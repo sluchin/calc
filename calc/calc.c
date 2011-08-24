@@ -33,6 +33,7 @@
 
 #include <stdio.h>   /* FILE */
 #include <stdlib.h>  /* realloc */
+#include <string.h>  /* strndup */
 #include <stdbool.h> /* bool */
 #include <string.h>  /* memcpy memset */
 #include <ctype.h>   /* isdigit isalpha */
@@ -291,7 +292,7 @@ get_digit(ldfl val)
  * バッファ読込
  *
  * バッファから一文字読み込む.
- * 空白, タブは読み飛ばす.
+ * 空白は読み飛ばす.
  *
  * @return なし
  */
@@ -332,7 +333,7 @@ parse_func_args(struct arg_value *val, const int argnum)
     readch();
     val->x = expression();
 
-    if (argnum == 2) {
+    if (argnum == ARG_2) {
         if (ch != ',') {
             set_errorcode(E_SYNTAX);
             return;
@@ -390,13 +391,12 @@ input(uchar *buf, const size_t len)
     if (is_error()) { /* エラー */
         errormsg = get_errormsg();
         slen = strlen((char *)errormsg) + 1; /* 文字数 + 1 */
-        result = calloc(slen, sizeof(uchar));
+        result = (uchar *)strndup((char *)errormsg, slen);
+        clear_error(errormsg);
         if (!result) {
-            outlog("calloc[%p]", result);
+            outlog("strndup[%p]", result);
             return NULL;
         }
-        (void)memcpy(result, errormsg, slen);
-        clear_error(errormsg);
         dbglog("result[%p] slen[%u]", result, slen);
     } else {
         digit = get_digit(val);
