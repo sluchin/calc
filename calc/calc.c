@@ -372,16 +372,8 @@ input(uchar *buf, const size_t len)
     dbglog("start");
 
     /* 初期値設定 */
-    p = buf;
-    rlen = 0;
-    if (precision == -1) /* デフォルト値 */
-        precision = DEFAULT_PREC;
-    retval = snprintf(fmt, sizeof(fmt), "%s%ld%s", "%.", precision + 1, "Lg");
-    if (retval < 0) {
-        outlog("snprintf[%d]", retval);
-        return NULL;
-    }
-    dbglog("fmt[%s]", fmt);
+    p = buf;  /* ポインタ設定 */
+    rlen = 0; /* 読込位置 */
 
     readch();
     val = expression();
@@ -389,7 +381,7 @@ input(uchar *buf, const size_t len)
 
     check_validate(val);
 
-    if (ch != '\0')
+    if (ch != '\0') /* エラー */
         set_errorcode(E_SYNTAX);
 
     if (is_error()) { /* エラー */
@@ -403,15 +395,26 @@ input(uchar *buf, const size_t len)
         }
         dbglog("result[%p] slen[%u]", result, slen);
     } else {
+        /* 桁数取得 */
         digit = get_digit(val);
         dbglog("digit[%uld]", digit);
 
         digit += 1; /* 桁数 + 1 */
+        /* メモリ確保 */
         result = calloc(digit, sizeof(uchar));
         if (!result) {
             outlog("calloc[%p]", result);
             return NULL;
         }
+        /* フォーマット設定 */
+        retval = snprintf(fmt, sizeof(fmt), "%s%ld%s",
+                          "%.", precision + 1, "Lg");
+        if (retval < 0) {
+            outlog("snprintf[%d]", retval);
+            return NULL;
+        }
+        dbglog("fmt[%s]", fmt);
+        /* 値を文字列に変換 */
         retval = snprintf((char *)result, digit, fmt, val);
         if (retval < 0) {
             outlog("snprintf[%d]: result[%p] digit[%uld]",

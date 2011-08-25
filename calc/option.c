@@ -134,7 +134,7 @@ parse_args(int argc, char *argv[])
             if (0 <= precision && precision <= MAX_PREC)
                 precision = strtol(optarg, NULL, base);
             else if (MAX_PREC < precision)
-                precision = MAX_PREC + 1;
+                precision = MAX_PREC;
             else
                 precision = DEFAULT_PREC;
             break;
