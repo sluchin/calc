@@ -376,7 +376,11 @@ input(uchar *buf, const size_t len)
     rlen = 0;
     if (precision == -1) /* デフォルト値 */
         precision = DEFAULT_PREC;
-    snprintf(fmt, sizeof(fmt), "%s%ld%s", "%.", precision + 1, "Lg");
+    retval = snprintf(fmt, sizeof(fmt), "%s%ld%s", "%.", precision + 1, "Lg");
+    if (retval < 0) {
+        outlog("snprintf[%d]", retval);
+        return NULL;
+    }
     dbglog("fmt[%s]", fmt);
 
     readch();

@@ -45,12 +45,12 @@ static uchar *result = NULL; /* メッセージ */
 static uchar *tmp = NULL;    /* 一時アドレス */
 
 /* メモリ解放 */
-#define ALLFREE if (expr) free(expr);           \
-    if (result) free(result);                   \
-    expr = result = NULL;
+#define ALL     0
+#define EXPR    1
+#define FREE(a)                                                 \
+    if (!a) { if (result) { free(result); } result = NULL; }    \
+    if (expr) { free(expr); } expr = NULL;                      \
 
-#define EXPRFREE if (expr) free(expr);          \
-    expr = NULL;
 
 /* 内部関数 */
 /** シグナルハンドラ */
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
             fgetsval = fgets((char *)buf, sizeof(buf), stdin);
             if (ferror(stdin)) { /* エラー */
                 outlog("fgets[%p]", retval);
-                EXPRFREE;
+                FREE(EXPR);
                 clearerr(stdin);
                 break;
             }
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
                                    (total + length + 1) * sizeof(uchar));
             if (!tmp) {
                 outlog("realloc[%p]: %u", expr, total + length + 1);
-                EXPRFREE;
+                FREE(EXPR);
                 break;
             }
             expr = tmp;
@@ -136,10 +136,10 @@ int main(int argc, char *argv[])
         }
 
         if (*expr == '\n' || !(*expr)) { /* 改行のみ */
-            ALLFREE;
+            FREE(ALL);
             continue;
         }
-        *(expr + strlen((char *)expr) - 1) = '\0'; /* 改行削除 */
+        *(expr + total - 1) = '\0'; /* 改行削除 */
         dbgdump((uchar *)expr, total + 1, "expr[%u]", total + 1);
 
         if (!strcmp((char *)expr, "quit") || !strcmp((char *)expr, "exit"))
@@ -155,13 +155,12 @@ int main(int argc, char *argv[])
             if (retval < 0)
                 outlog("fflush[%d]", retval);
         }
-        ALLFREE
-            dbglog("result[%p]", result);
+        FREE(ALL);
+        dbglog("result[%p]", result);
         clearerr(stdin);
     }
-    ALLFREE
-
-        return EXIT_SUCCESS;
+    FREE(ALL);
+    return EXIT_SUCCESS;
 }
 
 /** 
@@ -172,8 +171,8 @@ int main(int argc, char *argv[])
  */
 static void sig_handler(int signo)
 {
-    ALLFREE
-        clearerr(stdin);
+    FREE(ALL);
+    clearerr(stdin);
     _exit(EXIT_SUCCESS);
 }
 
