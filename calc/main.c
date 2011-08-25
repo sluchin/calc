@@ -48,7 +48,7 @@ static uchar *tmp = NULL;    /* 一時アドレス */
 #define ALL     0
 #define EXPR    1
 #define FREE(a)                                                 \
-    if (!a) { if (result) { free(result); } result = NULL; }    \
+    if (a == ALL) { if (result) { free(result); } result = NULL; }    \
     if (expr) { free(expr); } expr = NULL;                      \
 
 

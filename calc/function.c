@@ -589,7 +589,7 @@ get_combination(const struct arg_value *val)
 
     x = factorial(val->x);
     y = factorial(val->x);
-    if ((val->x - val->y) > 0)
+    if (isgreater((val->x - val->y), 0))
         z = factorial(val->x - val->y);
     dbglog("x[%.18Lg] y[%.18Lg] z[%.18Lg]", x, y, z);
 
