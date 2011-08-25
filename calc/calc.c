@@ -407,6 +407,8 @@ input(uchar *buf, const size_t len)
             return NULL;
         }
         /* フォーマット設定 */
+        if (precision == -1) /* デフォルト */
+            precision = DEFAULT_PREC;
         retval = snprintf(fmt, sizeof(fmt), "%s%ld%s",
                           "%.", precision + 1, "Lg");
         if (retval < 0) {

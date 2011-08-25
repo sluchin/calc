@@ -129,14 +129,14 @@ parse_args(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt[%c] optarg[%s]", opt, optarg);
         switch (opt) {
-        case 'p': /* 有効桁数設定 */
+        case 'p': /* 小数点以下有効桁数設定 */
             precision = strtol(optarg, NULL, base);
-            if (0 <= precision && precision <= MAX_PREC)
+            if (0 <= precision && precision <= MAX_PREC) {
                 precision = strtol(optarg, NULL, base);
-            else if (MAX_PREC < precision)
-                precision = MAX_PREC;
-            else
-                precision = DEFAULT_PREC;
+            } else if (MAX_PREC < precision) {
+                (void)fprintf(fp, "Maximum precision is %ul.\n", MAX_PREC);
+                exit(EXIT_FAILURE);
+            }
             break;
         case 'h': /* ヘルプ表示 */
             print_help(basename(argv[0]));
