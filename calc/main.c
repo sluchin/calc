@@ -30,6 +30,10 @@
 #include <unistd.h>  /* close */
 #include <libgen.h>  /* basename */
 #include <signal.h>  /* sigaction */
+#if defined(_USE_READLINE)
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif /* _USE_READLINE */
 
 #include "common.h"
 #include "data.h"
@@ -38,21 +42,141 @@
 #include "calc.h"
 
 /* 外部変数 */
-char *progname; /**< プログラム名 */
+char *progname;                    /**< プログラム名 */
 /* 内部変数 */
-static uchar *expr = NULL;   /* 式 */
-static uchar *result = NULL; /* メッセージ */
-static uchar *tmp = NULL;    /* 一時アドレス */
+static uchar *expr = NULL;         /**< 式 */
+static uchar *result = NULL;       /**< メッセージ */
+#if defined(_USE_READLINE)
+static HIST_ENTRY *history = NULL; /**< 履歴 */
+#endif /* _USE_READLINE */
 
 /* メモリ解放 */
 #define FREEALL                                         \
     if (result) { free(result); } result = NULL;        \
-    if (expr) { free(expr); } expr = NULL;              \
+    if (expr) { free(expr); } expr = NULL;
+
+#if defined(_USE_READLINE)
+#  define FREEHISTORY                                   \
+    history = remove_history(0);                        \
+    if (history) { free(history); } history = NULL;
+#  define MAX_HISTORY    100 /**< 最大履歴数 */
+#else
+#  define FREEHISTORY do { } while(0);
+#endif /* _USE_READLINE */
 
 
 /* 内部関数 */
+/** 標準入力読込 */
+static uchar *stdin_read(void);
 /** シグナルハンドラ */
 static void sig_handler(int signo);
+
+/**
+ * 標準入力読込
+ *
+ * @return 文字列
+ */
+static uchar *
+stdin_read(void)
+{
+#if !defined(_USE_READLINE)
+    char *retval = NULL; /* fgetsの戻り値 */
+    size_t length = 0;   /* 文字列長 */
+    size_t total = 0;    /* 文字列長全て */
+    uchar buf[BUF_SIZE]; /* バッファ */
+    uchar *tmp = NULL;   /* 一時アドレス */
+#endif /* _USE_READLINE */
+    uchar *line = NULL;  /* 文字列 */
+
+#if defined(_USE_READLINE)
+    line = (uchar *)readline(NULL);
+#else
+    while (true) {
+        retval = fgets((char *)buf, sizeof(buf), stdin);
+        if (feof(stdin) || ferror(stdin)) { /* エラー */
+            outlog("fgets[%p]", retval);
+            FREEALL;
+            clearerr(stdin);
+            break;
+        }
+        length = strlen((char *)buf);
+        dbgdump((uchar *)buf, length, "buf[%u]", length);
+
+        tmp = (uchar *)realloc((uchar *)line,
+                               (total + length + 1) * sizeof(uchar));
+        if (!tmp) {
+            outlog("realloc[%p]: %u", line, total + length + 1);
+            FREEALL;
+            break;
+        }
+        line = tmp;
+
+        (void)memcpy((uchar *)line + total, buf, length + 1);
+
+        total += length;
+        dbglog("length[%u] total[%u]", length, total);
+        dbglog("line[%p]: %s", line, line);
+        dbgdump((uchar *)line, total + 1, "line[%u]", total + 1);
+
+        if (*(line + total - 1) == '\n')
+            break;
+    }
+    *(line + total - 1) = '\0'; /* 改行削除 */
+#endif /* _USE_READLINE */
+    return line;
+}
+
+/**
+ * main ループ
+ *
+ * @return なし
+ */
+static void
+main_loop(void)
+{
+    int retval = 0;    /* 戻り値 */
+    size_t length = 0; /* 文字列長 */
+#if defined(_USE_READLINE)
+    int hist_no = 0;   /* 履歴数 */
+#endif /* _USE_READLINE */
+
+    while (true) {
+        retval = fflush(NULL);
+        if (retval == EOF)
+            outlog("fflush[%d]", retval);
+
+        expr = stdin_read();
+        if (*expr == '\n' || !(*expr)) { /* 改行のみ */
+            FREEALL;
+            continue;
+        }
+        length = strlen((char *)expr);
+        dbgdump((uchar *)expr, length + 1, "expr[%u]", length + 1);
+
+        if (!strcmp((char *)expr, "quit") || !strcmp((char *)expr, "exit"))
+            break;
+
+        result = input(expr, sizeof(expr));
+        dbglog("result[%p]", result);
+        if (result) {
+            retval = fprintf(stdout, "%s\n", (char *)result);
+            if (retval < 0)
+                outlog("fprintf[%d]", retval);
+            retval = fflush(stdout);
+            if (retval == EOF)
+                outlog("fflush[%d]", retval);
+        }
+#if defined(_USE_READLINE)
+        add_history((char *)expr);
+        if (MAX_HISTORY < ++hist_no)
+            FREEHISTORY;
+#endif /* _USE_READLINE */
+        FREEALL;
+        dbglog("result[%p]", result);
+    }
+    FREEALL;
+    FREEHISTORY;
+}
 
 /** 
  * main関数
@@ -64,11 +188,6 @@ static void sig_handler(int signo);
 int main(int argc, char *argv[])
 {
     struct sigaction sa;   /* シグナル */
-    int retval = 0;        /* 戻り値 */
-    char *fgetsval = NULL; /* fgetsの戻り値 */
-    uchar buf[BUF_SIZE];   /* バッファ */
-    size_t length;         /* 文字列長 */
-    size_t total;          /* 文字列長全て */
 
     dbglog("start");
 
@@ -98,66 +217,8 @@ int main(int argc, char *argv[])
     /* オプション引数 */
     parse_args(argc, argv);
 
-    while (true) {
-        total = 0;
-        while (true) {
-            length = 0;
-            (void)memset(buf, 0, sizeof(buf));
-            fgetsval = fgets((char *)buf, sizeof(buf), stdin);
-            if (feof(stdin) || ferror(stdin)) { /* エラー */
-                outlog("fgets[%p]", retval);
-                FREEALL;
-                clearerr(stdin);
-                break;
-            }
-            length = strlen((char *)buf);
-            dbgdump((uchar *)buf, length, "buf[%u]", length);
+    main_loop();
 
-            tmp = (uchar *)realloc((uchar *)expr,
-                                   (total + length + 1) * sizeof(uchar));
-            if (!tmp) {
-                outlog("realloc[%p]: %u", expr, total + length + 1);
-                FREEALL;
-                break;
-            }
-            expr = tmp;
-
-            (void)memcpy((uchar *)expr + total, buf, length + 1);
-
-            total += length;
-            dbglog("length[%u] total[%u]", length, total);
-            dbglog("expr[%p]: %s", expr, expr);
-            dbgdump((uchar *)expr, total + 1, "expr[%u]", total + 1);
-            
-            if (*(expr + total - 1) == '\n')
-                break;
-        }
-
-        if (*expr == '\n' || !(*expr)) { /* 改行のみ */
-            FREEALL;
-            continue;
-        }
-        *(expr + total - 1) = '\0'; /* 改行削除 */
-        dbgdump((uchar *)expr, total + 1, "expr[%u]", total + 1);
-
-        if (!strcmp((char *)expr, "quit") || !strcmp((char *)expr, "exit"))
-            break;
-
-        result = input(expr, sizeof(expr));
-        dbglog("result[%p]", result);
-        if (result) {
-            retval = fprintf(stdout, "%s\n", (char *)result);
-            if (retval < 0)
-                outlog("fprintf[%d]", retval);
-            retval = fflush(stdout);
-            if (retval < 0)
-                outlog("fflush[%d]", retval);
-        }
-        FREEALL;
-        dbglog("result[%p]", result);
-        clearerr(stdin);
-    }
-    FREEALL;
     return EXIT_SUCCESS;
 }
 
@@ -170,7 +231,7 @@ int main(int argc, char *argv[])
 static void sig_handler(int signo)
 {
     FREEALL;
-    clearerr(stdin);
+    FREEHISTORY;
     _exit(EXIT_SUCCESS);
 }
 
