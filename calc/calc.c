@@ -365,6 +365,7 @@ input(uchar *buf, const size_t len)
     size_t slen = 0;            /* 文字数 */
     ulong digit = 0;            /* 桁数 */
     uchar *result = NULL;       /* 結果 */
+    uchar *tmp = NULL;          /* 一時ポインタ */
     uchar *errormsg = NULL;     /* エラーメッセージ */
     int retval = 0;             /* 戻り値 */
     char fmt[sizeof("%.15Lg")]; /* フォーマット */
@@ -401,11 +402,12 @@ input(uchar *buf, const size_t len)
 
         digit += 1; /* 桁数 + 1 */
         /* メモリ確保 */
-        result = calloc(digit, sizeof(uchar));
-        if (!result) {
-            outlog("calloc[%p]", result);
+        tmp = (uchar *)calloc(digit, sizeof(uchar));
+        if (!tmp) {
+            outlog("calloc[%p]", tmp);
             return NULL;
         }
+        result = tmp;
         /* フォーマット設定 */
         if (precision == -1) /* デフォルト */
             precision = DEFAULT_PREC;
