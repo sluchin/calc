@@ -45,11 +45,9 @@ static uchar *result = NULL; /* メッセージ */
 static uchar *tmp = NULL;    /* 一時アドレス */
 
 /* メモリ解放 */
-#define ALL     0
-#define EXPR    1
-#define FREE(a)                                                 \
-    if (a == ALL) { if (result) { free(result); } result = NULL; }    \
-    if (expr) { free(expr); } expr = NULL;                      \
+#define FREEALL                                         \
+    if (result) { free(result); } result = NULL;        \
+    if (expr) { free(expr); } expr = NULL;              \
 
 
 /* 内部関数 */
@@ -106,9 +104,9 @@ int main(int argc, char *argv[])
             length = 0;
             (void)memset(buf, 0, sizeof(buf));
             fgetsval = fgets((char *)buf, sizeof(buf), stdin);
-            if (ferror(stdin)) { /* エラー */
+            if (feof(stdin) || ferror(stdin)) { /* エラー */
                 outlog("fgets[%p]", retval);
-                FREE(EXPR);
+                FREEALL;
                 clearerr(stdin);
                 break;
             }
@@ -119,7 +117,7 @@ int main(int argc, char *argv[])
                                    (total + length + 1) * sizeof(uchar));
             if (!tmp) {
                 outlog("realloc[%p]: %u", expr, total + length + 1);
-                FREE(EXPR);
+                FREEALL;
                 break;
             }
             expr = tmp;
@@ -136,7 +134,7 @@ int main(int argc, char *argv[])
         }
 
         if (*expr == '\n' || !(*expr)) { /* 改行のみ */
-            FREE(ALL);
+            FREEALL;
             continue;
         }
         *(expr + total - 1) = '\0'; /* 改行削除 */
@@ -155,11 +153,11 @@ int main(int argc, char *argv[])
             if (retval < 0)
                 outlog("fflush[%d]", retval);
         }
-        FREE(ALL);
+        FREEALL;
         dbglog("result[%p]", result);
         clearerr(stdin);
     }
-    FREE(ALL);
+    FREEALL;
     return EXIT_SUCCESS;
 }
 
@@ -171,7 +169,7 @@ int main(int argc, char *argv[])
  */
 static void sig_handler(int signo)
 {
-    FREE(ALL);
+    FREEALL;
     clearerr(stdin);
     _exit(EXIT_SUCCESS);
 }
