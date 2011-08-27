@@ -66,7 +66,7 @@ static ldfl token(void);
 /** 文字列を数値に変換 */
 static ldfl to_numvalue(void);
 /** 桁数取得 */
-static ulong get_digit(const ldfl val);
+static ulong get_digit(const ldfl val, const char *fmt);
 /** バッファ読込 */
 static void readch(void);
 
@@ -86,7 +86,7 @@ expression(void)
         return EX_ERROR;
 
     x = term();
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
 
     while (true) {
         if (ch == '+') {
@@ -100,7 +100,7 @@ expression(void)
         }
     }
 
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
     return x;
 }
 
@@ -120,7 +120,7 @@ term(void)
         return EX_ERROR;
 
     x = factor();
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
 
     while (true) {
         if (ch == '*') {
@@ -142,7 +142,7 @@ term(void)
             break;
         }
     }
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
     return x;
 }
 
@@ -173,7 +173,7 @@ factor(void)
     }
     readch();
 
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
     return x;
 }
 
@@ -218,7 +218,7 @@ token(void)
         set_errorcode(E_SYNTAX);
     }
 
-    dbglog("result[%Lg]", result);
+    dbglog("result[%.18Lg]", result);
     return (sign == '+') ? result : -result;
 }
 
@@ -238,7 +238,7 @@ to_numvalue(void)
     readch();
     while (isdigit(ch) && ch != '\0') { /* 整数 */
         x = (x * 10) + (ch - '0');
-        dbglog("x[%Lg]", x);
+        dbglog("x[%.18Lg]", x);
         readch();
     }
 
@@ -246,14 +246,14 @@ to_numvalue(void)
         readch();
         while (isdigit(ch) && ch != '\0') {
             x += (y /= 10) * (ch - '0');
-            dbglog("x[%Lg]", x);
+            dbglog("x[%.18Lg]", x);
             readch();
         }
     }
 
     check_validate(x);
 
-    dbglog("x[%Lg]", x);
+    dbglog("x[%.18Lg]", x);
     return x;
 }
 
@@ -261,10 +261,11 @@ to_numvalue(void)
  * 桁数取得
  *
  * @param[in] val 値
+ * @param[in] fmt フォーマット
  * @return 桁数
  */
 static ulong
-get_digit(ldfl val)
+get_digit(ldfl val, const char *fmt)
 {
     FILE *fp = NULL;  /* ファイルポインタ */
     int retval = 0;   /* fclose戻り値 */
@@ -276,7 +277,7 @@ get_digit(ldfl val)
     if (!fp) { /* fopen エラー */
         outlog("fopen[%p]", fp);
     } else {
-        result = fprintf(fp, "%.15Lg", val);
+        result = fprintf(fp, fmt, val);
         if (result < 0)
             outlog("fprintf[%d]", retval);
 
@@ -340,7 +341,7 @@ parse_func_args(struct arg_value *val, const int argnum)
         }
         readch();
         val->y = expression();
-        dbglog("y[%Lg]", val->y);
+        dbglog("y[%.18Lg]", val->y);
     }
 
     if (ch != ')') {
@@ -368,7 +369,7 @@ input(uchar *buf, const size_t len)
     uchar *tmp = NULL;          /* 一時ポインタ */
     uchar *errormsg = NULL;     /* エラーメッセージ */
     int retval = 0;             /* 戻り値 */
-    char fmt[sizeof("%.15Lg")]; /* フォーマット */
+    char fmt[sizeof("%.18Lg")]; /* フォーマット */
 
     dbglog("start");
 
@@ -396,18 +397,6 @@ input(uchar *buf, const size_t len)
         }
         dbglog("result[%p] slen[%u]", result, slen);
     } else {
-        /* 桁数取得 */
-        digit = get_digit(val);
-        dbglog("digit[%uld]", digit);
-
-        digit += 1; /* 桁数 + 1 */
-        /* メモリ確保 */
-        tmp = (uchar *)calloc(digit, sizeof(uchar));
-        if (!tmp) {
-            outlog("calloc[%p]", tmp);
-            return NULL;
-        }
-        result = tmp;
         /* フォーマット設定 */
         if (precision == -1) /* デフォルト */
             precision = DEFAULT_PREC;
@@ -418,6 +407,18 @@ input(uchar *buf, const size_t len)
             return NULL;
         }
         dbglog("fmt[%s]", fmt);
+        /* 桁数取得 */
+        digit = get_digit(val, fmt);
+        dbglog("digit[%uld]", digit);
+
+        digit += 1; /* 桁数 + 1 */
+        /* メモリ確保 */
+        tmp = (uchar *)calloc(digit, sizeof(uchar));
+        if (!tmp) {
+            outlog("calloc[%p]", tmp);
+            return NULL;
+        }
+        result = tmp;
         /* 値を文字列に変換 */
         retval = snprintf((char *)result, digit, fmt, val);
         if (retval < 0) {
@@ -425,7 +426,7 @@ input(uchar *buf, const size_t len)
                    retval, result, digit);
             return NULL;
         }
-        dbglog("result[%s] val[%Lg] digit[%uld]", result, val, digit);
+        dbglog("result[%s] val[%.18Lg] digit[%uld]", result, val, digit);
     }
     return result;
 }

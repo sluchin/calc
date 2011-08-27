@@ -627,7 +627,7 @@ exec_func(struct arg_value *val, const char *func)
                 parse_func_args(val, st_func[i].argnum);
 
             dbglog("i[%d] x[%.18Lg] y[%.18Lg] funcname[%s]",
-                   i, st_func[i].funcname, val->x, val->y);
+                   i, val->x, val->y, st_func[i].funcname);
             result = st_func[i].func(val);
             exec = true;
         }

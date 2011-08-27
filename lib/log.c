@@ -44,6 +44,14 @@
 
 /**
  * シスログ出力
+ *
+ * @param[in] prog_name プログラム名
+ * @param[in] filename ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] format フォーマット
+ * @param[in] ... 可変引数
+ * @return なし
  */
 void system_log(const char *prog_name,
                 const char *filename,
@@ -55,6 +63,11 @@ void system_log(const char *prog_name,
     int retval = 0;                 /* 戻り値 */
     char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                     /* va_list */
+
+    if (!format) {
+        outlog("format[%p]", format);
+        return;
+    }
 
     /* シスログオープン */
     openlog (prog_name, LOG_PID, LOG_SYSLOG);
@@ -80,6 +93,14 @@ void system_log(const char *prog_name,
 
 /**
  * シスログ出力(デバッグ用)
+ *
+ * @param[in] prog_name プログラム名
+ * @param[in] filename ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] format フォーマット
+ * @param[in] ... 可変引数
+ * @return なし
  */
 void system_dbg_log(const char *prog_name,
                     const char *filename,
@@ -96,6 +117,10 @@ void system_dbg_log(const char *prog_name,
     char d_buf[sizeof("00")] = {0}; /* 秒格納用バッファ */
     va_list ap;                     /* va_list */
 
+    if (!format) {
+        outlog("format[%p]", format);
+        return;
+    }
     /* シスログオープン */
     openlog(prog_name, LOG_PID, LOG_SYSLOG);
 
@@ -141,6 +166,14 @@ void system_dbg_log(const char *prog_name,
 
 /**
  * 標準エラー出力にログ出力
+ *
+ * @param[in] prog_name プログラム名
+ * @param[in] filename ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] format フォーマット
+ * @param[in] ... 可変引数
+ * @return なし
  */
 void stderr_log(const char *prog_name,
                 const char *filename,
@@ -157,6 +190,11 @@ void stderr_log(const char *prog_name,
     va_list ap;         /* va_list */
     char d_buf[sizeof("xxx 00 00:00:00")] = {0}; /* 時間用バッファ */
     char h_buf[MAX_HOST_SIZE] = {0};             /* ホスト用バッファ */
+
+    if (!format) {
+        outlog("format[%p]", format);
+        return;
+    }
 
     retval = gettimeofday(&tv, NULL);
     if (retval < 0) {
@@ -206,6 +244,10 @@ void stderr_log(const char *prog_name,
 
 /**
  * 標準エラー出力にHEXダンプ
+ *
+ * @param[in] buf ダンプ出力用バッファ
+ * @param[in] len 長さ
+ * @return なし
  */
 void dump_log(const void *buf, const size_t len)
 {
@@ -213,6 +255,10 @@ void dump_log(const void *buf, const size_t len)
     int pt = 0;        /* アドレス用変数 */
     unsigned char *p;  /* バッファポインタ */
 
+    if (!buf) {
+        outlog("buf[%p] len[%u]", buf, len);
+        return;
+    }
     p = (unsigned char *)buf;
 
 #if 1
@@ -245,6 +291,15 @@ void dump_log(const void *buf, const size_t len)
 
 /**
  * シスログにHEXダンプ
+ *
+ * @param[in] prog_name プログラム名
+ * @param[in] filename ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] buf ダンプ出力用バッファ
+ * @param[in] len 長さ
+ * @param[in] format フォーマット
+ * @return なし
  */
 void dump_sys(const char *prog_name,
               const char *filename,
@@ -263,6 +318,10 @@ void dump_sys(const char *prog_name,
     char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                     /* va_list */
 
+    if (!buf || !format) {
+        outlog("buf[%p] format[%p] len[%u]", buf, format, len);
+        return;
+    }
     p = (unsigned char *)buf;
 
     /* シスログオープン */
@@ -317,6 +376,12 @@ void dump_sys(const char *prog_name,
 
 /**
  * ファイルにバイナリ出力
+ *
+ * @param[in] prog_name プログラム名
+ * @param[in] d_file ファイル名
+ * @param[in] buf ダンプ出力用バッファ
+ * @param[in] len 長さ
+ * @return なし
  */
 void dump_file(const char *prog_name, const char *d_file,
                const char *buf, const size_t len)
@@ -324,6 +389,11 @@ void dump_file(const char *prog_name, const char *d_file,
     FILE *fp = NULL; /* ファイルディスクリプタ */
     int num = 0;     /* fwrite戻り値 */
     int retval = 0;  /* 戻り値 */
+
+    if (!buf) {
+        outlog("buf[%p] len[%u]", buf, len);
+        return;
+    }
 
     /* シスログオープン */
     openlog(prog_name, LOG_PID, LOG_SYSLOG);
@@ -342,11 +412,13 @@ void dump_file(const char *prog_name, const char *d_file,
         return;
     }
 
+#if 0
     retval = fflush(fp);
     if (retval == EOF) {
         syslog(SYS_PRIO, "%s[%d]: fflush[%p](%d)",
                __FILE__, __LINE__, fp, errno);
     }
+#endif
 
     retval = fclose(fp);
     if (retval == EOF) {

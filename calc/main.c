@@ -67,30 +67,29 @@ static HIST_ENTRY *history = NULL; /**< 履歴 */
 
 /* 内部関数 */
 /** 標準入力読込 */
-static uchar *stdin_read(void);
+#if !defined(_USE_READLINE)
+static uchar *read_stdin(void);
+#endif /* _USE_READLINE */
+
 /** シグナルハンドラ */
 static void sig_handler(int signo);
 
+#if !defined(_USE_READLINE)
 /**
  * 標準入力読込
  *
  * @return 文字列
  */
 static uchar *
-stdin_read(void)
+read_stdin(void)
 {
-#if !defined(_USE_READLINE)
     char *retval = NULL; /* fgetsの戻り値 */
     size_t length = 0;   /* 文字列長 */
     size_t total = 0;    /* 文字列長全て */
     uchar buf[BUF_SIZE]; /* バッファ */
-    uchar *tmp = NULL;   /* 一時アドレス */
-#endif /* _USE_READLINE */
     uchar *line = NULL;  /* 文字列 */
+    uchar *tmp = NULL;   /* 一時アドレス */
 
-#if defined(_USE_READLINE)
-    line = (uchar *)readline(NULL);
-#else
     while (true) {
         retval = fgets((char *)buf, sizeof(buf), stdin);
         if (feof(stdin) || ferror(stdin)) { /* エラー */
@@ -122,22 +121,24 @@ stdin_read(void)
             break;
     }
     *(line + total - 1) = '\0'; /* 改行削除 */
-#endif /* _USE_READLINE */
+
     return line;
 }
+#endif /* _USE_READLINE */
 
 /**
- * main ループ
+ * ループ処理
  *
  * @return なし
  */
 static void
 main_loop(void)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 文字列長 */
+    int retval = 0;      /* 戻り値 */
+    size_t length = 0;   /* 文字列長 */
 #if defined(_USE_READLINE)
-    int hist_no = 0;   /* 履歴数 */
+    int hist_no = 0;     /* 履歴数 */
+    char *prompt = NULL; /* プロンプト */
 #endif /* _USE_READLINE */
 
     while (true) {
@@ -145,7 +146,11 @@ main_loop(void)
         if (retval == EOF)
             outlog("fflush[%d]", retval);
 
-        expr = stdin_read();
+#if defined(_USE_READLINE)
+        expr = (uchar *)readline(prompt);
+#else
+        expr = read_stdin();
+#endif /* _USE_READLINE */
         if (*expr == '\n' || !(*expr)) { /* 改行のみ */
             FREEALL;
             continue;

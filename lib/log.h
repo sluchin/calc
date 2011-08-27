@@ -50,86 +50,31 @@ extern char *progname; /**< プログラム名 */
 #  define dbgdump(a, b)      do { } while (0)
 #endif /* _DEBUG */
 
-/**
- * シスログ出力
- *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
- * @param[in] line 行番号
- * @param[in] func 関数名
- * @param[in] format フォーマット
- * @param[in] ... 可変引数
- * @return なし
- */
+/** シスログ出力 */
 void system_log(const char *prog_name, const char *filename,
                 const unsigned long line, const char *func,
                 const char *format, ...);
 
-/**
- * シスログ出力(デバッグ用)
- *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
- * @param[in] line 行番号
- * @param[in] func 関数名
- * @param[in] format フォーマット
- * @param[in] ... 可変引数
- * @return なし
- */
+/** シスログ出力(デバッグ用) */
 void system_dbg_log(const char *prog_name, const char *filename,
                     const unsigned long line, const char *func,
                     const char *format, ...);
 
-/**
- * 標準エラー出力にログ出力
- *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
- * @param[in] line 行番号
- * @param[in] func 関数名
- * @param[in] format フォーマット
- * @param[in] ... 可変引数
- * @return なし
- */
+/** 標準エラー出力にログ出力 */
 void stderr_log(const char *prog_name, const char *filename,
                 const unsigned long line, const char *func,
                 const char *format, ...);
 
-/**
- * 標準エラー出力にHEXダンプ
- *
- * @param[in] buf ダンプ出力用バッファ
- * @param[in] len 長さ
- * @return なし
- */
+/** 標準エラー出力にHEXダンプ */
 void dump_log(const void *buf, const size_t len);
 
-/**
- * シスログにHEXダンプ
- *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
- * @param[in] line 行番号
- * @param[in] func 関数名
- * @param[in] buf ダンプ出力用バッファ
- * @param[in] len 長さ
- * @param[in] format フォーマット
- * @return なし
- */
+/** シスログにHEXダンプ */
 void dump_sys(const char *prog_name, const char *filename,
               const unsigned long line, const char *func,
               const void *buf, const size_t len,
               const char *format, ...);
 
-/**
- * ファイルにバイナリ出力
- *
- * @param[in] prog_name プログラム名
- * @param[in] d_file ファイル名
- * @param[in] buf ダンプ出力用バッファ
- * @param[in] len 長さ
- * @return なし
- */
+/** ファイルにバイナリ出力 */
 void dump_file(const char *prog_name, const char *d_file, const char *buf,
                const size_t len);
 
