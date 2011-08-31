@@ -31,6 +31,11 @@
 
 /**
  * クライアントデータ構造体設定
+ *
+ * @param[in,out] dt 送受信データ構造体
+ * @param[in] buf 送受信バッファ
+ * @param[in] len 長さ
+ * @return なし
  */
 void
 set_client_data(struct client_data *dt,
@@ -44,6 +49,11 @@ set_client_data(struct client_data *dt,
 
 /**
  * サーバデータ構造体設定
+ *
+ * @param[in,out] dt 送受信データ構造体
+ * @param[in] buf 送受信バッファ
+ * @param[in] len 長さ
+ * @return なし
  */
 void
 set_server_data(struct server_data *dt,

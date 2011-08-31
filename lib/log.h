@@ -44,10 +44,10 @@ extern char *progname; /**< プログラム名 */
 #  define dumplog(a, b)              dump_log(a, b)
 #  define dbgdump(a, b, fmt...)      dump_sys(LOG_FORMAT, a, b, fmt)
 #else
-#  define dbglog(fmt...)     do { } while (0)
-#  define stdlog(fmt...)     do { } while (0)
-#  define dumplog(a, b)      do { } while (0)
-#  define dbgdump(a, b)      do { } while (0)
+#  define dbglog(fmt...)             do { } while (0)
+#  define stdlog(fmt...)             do { } while (0)
+#  define dumplog(a, b)              do { } while (0)
+#  define dbgdump(a, b, fmt...)      do { } while (0)
 #endif /* _DEBUG */
 
 /** シスログ出力 */

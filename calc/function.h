@@ -27,7 +27,7 @@
 #ifndef _FUNCTION_H_
 #define _FUNCTION_H_
 
-#include "common.h"
+#include "def.h"
 #include "calc.h"
 
 /** 関数最大文字数 */

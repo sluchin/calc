@@ -8,7 +8,7 @@ RM = rm -rf
 AR = ar rcsv
 STRIP = strip
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS += -g -Wall -O2 -D_DEBUG -D_USE_READLINE
+CFLAGS += -g -Wall -O2 -D_USE_READLINE
 LDFLAGS =
 LIBS = -lm -lreadline
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
@@ -38,7 +38,7 @@ $(PROGRAM): $(OBJECTS) $(LIBRARY)
 $(OBJECTS): option.h calc.h version.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
+	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG -D_USE_READLINE" 
 
 strip:
 	$(STRIP) $(PROGRAM)

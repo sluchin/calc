@@ -43,68 +43,42 @@ char port_no[PORT_SIZE];   /**< ポート番号またはサービス名 */
 static volatile sig_atomic_t sockfd = -1; /**< ソケット */
 
 /* 内部関数 */
+/** シグナルハンドラ設定 */
+static void set_sig_handler(void);
+/* シグナルハンドラ */
 static void sig_handler(int signo);
 
 /** 
- * main関数
+ * シグナルハンドラ設定
  *
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @retval EXIT_FAILURE ソケット接続失敗
+ * @return なし
  */
-int main(int argc, char *argv[])
+static void
+set_sig_handler(void)
 {
-    FILE *fp = stderr;   /* 標準エラー出力 */
     struct sigaction sa; /* シグナル */
-    int retval = 0;      /* 戻り値 */
-
-    dbglog("start");
-
-    progname = basename(argv[0]);
 
     /* シグナルマスクの設定 */
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset[%p]", sa);  
+        outlog("sigemptyset[%p]", sa);
     if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset[%p]; SIGINT", sa);  
+        outlog("sigaddset[%p]; SIGINT", sa);
     if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset[%p]; SIGTERM", sa);  
+        outlog("sigaddset[%p]; SIGTERM", sa);
     if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset[%p]; SIGQUIT", sa);  
+        outlog("sigaddset[%p]; SIGQUIT", sa);
 
     /* シグナル補足 */
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGINT", sa);  
+        outlog("sigaction[%p]; SIGINT", sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGTERM", sa);  
+        outlog("sigaction[%p]; SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGQUIT", sa);  
+        outlog("sigaction[%p]; SIGQUIT", sa);
 
-    /* オプション引数 */
-    parse_args(argc, argv);
-
-    /* ソケット接続 */
-    sockfd = connect_sock(host_name, port_no);
-    if (sockfd < 0) {
-        (void)fprintf(fp, "connect error\n");
-        return EXIT_FAILURE;
-    }
-
-    /* ソケット送受信 */
-    client_loop(sockfd);
-
-    /* ソケットクローズ */
-    if (sockfd != -1) {
-        retval = close(sockfd);
-        if (retval < 0)
-            outlog("close[%d] sockfd[%d]", retval, sockfd);
-        sockfd = -1;
-    }
-
-    return EXIT_SUCCESS;
 }
 
 /** 
@@ -129,5 +103,50 @@ static void sig_handler(int signo)
         sockfd = -1;
     }
     _exit(EXIT_SUCCESS);
+}
+
+/** 
+ * main関数
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @retval EXIT_FAILURE ソケット接続失敗
+ */
+int main(int argc, char *argv[])
+{
+    FILE *fp = stderr;   /* 標準エラー出力 */
+    int retval = 0;      /* 戻り値 */
+
+    dbglog("start");
+
+    progname = basename(argv[0]);
+
+    /* シグナルハンドラ */
+    set_sig_handler();
+
+    /* オプション引数 */
+    parse_args(argc, argv);
+
+    /* ソケット接続 */
+    sockfd = connect_sock(host_name, port_no);
+    if (sockfd < 0) {
+        (void)fprintf(fp, "connect error\n");
+        return EXIT_FAILURE;
+    }
+
+    dbglog("sockfd[%d]", sockfd);
+
+    /* ソケット送受信 */
+    client_loop(sockfd);
+
+    /* ソケットクローズ */
+    if (sockfd != -1) {
+        retval = close(sockfd);
+        if (retval < 0)
+            outlog("close[%d] sockfd[%d]", retval, sockfd);
+        sockfd = -1;
+    }
+
+    return EXIT_SUCCESS;
 }
 

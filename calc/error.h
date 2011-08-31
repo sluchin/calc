@@ -29,7 +29,7 @@
 
 #include <stdbool.h> /* bool */
 
-#include "common.h"
+#include "def.h"
 
 /** エラー種別 */
 typedef enum {

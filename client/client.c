@@ -39,6 +39,7 @@
 #  include <sys/poll.h>   /* poll */
 #endif
 
+#include "def.h"
 #include "log.h"
 #include "data.h"
 #include "util.h"
@@ -57,8 +58,120 @@ enum {
 };
 #endif /* _USE_SELECT */
 
+/** 標準入力読込 */
+static int read_stdin(int sock, char *buf, size_t length);
+/** ソケット読込 */
+static int read_sock(int sock);
+
+/**
+ * 標準入力読込
+ *
+ * @param[in] ソケット
+ * @param[out] バッファ
+ * @param[in] バッファサイズ
+ * @retval ST_NG エラー
+ */
+static int
+read_stdin(int sock, char *buf, size_t length)
+{
+    int retval = 0;           /* 戻り値 */
+    char *fgetsval = NULL;    /* fgets戻り値 */
+    struct client_data sdata; /* 送信データ構造体 */
+    size_t rlen = 0;          /* 送信または受信する長さ */
+
+    dbglog("start");
+
+    /* 標準入力 */
+    fgetsval = fgets(buf, length, stdin);
+    if (feof(stdin) || ferror(stdin)) {
+        outlog("fgets[%p]: feof[%d]", fgetsval, feof(stdin));
+        clearerr(stdin); /* エラーをクリア */
+        return ST_NG;
+    }
+    dbgdump((char *)buf, length, "buf[%u]", strlen(buf));
+    buf[strlen(buf) - 1] = '\0'; /* 改行削除 */
+    dbgdump((char *)buf, length, "buf[%u]", strlen(buf));
+
+    memset(&sdata, 0, sizeof(struct client_data));
+    set_client_data(&sdata, (unsigned char *)buf, strlen(buf));
+    /* データ送信 */
+    rlen = sizeof(struct header) + strlen(buf);
+    retval = send_data(sock, &sdata, rlen);
+    if (retval < 0) /* エラー */
+        return ST_NG;
+
+    stdlog("send_data[%d]: sdata[%p]: rlen[%u]: %u",
+           retval, &sdata, rlen, sdata.hd.length);
+    dumplog(&sdata, rlen);
+    if (gflag)
+        outdump(&sdata, rlen, "sdata[%u]", rlen);
+    return ST_OK;
+}
+
+/**
+ * ソケット読込
+ *
+ * @param[in] ソケット
+ * retval ST_NG エラー
+ */
+static int
+read_sock(int sock)
+{
+    int retval = 0;           /* 戻り値 */
+    size_t length = 0;        /* 送信または受信する長さ */
+    unsigned short cs;        /* チェックサム値 */
+    struct server_data rdata; /* 受信データ構造体 */
+
+    /* ヘッダ受信 */
+    memset(&rdata, 0, sizeof(struct server_data));
+    length = sizeof(struct header);
+    retval = recv_data(sock, &rdata, length);
+    if (retval < 0) /* エラー */
+        return ST_NG;
+    stdlog("recv_data[%d]: rdata[%p]: length[%u]",
+           retval, &rdata, length);
+    dumplog(&rdata, length);
+    if (gflag)
+        outdump(&rdata, length, "rdata[%u]", length);
+
+    length = rdata.hd.length; /* データ長を保持 */
+
+    /* データ受信 */
+    retval = recv_data(sock, rdata.answer, length);
+    if (retval < 0) /* エラー */
+        return ST_NG;
+
+    stdlog("recv_data[%d]: rdata[%p]: length[%u]",
+           retval, &rdata, length);
+    dumplog(rdata.answer, length);
+    if (gflag)
+        outdump(rdata.answer, length, "rdata.answer[%u]", length);
+
+    cs = in_cksum((unsigned short *)rdata.answer, length);
+    if (cs != rdata.hd.checksum) { /* チェックサムエラー */
+        outlog("checksum error; cs[0x%x!=0x%x]",
+               cs, rdata.hd.checksum);
+        return ST_NG;
+    }
+    retval = fprintf(stdout, "%s\n", rdata.answer);
+    if (retval < 0) {
+        outlog("fprintf[%d]", retval);
+        return ST_NG;
+    }
+    retval = fflush(stdout);
+    if (retval == EOF) {
+        outlog("fflush[%d]", retval);
+        return ST_NG;
+    }
+    return ST_OK;
+}
+
 /**
  * ソケット接続
+ *
+ * @param[in] host ホスト名またはIPアドレス　
+ * @param[in] port ポート番号
+ * @return ソケット
  */
 int
 connect_sock(const char *host, const char *port)
@@ -75,9 +188,9 @@ connect_sock(const char *host, const char *port)
     memset(&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
 
-    if (!set_hostname(&server, &addr, host))
+    if (set_hostname(&server, &addr, host) < 0)
         return SOCK_ERROR;
-    if (!set_port(&server, port))
+    if (set_port(&server, port) < 0)
         return SOCK_ERROR;
 
     /* ソケット生成 */
@@ -105,21 +218,16 @@ connect_sock(const char *host, const char *port)
 
 /**
  * ソケット送受信
+ *
+ * @param[in] sock ソケット
+ * @return なし
  */
 void
 client_loop(int sock)
 {
-    FILE *fd_in = stdin;      /* 標準入力 */
-    FILE *fd_out = stdout;    /* 標準出力 */
-    size_t length = 0;        /* 送信または受信する長さ */
-    unsigned short cs;        /* チェックサム値 */
     char buf[BUF_SIZE];       /* 送受信バッファ */
-    struct client_data sdata; /* 送信データ構造体 */
-    struct server_data rdata; /* 受信データ構造体 */
     int retval = 0;           /* 戻り値 */
-    bool error = false;       /* エラーフラグ */
     int ready = 0;            /* select戻り値 */
-    char *fgetsval = NULL;    /* fgets戻り値 */
 #ifdef _USE_SELECT
     fd_set fds, tfds;         /* selectマスク */
     struct timeval timeout;   /* タイムアウト値 */
@@ -153,6 +261,7 @@ client_loop(int sock)
         targets[SOCK_POLL].events = POLLIN;
         ready = poll(targets, MAX_POLL, 1 * 1000);
 #endif /* _USE_SELECT */
+        memset(buf, 0, sizeof(buf)); /* 初期化 */
         switch (ready) {
         case -1:
             if (errno == EINTR) { /* 割り込み */
@@ -160,91 +269,24 @@ client_loop(int sock)
                 break;
             }
             /* selectエラー */
-            outlog("select[%d]", retval);
+            outlog("select[%d]", ready);
             break;
         case 0: /* タイムアウト */
             break;
         default:
 #ifdef _USE_SELECT
-            if (FD_ISSET(STDIN_FILENO, &fds)) { /* 標準入力レディ */
+            if (FD_ISSET(STDIN_FILENO, &fds)) /* 標準入力レディ */
+                retval = read_stdin(sock, buf, sizeof(buf));
+            if (FD_ISSET(sock, &fds)) /* ソケットレディ */
+                retval = read_sock(sock);
 #else
-                if (targets[STDIN_POLL].revents & POLLIN) {
+            if (targets[STDIN_POLL].revents & POLLIN) /* 標準入力レディ */
+                retval = read_stdin(sock, buf, sizeof(buf));
+            if (targets[SOCK_POLL].revents & POLLIN) /* ソケットレディ */
+                retval = read_sock(sock);
 #endif /* _USE_SELECT */
-                    /* 標準入力 */
-                    memset(buf, 0, sizeof(buf)); /* 初期化 */
-                    fgetsval = fgets(buf, sizeof(buf), fd_in);
-                    if (!fgetsval || feof(fd_in)) {
-                        outlog("fgets[%p]: fd_in[%d]", fgetsval, feof(fd_in));
-                        if (feof(fd_in)) clearerr(fd_in); /* エラーをクリア */
-                        break;
-                    }
-                    buf[strlen(buf) - 1] = '\0'; /* 改行削除 */
-                    memset(&sdata, 0, sizeof(struct client_data));
-                    set_client_data(&sdata, (unsigned char *)buf, strlen(buf));
-                    /* データ送信 */
-                    length = sizeof(struct header) + strlen(buf);
-                    retval = send_data(sock, &sdata, length); 
-                    if (!retval) { /* エラー */
-                        error = true;
-                        break;
-                    }
-                    stdlog("send_data[%d]: sdata[%p]: length[%u]: %u",
-                           retval, &sdata, length, sdata.hd.length);
-                    dumplog(&sdata, length);
-                    if (gflag)
-                        outdump(&sdata, length, "sdata[%u]", length);
-
-                    if (!strcmp(buf, "exit") || !strcmp(buf, "quit"))
-                        break;
-                }
-#ifdef _USE_SELECT
-                if (FD_ISSET(sock, &fds)) { /* ソケットレディ */
-#else
-                    if (targets[SOCK_POLL].revents & POLLIN) {
-#endif /* _USE_SELECT */
-                        /* ヘッダ受信 */
-                        memset(&rdata, 0, sizeof(struct server_data));
-                        length = sizeof(struct header);
-                        retval = recv_data(sock, &rdata, length); 
-                        if (!retval) { /* エラー */
-                            error = true;
-                            break;
-                        }
-                        stdlog("recv_data[%d]: rdata[%p]: length[%u]",
-                               retval, &rdata, length);
-                        dumplog(&rdata, length);
-                        if (gflag)
-                            outdump(&rdata, length, "rdata[%u]", length);
-
-                        length = rdata.hd.length; /* データ長を保持 */
-
-                        /* データ受信 */
-                        retval = recv_data(sock, rdata.answer, length); 
-                        if (!retval) { /* エラー */
-                            error = true;
-                            break;
-                        }
-                        stdlog("recv_data[%d]: rdata[%p]: length[%u]",
-                               retval, &rdata, length);
-                        dumplog(rdata.answer, length);
-                        if (gflag)
-                            outdump(rdata.answer, length, "rdata.answer[%u]", length);
-
-                        cs = in_cksum((unsigned short *)rdata.answer, length);
-                        if (cs != rdata.hd.checksum) { /* チェックサムエラー */
-                            outlog("checksum error; cs[0x%x!=0x%x]",
-                                   cs, rdata.hd.checksum);
-                            error = true;
-                            break;
-                        }
-                        (void)fprintf(fd_out, "%s\n", rdata.answer);
-                        if ((retval = fflush(fd_out)) == EOF) {
-                            outlog("fflush[%d]", retval);
-                            break;
-                        }
-                    }
-                    break;
-                } /* switch */
-            } while (strcmp(buf, "exit") && strcmp(buf, "quit") && !error); 
-        }
+            break;
+        } /* switch */
+    } while (strcmp(buf, "exit") && strcmp(buf, "quit") && !retval); 
+}
 

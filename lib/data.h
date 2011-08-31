@@ -27,57 +27,37 @@
 #ifndef _DATA_H_
 #define _DATA_H_
 
+#include "def.h"
+
 //#define BUF_SIZE  (int)256  /**< 送受信バッファ最大バイト数 */
 #define BUF_SIZE  (int)6
 
-/**
- * ヘッダー構造体
- */
+/** ヘッダー構造体 */
 struct header {
-    size_t length;           /**< データ長 */
-    unsigned short checksum; /**< チェックサム */
-    unsigned short pack;     /**< パッキング */
+    size_t length;   /**< データ長 */
+    ushort checksum; /**< チェックサム */
+    ushort pack;     /**< パッキング */
 };
 
-/**
- * クライアントデータ構造体
- */
+/** クライアントデータ構造体 */
 struct client_data {
-    struct header hd;                   /**< ヘッダー構造体 */
-    unsigned char expression[BUF_SIZE]; /**< データバッファ */
+    struct header hd;           /**< ヘッダー構造体 */
+    uchar expression[BUF_SIZE]; /**< データバッファ */
 };
 
-/**
- * サーバデータ構造体
- */
+/** サーバデータ構造体 */
 struct server_data {
-    struct header hd;               /**< ヘッダー構造体 */
-    unsigned char answer[BUF_SIZE]; /**< データバッファ */
+    struct header hd;       /**< ヘッダー構造体 */
+    uchar answer[BUF_SIZE]; /**< データバッファ */
 };
 
-/**
- * クライアントデータ構造体設定
- *
- * @param[in,out] dt 送受信データ構造体
- * @param[in] buf 送受信バッファ
- * @param[in] len 長さ
- * @return なし
- */
-void
-set_client_data(struct client_data *dt,
-                const unsigned char *buf, const size_t len);
+/** クライアントデータ構造体設定 */
+void set_client_data(struct client_data *dt,
+                     const uchar *buf, const size_t len);
 
-/**
- * サーバデータ構造体設定
- *
- * @param[in,out] dt 送受信データ構造体
- * @param[in] buf 送受信バッファ
- * @param[in] len 長さ
- * @return なし
- */
-void
-set_server_data(struct server_data *dt,
-                const unsigned char *buf, const size_t len);
+/** サーバデータ構造体設定 */
+void set_server_data(struct server_data *dt,
+                     const uchar *buf, const size_t len);
 
 #endif /* _DATA_H_ */
 

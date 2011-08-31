@@ -30,59 +30,23 @@
 #include <stdbool.h> /* bool */
 #include <netdb.h>   /* struct sockaddr_in */
 
-/**
- * ホスト名設定
- *
- * @param[in,out] addr sockaddr_in構造体
- * @param[in,out] h_addr in_addr構造体
- * @param[in] host ホスト名
- * @retval false エラー
- */
-bool
-set_hostname(struct sockaddr_in *addr,
-             struct in_addr h_addr, const char *host);
+#include "def.h"
 
-/**
- * ポート番号設定
- *
- * @param[in,out] addr sockaddr_in構造体
- * @param[in] port ポート番号
- * @retval false エラー
- */
-bool
-set_port(struct sockaddr_in *addr, const char *port);
+/** ホスト名設定 */
+int set_hostname(struct sockaddr_in *addr,
+                 struct in_addr h_addr, const char *host);
 
-/**
- * データ送信
- *
- * @param[in] sock ソケット
- * @param[in] sdata データ
- * @param[in] length データ長
- * @retval false エラー
- */
-bool
-send_data(const int sock, const void *sdata, const size_t length);
+/** ポート番号設定 */
+int set_port(struct sockaddr_in *addr, const char *port);
 
-/**
- * データ受信
- *
- * @param[in] sock ソケット
- * @param[out] rdata データ
- * @param[in] length データ長
- * @retval false エラー
- */
-bool
-recv_data(const int sock, void *rdata, const size_t length);
+/** データ送信 */
+int send_data(const int sock, const void *sdata, const size_t length);
 
-/**
- * チェックサム
- *
- * @param[in] addr
- * @param[in] len 長さ
- * @return チェックサム値
- */
-unsigned short
-in_cksum(unsigned short *addr, const size_t len);
+/** データ受信 */
+int recv_data(const int sock, void *rdata, const size_t length);
+
+/** チェックサム */
+ushort in_cksum(ushort *addr, const size_t len);
 
 #endif /* _UTIL_H_ */
 

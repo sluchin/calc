@@ -44,54 +44,43 @@ static char ***argv;                      /**< コマンド引数 */
 static char ***envp;                      /**< 環境変数 */
 
 /* 内部関数 */
+/** シグナルハンドラ設定 */
+static void set_sig_handler(void);
 /** シグナルハンドラ(SIGINT SIGQUIT SIGTERM) */
 static void sig_handler(int signo);
 /** シグナルハンドラ(SIGHUP) */
 static void sighup_handler(int signo);
 
 /** 
- * main関数
+ * シグナルハンドラ設定
  *
- * @param[in] c 引数の数
- * @param[in] v コマンド引数・オプション引数
- * @param[in] ep 環境変数
- * @return 常にEXIT_SUCCESS
+ * @return なし
  */
-int main(int c, char *v[], char *ep[])
+static void
+set_sig_handler(void)
 {
     struct sigaction sa, hup; /* シグナル */
-    int retval = 0;           /* 戻り値 */
-
-    dbglog("start");
-
-    /* アドレスを保持 */
-    argc = &c;
-    argv = &v;
-    envp = &ep;
-
-    /* プログラム名を保持 */
-    progname = basename(v[0]);
 
     /* シグナルマスクの設定 */
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset[%p]", sa);  
+        outlog("sigemptyset[%p]", sa);
     if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset[%p]; SIGINT", sa);  
+        outlog("sigaddset[%p]; SIGINT", sa);
     if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset[%p]; SIGTERM", sa);  
+        outlog("sigaddset[%p]; SIGTERM", sa);
     if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset[%p]; SIGQUIT", sa);  
+        outlog("sigaddset[%p]; SIGQUIT", sa);
 
     /* シグナル補足 */
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGINT", sa);  
+        outlog("sigaction[%p]; SIGINT", sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGTERM", sa);  
+        outlog("sigaction[%p]; SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGQUIT", sa);  
+        outlog("sigaction[%p]; SIGQUIT", sa);
 
     /* シグナルマスクの設定 */
     memset(&hup, 0, sizeof(hup));
@@ -104,7 +93,7 @@ int main(int c, char *v[], char *ep[])
 
     /* SIGHUPの補足 */
     if (sigaction(SIGHUP, &hup, NULL) < 0)
-        outlog("sigaction[%p]; SIGHUP", hup);  
+        outlog("sigaction[%p]; SIGHUP", hup);
 
 #if 0
     /* 子プロセスをゾンビにしない */
@@ -115,36 +104,6 @@ int main(int c, char *v[], char *ep[])
     if (sigaction(SIGCHLD, &chld, NULL) < 0)
         outlog("sigaction[%p]; SIGCHLD", chld);  
 #endif
-
-    /* オプション引数 */
-    parse_args(c, v);
-
-    /* デーモン化する */
-#ifndef _DEBUG
-    retval = daemon(0, 0);
-    if (retval < 0) {
-        outlog("daemon[%d]", retval);
-        exit(EXIT_FAILURE);
-    }
-#endif /* _DEBUG */
-
-    /* ソケット接続 */
-    sockfd = server_sock(port_no);
-    if (sockfd < 0)
-        exit(EXIT_FAILURE);
-
-    /* ソケット送受信 */
-    server_loop(sockfd);
-
-    /* ソケットクローズ */
-    if (sockfd != -1) {
-        retval = close(sockfd);
-        if (retval < 0)
-            outlog("close[%d]", retval);
-        sockfd = -1;
-    }
-
-    return EXIT_SUCCESS;
 }
 
 /** 
@@ -188,6 +147,62 @@ static void sighup_handler(int signo)
     }
     /* 再起動 */
     (void)execve((*argv)[0], (*argv), (*envp));
+}
+
+/** 
+ * main関数
+ *
+ * @param[in] c 引数の数
+ * @param[in] v コマンド引数・オプション引数
+ * @param[in] ep 環境変数
+ * @return 常にEXIT_SUCCESS
+ */
+int main(int c, char *v[], char *ep[])
+{
+    int retval = 0; /* 戻り値 */
+
+    dbglog("start");
+
+    /* アドレスを保持 */
+    argc = &c;
+    argv = &v;
+    envp = &ep;
+
+    /* シグナルハンドラ */
+    set_sig_handler();
+
+    /* プログラム名を保持 */
+    progname = basename(v[0]);
+
+    /* オプション引数 */
+    parse_args(c, v);
+
+    /* デーモン化する */
+#ifndef _DEBUG
+    retval = daemon(0, 0);
+    if (retval < 0) {
+        outlog("daemon[%d]", retval);
+        exit(EXIT_FAILURE);
+    }
+#endif /* _DEBUG */
+
+    /* ソケット接続 */
+    sockfd = server_sock(port_no);
+    if (sockfd < 0)
+        exit(EXIT_FAILURE);
+
+    /* ソケット送受信 */
+    server_loop(sockfd);
+
+    /* ソケットクローズ */
+    if (sockfd != -1) {
+        retval = close(sockfd);
+        if (retval < 0)
+            outlog("close[%d]", retval);
+        sockfd = -1;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 /**

@@ -27,21 +27,10 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
-/**
- * ソケット接続
- *
- * @param[in] host ホスト名またはIPアドレス　
- * @param[in] port ポート番号
- * @return ソケット
- */
+/** ソケット接続 */
 int connect_sock(const char *host, const char *port);
 
-/**
- * ソケット送受信
- *
- * @param[in] sock ソケット
- * @return なし
- */
+/** ソケット送受信 */
 void client_loop(int sock);
 
 #endif /* _CLIENT_H_ */

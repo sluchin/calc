@@ -27,7 +27,7 @@
 #ifndef _CALC_H_
 #define _CALC_H_
 
-#include "common.h"
+#include "def.h"
 
 #define MAX_PREC      (long int)15 /**< 小数点以下の有効桁数最大値 */
 #define DEFAULT_PREC  (long int)12 /**< デフォルト小数点以下の有効桁数 */

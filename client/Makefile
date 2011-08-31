@@ -9,7 +9,7 @@ RM = rm -rf
 AR = ar rcsv
 STRIP = strip
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS += -g -Wall -O2
+CFLAGS += -g -Wall -O2 -D_USE_SELECT
 LDFLAGS =
 LIBS = #-lpthread
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
@@ -37,7 +37,7 @@ $(PROGRAM): $(OBJECTS) $(LIBRARY)
 $(OBJECTS): option.h client.h version.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
+	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG -D_USE_SELECT" 
 
 strip:
 	$(STRIP) $(PROGRAM)

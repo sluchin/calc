@@ -52,7 +52,6 @@ long int precision = -1;
 /* 内部変数 */
 static int ch = 0;      /**< 文字 */
 static uchar *p = NULL; /**< 文字列先頭ポインタ */
-static size_t rlen = 0; /**< 読み込んだ文字数 */
 
 /* 内部関数 */
 /** 式 */
@@ -66,7 +65,7 @@ static ldfl token(void);
 /** 文字列を数値に変換 */
 static ldfl to_numvalue(void);
 /** 桁数取得 */
-static ulong get_digit(const ldfl val, const char *fmt);
+static long get_digit(const ldfl val, const char *fmt);
 /** バッファ読込 */
 static void readch(void);
 
@@ -263,13 +262,14 @@ to_numvalue(void)
  * @param[in] val 値
  * @param[in] fmt フォーマット
  * @return 桁数
+ * @retval -1 エラー
  */
-static ulong
+static long
 get_digit(ldfl val, const char *fmt)
 {
-    FILE *fp = NULL;  /* ファイルポインタ */
-    int retval = 0;   /* fclose戻り値 */
-    ulong result = 0; /* 桁数 */
+    FILE *fp = NULL; /* ファイルポインタ */
+    int retval = 0;  /* fclose戻り値 */
+    long result = 0; /* 桁数 */
 
     dbglog("start");
 
@@ -293,7 +293,7 @@ get_digit(ldfl val, const char *fmt)
  * バッファ読込
  *
  * バッファから一文字読み込む.
- * 空白は読み飛ばす.
+ * 空白, タブは読み飛ばす.
  *
  * @return なし
  */
@@ -303,12 +303,12 @@ readch(void)
     dbglog("start");
 
     do {
-        if (rlen && ch == '\0')
+        ch = (int)*p;
+        dbglog("p[%p]: %c", p, ch);
+        if (ch == '\0')
             break;
-        ch = (int)*(p + rlen);
-        dbglog("ch[%c] rlen[%u]", ch, rlen);
-        rlen++;
-    } while (isspace(ch));
+        p++;
+    } while (isblank(ch));
 }
 
 /**
@@ -375,11 +375,10 @@ input(uchar *buf, const size_t len)
 
     /* 初期値設定 */
     p = buf;  /* ポインタ設定 */
-    rlen = 0; /* 読込位置 */
 
     readch();
     val = expression();
-    dbglog("val[%Lg] ch[%c]", val, ch);
+    dbglog("val[%Lg] p[%p]: %c", val, p, ch);
 
     check_validate(val);
 
@@ -410,6 +409,10 @@ input(uchar *buf, const size_t len)
         /* 桁数取得 */
         digit = get_digit(val, fmt);
         dbglog("digit[%uld]", digit);
+        if (digit < 0) {
+            outlog("digit[%ul]", digit);
+            return NULL;
+        }
 
         digit += 1; /* 桁数 + 1 */
         /* メモリ確保 */

@@ -69,7 +69,7 @@ server_sock(const char *port)
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /* ポート番号またはサービス名を設定 */
-    if (!set_port(&addr, port))
+    if (set_port(&addr, port) < 0)
         return SOCK_ERROR;
 
     /* ソケット生成 */
@@ -186,7 +186,7 @@ server_proc(void *arg)
         memset(&rdata, 0, sizeof(struct server_data));
         length = sizeof(struct header);
         retval = recv_data(acc, &rdata, length);
-        if (!retval) /* エラー */
+        if (retval < 0) /* エラー */
             break;
         stdlog("recv_data[%d]: rdata[%p]: length[%u]: %d",
                retval, &rdata, length, rdata.hd.length);
@@ -197,7 +197,7 @@ server_proc(void *arg)
 
         /* データ受信 */
         retval = recv_data(acc, rdata.expression, length);
-        if (!retval) /* エラー */
+        if (retval < 0) /* エラー */
             break;
         stdlog("recv_data[%d]: rdata[%p]: length[%u]",
                retval, &rdata, length);
@@ -223,7 +223,7 @@ server_proc(void *arg)
         set_server_data(&sdata, result, strlen((char *)result));
         length = sizeof(struct header) + strlen((char *)result);
         retval = send_data(acc, &sdata, length);
-        if (!retval) /* エラー */
+        if (retval < 0) /* エラー */
             break;
         stdlog("send_data[%d]: sdata[%p]: length[%u]",
                retval, &sdata, length);

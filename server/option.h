@@ -28,7 +28,7 @@
 #define _OPTION_H_
 
 /** デフォルトのIPアドレス */
-#define DEFAULT_IPADDR    "192.168.0.5"
+#define DEFAULT_IPADDR    "127.0.0.1"
 /** デフォルトのポート番号 */
 #define DEFAULT_PORTNO    "12345"
 /** ホスト名サイズ */
