@@ -27,8 +27,8 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#include <stdbool.h> /* bool */
-#include <netdb.h>   /* struct sockaddr_in */
+#include <stdio.h> /* FILE */
+#include <netdb.h> /* struct sockaddr_in */
 
 #include "def.h"
 
@@ -45,8 +45,14 @@ int send_data(const int sock, const void *sdata, const size_t length);
 /** データ受信 */
 int recv_data(const int sock, void *rdata, const size_t length);
 
+/** ソケットクローズ */
+void close_sock(int *sock);
+
 /** チェックサム */
 ushort in_cksum(ushort *addr, const size_t len);
+
+/** 一行読込 */
+uchar *read_line(FILE *fp);
 
 #endif /* _UTIL_H_ */
 

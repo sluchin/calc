@@ -38,10 +38,10 @@ $(PROGRAM): $(OBJECTS) $(LIBRARY)
 	cd $(top_srcdir)/server
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h server.h version.h Makefile
+$(OBJECTS): option.h server.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
+	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
 
 strip:
 	$(STRIP) $(PROGRAM)

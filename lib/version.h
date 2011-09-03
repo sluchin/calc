@@ -1,5 +1,5 @@
 /**
- * @file server/version.h
+ * @file version.h
  * @brief バージョン情報
  *
  * @author higashi
@@ -26,7 +26,7 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define VERSION  "version 0.02"
+#define VERSION  "version 0.03"
 
 #endif /* _VERSION_H_ */
 

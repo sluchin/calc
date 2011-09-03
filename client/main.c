@@ -35,12 +35,13 @@
 #include "client.h"
 
 /* 外部変数 */
-char *progname;            /**< プログラム名 */
-char host_name[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
-char port_no[PORT_SIZE];   /**< ポート番号またはサービス名 */
+char *progname;                        /**< プログラム名 */
+char host_name[HOST_SIZE];             /**< IPアドレスまたはホスト名 */
+char port_no[PORT_SIZE];               /**< ポート番号またはサービス名 */
+volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 
 /* 内部変数 */
-static volatile sig_atomic_t sockfd = -1; /**< ソケット */
+static int sockfd = -1; /**< ソケット */
 
 /* 内部関数 */
 /** シグナルハンドラ設定 */
@@ -59,7 +60,7 @@ set_sig_handler(void)
     struct sigaction sa; /* シグナル */
 
     /* シグナルマスクの設定 */
-    memset(&sa, 0, sizeof(sa));
+    (void)memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
@@ -89,20 +90,7 @@ set_sig_handler(void)
  */
 static void sig_handler(int signo)
 {
-    int closeval = 0; /* close戻り値 */
-    int writeval = 0; /* write戻り値 */
-    char *mes = NULL; /* メッセージ */
-
-    /* ソケットクローズ */
-    if (sockfd != -1) {
-        closeval = close(sockfd);
-        if (closeval < 0) {
-            mes = "close: error\n";
-            writeval = write(STDOUT_FILENO, mes, strlen(mes));
-        }
-        sockfd = -1;
-    }
-    _exit(EXIT_SUCCESS);
+    sig_handled = 1;
 }
 
 /** 
@@ -114,9 +102,6 @@ static void sig_handler(int signo)
  */
 int main(int argc, char *argv[])
 {
-    FILE *fp = stderr;   /* 標準エラー出力 */
-    int retval = 0;      /* 戻り値 */
-
     dbglog("start");
 
     progname = basename(argv[0]);
@@ -130,7 +115,7 @@ int main(int argc, char *argv[])
     /* ソケット接続 */
     sockfd = connect_sock(host_name, port_no);
     if (sockfd < 0) {
-        (void)fprintf(fp, "connect error\n");
+        (void)fprintf(stderr, "connect error\n");
         return EXIT_FAILURE;
     }
 
@@ -140,12 +125,7 @@ int main(int argc, char *argv[])
     client_loop(sockfd);
 
     /* ソケットクローズ */
-    if (sockfd != -1) {
-        retval = close(sockfd);
-        if (retval < 0)
-            outlog("close[%d] sockfd[%d]", retval, sockfd);
-        sockfd = -1;
-    }
+    close_sock(&sockfd);
 
     return EXIT_SUCCESS;
 }

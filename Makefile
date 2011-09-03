@@ -30,10 +30,10 @@ doc:
 	doxygen Doxyfile
 
 debug:
-	cd $(top_srcdir)/lib && $(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
-	cd $(top_srcdir)/calc && $(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
-	cd $(top_srcdir)/server && $(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
-	cd $(top_srcdir)/client && $(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
+	cd $(top_srcdir)/lib && $(MAKE) debug 
+	cd $(top_srcdir)/calc && $(MAKE) debug 
+	cd $(top_srcdir)/server && $(MAKE) debug
+	cd $(top_srcdir)/client && $(MAKE) debug 
 
 strip:
 	$(STRIP) $(PROGRAM)

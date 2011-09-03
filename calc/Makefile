@@ -35,10 +35,10 @@ $(PROGRAM): $(OBJECTS) $(LIBRARY)
 	cd $(top_srcdir)/calc
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h calc.h version.h Makefile
+$(OBJECTS): option.h calc.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG -D_USE_READLINE" 
+	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
 
 strip:
 	$(STRIP) $(PROGRAM)

@@ -387,6 +387,8 @@ input(uchar *buf, const size_t len)
 
     if (is_error()) { /* エラー */
         errormsg = get_errormsg();
+        if (!errormsg)
+            return NULL;
         slen = strlen((char *)errormsg) + 1; /* 文字数 + 1 */
         result = (uchar *)strndup((char *)errormsg, slen);
         clear_error(errormsg);
@@ -408,9 +410,9 @@ input(uchar *buf, const size_t len)
         dbglog("fmt[%s]", fmt);
         /* 桁数取得 */
         digit = get_digit(val, fmt);
-        dbglog("digit[%uld]", digit);
+        dbglog("digit[%lu]", digit);
         if (digit < 0) {
-            outlog("digit[%ul]", digit);
+            outlog("digit[%lu]", digit);
             return NULL;
         }
 
@@ -425,11 +427,11 @@ input(uchar *buf, const size_t len)
         /* 値を文字列に変換 */
         retval = snprintf((char *)result, digit, fmt, val);
         if (retval < 0) {
-            outlog("snprintf[%d]: result[%p] digit[%uld]",
+            outlog("snprintf[%d]: result[%p] digit[%lu]",
                    retval, result, digit);
             return NULL;
         }
-        dbglog("result[%s] val[%.18Lg] digit[%uld]", result, val, digit);
+        dbglog("result[%s] val[%.18Lg] digit[%lu]", result, val, digit);
     }
     return result;
 }

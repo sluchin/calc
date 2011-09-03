@@ -26,8 +26,9 @@
 
 #include <string.h> /* memset memcpy */
 
-#include "data.h"
 #include "util.h"
+#include "log.h"
+#include "data.h"
 
 /**
  * クライアントデータ構造体設定
@@ -35,16 +36,34 @@
  * @param[in,out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ
  * @param[in] len 長さ
- * @return なし
+ * @return クライアントデータ構造体
  */
-void
+struct client_data *
 set_client_data(struct client_data *dt,
-                const unsigned char *buf, const size_t len)
+                uchar *buf, const size_t len)
 {
-    dt->hd.checksum = in_cksum((unsigned short *)buf, (unsigned int)len);
+    size_t length = 0;
+    size_t padding = 0;
+
+    length = sizeof(struct header) + len;
+    padding = length % 4;
+    padding = padding ? 4 - padding : padding;
+    dbglog("length[%u] padding[%d]", length, padding);
+    length += padding;
+
+    dt = (struct client_data *)malloc(length);
+    if (!dt) {
+        outlog("malloc[%p]", dt);
+        return NULL;
+    }
+    (void)memset(dt, 0, length);
+    dbglog("dt[%p]", dt);
+
+    dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     dt->hd.length = len;
-    (void)memset(dt->expression, 0, sizeof(dt->expression));
     (void)memcpy(dt->expression, buf, len);
+
+    return dt;
 }
 
 /**
@@ -53,15 +72,33 @@ set_client_data(struct client_data *dt,
  * @param[in,out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ
  * @param[in] len 長さ
- * @return なし
+ * @return サーバデータ構造体
  */
-void
+struct server_data *
 set_server_data(struct server_data *dt,
-                const unsigned char *buf, const size_t len)
+                uchar *buf, const size_t len)
 {
-    dt->hd.checksum = in_cksum((unsigned short *)buf, (unsigned int)len);
+    size_t length = 0;
+    size_t padding = 0;
+
+    length = sizeof(struct header) + len;
+    padding = length % 4;
+    padding = padding ? 4 - padding : padding;
+    dbglog("length[%u] padding[%d]", length, padding);
+    length += padding;
+
+    dt = (struct server_data *)malloc(length);
+    if (!dt) {
+        outlog("malloc[%p]", dt);
+        return NULL;
+    }
+    (void)memset(dt, 0, length);
+    dbglog("dt[%p]", dt);
+
+    dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     dt->hd.length = len;
-    (void)memset(dt->answer, 0, sizeof(dt->answer));
     (void)memcpy(dt->answer, buf, len);
+
+    return dt;
 }
 

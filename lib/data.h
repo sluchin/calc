@@ -29,9 +29,6 @@
 
 #include "def.h"
 
-//#define BUF_SIZE  (int)256  /**< 送受信バッファ最大バイト数 */
-#define BUF_SIZE  (int)6
-
 /** ヘッダー構造体 */
 struct header {
     size_t length;   /**< データ長 */
@@ -41,23 +38,23 @@ struct header {
 
 /** クライアントデータ構造体 */
 struct client_data {
-    struct header hd;           /**< ヘッダー構造体 */
-    uchar expression[BUF_SIZE]; /**< データバッファ */
+    struct header hd;    /**< ヘッダー構造体 */
+    uchar expression[1]; /**< データバッファ */
 };
 
 /** サーバデータ構造体 */
 struct server_data {
-    struct header hd;       /**< ヘッダー構造体 */
-    uchar answer[BUF_SIZE]; /**< データバッファ */
+    struct header hd; /**< ヘッダー構造体 */
+    uchar answer[1];  /**< データバッファ */
 };
 
 /** クライアントデータ構造体設定 */
-void set_client_data(struct client_data *dt,
-                     const uchar *buf, const size_t len);
+struct client_data *set_client_data(struct client_data *dt,
+                                    uchar *buf, const size_t len);
 
 /** サーバデータ構造体設定 */
-void set_server_data(struct server_data *dt,
-                     const uchar *buf, const size_t len);
+struct server_data *set_server_data(struct server_data *dt,
+                                    uchar *buf, const size_t len);
 
 #endif /* _DATA_H_ */
 

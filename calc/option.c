@@ -134,7 +134,7 @@ parse_args(int argc, char *argv[])
             if (0 <= precision && precision <= MAX_PREC) {
                 precision = strtol(optarg, NULL, base);
             } else if (MAX_PREC < precision) {
-                (void)fprintf(fp, "Maximum precision is %ul.\n", MAX_PREC);
+                (void)fprintf(fp, "Maximum precision is %lu.\n", MAX_PREC);
                 exit(EXIT_FAILURE);
             }
             break;

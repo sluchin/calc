@@ -247,19 +247,35 @@ void stderr_log(const char *prog_name,
  *
  * @param[in] buf ダンプ出力用バッファ
  * @param[in] len 長さ
+ * @param[in] format フォーマット
  * @return なし
  */
-void dump_log(const void *buf, const size_t len)
+void
+dump_log(const void *buf, const size_t len, const char *format, ...)
 {
-    unsigned int i, k; /* 汎用変数 */
-    int pt = 0;        /* アドレス用変数 */
-    unsigned char *p;  /* バッファポインタ */
+    int retval = 0;                 /* 戻り値 */
+    unsigned int i, k;              /* 汎用変数 */
+    int pt = 0;                     /* アドレス用変数 */
+    unsigned char *p;               /* バッファポインタ */
+    char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
+    va_list ap;                     /* va_list */
 
     if (!buf) {
         outlog("buf[%p] len[%u]", buf, len);
         return;
     }
     p = (unsigned char *)buf;
+
+    va_start(ap, format);
+    retval = vsnprintf(m_buf, sizeof(m_buf), format, ap);
+    va_end(ap);
+    if (retval < 0) {
+        fprintf(stderr, "%s[%d]: vsnprintf[%d](%d)",
+               __FILE__, __LINE__, retval, errno);
+        return;
+    }
+    (void)fprintf(stderr, "%s\n", m_buf);
+
 
 #if 1
     (void)fprintf(stderr,
@@ -286,7 +302,7 @@ void dump_log(const void *buf, const size_t len)
         (void)fprintf(stderr, "\n");
         pt += k;
     }
-
+    (void)fprintf(stderr, "\n");
 }
 
 /**

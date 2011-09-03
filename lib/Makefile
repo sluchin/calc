@@ -31,10 +31,10 @@ $(LIBRARY): $(OBJECTS)
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): data.h util.h log.h Makefile
+$(OBJECTS): data.h util.h log.h version.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG" 
+	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
 strip:
 	$(STRIP) $(OBJECTS)
 clean:

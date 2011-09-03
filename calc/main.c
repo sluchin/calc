@@ -36,6 +36,7 @@
 #endif /* _USE_READLINE */
 
 #include "def.h"
+#include "util.h"
 #include "data.h"
 #include "option.h"
 #include "log.h"
@@ -48,87 +49,29 @@ static uchar *expr = NULL;                    /**< 式 */
 static uchar *result = NULL;                  /**< メッセージ */
 static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 #if defined(_USE_READLINE)
-static HIST_ENTRY *history = NULL; /**< 履歴 */
+static HIST_ENTRY *history = NULL;            /**< 履歴 */
 #endif /* _USE_READLINE */
 
-/* メモリ解放 */
-#define FREEALL                                         \
-    if (result) { free(result); } result = NULL;        \
-    if (expr) { free(expr); } expr = NULL;
-
 #if defined(_USE_READLINE)
-#  define FREEHISTORY                                   \
-    history = remove_history(0);                        \
-    if (history) { free(history); } history = NULL;
+#  define FREEHISTORY                           \
+    if (history) {                              \
+        history = remove_history(0);            \
+        free(history); }                        \
+    history = NULL;
 #  define MAX_HISTORY    100 /**< 最大履歴数 */
-#else
-#  define FREEHISTORY do { } while(0);
 #endif /* _USE_READLINE */
 
 /* 内部関数 */
-/** 標準入力読込 */
-#if !defined(_USE_READLINE)
-static uchar *read_stdin(void);
-#endif /* _USE_READLINE */
-
 /* イベントフック */
+#if defined(_USE_READLINE)
 static int check_state(void);
+#endif
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
 /** シグナルハンドラ */
 static void sig_handler(int signo);
-
-/**
- * 標準入力読込
- *
- * @return 文字列
- */
-#if !defined(_USE_READLINE)
-static uchar *
-read_stdin(void)
-{
-    char *retval = NULL; /* fgetsの戻り値 */
-    size_t length = 0;   /* 文字列長 */
-    size_t total = 0;    /* 文字列長全て */
-    uchar buf[BUF_SIZE]; /* バッファ */
-    uchar *line = NULL;  /* 文字列 */
-    uchar *tmp = NULL;   /* 一時アドレス */
-
-    do {
-        retval = fgets((char *)buf, sizeof(buf), stdin);
-        if (feof(stdin) || ferror(stdin)) { /* エラー */
-            outlog("fgets[%p]", retval);
-            FREEALL;
-            clearerr(stdin);
-            break;
-        }
-        length = strlen((char *)buf);
-        dbgdump((uchar *)buf, length, "buf[%u]", length);
-
-        tmp = (uchar *)realloc((uchar *)line,
-                               (total + length + 1) * sizeof(uchar));
-        if (!tmp) {
-            outlog("realloc[%p]: %u", line, total + length + 1);
-            FREEALL;
-            break;
-        }
-        line = tmp;
-
-        (void)memcpy((uchar *)line + total, buf, length + 1);
-
-        total += length;
-        dbglog("length[%u] total[%u]", length, total);
-        dbglog("line[%p]: %s", line, line);
-        dbgdump((uchar *)line, total + 1, "line[%u]", total + 1);
-
-    } while (*(line + total - 1) != '\n' && !sig_handled)
-
-        if (line)
-            *(line + total - 1) = '\0'; /* 改行削除 */
-
-    return line;
-}
-#endif /* _USE_READLINE */
+/** メモリ解放 */
+static void memfree(void);
 
 /**
  * ループ処理
@@ -143,24 +86,23 @@ main_loop(void)
 #if defined(_USE_READLINE)
     int hist_no = 0;     /* 履歴数 */
     char *prompt = NULL; /* プロンプト */
+
+    rl_event_hook = check_state;
 #endif /* _USE_READLINE */
 
-    while (true) {
+    do {
         retval = fflush(NULL);
         if (retval == EOF)
             outlog("fflush[%d]", retval);
 
 #if defined(_USE_READLINE)
-        rl_event_hook = check_state;
         expr = (uchar *)readline(prompt);
 #else
-        expr = read_stdin();
+        expr = read_line(stdin);
 #endif /* _USE_READLINE */
-        if (sig_handled) 
-            break;
         if (!expr || *expr == 0) {
             outlog("expr[%p]: %s");
-            FREEALL;
+            memfree();
             continue;
         }
         if (!strcmp((char *)expr, "quit") ||
@@ -180,22 +122,22 @@ main_loop(void)
                 outlog("fflush[%d]", retval);
         }
 #if defined(_USE_READLINE)
-        if (MAX_HISTORY <= ++hist_no)
+        if (MAX_HISTORY <= ++hist_no) {
             FREEHISTORY;
+        }
         add_history((char *)expr);
 #endif /* _USE_READLINE */
-        FREEALL;
+        memfree();
         dbglog("result[%p]", result);
-    }
-    FREEALL;
-    FREEHISTORY;
+
+    } while(!sig_handled);
 }
 
 /** 
  * イベントフック
  *
  * readline 内から定期的に呼ばれる関数
- * @return 常にEXIT_SUCCESS
+ * @return 常にST_OK
  */
 #if defined(_USE_READLINE)
 static int check_state(void) {
@@ -206,7 +148,7 @@ static int check_state(void) {
         /* readline を return させる */
         rl_done = 1;
     }
-    return EXIT_SUCCESS;
+    return ST_OK;
 }
 #endif /* _USE_READLINE */
 
@@ -221,7 +163,7 @@ set_sig_handler(void)
     struct sigaction sa; /* シグナル */
 
     /* シグナルマスクの設定 */
-    memset(&sa, 0, sizeof(sa));
+    (void)memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
@@ -253,6 +195,22 @@ static void sig_handler(int signo)
     sig_handled = 1;
 }
 
+/**
+ * メモリ解放
+ *
+ * @return なし
+ */
+static void
+memfree(void)
+{
+    if (result)
+        free(result);
+    result = NULL;
+    if (expr)
+        free(expr);
+    expr = NULL;
+}
+
 /** 
  * main関数
  *
@@ -272,7 +230,14 @@ int main(int argc, char *argv[])
     /* オプション引数 */
     parse_args(argc, argv);
 
+    /* メインループ */
     main_loop();
+
+    /* 終了処理 */
+    memfree();
+#if defined(_USE_READLINE)
+    FREEHISTORY;
+#endif /* _USE_READLINE */
 
     return EXIT_SUCCESS;
 }

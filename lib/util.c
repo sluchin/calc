@@ -25,7 +25,8 @@
  */
 
 #include <stdlib.h>     /* strtol EXIT_SUCCESS */
-#include <string.h>     /* memcpy memset */
+#include <string.h>     /* memcpy memset strdup */
+#include <unistd.h>     /* close */
 #include <ctype.h>      /* isdigit */
 #include <sys/types.h>  /* send recv */
 #include <sys/socket.h> /* send recv */
@@ -34,6 +35,8 @@
  
 #include "log.h"
 #include "util.h"
+
+#define BUF_SIZE  (int)256  /**< 送受信バッファ最大バイト数 */
 
 /**
  * ホスト名設定
@@ -64,11 +67,11 @@ set_hostname(struct sockaddr_in *addr, struct in_addr h_addr, const char *host)
         }
         dbglog("h_addr[%p]: length: h_addr[%u] h_length[%d]", &h_addr,
                sizeof(h_addr), hp->h_length);
-        memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
-               hp->h_length);
+        (void)memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
+                     hp->h_length);
     }
     /* IPアドレスを設定 */
-    memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
+    (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
 
     dbglog("h_addr[%p]: %s", &h_addr, inet_ntoa(h_addr));
 
@@ -130,6 +133,8 @@ send_data(const int sock, const void *sdata, const size_t length)
 {
     ssize_t len = 0; /* sendの戻り値 */
 
+    dbglog("start: sdata[%p]", sdata);
+
     if (length <= 0)
         return ST_NG;
     len = send(sock, sdata, length, 0);
@@ -156,6 +161,8 @@ recv_data(const int sock, void *rdata, const size_t length)
     int rlen = 0;        /* 受信した長さ */
     int remain = length; /* 残りの長さ */
 
+    dbglog("start: rdata[%p]", rdata);
+
     while (rlen < length) {
         if (remain <= 0)
             return ST_NG;
@@ -175,6 +182,24 @@ recv_data(const int sock, void *rdata, const size_t length)
 }
 
 /**
+ * ソケットクローズ
+ *
+ * @return なし
+ */
+void
+close_sock(int *sock) {
+
+    int retval = 0; /* 戻り値 */
+
+    if (*sock != -1) {
+        retval = close(*sock);
+        if (retval < 0)
+            outlog("close[%d]: sock[%d]", retval, *sock);
+    }
+    *sock = -1;
+}
+
+/**
  * チェックサム
  *
  * チェックサムの計算をする.
@@ -183,20 +208,20 @@ recv_data(const int sock, void *rdata, const size_t length)
  * @param[in] len 長さ
  * @return チェックサム値
  */
-unsigned short
+ushort
 in_cksum(unsigned short *addr, const size_t len)
 {
     int nleft = len;
     int sum = 0;
-    unsigned short *w = addr;
-    unsigned short answer = 0;
+    ushort *w = addr;
+    ushort answer = 0;
 
     while (nleft > 1) {
         sum += *w++;
         nleft -= 2;
     }
     if (nleft == 1) {
-        *(unsigned char *)(&answer) = *(unsigned char *)w;
+        *(uchar *)(&answer) = *(uchar *)w;
         sum += answer;
     }
     sum = (sum >> 16) + (sum & 0xffff);
@@ -204,5 +229,55 @@ in_cksum(unsigned short *addr, const size_t len)
     answer = ~sum;
 
     return answer;
+}
+
+/**
+ * 一行読込
+ *
+ * @param[in] ファイルポインタ
+ * @return 文字列
+ * @retval NULL エラー
+ */
+uchar *
+read_line(FILE *fp)
+{
+    char *retval = NULL; /* fgetsの戻り値 */
+    size_t length = 0;   /* 文字列長 */
+    size_t total = 0;    /* 文字列長全て */
+    uchar *line = NULL;  /* 文字列 */
+    uchar *tmp = NULL;   /* 一時アドレス */
+    uchar buf[BUF_SIZE]; /* バッファ */
+
+    do {
+        (void)memset(buf, 0, sizeof(buf));
+        retval = fgets((char *)buf, sizeof(buf), fp);
+        if (feof(fp) || ferror(fp)) { /* エラー */
+            outlog("fgets[%p]", retval);
+            clearerr(fp);
+            break;
+        }
+        length = strlen((char *)buf);
+        dbgdump(buf, length, "buf[%u]", length);
+
+        tmp = (uchar *)realloc(line, (total + length + 1) * sizeof(uchar));
+        if (!tmp) {
+            outlog("realloc[%p]: %u", line, total + length + 1);
+            break;
+        }
+        line = tmp;
+
+        (void)memcpy(line + total, buf, length + 1);
+
+        total += length;
+        dbglog("length[%u] total[%u]", length, total);
+        dbglog("line[%p]: %s", line, line);
+        dbgdump(line, total + 1, "line[%u]", total + 1);
+
+    } while (*(line + total - 1) != '\n');
+
+    if (line && *(line + total - 1) == '\n')
+        *(line + total - 1) = '\0'; /* 改行削除 */
+
+    return line;
 }
 

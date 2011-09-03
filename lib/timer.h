@@ -38,6 +38,11 @@
 #include <stdio.h>    /* fprintf stderr */
 #include <sys/time.h> /* timeval */
 
+/**
+ * 時刻取得
+ *
+ * @return 時刻
+ */
 inline
 unsigned long long get_time(void)
 {
@@ -48,6 +53,11 @@ unsigned long long get_time(void)
     return (((unsigned long long)tv.tv_sec) * 1000000 + tv.tv_usec);
 }
 
+/**
+ * タイマースタート
+ *
+ * @return なし
+ */
 inline
 void start_timer(unsigned int *start_time)
 {
@@ -55,6 +65,12 @@ void start_timer(unsigned int *start_time)
     return;
 }
 
+/**
+ * タイマーストップ
+ *
+ * @parma[in] start_time タイマー開始の時刻
+ * @return 時間
+ */
 inline
 unsigned int stop_timer(unsigned int *start_time)
 {
@@ -62,6 +78,7 @@ unsigned int stop_timer(unsigned int *start_time)
     return ((stop_time >= *start_time) ? (stop_time - *start_time) : stop_time);
 }
 
+/** 時間出力 */
 #define print_timer(te) {                                               \
         (void)fprintf(stderr, "time of %s:%f[msec]\n", #te, te*1.0e-3); \
     }

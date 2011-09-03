@@ -35,19 +35,20 @@ extern char *progname; /**< プログラム名 */
 #define LOG_FORMAT     progname, __FILE__, __LINE__, __FUNCTION__
 
 #define outlog(fmt...)         system_log(LOG_FORMAT, fmt)
+#define outstd(fmt...)         stderr_log(LOG_FORMAT, fmt)
 #define outdump(a, b, fmt...)  dump_sys(LOG_FORMAT, a, b, fmt)
 
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
 #  define dbglog(fmt...)             system_dbg_log(LOG_FORMAT, fmt)
 #  define stdlog(fmt...)             stderr_log(LOG_FORMAT, fmt)
-#  define dumplog(a, b)              dump_log(a, b)
 #  define dbgdump(a, b, fmt...)      dump_sys(LOG_FORMAT, a, b, fmt)
+#  define stddump(a, b, fmt...)      dump_log(a, b, fmt)
 #else
 #  define dbglog(fmt...)             do { } while (0)
 #  define stdlog(fmt...)             do { } while (0)
-#  define dumplog(a, b)              do { } while (0)
 #  define dbgdump(a, b, fmt...)      do { } while (0)
+#  define stddump(a, b, fmt...)      do { } while (0)
 #endif /* _DEBUG */
 
 /** シスログ出力 */
@@ -66,7 +67,7 @@ void stderr_log(const char *prog_name, const char *filename,
                 const char *format, ...);
 
 /** 標準エラー出力にHEXダンプ */
-void dump_log(const void *buf, const size_t len);
+void dump_log(const void *buf, const size_t len, const char *format, ...);
 
 /** シスログにHEXダンプ */
 void dump_sys(const char *prog_name, const char *filename,

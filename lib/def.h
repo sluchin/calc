@@ -1,12 +1,12 @@
 /**
- * @file calc/version.h
- * @brief バージョン情報
+ * @file common.h
+ * @brief 汎用定義
  *
  * @author higashi
- * @date 2010-06-27 higashi 新規作成
+ * @date 2011-08-22 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef _DEF_H_
+#define _DEF_H_
 
-#define VERSION  "version 0.02"
+typedef unsigned char uchar;
+typedef unsigned int uint;
+typedef unsigned short ushort;
+typedef unsigned long ulong;
+typedef long double ldfl;
 
-#endif /* _VERSION_H_ */
+#define ST_OK     0 /**< 正常時戻り値 */
+#define ST_NG    -1 /**< エラー戻り値 */
+
+#endif /* _DEF_H_ */
 

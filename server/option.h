@@ -36,13 +36,7 @@
 /** ポート名サイズ */
 #define PORT_SIZE         (int)48
 
-/**
- * オプション引数
- *
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @return なし
- */
+/** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
 #endif /* _OPTION_H_ */

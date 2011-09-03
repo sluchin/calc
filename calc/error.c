@@ -63,8 +63,13 @@ get_errormsg(void)
     uchar *msg = NULL; /* エラーメッセージ */
 
     if (errorcode != E_NONE) {
-        slen = strlen(errormsg[errorcode]);
-        msg = (uchar *)malloc((slen + 1) * sizeof(uchar));
+        slen = strlen(errormsg[errorcode]) + 1;
+        msg = (uchar *)malloc(slen * sizeof(uchar));
+        if (!msg) {
+            outlog("malloc[%p]", msg);
+            return NULL;
+        }
+        (void)memset(msg, 0, slen);
         (void)strncpy((char *)msg, errormsg[errorcode], slen + 1);
     }
     return msg;

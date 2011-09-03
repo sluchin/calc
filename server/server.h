@@ -13,23 +13,11 @@
 #ifndef _SERVER_H_
 #define _SERVER_H_
 
-/**
- * ソケット接続
- *
- * @param[in] port ポート番号またはサービス名
- * @return ソケット
- */
-int
-server_sock(const char *port);
+/** ソケット接続 */
+int server_sock(const char *port);
 
-/**
- * 接続受付
- *
- * @param[in] sock ソケット
- * @return なし
- */
-void
-server_loop(int sock);
+/** 接続受付 */
+void server_loop(int sock);
 
 #endif /* _SERVER_H_ */
 

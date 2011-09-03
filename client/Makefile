@@ -9,9 +9,9 @@ RM = rm -rf
 AR = ar rcsv
 STRIP = strip
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS += -g -Wall -O2 -D_USE_SELECT
+CFLAGS += -g -Wall -O2 -D_USE_SELECT #-D_USE_READLINE
 LDFLAGS =
-LIBS = #-lpthread
+LIBS =  -lreadline
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(CFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalc.a
@@ -34,10 +34,10 @@ $(PROGRAM): $(OBJECTS) $(LIBRARY)
 	cd $(top_srcdir)/client
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h client.h version.h Makefile
+$(OBJECTS): option.h client.h Makefile
 
 debug:
-	$(MAKE) CFLAGS="-g -Wall -O2 -D_DEBUG -D_USE_SELECT" 
+	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
 
 strip:
 	$(STRIP) $(PROGRAM)

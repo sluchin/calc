@@ -34,14 +34,16 @@
 #include "server.h"
 
 /* グローバル変数 */
-char *progname;          /**< プログラム名 */
-char port_no[PORT_SIZE]; /**< ポート番号またはサービス名 */
+char *progname;                           /**< プログラム名 */
+char port_no[PORT_SIZE];                  /**< ポート番号またはサービス名 */
+volatile sig_atomic_t sig_handled = 0;    /**< シグナル */
+volatile sig_atomic_t sighup_handled = 0; /**< シグナル */
 
 /* 内部変数 */
-static volatile sig_atomic_t sockfd = -1; /**< ソケット */
-static int *argc;                         /**< 引数の数 */
-static char ***argv;                      /**< コマンド引数 */
-static char ***envp;                      /**< 環境変数 */
+static int sockfd = -1; /**< ソケット */
+static int *argc;       /**< 引数の数 */
+static char ***argv;    /**< コマンド引数 */
+static char ***envp;    /**< 環境変数 */
 
 /* 内部関数 */
 /** シグナルハンドラ設定 */
@@ -62,7 +64,7 @@ set_sig_handler(void)
     struct sigaction sa, hup; /* シグナル */
 
     /* シグナルマスクの設定 */
-    memset(&sa, 0, sizeof(sa));
+    (void)memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
@@ -83,7 +85,7 @@ set_sig_handler(void)
         outlog("sigaction[%p]; SIGQUIT", sa);
 
     /* シグナルマスクの設定 */
-    memset(&hup, 0, sizeof(hup));
+    (void)memset(&hup, 0, sizeof(hup));
     hup.sa_handler = sighup_handler;
     hup.sa_flags = 0;
     if (sigemptyset(&hup.sa_mask) < 0)
@@ -98,7 +100,7 @@ set_sig_handler(void)
 #if 0
     /* 子プロセスをゾンビにしない */
     struct sigaction chld;
-    memset(&chld, 0, sizeof(chld));
+    (void)memset(&chld, 0, sizeof(chld));
     chld.sa_handler = SIG_IGN;
     chld.sa_flags = SA_NOCLDWAIT;
     if (sigaction(SIGCHLD, &chld, NULL) < 0)
@@ -114,12 +116,7 @@ set_sig_handler(void)
  */
 static void sig_handler(int signo)
 {
-    /* ソケットクローズ */
-    if (sockfd != -1) {
-        (void)close(sockfd);
-        sockfd = -1;
-    }
-    _exit(EXIT_SUCCESS);
+    sig_handled = 1;
 }
 
 /** 
@@ -131,22 +128,7 @@ static void sig_handler(int signo)
  */
 static void sighup_handler(int signo)
 {
-#ifdef _DEBUG
-    int writeval = 0; /* write戻り値 */
-    char *mes = NULL; /* メッセージ */
-    mes = "sighup_handler\n";
-    writeval = write(STDOUT_FILENO, mes, strlen(mes));
-#endif /* _DEBUG */
-
-    (void)alarm(0);
-
-    /* ソケットクローズ */
-    if (sockfd != -1) {
-        (void)close(sockfd);
-        sockfd = -1;
-    }
-    /* 再起動 */
-    (void)execve((*argv)[0], (*argv), (*envp));
+    sighup_handled = 1;
 }
 
 /** 
@@ -195,11 +177,13 @@ int main(int c, char *v[], char *ep[])
     server_loop(sockfd);
 
     /* ソケットクローズ */
-    if (sockfd != -1) {
-        retval = close(sockfd);
-        if (retval < 0)
-            outlog("close[%d]", retval);
-        sockfd = -1;
+    close_sock(&sockfd);
+
+    if (sighup_handled) { /* 再起動 */
+        dbglog("signal hup");
+        (void)alarm(0);
+        sighup_handled = 0;
+        (void)execve((*argv)[0], (*argv), (*envp));
     }
 
     return EXIT_SUCCESS;
