@@ -60,20 +60,21 @@ static ER errorcode = E_NONE;
 uchar *
 get_errormsg(void)
 {
-    dbglog("start");
+    dbglog("start: errorcode=%d", errorcode);
 
     size_t slen = 0;   /* 文字列長 */
     uchar *msg = NULL; /* エラーメッセージ */
 
     if (errorcode != E_NONE) {
         slen = strlen(errormsg[errorcode]) + 1;
+        dbglog("slen=%u", slen);
         msg = (uchar *)malloc(slen * sizeof(uchar));
         if (!msg) {
             outlog("malloc=%p", msg);
             return NULL;
         }
         (void)memset(msg, 0, slen);
-        (void)strncpy((char *)msg, errormsg[errorcode], slen + 1);
+        (void)strncpy((char *)msg, errormsg[errorcode], slen);
         dbglog("errormsg=%s, errorcode=%d", errormsg[errorcode], errorcode);
     }
     return msg;

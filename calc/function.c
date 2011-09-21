@@ -56,6 +56,8 @@ static dbl check_math(dbl x, dbl (*callback)(dbl));
 static dbl get_rad(dbl x);
 /** ラジアンを角度に変換 */
 static dbl get_deg(dbl x);
+/** 階乗 */
+static dbl factorial(dbl n);
 /** 階乗取得 */
 static dbl get_factorial(dbl n);
 /** 順列(nPr) */
@@ -77,6 +79,7 @@ struct funcstring {
     char funcname[MAX_FUNC_STRING + 1];
 };
 
+/** 関数文字列構造体初期化 */
 struct funcstring fstring[] = {
     { "pi"   }, /**< pi */
     { "e"    }, /**< ネイピア数(オイラー数) */
@@ -265,6 +268,17 @@ check_math(dbl x, dbl (*callback)(dbl))
 }
 
 /**
+ * 階乗
+ *
+ * @return 階乗
+ */
+static dbl
+factorial(dbl n)
+{
+    return (n == 0 || n == 1) ? 1 : n * factorial(n - 1);
+}
+
+/**
  * 階乗取得
  *
  * @param[in] val arg_value構造体
@@ -273,7 +287,10 @@ check_math(dbl x, dbl (*callback)(dbl))
 static dbl
 get_factorial(dbl n)
 {
-    dbl result = 0;   /* 計算結果 */
+    dbl result = 0;     /* 計算結果 */
+    dbl decimal = 0;    /* 小数 */
+    dbl integer = 0;    /* 整数 */
+    bool minus = false; /* マイナス */
 
     dbglog("start");
 
@@ -282,12 +299,28 @@ get_factorial(dbl n)
         return result;
 
     dbglog("n=%.18g", n);
-    if (n == 1 || n == 0)
-        result = 1;
-    else
-        result = n * get_factorial(n - 1);
-    dbglog("result=%.18g", result);
 
+    /* 自然数かどうかチェック */
+    decimal = modf(n, &integer);
+    dbglog("frac=%f, exp=%d", decimal, integer);
+    if (decimal) { /* 自然数ではない */
+        set_errorcode(E_MATH);
+        return result;
+    }
+
+    if (isless(n, 0)) { /* マイナス */
+        n = check_math(n, fabs);
+        minus = true; 
+    }
+
+    result = factorial(n);
+
+    if (minus) {
+        result *= -1;
+        minus = false;
+    }
+
+    dbglog("result=%.18g", result);
     check_validate(1, result);
 
     return result;

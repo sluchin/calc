@@ -90,8 +90,8 @@ void system_log(const char *pname,
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
                        (unsigned long int)thread_id);
 
-    syslog(SYS_PRIO, "%s[%d]: ppid=%d%s: %s(%s): %m(%d)",
-           fname, line, getppid(), !thread_id ? t_buf : "",
+    syslog(SYS_PRIO, "ppid=%d%s: %s[%d]: %s(%s): %m(%d)",
+           getppid(), !thread_id ? t_buf : "", fname, line,
            func, message, err_no);
 
 #if 0 
@@ -178,9 +178,9 @@ void system_dbg_log(const char *pname,
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
                        (unsigned long int)thread_id);
 
-    syslog(SYS_PRIO, "%s[%d]: %s.%ld: ppid=%d%s: #%lu %s(%s): %m(%d)",
-           fname, line, d_buf, tv.tv_usec, getppid(),
-           !thread_id ? t_buf : "", number, func, message, err_no);
+    syslog(SYS_PRIO, "ppid=%d%s: #%lu %s.%ld: %s[%d]: %s(%s): %m(%d)",
+           getppid(), !thread_id ? t_buf : "",
+           number, d_buf, tv.tv_usec, fname, line, func, message, err_no);
 
 #if 0
     syslog(SYS_PRIO,
