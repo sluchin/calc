@@ -80,7 +80,7 @@ struct funcstring {
 };
 
 /** 関数文字列構造体初期化 */
-struct funcstring fstring[] = {
+static struct funcstring fstring[] = {
     { "pi"   }, /**< pi */
     { "e"    }, /**< ネイピア数(オイラー数) */
     { "abs"  }, /**< 絶対値 */

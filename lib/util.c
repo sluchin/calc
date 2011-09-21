@@ -35,7 +35,7 @@
  * freeして, NULLを代入する.
  *
  * @param[in] num 引数の数
- * @param[in] ... freeする変数
+ * @param[in,out] ... freeする変数
  * @return なし
  */
 void
