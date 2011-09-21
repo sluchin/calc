@@ -132,9 +132,7 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'p': /* 小数点以下有効桁数設定 */
             precision = strtol(optarg, NULL, base);
-            if (0 <= precision && precision <= MAX_PREC) {
-                precision = strtol(optarg, NULL, base);
-            } else if (MAX_PREC < precision) {
+            if (precision < 0 || MAX_PREC < precision) {
                 (void)fprintf(fp, "Maximum precision is %d.\n", MAX_PREC);
                 exit(EXIT_FAILURE);
             }

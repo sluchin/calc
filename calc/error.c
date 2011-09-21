@@ -221,8 +221,7 @@ check_math_feexcept(dbl val)
         if (val == HUGE_VALL) {
             dbglog("%g==HUGE_VALL", val);
             set_errorcode(E_PLUSINF);
-        }
-        if (val == -HUGE_VALL) {
+        } else if (val == -HUGE_VALL) {
             dbglog("%g==-HUGE_VALL", val);
             set_errorcode(E_MINUSINF);
         }
