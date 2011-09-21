@@ -31,13 +31,12 @@
 #include <signal.h> /* sigaction */
 
 #include "log.h"
+#include "net.h"
+#include "util.h"
 #include "option.h"
 #include "client.h"
 
 /* 外部変数 */
-char *progname;                        /**< プログラム名 */
-char host_name[HOST_SIZE];             /**< IPアドレスまたはホスト名 */
-char port_no[PORT_SIZE];               /**< ポート番号またはサービス名 */
 volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 
 /* 内部変数 */
@@ -64,21 +63,21 @@ set_sig_handler(void)
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset[%p]", sa);
+        outlog("sigemptyset=%p", sa);
     if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset[%p]; SIGINT", sa);
+        outlog("sigaddset=%p, SIGINT", sa);
     if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset[%p]; SIGTERM", sa);
+        outlog("sigaddset=%p, SIGTERM", sa);
     if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset[%p]; SIGQUIT", sa);
+        outlog("sigaddset=%p, SIGQUIT", sa);
 
     /* シグナル補足 */
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGINT", sa);
+        outlog("sigaction=%p, SIGINT", sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGTERM", sa);
+        outlog("sigaction=%p, SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGQUIT", sa);
+        outlog("sigaction=%p, SIGQUIT", sa);
 
 }
 
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    dbglog("sockfd[%d]", sockfd);
+    dbglog("sockfd=%d", sockfd);
 
     /* ソケット送受信 */
     client_loop(sockfd);
@@ -127,6 +126,7 @@ int main(int argc, char *argv[])
     /* ソケットクローズ */
     close_sock(&sockfd);
 
+    exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 }
 

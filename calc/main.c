@@ -30,10 +30,12 @@
 #include <unistd.h>  /* close */
 #include <libgen.h>  /* basename */
 #include <signal.h>  /* sigaction */
-#if defined(_USE_READLINE)
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif /* _USE_READLINE */
+#ifdef HAVE_READLINE
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#else
+#  include "readline.h"
+#endif /* HAVE_READLINE */
 
 #include "def.h"
 #include "util.h"
@@ -42,36 +44,32 @@
 #include "log.h"
 #include "calc.h"
 
-/* 外部変数 */
-char *progname;                               /**< プログラム名 */
 /* 内部変数 */
+static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 static uchar *expr = NULL;                    /**< 式 */
 static uchar *result = NULL;                  /**< メッセージ */
-static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 static HIST_ENTRY *history = NULL;            /**< 履歴 */
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 #  define FREEHISTORY                           \
     if (history) {                              \
         history = remove_history(0);            \
         free(history); }                        \
     history = NULL;
 #  define MAX_HISTORY    100 /**< 最大履歴数 */
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 
 /* 内部関数 */
 /* イベントフック */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 static int check_state(void);
-#endif
+#endif /* HAVE_READLINE */
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
 /** シグナルハンドラ */
 static void sig_handler(int signo);
-/** メモリ解放 */
-static void memfree(void);
 
 /**
  * ループ処理
@@ -83,52 +81,57 @@ main_loop(void)
 {
     int retval = 0;      /* 戻り値 */
     size_t length = 0;   /* 文字列長 */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
     int hist_no = 0;     /* 履歴数 */
     char *prompt = NULL; /* プロンプト */
 
-    rl_event_hook = check_state;
-#endif /* _USE_READLINE */
+    rl_event_hook = &check_state;
+#endif /* HAVE_READLINE */
+
+    dbglog("start");
 
     do {
         retval = fflush(NULL);
         if (retval == EOF)
-            outlog("fflush[%d]", retval);
+            outlog("fflush=%d", retval);
 
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
         expr = (uchar *)readline(prompt);
 #else
-        expr = read_line(stdin);
-#endif /* _USE_READLINE */
-        if (!expr || *expr == 0) {
-            outlog("expr[%p]: %s");
-            memfree();
+        expr = _readline(stdin);
+#endif /* HAVE_READLINE */
+        if (!expr)
+            break;
+
+        if (*expr == 0) {
+            dbglog("expr=%p", expr);
+            memfree(1, &expr);
             continue;
         }
         if (!strcmp((char *)expr, "quit") ||
             !strcmp((char *)expr, "exit"))
             break;
         length = strlen((char *)expr);
-        dbgdump((uchar *)expr, length + 1, "expr[%u]", length + 1);
+        dbgdump(expr, length + 1, "expr=%u", length + 1);
 
         result = input(expr, sizeof(expr));
-        dbglog("result[%p]", result);
+        dbglog("expr=%p, result=%p", expr, result);
         if (result) {
             retval = fprintf(stdout, "%s\n", (char *)result);
             if (retval < 0)
-                outlog("fprintf[%d]", retval);
+                outlog("fprintf=%d", retval);
             retval = fflush(stdout);
             if (retval == EOF)
-                outlog("fflush[%d]", retval);
+                outlog("fflush=%d", retval);
         }
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
         if (MAX_HISTORY <= ++hist_no) {
             FREEHISTORY;
         }
         add_history((char *)expr);
-#endif /* _USE_READLINE */
-        memfree();
-        dbglog("result[%p]", result);
+#endif /* HAVE_READLINE */
+        memfree(2, &expr, &result);
+        dbglog("expr=%p, result=%p", expr, result);
 
     } while(!sig_handled);
 }
@@ -137,20 +140,24 @@ main_loop(void)
  * イベントフック
  *
  * readline 内から定期的に呼ばれる関数
- * @return 常にST_OK
+ * @return 常にEX_OK
  */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 static int check_state(void) {
     if (sig_handled) {
         /* 入力中のテキストを破棄 */
         rl_delete_text(0, rl_end);
 
-        /* readline を return させる */
+        /* readlineをreturnさせる */
         rl_done = 1;
+
+        //rl_event_hook = 0;
+        //rl_deprep_terminal();
+        //close(STDIN_FILENO);
     }
-    return ST_OK;
+    return EX_OK;
 }
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 
 /** 
  * シグナルハンドラ設定
@@ -167,21 +174,21 @@ set_sig_handler(void)
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset[%p]", sa);
+        outlog("sigemptyset=%p", sa);
     if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset[%p]; SIGINT", sa);
+        outlog("sigaddset=%p, SIGINT", sa);
     if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset[%p]; SIGTERM", sa);
+        outlog("sigaddset=%p, SIGTERM", sa);
     if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset[%p]; SIGQUIT", sa);
+        outlog("sigaddset=%p, SIGQUIT", sa);
 
     /* シグナル補足 */
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGINT", sa);
+        outlog("sigaction=%p, SIGINT", sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGTERM", sa);
+        outlog("sigaction=%p, SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGQUIT", sa);
+        outlog("sigaction=%p, SIGQUIT", sa);
 }
 
 /** 
@@ -193,22 +200,6 @@ set_sig_handler(void)
 static void sig_handler(int signo)
 {
     sig_handled = 1;
-}
-
-/**
- * メモリ解放
- *
- * @return なし
- */
-static void
-memfree(void)
-{
-    if (result)
-        free(result);
-    result = NULL;
-    if (expr)
-        free(expr);
-    expr = NULL;
 }
 
 /** 
@@ -234,11 +225,12 @@ int main(int argc, char *argv[])
     main_loop();
 
     /* 終了処理 */
-    memfree();
-#if defined(_USE_READLINE)
+    memfree(2, &expr, &result);
+#ifdef HAVE_READLINE
     FREEHISTORY;
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 
+    exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 }
 

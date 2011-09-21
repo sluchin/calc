@@ -1,0 +1,6 @@
+    1. Gnu readline から editline を使用するよう変更する.
+    2. 多倍長整数に対応する. Gnu gmp, Gnu mpfr.
+    3. python でテスト書く.
+    4. python でデバッガ書く.
+    5. ログのレベルをERROR, WARNING, INFO, DEBUG に増やす.
+

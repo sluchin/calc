@@ -1,5 +1,5 @@
 /**
- * @file timer.h
+ * @file  lib/timer.h
  * @brief 処理時間測定
  *
  * @author higashi
@@ -68,7 +68,7 @@ void start_timer(unsigned int *start_time)
 /**
  * タイマーストップ
  *
- * @parma[in] start_time タイマー開始の時刻
+ * @param[in] start_time タイマー開始の時刻
  * @return 時間
  */
 inline

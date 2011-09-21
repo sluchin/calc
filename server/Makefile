@@ -3,49 +3,98 @@
 
 srcdir = .
 top_srcdir = ..
-lib_dir = ../../lib
+prefix = /usr/local
+libdir = $(prefix)/lib
+bindir = $(prefix)/bin
 CC = gcc
 RM = rm -rf
 AR = ar rcsv
 STRIP = strip
+INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/calc
-CFLAGS += -g -Wall -O2
-LDFLAGS =
-LIBS = -lpthread -lm
-COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
-LINK = $(CC) $(CFLAGS)
-LIBRARY = $(top_srcdir)/lib/libcalc.a \
-          $(top_srcdir)/calc/function.o \
-          $(top_srcdir)/calc/error.o \
-          $(top_srcdir)/calc/calc.o
+CFLAGS = -g -Wall -O2 -DNDEBUG
+DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG
+LDFLAGS = -L. -L$(top_srcdir)/lib -L$(top_srcdir)/calc
+LIBS = -lm -lpthread
+SERVERLIBS = -lcalcd -lcalcp -lcalcutil
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
+LINK = $(CC) $(LDFLAGS)
+LIBRARY = $(top_srcdir)/lib/libcalcutil.a $(top_srcdir)/calc/libcalcp.a
+LIBSERVER = libcalcd.a
+OBJSERVER = server.o
+OBJECTS = main.o option.o
+SHAREDOBJ = libcalcd.so
 PROGRAM = calcd
-OBJECTS = main.o \
-          option.o \
-          server.o
+PYTHON = python
+TESTOPT = -Wd -3 -E -tt
 
-.PHONY: all debug strip clean
-
-all: $(PROGRAM) $(OBJECTS)
 .SUFFIXES: .c .o
 
-$(PROGRAM): $(OBJECTS) $(LIBRARY)
+.PHONY: all
+all: $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ) $(PROGRAM)
+
+$(LIBSERVER): $(OBJSERVER)
+	@$(RM) $@
+	$(AR) $@ $^
+
+$(SHAREDOBJ): $(OBJSERVER)
+	@$(RM) $@
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^
+
+$(PROGRAM): $(OBJECTS)
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $@ $^ $(LIBS) $(LDFLAGS)
+	$(LINK) -o $@ $(LIBS) $(SERVERLIBS) $^
+	@#$(LINK) -o $@ $(LIBS) $^ $(LIBSERVER) $(LIBRARY)
+
+.PHONY: static
+static: all
+	@$(RM) $(PROGRAM)
+	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBSERVER) $(LIBRARY)
 
 .c.o:
-	cd $(top_srcdir)/lib && $(MAKE)
-	cd $(top_srcdir)/calc && $(MAKE)
-	cd $(top_srcdir)/server
 	$(COMPILE) -c $<
 
 $(OBJECTS): option.h server.h Makefile
 
+.PHONY: debug
 debug:
-	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
+	@$(MAKE) CFLAGS="$(DFLAGS)" 
 
+.PHONY: test
+test: debug
+	@for file in `ls $(testdir)`; do \
+	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
+	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
+	    fi; \
+	done
+
+.PHONY: install
+install: all
+	@test -z $(bindir) || mkdir -p $(bindir) || exit 1;
+	$(INSTALL) $(PROGRAM) $(bindir)
+	@test -z $(libdir) || mkdir -p $(libdir) || exit 1;
+	$(INSTALL) $(LIBSERVER) $(libdir)
+	$(INSTALL) $(SHAREDOBJ) $(libdir)
+
+.PHONY: strip
 strip:
 	$(STRIP) $(PROGRAM)
+	$(STRIP) $(LIBSERVER)
+	$(STRIP) $(SHAREDOBJ)
 
+.PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJECTS) calc.o
+	$(RM) $(PROGRAM) $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ)
+
+.PHONY: help
+help:
+	@echo "The following are some of the valid targets for this Makefile:"
+	@echo "... all (the default if no target is provided)"
+	@echo "... clean"
+	@echo "... debug"
+	@echo "... test"
+	@echo "... static"
+	@echo "... install"
+	@echo "... doc"
+	@echo "... strip"
 

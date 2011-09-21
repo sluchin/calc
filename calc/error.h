@@ -1,8 +1,7 @@
 /**
- * @file  error.h
+ * @file  calc/error.h
  * @brief エラー設定取得
  *
- * @sa error.c
  * @author higashi
  * @date 2011-08-15 higashi 新規作成
  * @version \$Id$
@@ -30,17 +29,21 @@
 #include <stdbool.h> /* bool */
 
 #include "def.h"
+#include "function.h"
 
 /** エラー種別 */
 typedef enum {
-    E_NONE = 0, /**< エラーなし */
-    E_ZERO,     /**< ゼロ除算エラー */
-    E_SYNTAX,   /**< 文法エラー */
-    E_NOFUNC,   /**< 関数名なし */
-    E_MATH,     /**< 計算不能なエラー */
-    E_NAN,      /**< 数値ではない */
-    E_OVERFLOW, /**< オーバーフロー */
-    E_UNDERFLOW /**< アンダーフロー */
+    E_NONE = 0,  /**< エラーなし */
+    E_DIVBYZERO, /**< ゼロ除算エラー */
+    E_SYNTAX,    /**< 文法エラー */
+    E_NOFUNC,    /**< 関数名なし */
+    E_MATH,      /**< 計算不能なエラー */
+    E_NAN,       /**< 数値ではない */
+    E_OVERFLOW,  /**< オーバーフロー */
+    E_UNDERFLOW, /**< アンダーフロー */
+    E_PLUSINF,   /**< 正の無限大 */
+    E_MINUSINF,  /**< 負の無限大 */
+    E_NORMSMALL  /**< 小さすぎて正規化表現できない */
 } ER;
 
 /** エラーメッセージ取得 */
@@ -50,16 +53,16 @@ uchar *get_errormsg(void);
 void set_errorcode(ER error);
 
 /** エラークリア */
-void clear_error(uchar *msg);
+void clear_error(uchar **msg);
 
 /** エラー判定 */
 bool is_error(void);
 
 /** 数値の妥当性チェック */
-void check_validate(ldfl val);
+void check_validate(int num, ...);
 
 /** 浮動小数点例外チェック */
-void check_math_feexcept(void);
+void check_math_feexcept(dbl val);
 
 #endif /* _ERROR_H_ */
 

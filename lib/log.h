@@ -1,8 +1,7 @@
 /**
- * @file log.h
+ * @file lib/log.h
  * @brief ログ出力
  *
- * @see log.c
  * @author higashi
  * @date 2010-06-22 higashi 新規作成
  * @version \$Id$
@@ -29,7 +28,7 @@
 
 #include <stddef.h> /* size_t */
 
-extern char *progname; /**< プログラム名 */
+extern char *progname; /* プログラム名 */
 
 #define SYS_PRIO       LOG_INFO
 #define LOG_FORMAT     progname, __FILE__, __LINE__, __FUNCTION__
@@ -52,32 +51,35 @@ extern char *progname; /**< プログラム名 */
 #endif /* _DEBUG */
 
 /** シスログ出力 */
-void system_log(const char *prog_name, const char *filename,
-                const unsigned long line, const char *func,
+void system_log(const char *pname, const char *fname,
+                const int line, const char *func,
                 const char *format, ...);
 
 /** シスログ出力(デバッグ用) */
-void system_dbg_log(const char *prog_name, const char *filename,
-                    const unsigned long line, const char *func,
+void system_dbg_log(const char *pname, const char *fname,
+                    const int line, const char *func,
                     const char *format, ...);
 
 /** 標準エラー出力にログ出力 */
-void stderr_log(const char *prog_name, const char *filename,
-                const unsigned long line, const char *func,
+void stderr_log(const char *pname, const char *fname,
+                const int line, const char *func,
                 const char *format, ...);
 
 /** 標準エラー出力にHEXダンプ */
 void dump_log(const void *buf, const size_t len, const char *format, ...);
 
 /** シスログにHEXダンプ */
-void dump_sys(const char *prog_name, const char *filename,
-              const unsigned long line, const char *func,
+void dump_sys(const char *pname, const char *fname,
+              const int line, const char *func,
               const void *buf, const size_t len,
               const char *format, ...);
 
 /** ファイルにバイナリ出力 */
-void dump_file(const char *prog_name, const char *d_file, const char *buf,
+void dump_file(const char *pname, const char *fname, const char *buf,
                const size_t len);
+
+/** バックトレース出力 */
+void print_trace(void);
 
 #endif /* _OUTPUTLOG_H_ */
 

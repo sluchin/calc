@@ -1,8 +1,7 @@
 /**
- * @file  error.c
+ * @file  calc/error.c
  * @brief エラー設定取得
  *
- * @sa error.h
  * @author higashi
  * @date 2011-08-15 higashi 新規作成
  * @version \$Id$
@@ -29,6 +28,7 @@
 #include <string.h> /* strlen */
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* FE_INVALID */
+#include <stdarg.h> /* va_list va_arg */
 
 #include "log.h"
 #include "error.h"
@@ -40,9 +40,12 @@ static const char *errormsg[] = {
     "Syntax error.",
     "Function not defined.",
     "Math error.",
-    "Not a Number"
+    "Not a Number.",
     "Overflow.",
-    "Underflow."
+    "Underflow.",
+    "Positive infinity.",
+    "Negative infinity.",
+    "Too small to be represented in normalized format."
 };
 
 /** エラーコード */
@@ -66,11 +69,12 @@ get_errormsg(void)
         slen = strlen(errormsg[errorcode]) + 1;
         msg = (uchar *)malloc(slen * sizeof(uchar));
         if (!msg) {
-            outlog("malloc[%p]", msg);
+            outlog("malloc=%p", msg);
             return NULL;
         }
         (void)memset(msg, 0, slen);
         (void)strncpy((char *)msg, errormsg[errorcode], slen + 1);
+        dbglog("errormsg=%s, errorcode=%d", errormsg[errorcode], errorcode);
     }
     return msg;
 }
@@ -88,7 +92,7 @@ set_errorcode(ER error)
 
     if (errorcode == E_NONE)
         errorcode = error;
-    dbglog("errorcode[%d]", errorcode);
+    dbglog("errorcode=%d", errorcode);
 }
 
 /**
@@ -98,13 +102,13 @@ set_errorcode(ER error)
  * @return なし
  */
 void
-clear_error(uchar *msg)
+clear_error(uchar **msg)
 {
     dbglog("start");
 
-    if (msg)
-        free(msg);
-    msg = NULL;
+    if (*msg)
+        free(*msg);
+    *msg = NULL;
     errorcode = E_NONE;
 }
 
@@ -118,30 +122,65 @@ is_error(void)
 {
     dbglog("start");
 
-    if (errorcode) {
-        dbglog("errorcode[%d]", errorcode);
+    if (errorcode)
         return true;
-    }
+
+    dbglog("errorcode=%d", errorcode);
+
     return false;
 }
 
 /**
  * 数値の妥当性チェック
  *
- * @param[in] val 数値
+ * @param[in] num 引数の数
+ * @param[in] ... double型引数
  * @return なし
  */
 void
-check_validate(ldfl val)
+check_validate(int num, ...)
 {
+    dbl val = 0; /* 値 */
+    va_list ap;  /* va_list */
+    int i;       /* 汎用変数 */
+
     dbglog("start");
 
-    if (isnan(val))
-        set_errorcode(E_NAN);
-    else if (isinf(val))
-        set_errorcode(E_OVERFLOW);
-    else if (fpclassify(val) == FP_SUBNORMAL)
-        set_errorcode(E_UNDERFLOW);
+    va_start(ap, num);
+
+    for (i = 0; i < num; i++) {
+        val = va_arg(ap, double);
+
+#ifndef _DEBUG
+        if (isnan(val))
+            set_errorcode(E_NAN);
+        else if (isinf(val) == 1)
+            set_errorcode(E_PLUSINF);
+        else if (isinf(val) == -1)
+            set_errorcode(E_MINUSINF);
+        else if (fpclassify(val) == FP_SUBNORMAL)
+            set_errorcode(E_NORMSMALL);
+#else
+        int retval = 0; 
+        if ((retval = isnan(val)) != 0) {
+            dbglog("isnan(%g)=%d", val, retval);
+            set_errorcode(E_NAN);
+        }
+        if ((retval = isinf(val)) == 1) {
+            dbglog("isinf(%g)=%d", val, retval);
+            set_errorcode(E_PLUSINF);
+        }
+        if ((retval = isinf(val)) == -1) {
+            dbglog("isinf(%g)=%d", val, retval);
+            set_errorcode(E_MINUSINF);
+        }
+        if ((retval = fpclassify(val)) == FP_SUBNORMAL) {
+            dbglog("fpclassify(%g)=%d", val, retval);
+            set_errorcode(E_NORMSMALL);
+        }
+#endif
+    }
+    va_end(ap);
 }
 
 /**
@@ -153,17 +192,49 @@ check_validate(ldfl val)
  * @return なし
  */
 void
-check_math_feexcept(void)
+check_math_feexcept(dbl val)
 {
-    dbglog("start");
+    dbglog("start: val=%g", val);
 
-    if (fetestexcept(FE_INVALID))
+#ifndef _DEBUG
+    if (fetestexcept(FE_INVALID)) {
         set_errorcode(E_NAN);
-    else if (fetestexcept(FE_DIVBYZERO))
-        set_errorcode(E_ZERO);
-    else if (fetestexcept(FE_OVERFLOW))
+    } else if (fetestexcept(FE_DIVBYZERO)) {
+        if (val == HUGE_VALL) {
+            set_errorcode(E_PLUSINF);
+        } else if (val == -HUGE_VALL) {
+            set_errorcode(E_MINUSINF);
+        }
+    } else if (fetestexcept(FE_OVERFLOW)) {
         set_errorcode(E_OVERFLOW);
-    else if (fetestexcept(FE_UNDERFLOW))
+    } else if (fetestexcept(FE_UNDERFLOW)) {
         set_errorcode(E_UNDERFLOW);
+    }
+#else
+    int retval = 0;
+    if ((retval = fetestexcept(FE_INVALID)) != 0) {
+        dbglog("fetestexcept(FE_INVALID)=%d)", retval);
+        set_errorcode(E_NAN);
+    }
+    if ((retval = fetestexcept(FE_DIVBYZERO)) != 0) {
+        dbglog("fetestexcept(FE_DIVBYZERO)=%d)", retval);
+        if (val == HUGE_VALL) {
+            dbglog("%g==HUGE_VALL", val);
+            set_errorcode(E_PLUSINF);
+        }
+        if (val == -HUGE_VALL) {
+            dbglog("%g==-HUGE_VALL", val);
+            set_errorcode(E_MINUSINF);
+        }
+    }
+    if ((retval = fetestexcept(FE_OVERFLOW)) != 0) {
+        dbglog("fetestexcept(FE_OVERFLOW)=%d)", retval);
+        set_errorcode(E_OVERFLOW);
+    }
+    if ((retval = fetestexcept(FE_UNDERFLOW)) != 0) {
+        dbglog("fetestexcept(FE_UNDERFLOW)=%d)", retval);
+        set_errorcode(E_UNDERFLOW);
+    }
+#endif
 }
 

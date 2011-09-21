@@ -3,46 +3,100 @@
 
 srcdir = .
 top_srcdir = ..
+prefix = /usr/local
+libdir = $(prefix)/lib
+bindir = $(prefix)/bin
+testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
 AR = ar rcsv
 STRIP = strip
+INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS += -g -Wall -O2 -D_USE_READLINE
-LDFLAGS =
-LIBS = -lm -lreadline
+CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
+DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG -rdynamic
+LDFLAGS = -L. -L$(top_srcdir)/lib
+LIBS = -lm #-lreadline -lpthread
+CALCLIBS = -lcalcp -lcalcutil
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
-LINK = $(CC) $(CFLAGS)
-LIBRARY = $(top_srcdir)/lib/libcalc.a
-PROGRAM = calcp
+LINK = $(CC) $(LDFLAGS)
+LIBRARY = $(top_srcdir)/lib/libcalcutil.a
+LIBCALC = libcalcp.a
+OBJCALC = error.o function.o calc.o
 OBJECTS = main.o \
-          option.o \
-          function.o \
-          error.o \
-          calc.o
+          option.o
+SHAREDOBJ = libcalcp.so
+PROGRAM = calcp
+PYTHON = python
+TESTOPT = -Wd -3 -E -tt
 
-.PHONY: all debug strip clean
 .SUFFIXES: .c .o
 
-all: $(PROGRAM) $(OBJECTS)
+.PHONY: all
+all: $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ) $(PROGRAM)
 
-$(PROGRAM): $(OBJECTS) $(LIBRARY)
+$(LIBCALC): $(OBJCALC)
+	@$(RM) $@
+	$(AR) $@ $^
+
+$(SHAREDOBJ): $(OBJCALC)
+	@$(RM) $@
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBRARY)
+
+$(PROGRAM): $(OBJECTS)
+	@$(RM) $@
+	$(LINK) -o $@ $(LIBS) $(CALCLIBS) $^
+	@#$(LINK) -o $@ $(LIBS) $^ $(LIBCALC) $(LIBRARY)
+
+.PHONY: static
+static: all
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $@ $^ $(LIBS) $(LDFLAGS)
+	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBCALC) $(LIBRARY)
 
 .c.o:
-	cd $(top_srcdir)/lib && $(MAKE)
-	cd $(top_srcdir)/calc
 	$(COMPILE) -c $<
 
 $(OBJECTS): option.h calc.h Makefile
 
+.PHONY: debug
 debug:
-	$(MAKE) CFLAGS="$(CFLAGS) -D_DEBUG" 
+	@$(MAKE) CFLAGS="$(DFLAGS)"
 
+.PHONY: test
+test: debug
+	@for file in `ls $(testdir)`; do \
+	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
+	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
+	    fi; \
+	done
+
+.PHONY: install
+install: all
+	@test -z $(bindir) || mkdir -p $(bindir) || exit 1;
+	$(INSTALL) $(PROGRAM) $(bindir)
+	@test -z $(libdir) || mkdir -p $(libdir) || exit 1;
+	$(INSTALL) $(LIBCALC) $(libdir)
+	$(INSTALL) $(SHAREDOBJ) $(libdir)
+
+.PHONY: strip
 strip:
 	$(STRIP) $(PROGRAM)
+	$(STRIP) $(LIBCALC)
+	$(STRIP) $(SHAREDOBJ)
 
+.PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJECTS) test_result
+	$(RM) $(PROGRAM) $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
+
+.PHONY: help
+help:
+	@echo "The following are some of the valid targets for this Makefile:"
+	@echo "... all (the default if no target is provided)"
+	@echo "... clean"
+	@echo "... debug"
+	@echo "... static"
+	@echo "... test"
+	@echo "... install"
+	@echo "... doc"
+	@echo "... strip"
 

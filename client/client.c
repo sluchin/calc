@@ -1,8 +1,7 @@
 /**
- * @file  client.c
+ * @file  client/client.c
  * @brief ソケット送受信
  *
- * @sa client.h
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
@@ -22,56 +21,48 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- */
-
+ */ 
 #include <stdio.h>        /* FILE */
 #include <stdlib.h>       /* strtol */
 #include <string.h>       /* memcpy memset */
-#include <stdbool.h>      /* bool */
 #include <ctype.h>        /* isdigit */
 #include <sys/socket.h>   /* socket */
 #include <arpa/inet.h>    /* inet_addr */
 #include <errno.h>        /* errno */
 #include <unistd.h>       /* close */
-#include <signal.h>       /* sig_atomic_t */
 #ifdef _USE_SELECT
 #  include <sys/select.h> /* select */
 #  include <sys/time.h>   /* timerclear */
 #else
 #  include <sys/poll.h>   /* poll */
 #endif
-#if defined(_USE_READLINE)
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif /* _USE_READLINE */
+#ifdef HAVE_READLINE
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#else
+#  include "readline.h"
+#endif /* HAVE_READLINE */
+#include <limits.h>
 
 #include "def.h"
 #include "log.h"
 #include "data.h"
+#include "net.h"
 #include "util.h"
+#include "option.h"
+#include "timer.h"
 #include "client.h"
 
-#define SOCK_ERROR    (int)(-1) /**< ソケットエラー */
+#define SOCK_ERROR    -1 /**< ソケットエラー */
 
-/* 外部変数 */
-extern bool gflag;                        /**< gオプションフラグ */
-extern volatile sig_atomic_t sig_handled; /**< シグナル */
-/* 内部変数 */
-static struct client_data *sdata = NULL;  /* 送信データ構造体 */
-static uchar *expr = NULL;                /* バッファ */
-static uchar *answer = NULL;              /* 受信データ */
-#if defined(_USE_READLINE)
-static HIST_ENTRY *history = NULL;        /**< 履歴 */
-#endif /* _USE_READLINE */
-
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 #  define FREEHISTORY                           \
     if (history) {                              \
         history = remove_history(0);            \
         free(history); }                        \
     history = NULL;
 #  define MAX_HISTORY    100 /**< 最大履歴数 */
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 
 #ifndef _USE_SELECT
 enum {
@@ -81,121 +72,146 @@ enum {
 };
 #endif /* _USE_SELECT */
 
-/** ステータス */
-typedef enum {
-    ST_CONT = 0, /**< ループから抜け出さない */
-    ST_BREAK     /**< ループから抜け出す */
-} ST;
+/* 内部変数 */
+static uint t = 0;  /**< タイマ */
+static uint tm = 0; /**< タイマ用変数 */
 
 /* 内部関数 */
 /** 標準入力読込 */
-static ST read_stdin(int sock);
+static bool read_stdin(int sock);
 /** ソケット読込 */
-static ST read_sock(int sock);
+static bool read_sock(int sock);
 /* イベントフック */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 static int check_state(void);
-#endif
-/** メモリ解放 */
-static void memfree(void);
+#endif /* HAVE_READLINE */
 
 /**
  * 標準入力読込
  *
- * @param[in] ソケット
- * @param[out] バッファ
- * @param[in] バッファサイズ
- * @retval ST_CONT ループを継続する
- * @retval ST_BREAK ループを抜ける
+ * @param[in] sock ソケット
+ * @retval true ループを継続する
+ * @retval false ループを抜ける
  */
-static ST
+static bool
 read_stdin(int sock)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 文字列長 */
-    size_t rlen = 0;   /* 送信するデータ長 */
-#if defined(_USE_READLINE)
-    int hist_no = 0;     /* 履歴数 */
-    char *prompt = NULL; /* プロンプト */
-#endif /* _USE_READLINE */
+    int retval = 0;                    /* 戻り値 */
+    size_t length = 0;                 /* 長さ */
+    struct client_data *sdata = NULL;  /* 送信データ構造体 */
+    uchar *expr = NULL;                /* バッファ */
+#ifdef HAVE_READLINE
+    HIST_ENTRY *history = NULL;        /* 履歴 */
+    int hist_no = 0;                   /* 履歴数 */
+    char *prompt = NULL;               /* プロンプト */
+#endif /* HAVE_READLINE */
 
     dbglog("start");
 
-#if defined(_USE_READLINE)
-    expr = (uchar *)readline(prompt);
-    if (!expr)
-        return ST_BREAK;
-#else
-    expr = read_line(stdin);
-#endif
+    retval = fflush(NULL);
+    if (retval == EOF)
+        outlog("fflush=%d", retval);
 
-    if (!expr || *expr == 0) {
-        outlog("expr[%p]: %s");
-        memfree();
-        return ST_CONT;
+#ifdef HAVE_READLINE
+    expr = (uchar *)readline(prompt);
+#else
+    expr = _readline(stdin);
+#endif /* HAVE_READLINE */
+
+#ifdef _UT
+    if (expr)
+        free(expr);
+    expr = NULL;
+    /* test
+     * 1400000000 OK 1.4G
+     * 1480000000 NG
+     */
+    size_t test_len = 1400000000;
+    expr = (uchar *)malloc(test_len * sizeof(uchar));
+    if (!expr) {
+        outlog("malloc=%p", expr);
+        return false;
+    }
+    (void)memset(expr, 0x31, test_len);
+    *(expr + (test_len - 1)) = '\0';
+#endif /* _UT */
+
+    if (!expr) /* メモリ確保できない */
+        return true;
+
+    if (*expr == 0) { /* 文字列長ゼロ */
+        outlog("expr=%p, %c", expr, *expr);
+        memfree(1, &expr);
+        return true;
     }
     
     length = strlen((char *)expr) + 1;
-    dbgdump(expr, length, "expr[%u]", length);
+    dbgdump(expr, length, "expr=%u", length);
+
+    if (tflag)
+        start_timer(&t);
 
     /* データ設定 */
     sdata = set_client_data(sdata, expr, length);
-    if (!sdata) {
-        memfree();
-        return ST_CONT;
+    if (!sdata) { /* メモリ確保できない */
+        memfree(2, &expr, &sdata);
+        return true;
     }
 
     /* データ送信 */
-    rlen = sizeof(struct header) + length;
+    length += sizeof(struct header);
 
     if (gflag)
-        outdump(sdata, rlen, "sdata[%p] rlen[%u]", sdata, rlen);
-    stddump(sdata, rlen, "sdata[%p] rlen[%u]", sdata, rlen);
+        outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
+    stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
 
-    retval = send_data(sock, sdata, rlen);
-    if (retval < 0) /* エラー */
-        return ST_BREAK;
+    retval = send_data(sock, sdata, length);
+    if (retval < 0) {/* エラー */
+        memfree(2, &expr, &sdata);
+        return true;
+    }
 
     if (!strcmp((char *)expr, "quit") ||
         !strcmp((char *)expr, "exit")) {
-        return ST_BREAK;
+        memfree(2, &expr, &sdata);
+        return false;
     }
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
     if (MAX_HISTORY <= ++hist_no) {
         FREEHISTORY;
     }
     add_history((char *)expr);
-#endif /* _USE_READLINE */
-    memfree();
+#endif /* HAVE_READLINE */
+    memfree(2, &expr, &sdata);
 
-    return ST_CONT;
+    return true;
 }
 
 /**
  * ソケット読込
  *
- * @param[in] ソケット
- * @retval ST_CONT ループを継続する
- * @retval ST_BREAK ループを抜ける
+ * @param[in] sock ソケット
+ * @retval true ループを継続する
+ * @retval false ループを抜ける
  */
-static ST
+static bool
 read_sock(int sock)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 送信または受信する長さ */
-    ushort cs = 0;     /* チェックサム値 */
-    struct header hd;  /* ヘッダ */
+    int retval = 0;       /* 戻り値 */
+    size_t length = 0;    /* 送信または受信する長さ */
+    ushort cs = 0;        /* チェックサム値 */
+    struct header hd;     /* ヘッダ */
+    uchar *answer = NULL; /* 受信データ */
 
     dbglog("start");
 
     /* ヘッダ受信 */
-    dbglog("recv header");
     length = sizeof(struct header);
     (void)memset(&hd, 0, length);
     retval = recv_data(sock, &hd, length);
     if (retval < 0) /* エラー */
-        return ST_CONT;
-    dbglog("recv_data[%d]: hd[%p]: length[%u]",
+        return true;
+    dbglog("recv_data=%d, hd=%p, length=%u",
            retval, &hd, length);
     if (gflag)
         outdump(&hd, length, "hd[%p] length[%u]", &hd, length);
@@ -204,48 +220,45 @@ read_sock(int sock)
     length = hd.length; /* データ長を保持 */
 
     /* データ受信 */
-    dbglog("recv data");
-
-    /* メモリ確保 */
-    answer = (uchar *)malloc(length * sizeof(uchar));
-    if (!answer) {
-        outlog("malloc[%p]", answer);
-        return ST_CONT;
+    answer = recv_data_new(sock, length);
+    if (!answer) { /* エラー */
+        memfree(1, &answer);
+        return true;
     }
-    (void)memset(answer, 0, length);
+    dbglog("answer=%p, length=%u", answer, length);
 
-    retval = recv_data(sock, answer, length);
-    if (retval < 0) /* エラー */
-        return ST_BREAK;
-
-    dbglog("recv_data[%d]: answer[%p]: length[%u]",
-           retval, answer, length);
     if (gflag)
-        outdump(answer, length, "answer[%p] length[%u]", answer, length);
-    stddump(answer, length, "answer[%p] length[%u]", answer, length);
+        outdump(answer, length, "answer=%p, length=%u", answer, length);
+    stddump(answer, length, "answer=%p, length=%u", answer, length);
 
     cs = in_cksum((ushort *)answer, length);
     if (cs != hd.checksum) { /* チェックサムエラー */
-        outlog("checksum error: cs[0x%x!=0x%x]",
+        outlog("checksum error: 0x%x!=0x%x",
                cs, hd.checksum);
-        memfree();
-        return ST_CONT;
+        memfree(1, &answer);
+        return true;
     }
+
+    if (tflag) {
+        tm = stop_timer(&t);
+        print_timer(tm);
+    }
+
     retval = fprintf(stdout, "%s\n", answer);
     if (retval < 0) {
-        outlog("fprintf[%d]", retval);
-        memfree();
-        return ST_CONT;
+        outlog("fprintf=%d", retval);
+        memfree(1, &answer);
+        return true;
     }
     retval = fflush(stdout);
     if (retval == EOF) {
-        outlog("fflush[%d]", retval);
-        memfree();
-        return ST_CONT;
+        outlog("fflush=%d", retval);
+        memfree(1, &answer);
+        return true;
     }
-    memfree();
+    memfree(1, &answer);
 
-    return ST_CONT;
+    return true;
 }
 
 /** 
@@ -254,13 +267,13 @@ read_sock(int sock)
  * readline 内から定期的に呼ばれる関数
  * @return 常にST_OK
  */
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
 static int check_state(void) {
     if (sig_handled) {
         /* 入力中のテキストを破棄 */
         rl_delete_text(0, rl_end);
 
-        /* readline を return させる */
+        /* readlineをreturnさせる */
         rl_done = 1;
 
         //rl_event_hook = 0;
@@ -269,26 +282,7 @@ static int check_state(void) {
     }
     return ST_OK;
 }
-#endif /* _USE_READLINE */
-
-/**
- * メモリ解放
- *
- * @return なし
- */
-static void
-memfree(void)
-{
-    if (sdata)
-        free(sdata);
-    sdata = NULL;
-    if (expr)
-        free(expr);
-    expr = NULL;
-    if (answer)
-        free(answer);
-    answer = NULL;
-}
+#endif /* HAVE_READLINE */
 
 /**
  * ソケット接続
@@ -319,7 +313,7 @@ connect_sock(const char *host, const char *port)
     /* ソケット生成 */
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        outlog("sock[%d]", sock);
+        outlog("sock=%d", sock);
         return SOCK_ERROR;
     }
 
@@ -327,7 +321,7 @@ connect_sock(const char *host, const char *port)
     retval = connect(sock, (struct sockaddr *)&server,
                      sizeof(struct sockaddr_in));
     if (retval < 0) {
-        outlog("connect[%d]: sock[%d]", retval, sock);
+        outlog("connect=%d, sock=%d", retval, sock);
         /* ソケットクローズ */
         close_sock(&sock);
         return SOCK_ERROR;
@@ -345,7 +339,7 @@ void
 client_loop(int sock)
 {
     int ready = 0;          /* select戻り値 */
-    ST status = ST_CONT;    /* ステータス */
+    bool status = false;    /* ステータス */
 #ifdef _USE_SELECT
     fd_set fds, tfds;       /* selectマスク */
     struct timeval timeout; /* タイムアウト値 */
@@ -353,7 +347,7 @@ client_loop(int sock)
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
 
-    dbglog("start: sock[%d]", sock);
+    dbglog("start: sock=%d", sock);
 
 #ifdef _USE_SELECT
     /* マスクの設定 */
@@ -365,9 +359,9 @@ client_loop(int sock)
     timerclear(&timeout);
 #endif /* _USE_SELECT */
 
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
     rl_event_hook = &check_state;
-#endif
+#endif /* HAVE_READLINE */
     do {
         errno = 0;    /* errno初期化 */
 #ifdef _USE_SELECT
@@ -385,34 +379,38 @@ client_loop(int sock)
         switch (ready) {
         case -1:
             if (errno == EINTR) { /* 割り込み */
-                outlog("interrupt[%d]", errno);
+                outlog("interrupt=%d", errno);
                 break;
             }
             /* selectエラー */
-            outlog("select[%d]", ready);
+            outlog("select=%d", ready);
             break;
         case 0: /* タイムアウト */
             break;
         default:
 #ifdef _USE_SELECT
-            if (FD_ISSET(STDIN_FILENO, &fds)) /* 標準入力レディ */
+            if (FD_ISSET(STDIN_FILENO, &fds)) { /* 標準入力レディ */
                 status = read_stdin(sock);
+                if (status)
+                    break;
+            }
             if (FD_ISSET(sock, &fds)) /* ソケットレディ */
                 status = read_sock(sock);
 #else
-            if (targets[STDIN_POLL].revents & POLLIN) /* 標準入力レディ */
+            if (targets[STDIN_POLL].revents & POLLIN) { /* 標準入力レディ */
                 status = read_stdin(sock);
+                if (status)
+                    break;
+            }
             if (targets[SOCK_POLL].revents & POLLIN) /* ソケットレディ */
                 status = read_sock(sock);
 #endif /* _USE_SELECT */
             break;
         } /* switch */
-    } while (status == ST_CONT && !sig_handled); 
+    } while (status && !sig_handled); 
 
-    /* 終了処理 */
-    memfree();
-#if defined(_USE_READLINE)
+#ifdef HAVE_READLINE
     FREEHISTORY;
-#endif /* _USE_READLINE */
+#endif /* HAVE_READLINE */
 }
 

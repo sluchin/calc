@@ -1,8 +1,7 @@
 /**
- * @file  data.h
+ * @file  lib/data.h
  * @brief 送受信データ構造体
  *
- * @sa data.c
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$

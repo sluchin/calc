@@ -1,8 +1,7 @@
 /**
- * @file log.c
+ * @file lib/log.c
  * @brief ログ出力
  *
- * @see log.h
  * @author higashi
  * @date 2010-06-22 higashi 新規作成
  * @version \$Id$
@@ -24,66 +23,84 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>      /* fprintf vsprintf */
-#include <string.h>     /* memset */
-#include <stdlib.h>     /* exit */
-#include <stdarg.h>     /* va_list va_start va_end */
-#include <errno.h>      /* errno */
-#include <time.h>       /* struct tm */
-#include <sys/time.h>   /* struct timeval */
-#include <sys/types.h>  /* getpid */
-#include <unistd.h>     /* getpid gethostname */
-#include <ctype.h>      /* isprint */
-#include <pthread.h>    /* pthread_self */
-#include <syslog.h>     /* syslog */
+#include <stdio.h>     /* fprintf vsprintf */
+#include <string.h>    /* memset */
+#include <stdlib.h>    /* exit */
+#include <stdarg.h>    /* va_list va_start va_end */
+#include <errno.h>     /* errno */
+#include <time.h>      /* struct tm */
+#include <sys/time.h>  /* struct timeval */
+#include <sys/types.h> /* getpid */
+#include <unistd.h>    /* getpid gethostname */
+#include <ctype.h>     /* isprint */
+#include <pthread.h>   /* pthread_self */
+#include <syslog.h>    /* syslog */
+#include <limits.h>    /* INT_MAX */
+#include <execinfo.h>  /* backtrace */
 
 #include "log.h"
 
 #define MAX_HOST_SIZE   25 /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE   256 /**< 最大メッセージサイズ */
 
+/* 外部変数 */
+char *progname = NULL;  /**< プログラム名 */
+
 /**
  * シスログ出力
  *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
  * @param[in] line 行番号
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_log(const char *prog_name,
-                const char *filename,
-                const unsigned long line,
+void system_log(const char *pname,
+                const char *fname,
+                const int line,
                 const char *func,
                 const char *format, ...)
 {
-    int err_no = errno;             /* errno退避 */
-    int retval = 0;                 /* 戻り値 */
-    char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
-    va_list ap;                     /* va_list */
-
-    if (!format) {
-        outlog("format[%p]", format);
-        return;
-    }
+    int err_no = errno;               /* errno退避 */
+    int retval = 0;                   /* 戻り値 */
+    char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
+    va_list ap;                       /* va_list */
+    pthread_t thread_id = 0;          /* スレッドID */
+    /* スレッドID用バッファ
+     * 64bit ULONG_MAX: 18446744073709551615UL
+     * 32bit ULONG_MAX: 4294967295UL */
+    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
     /* シスログオープン */
-    openlog (prog_name, LOG_PID, LOG_SYSLOG);
+    openlog (pname, LOG_PID, LOG_SYSLOG);
 
     va_start(ap, format);
-    retval = vsnprintf(m_buf, sizeof(m_buf), format, ap);
+    retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
-    syslog(SYS_PRIO, "%s[%lu]: %s[%d.%d.%u]: %m(%d): %s",
-           filename, line, func, getpid(), getppid(),
-           (unsigned int)pthread_self(), err_no, m_buf);
+    thread_id = pthread_self();
+    if (thread_id)
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+                       (unsigned long int)thread_id);
+
+    syslog(SYS_PRIO, "%s[%d]: ppid=%d%s: %s(%s): %m(%d)",
+           fname, line, getppid(), !thread_id ? t_buf : "",
+           func, message, err_no);
+
+#if 0 
+    syslog(SYS_PRIO,
+           "ppid=%d%s in %s (%s) %m(%d) at %s:%d",
+           getppid(),
+           thread_id != 0 ? t_buf : "",
+           func, message, err_no, fname, line);
+#endif
 
     /* シスログクローズ */
     closelog();
@@ -94,90 +111,110 @@ void system_log(const char *prog_name,
 /**
  * シスログ出力(デバッグ用)
  *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
  * @param[in] line 行番号
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_dbg_log(const char *prog_name,
-                    const char *filename,
-                    const unsigned long line,
+void system_dbg_log(const char *pname,
+                    const char *fname,
+                    const int line,
                     const char *func,
                     const char *format, ...)
 {
-    int err_no = errno;             /* errno退避 */
-    int retval = 0;                 /* 戻り値 */
-    struct tm ts;                   /* tm構造体 */
-    struct tm *tsp;                 /* localtime_r戻り値 */ 
-    struct timeval tv;              /* timeval構造体 */
-    char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
-    char d_buf[sizeof("00")] = {0}; /* 秒格納用バッファ */
-    va_list ap;                     /* va_list */
+    int err_no = errno;               /* errno退避 */
+    int retval = 0;                   /* 戻り値 */
+    struct tm ts;                     /* tm構造体 */
+    struct tm *tsp;                   /* localtime_r戻り値 */ 
+    struct timeval tv;                /* timeval構造体 */
+    char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
+    char d_buf[sizeof("00")] = {0};   /* 秒格納用バッファ */
+    va_list ap;                       /* va_list */
+    static unsigned long number;      /* ナンバリング */
+    pthread_t thread_id = 0;          /* スレッドID */
+    /* スレッドID用バッファ
+     * 64bit ULONG_MAX: 18446744073709551615UL
+     * 32bit ULONG_MAX: 4294967295UL */
+    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
-    if (!format) {
-        outlog("format[%p]", format);
-        return;
-    }
     /* シスログオープン */
-    openlog(prog_name, LOG_PID, LOG_SYSLOG);
+    openlog(pname, LOG_PID, LOG_SYSLOG);
 
     retval = gettimeofday (&tv, NULL);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: gettimeofday[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d]: gettimeofday=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
     tsp = localtime_r(&tv.tv_sec, &ts);
     if (!tsp) {
-        syslog(SYS_PRIO, "%s[%d]: localtime[%p](%d)",
+        syslog(SYS_PRIO, "%s[%d]: localtime=%p(%d)",
                __FILE__, __LINE__, tsp, errno);
         return;
     }
 
     retval = strftime(d_buf, sizeof(d_buf), "%S", &ts);
     if (!retval) {
-        syslog(SYS_PRIO, "%s[%d] strftime[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d] strftime=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
     va_start(ap, format);
-    retval = vsnprintf(m_buf, sizeof(m_buf), format, ap);
+    retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
-    syslog(SYS_PRIO, "%s[%lu]: %s[%d.%d.%u]: %m[%s.%ld](%d): %s",
-           filename, line, func, getpid(), getppid(),
-           (unsigned int)pthread_self(), d_buf, tv.tv_usec,
-           err_no, m_buf);
+
+    thread_id = pthread_self();
+    if (thread_id)
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+                       (unsigned long int)thread_id);
+
+    syslog(SYS_PRIO, "%s[%d]: %s.%ld: ppid=%d%s: #%lu %s(%s): %m(%d)",
+           fname, line, d_buf, tv.tv_usec, getppid(),
+           !thread_id ? t_buf : "", number, func, message, err_no);
+
+#if 0
+    syslog(SYS_PRIO,
+           "%s.%ld: ppid=%d%s #%lu in %s (%s) %m(%d) at %s:%d",
+           d_buf, tv.tv_usec,
+           getppid(),
+           !thread_id ? t_buf : "",
+           number, func, message, err_no, fname, line);
+#endif
+
+    if (number >= ULONG_MAX)
+        number = 0; /* 初期化 */
+    else
+        number++;
 
     /* シスログクローズ */
     closelog();
     errno = 0;  /* errno初期化 */
-
 }
 
 /**
  * 標準エラー出力にログ出力
  *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
  * @param[in] line 行番号
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
  * @return なし
  */
-void stderr_log(const char *prog_name,
-                const char *filename,
-                const unsigned long line,
+void stderr_log(const char *pname,
+                const char *fname,
+                const int line,
                 const char *func,
                 const char *format, ...)
 {
@@ -190,54 +227,69 @@ void stderr_log(const char *prog_name,
     va_list ap;         /* va_list */
     char d_buf[sizeof("xxx 00 00:00:00")] = {0}; /* 時間用バッファ */
     char h_buf[MAX_HOST_SIZE] = {0};             /* ホスト用バッファ */
-
-    if (!format) {
-        outlog("format[%p]", format);
-        return;
-    }
+    pthread_t thread_id = 0;                     /* スレッドID */
+    /* スレッドID用バッファ
+     * 64bit ULONG_MAX: 18446744073709551615UL
+     * 32bit ULONG_MAX: 4294967295UL */
+    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
     retval = gettimeofday(&tv, NULL);
     if (retval < 0) {
-        (void)fprintf(stderr, "%s[%d] gettimeofday[%d](%d)\n",
+        (void)fprintf(stderr, "%s[%d]: gettimeofday=%d(%d)\n",
                       __FILE__, __LINE__, retval, errno);
         return;
     }
 
     tsp = localtime_r(&tv.tv_sec, &ts);
     if (!tsp) {
-        (void)fprintf(stderr, "%s[%d] localtime[%p](%d)\n",
+        (void)fprintf(stderr, "%s[%d]: localtime=%p(%d)\n",
                       __FILE__, __LINE__, tsp, errno);
         return;
     }
 
     retval = strftime(d_buf, sizeof(d_buf), "%b %d %H:%M:%S", &ts);
     if (!retval) {
-        (void)fprintf(stderr, "%s[%d] strftime[%d](%d)\n",
+        (void)fprintf(stderr, "%s[%d]: strftime=%d(%d)\n",
                       __FILE__, __LINE__, retval, errno);
         return;
     }
 
     retval = gethostname(h_buf, sizeof(h_buf));
     if (retval < 0) {
-        (void)fprintf(stderr, "%s[%d] gethostname[%d](%d)\n",
+        (void)fprintf(stderr, "%s[%d]: gethostname=%d(%d)\n",
                       __FILE__, __LINE__, retval, errno);
         return;
     }
-    (void)fprintf(fp, "%s.%ld %s %s %s[%lu]: %s[%d.%d.%u](%d): ",
-                  d_buf, tv.tv_usec, h_buf, prog_name,
-                  filename, line, func, getpid(), getppid(),
-                  (unsigned int)pthread_self(), err_no);
+
+    thread_id = pthread_self();
+    if (thread_id)
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+                       (unsigned long int)thread_id);
+
+    (void)fprintf(fp, "%s.%ld: %s %s[%d]: %s[%d]: ppid=%d%s: %s(",
+                  d_buf, tv.tv_usec, h_buf, pname ? : "", getpid(),
+                  fname, line, getppid(), !thread_id ? t_buf : "", func);
+#if 0
+    (void)fprintf(fp,
+                  "%s.%ld: %s %s[%d] ppid=%d%s in %s(",
+                  d_buf, tv.tv_usec, h_buf, pname ? : "",
+                  getpid(), getppid(),
+                  thread_id != 0 ? t_buf : "", func);
+#endif
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vfprintf[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d]: vfprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
-    (void)fprintf(fp, "\n");
+    (void)fprintf(fp, "): %m(%d)\n", err_no);
+#if 0
+    (void)fprintf(fp, "): %m(%d) at %s:%d\n", err_no, fname, line);
+#endif
 
     errno = 0; /* errno初期化 */
 }
@@ -253,28 +305,29 @@ void stderr_log(const char *prog_name,
 void
 dump_log(const void *buf, const size_t len, const char *format, ...)
 {
-    int retval = 0;                 /* 戻り値 */
-    unsigned int i, k;              /* 汎用変数 */
-    int pt = 0;                     /* アドレス用変数 */
-    unsigned char *p;               /* バッファポインタ */
-    char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
-    va_list ap;                     /* va_list */
+    int retval = 0;                   /* 戻り値 */
+    unsigned int i, k;                /* 汎用変数 */
+    int pt = 0;                       /* アドレス用変数 */
+    unsigned char *p;                 /* バッファポインタ */
+    char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
+    va_list ap;                       /* va_list */
 
     if (!buf) {
-        outlog("buf[%p] len[%u]", buf, len);
+        fprintf(stderr, "%s[%d]: buf=%p(%d)",
+                __FILE__, __LINE__, buf, errno);
         return;
     }
     p = (unsigned char *)buf;
 
     va_start(ap, format);
-    retval = vsnprintf(m_buf, sizeof(m_buf), format, ap);
+    retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        fprintf(stderr, "%s[%d]: vsnprintf[%d](%d)",
-               __FILE__, __LINE__, retval, errno);
+        fprintf(stderr, "%s[%d]: vsnprintf=%d(%d)",
+                __FILE__, __LINE__, retval, errno);
         return;
     }
-    (void)fprintf(stderr, "%s\n", m_buf);
+    (void)fprintf(stderr, "%s\n", message);
 
 
 #if 1
@@ -308,8 +361,8 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 /**
  * シスログにHEXダンプ
  *
- * @param[in] prog_name プログラム名
- * @param[in] filename ファイル名
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
  * @param[in] line 行番号
  * @param[in] func 関数名
  * @param[in] buf ダンプ出力用バッファ
@@ -317,37 +370,38 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
  * @param[in] format フォーマット
  * @return なし
  */
-void dump_sys(const char *prog_name,
-              const char *filename,
-              const unsigned long line,
+void dump_sys(const char *pname,
+              const char *fname,
+              const int line,
               const char *func,
               const void *buf,
               const size_t len,
               const char *format, ...)
 {
-    int retval = 0;                 /* 戻り値 */
-    unsigned int i, k;              /* 汎用変数 */
-    static int pt = 0;              /* アドレス用変数 */
-    unsigned char *p;               /* バッファポインタ */
-    char tmp[4] = {0};              /* 一時バッファ */
-    char logmsg[68];                /* ログ出力用バッファ */
-    char m_buf[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
-    va_list ap;                     /* va_list */
+    int retval = 0;                   /* 戻り値 */
+    unsigned int i, k;                /* 汎用変数 */
+    static int pt = 0;                /* アドレス用変数 */
+    unsigned char *p;                 /* バッファポインタ */
+    char tmp[4] = {0};                /* 一時バッファ */
+    char hexdump[68];                 /* ログ出力用バッファ */
+    char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
+    va_list ap;                       /* va_list */
 
-    if (!buf || !format) {
-        outlog("buf[%p] format[%p] len[%u]", buf, format, len);
+    /* シスログオープン */
+    openlog(pname, LOG_CONS | LOG_PID, LOG_SYSLOG);
+
+    if (!buf) {
+        syslog(SYS_PRIO, "%s[%d]: buf=%p, format=%p, len=%u",
+               __FILE__, __LINE__, buf, format, len);
         return;
     }
     p = (unsigned char *)buf;
 
-    /* シスログオープン */
-    openlog(prog_name, LOG_CONS | LOG_PID, LOG_SYSLOG);
-
     va_start(ap, format);
-    retval = vsnprintf(m_buf, sizeof(m_buf), format, ap);
+    retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf[%d](%d)",
+        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
@@ -359,30 +413,30 @@ void dump_sys(const char *prog_name,
 #endif
     for (i = 0; i < len; ) {
         /* 初期化 */
-        (void)memset(logmsg, 0, sizeof(logmsg));
-        (void)snprintf(logmsg, sizeof(logmsg), "%08X : ", pt);
+        (void)memset(hexdump, 0, sizeof(hexdump));
+        (void)snprintf(hexdump, sizeof(hexdump), "%08X : ", pt);
         for (k = 0; k < 16; k++) {
             if ((i + k) >= len ) {
                 (void)snprintf(tmp, sizeof(tmp),
                                "  %s", (k % 2 == 1 ? " " : ""));
-                (void)strncat(logmsg, tmp,
-                              (sizeof(logmsg) - strlen(logmsg) - 1));
+                (void)strncat(hexdump, tmp,
+                              (sizeof(hexdump) - strlen(hexdump) - 1));
             } else {
                 (void)snprintf(tmp, sizeof(tmp), "%02x%s",
                                (unsigned int)*(p + i + k),
                                (k % 2 == 1 ? " " : ""));
-                (void)strncat(logmsg, tmp,
-                              (sizeof(logmsg) - strlen(logmsg) - 1));
+                (void)strncat(hexdump, tmp,
+                              (sizeof(hexdump) - strlen(hexdump) - 1));
             }
         }
         for (k = 0; (i < len) && (k < 16); k++, i++) {
             (void)snprintf(tmp, sizeof(tmp), "%c",
                            (*(p + i) < ' ' || *(p + i) >= 0x80 ?
                             '.' : *(p + i)));
-            (void)strncat(logmsg, tmp, (sizeof(logmsg) - strlen(logmsg) - 1));
+            (void)strncat(hexdump, tmp, (sizeof(hexdump) - strlen(hexdump) - 1));
         }
-        syslog(SYS_PRIO, "%s[%lu]: %s: %s: %s",
-               filename, line, func, m_buf, logmsg);
+        syslog(SYS_PRIO, "%s[%d]: %s(%s): %s",
+               fname, line, func, message, hexdump);
         pt += k;
     }
 
@@ -393,37 +447,37 @@ void dump_sys(const char *prog_name,
 /**
  * ファイルにバイナリ出力
  *
- * @param[in] prog_name プログラム名
- * @param[in] d_file ファイル名
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
  * @param[in] buf ダンプ出力用バッファ
  * @param[in] len 長さ
  * @return なし
  */
-void dump_file(const char *prog_name, const char *d_file,
+void dump_file(const char *pname, const char *fname,
                const char *buf, const size_t len)
 {
     FILE *fp = NULL; /* ファイルディスクリプタ */
-    int num = 0;     /* fwrite戻り値 */
     int retval = 0;  /* 戻り値 */
 
+    /* シスログオープン */
+    openlog(pname, LOG_PID, LOG_SYSLOG);
+
     if (!buf) {
-        outlog("buf[%p] len[%u]", buf, len);
+        syslog(SYS_PRIO, "%s[%d]: buf=%p, len=%u(%d)",
+               __FILE__, __LINE__, buf, len, errno);
         return;
     }
 
-    /* シスログオープン */
-    openlog(prog_name, LOG_PID, LOG_SYSLOG);
-
-    fp = fopen(d_file, "wb");
+    fp = fopen(fname, "wb");
     if (!fp) {
-        syslog(SYS_PRIO, "%s[%d]: fopen[%p](%d)",
+        syslog(SYS_PRIO, "%s[%d]: fopen=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return;
     }
 
-    num = fwrite(buf, len, 1, fp);
-    if (num != 1) {
-        syslog(SYS_PRIO, "%s[%d]: fwrite[%p](%d)",
+    retval = fwrite(buf, len, 1, fp);
+    if (retval != 1) {
+        syslog(SYS_PRIO, "%s[%d]: fwrite=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return;
     }
@@ -438,12 +492,36 @@ void dump_file(const char *prog_name, const char *d_file,
 
     retval = fclose(fp);
     if (retval == EOF) {
-        syslog(SYS_PRIO, "%s[%d]: fclose[%p](%d)",
+        syslog(SYS_PRIO, "%s[%d]: fclose=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return;
     }
 
     /* シスログクローズ */
     closelog();
+}
+
+/**
+ * バックトレース出力
+ *
+ * @return なし
+ */
+void
+print_trace(void)
+{
+    void *array[10] = {0}; /* 配列 */
+    size_t size = 0;       /* サイズ */
+    char **strings = NULL; /* 文字列 */
+    size_t i;              /* 変数 */
+
+    size = backtrace(array, 10);
+    strings = backtrace_symbols(array, size);
+
+    printf("Obtained %zd stack frames.\n", size);
+
+    for (i = 0; i < size; i++)
+        printf("%p, %s\n", array[i], strings[i]);
+
+    free(strings);
 }
 

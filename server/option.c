@@ -3,12 +3,11 @@
  * @brief オプション引数の処理
  *
  * オプション
- *  -p ポート番号指定\n
- *  -h ヘルプの表示\n
- *  -V バージョンの表示\n
- *  -g デバッグ用\n
+ *  -p, --port     ポート番号指定\n
+ *  -h, --debug    ヘルプの表示\n
+ *  -V, --help     バージョンの表示\n
+ *  -g, --version  デバッグ用\n
  *
- * @sa option.h
  * @author higashi
  * @date 2010-06-25 higashi 新規作成
  * @version \$Id$
@@ -35,15 +34,14 @@
 #include <stdlib.h>  /* EXIT_SUCCESS */
 #include <getopt.h>  /* getopt_long */
 #include <libgen.h>  /* basename */
-#include <stdbool.h> /* bool */
 
 #include "log.h"
 #include "version.h"
 #include "option.h"
 
 /* 外部変数 */
-bool gflag = false;             /**< gオプションフラグ */
-extern char port_no[PORT_SIZE]; /**< ポート番号またはサービス名 */
+bool gflag = false;            /**< gオプションフラグ */
+char port_no[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
 
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
@@ -135,18 +133,18 @@ parse_args(int argc, char *argv[])
     (void)strncpy(port_no, DEFAULT_PORTNO, sizeof(port_no));
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
-        dbglog("opt[%c] optarg[%s]", opt, optarg);
+        dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'p':
             if (!optarg) {
-                outlog("opt[%c] optarg[%s]", opt, optarg);
+                outlog("opt=%c, optarg=%s", opt, optarg);
                 exit(EXIT_FAILURE);
             }
             if (strlen(optarg) < sizeof(port_no)) {
                 (void)memset(port_no, 0, sizeof(port_no));
                 (void)strncpy(port_no, optarg, sizeof(port_no));
             } else {
-                (void)fprintf(fp, "port_no[%s]\n", optarg);
+                (void)fprintf(fp, "port_no=%s\n", optarg);
                 print_help(basename(argv[0]));
                 exit(EXIT_FAILURE);
             }
@@ -162,21 +160,14 @@ parse_args(int argc, char *argv[])
             break;
         case '?':
         case ':':
-            (void)fprintf(fp, "getopt[%c]\n", opt);
+            (void)fprintf(fp, "getopt=%c\n", opt);
             parse_error(NULL);
             exit(EXIT_FAILURE);
         default:
-            (void)fprintf(fp, "getopt[%c]\n", opt);
+            (void)fprintf(fp, "getopt=%c\n", opt);
             parse_error("internal error");
             exit(EXIT_FAILURE);
         }
     }
-    if (optind < argc) {
-        while (optind < argc)
-            outlog("%s ", argv[optind++]);
-        outlog("\n");
-    } else if (optind == argc) ;
-    else
-        parse_error("missing optstring argument");
 }
 

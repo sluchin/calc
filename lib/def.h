@@ -1,5 +1,5 @@
 /**
- * @file common.h
+ * @file lib/def.h
  * @brief 汎用定義
  *
  * @author higashi
@@ -30,10 +30,14 @@ typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
-typedef long double ldfl;
+typedef double dbl;
+typedef long double ldbl;
 
-#define ST_OK     0 /**< 正常時戻り値 */
-#define ST_NG    -1 /**< エラー戻り値 */
+/** 関数戻り値 */
+enum {
+    EX_NG = -1, /**< エラー戻り値 */
+    EX_OK = 0   /**< 正常時戻り値 */
+};
 
 #endif /* _DEF_H_ */
 

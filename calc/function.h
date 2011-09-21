@@ -1,8 +1,7 @@
 /**
- * @file  function.h
+ * @file  calc/function.h
  * @brief 関数
  *
- * @sa function.c
  * @author higashi
  * @date 2011-08-15 higashi 新規作成
  * @version \$Id$
@@ -28,13 +27,28 @@
 #define _FUNCTION_H_
 
 #include "def.h"
-#include "calc.h"
 
 /** 関数最大文字数 */
 #define MAX_FUNC_STRING    4
 
+/** 引数の数 */
+enum argtype {
+    ARG_0 = 0,
+    ARG_1,
+    ARG_2
+};
+
+/** 数学関数の引数に渡す値 */
+//struct arg_value {
+//    dbl x;
+//    dbl y;
+//};
+
+/** 指数取得 */
+dbl get_pow(dbl x, dbl y);
+
 /** 関数実行 */
-ldfl exec_func(struct arg_value *val, const char *func);
+dbl exec_func(const char *func);
 
 #endif /* _FUNCTION_H_ */
 

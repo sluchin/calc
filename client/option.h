@@ -2,7 +2,6 @@
  * @file  client/option.h
  * @brief オプション引数の処理
  *
- * @sa option.c
  * @author higashi
  * @date 2010-06-23 higashi 新規作成
  * @version \$Id$
@@ -24,20 +23,28 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _OPTION_H_
-#define _OPTION_H_
+#ifndef _CLIENT_OPTION_H_
+#define _CLIENT_OPTION_H_
+
+#include <stdbool.h> /* bool */
 
 /** デフォルトのIPアドレス */
 #define DEFAULT_IPADDR    "127.0.0.1"
 /** デフォルトのポート番号 */
 #define DEFAULT_PORTNO    "12345"
 /** ホスト名サイズ */
-#define HOST_SIZE         (int)48
+#define HOST_SIZE         48
 /** ポート名サイズ */
-#define PORT_SIZE         (int)48
+#define PORT_SIZE         48
+
+/* 外部変数 */
+extern bool gflag;                /**< gオプションフラグ */
+extern bool tflag;                /**< tオプションフラグ */
+extern char host_name[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
+extern char port_no[PORT_SIZE];   /**< ポート番号またはサービス名 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
-#endif /* _OPTION_H_ */
+#endif /* _CLIENT_OPTION_H_ */
 

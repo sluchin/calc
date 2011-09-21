@@ -1,9 +1,9 @@
 /**
- * @file  calc/option.h
- * @brief オプション引数の処理
+ * @file  lib/readline.h
+ * @brief readline
  *
  * @author higashi
- * @date 2010-06-27 higashi 新規作成
+ * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
@@ -23,16 +23,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CALC_OPTION_H_
-#define _CALC_OPTION_H_
+#ifndef _READLINE_H_
+#define _READLINE_H_
 
-/** デフォルトのIPアドレス */
-#define DEFAULT_IPADDR    "192.168.0.5"
-/** デフォルトのポート番号 */
-#define DEFAULT_PORTNO    "12345"
+#include <stdio.h> /* FILE */
 
-/** オプション引数 */
-void parse_args(int argc, char *argv[]);
+#include "def.h"
 
-#endif /* _CALC_OPTION_H_ */
+#define MAXLINE 256 /**< バッファサイズ */
+
+/** 一行読込 */
+uchar *_readline(FILE *fp);
+
+#endif /* _READLINE_H_ */
 

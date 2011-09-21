@@ -30,12 +30,12 @@
 #include <signal.h> /* sigaction */
 
 #include "log.h"
+#include "net.h"
+#include "util.h"
 #include "option.h"
 #include "server.h"
 
-/* グローバル変数 */
-char *progname;                           /**< プログラム名 */
-char port_no[PORT_SIZE];                  /**< ポート番号またはサービス名 */
+/* 外部変数 */
 volatile sig_atomic_t sig_handled = 0;    /**< シグナル */
 volatile sig_atomic_t sighup_handled = 0; /**< シグナル */
 
@@ -68,34 +68,34 @@ set_sig_handler(void)
     sa.sa_handler = sig_handler;
     sa.sa_flags = 0;
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset[%p]", sa);
+        outlog("sigemptyset=%p", sa);
     if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset[%p]; SIGINT", sa);
+        outlog("sigaddset=%p, SIGINT", sa);
     if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset[%p]; SIGTERM", sa);
+        outlog("sigaddset=%p, SIGTERM", sa);
     if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset[%p]; SIGQUIT", sa);
+        outlog("sigaddset=%p, SIGQUIT", sa);
 
     /* シグナル補足 */
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGINT", sa);
+        outlog("sigaction=%p, SIGINT", sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGTERM", sa);
+        outlog("sigaction=%p, SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGQUIT", sa);
+        outlog("sigaction=%p, SIGQUIT", sa);
 
     /* シグナルマスクの設定 */
     (void)memset(&hup, 0, sizeof(hup));
     hup.sa_handler = sighup_handler;
     hup.sa_flags = 0;
     if (sigemptyset(&hup.sa_mask) < 0)
-        outlog("sigemptyset[%p]", hup);
+        outlog("sigemptyset=%p", hup);
     if (sigaddset(&hup.sa_mask, SIGHUP) < 0)
-        outlog("sigaddset[%p]; SIGHUP", hup);
+        outlog("sigaddset=%p SIGHUP", hup);
 
     /* SIGHUPの補足 */
     if (sigaction(SIGHUP, &hup, NULL) < 0)
-        outlog("sigaction[%p]; SIGHUP", hup);
+        outlog("sigaction=%p, SIGHUP", hup);
 
 #if 0
     /* 子プロセスをゾンビにしない */
@@ -141,8 +141,9 @@ static void sighup_handler(int signo)
  */
 int main(int c, char *v[], char *ep[])
 {
+#ifndef _DEBUG
     int retval = 0; /* 戻り値 */
-
+#endif
     dbglog("start");
 
     /* アドレスを保持 */
@@ -159,6 +160,11 @@ int main(int c, char *v[], char *ep[])
     /* オプション引数 */
     parse_args(c, v);
 
+    /* ソケット接続 */
+    sockfd = server_sock(port_no);
+    if (sockfd < 0)
+        exit(EXIT_FAILURE);
+
     /* デーモン化する */
 #ifndef _DEBUG
     retval = daemon(0, 0);
@@ -167,11 +173,6 @@ int main(int c, char *v[], char *ep[])
         exit(EXIT_FAILURE);
     }
 #endif /* _DEBUG */
-
-    /* ソケット接続 */
-    sockfd = server_sock(port_no);
-    if (sockfd < 0)
-        exit(EXIT_FAILURE);
 
     /* ソケット送受信 */
     server_loop(sockfd);
@@ -186,6 +187,7 @@ int main(int c, char *v[], char *ep[])
         (void)execve((*argv)[0], (*argv), (*envp));
     }
 
+    exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 }
 

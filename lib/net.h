@@ -1,9 +1,9 @@
 /**
- * @file  calc/option.h
- * @brief オプション引数の処理
+ * @file  lib/net.h
+ * @brief ネットワーク設定
  *
  * @author higashi
- * @date 2010-06-27 higashi 新規作成
+ * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
@@ -23,16 +23,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CALC_OPTION_H_
-#define _CALC_OPTION_H_
+#ifndef _NET_H_
+#define _NET_H_
 
-/** デフォルトのIPアドレス */
-#define DEFAULT_IPADDR    "192.168.0.5"
-/** デフォルトのポート番号 */
-#define DEFAULT_PORTNO    "12345"
+#include <netdb.h>   /* struct sockaddr_in */
 
-/** オプション引数 */
-void parse_args(int argc, char *argv[]);
+#include "def.h"
 
-#endif /* _CALC_OPTION_H_ */
+/** ホスト名設定 */
+int set_hostname(struct sockaddr_in *addr,
+                 struct in_addr h_addr, const char *host);
+
+/** ポート番号設定 */
+int set_port(struct sockaddr_in *addr, const char *port);
+
+/** データ送信 */
+int send_data(const int sock, const void *sdata, const size_t length);
+
+/** データ受信 */
+int recv_data(const int sock, void *rdata, const size_t length);
+
+/** データ受信 */
+void *recv_data_new(const int sock, const size_t length);
+
+/** ソケットクローズ */
+void close_sock(int *sock);
+
+#endif /* _NET_H_ */
 

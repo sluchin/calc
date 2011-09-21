@@ -1,5 +1,5 @@
 /**
- * @file  calc.c
+ * @file  calc/calc.c
  * @brief 関数電卓インタプリタ
  *
  * 式とは、項を + または - でつないだものであり、項とは因子を * または / で\n
@@ -9,7 +9,6 @@
  * 関数 [abs,sqrt,sin,cos,tan,asin,acos,atan,exp,ln,log,deg,rad,n,nPr,nCr]、\n
  * 定数 [pi,e] が使用できる.
  *
- * @sa calc.h
  * @author higashi
  * @date 2010-06-27 higashi 新規作成
  * @version \$Id$
@@ -31,41 +30,47 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* FILE */
-#include <stdlib.h>  /* realloc */
-#include <string.h>  /* strndup */
-#include <stdbool.h> /* bool */
-#include <string.h>  /* memcpy memset */
-#include <ctype.h>   /* isdigit isalpha */
-#include <math.h>    /* powl */
+#include <stdio.h>    /* FILE */
+#include <stdlib.h>   /* realloc */
+#include <string.h>   /* strndup */
+#include <stdbool.h>  /* bool */
+#include <string.h>   /* memcpy memset */
+#include <ctype.h>    /* isdigit isalpha */
+#include <math.h>     /* powl */
+#if defined(_DEBUG)
+#  include <limits.h> /* INT_MAX */
+#endif
 
+#include "timer.h"
 #include "log.h"
 #include "data.h"
 #include "error.h"
-#include "function.h"
+#include "option.h"
 #include "calc.h"
 
-#define EX_ERROR    (ldfl)0 /* エラー戻り値 */
+#define EX_ERROR    0 /* エラー戻り値 */
 
-long int precision = -1;
+/* 外部変数 */
+int precision = -1; /**< 小数点以下桁数 */
+bool tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
-static int ch = 0;      /**< 文字 */
-static uchar *p = NULL; /**< 文字列先頭ポインタ */
+static int ch = 0;        /**< 文字 */
+static uchar *ptr = NULL; /**< 文字列ポインタ */
 
 /* 内部関数 */
 /** 式 */
-static ldfl expression(void);
+static dbl expression(void);
 /** 項 */
-static ldfl term(void);
+static dbl term(void);
 /** 因子 */
-static ldfl factor(void);
+static dbl factor(void);
 /** 数または関数 */
-static ldfl token(void);
+static dbl token(void);
 /** 文字列を数値に変換 */
-static ldfl to_numvalue(void);
+static dbl number(void);
 /** 桁数取得 */
-static long get_digit(const ldfl val, const char *fmt);
+static int get_digit(const dbl val, const char *fmt);
 /** バッファ読込 */
 static void readch(void);
 
@@ -74,10 +79,10 @@ static void readch(void);
  *
  * @return 値
  */
-static ldfl
+static dbl
 expression(void)
 {
-    ldfl x = 0; /* 値 */
+    dbl x = 0; /* 値 */
 
     dbglog("start");
 
@@ -85,7 +90,7 @@ expression(void)
         return EX_ERROR;
 
     x = term();
-    dbglog("x[%.18Lg]", x);
+    dbglog("x=%.18g", x);
 
     while (true) {
         if (ch == '+') {
@@ -99,7 +104,7 @@ expression(void)
         }
     }
 
-    dbglog("x[%.18Lg]", x);
+    dbglog("x=%.18g", x);
     return x;
 }
 
@@ -108,10 +113,10 @@ expression(void)
  *
  * @return 結果
  */
-static ldfl
+static dbl
 term(void)
 {
-    ldfl x = 0, y = 0; /* 値 */
+    dbl x = 0, y = 0;     /* 値 */
 
     dbglog("start");
 
@@ -119,7 +124,7 @@ term(void)
         return EX_ERROR;
 
     x = factor();
-    dbglog("x[%.18Lg]", x);
+    dbglog("x=%.18g", x);
 
     while (true) {
         if (ch == '*') {
@@ -129,19 +134,19 @@ term(void)
             readch();
             y = factor();
             if (y == 0) { /* ゼロ除算エラー */
-                set_errorcode(E_ZERO);
-                break;
+                set_errorcode(E_DIVBYZERO);
+                return EX_ERROR;
             }
             x /= y;
         } else if (ch == '^') {
             readch();
             y = factor();
-            x = powl(x, y);
+            x = get_pow(x, y);
         } else {
             break;
         }
     }
-    dbglog("x[%.18Lg]", x);
+    dbglog("x=%.18g", x);
     return x;
 }
 
@@ -150,10 +155,10 @@ term(void)
  *
  * @return 値
  */
-static ldfl 
+static dbl 
 factor(void)
 {
-    ldfl x = 0; /* 値 */
+    dbl x = 0; /* 値 */
 
     dbglog("start");
 
@@ -172,7 +177,7 @@ factor(void)
     }
     readch();
 
-    dbglog("x[%.18Lg]", x);
+    dbglog("x=%.18g", x);
     return x;
 }
 
@@ -181,10 +186,10 @@ factor(void)
  *
  * @return 結果
  */
-static ldfl
+static dbl
 token(void)
 {
-    ldfl result = 0;                /* 結果 */
+    dbl result = 0;                /* 結果 */
     int sign = '+';                 /* 単項+- */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
@@ -194,7 +199,8 @@ token(void)
     if (is_error())
         return EX_ERROR;
 
-    (void)memset(func, 0, sizeof(func)); /* 初期化 */
+    /* 初期化 */
+    (void)memset(func, 0, sizeof(func));
 
     if (ch == '+' || ch == '-') { /* 単項+- */
         sign = ch;
@@ -202,22 +208,22 @@ token(void)
     }
 
     if (isdigit(ch)) { /* 数値 */
-        result = to_numvalue();
-    } else if (isalpha(ch)) { /* 文字 */
+        result = number();
+    } else if (isalpha(ch)) { /* 関数 */
         while (isalpha(ch) && ch != '\0' && pos <= MAX_FUNC_STRING) {
             func[pos++] = ch;
             readch();
         }
-        dbglog("func[%s]", func);
+        dbglog("func=%s", func);
 
-        result = exec_func(&value, func);
+        result = exec_func(func);
 
     } else { /* エラー */
         dbglog("not isdigit && not isalpha");
         set_errorcode(E_SYNTAX);
     }
 
-    dbglog("result[%.18Lg]", result);
+    dbglog("result=%.18g", result);
     return (sign == '+') ? result : -result;
 }
 
@@ -226,33 +232,26 @@ token(void)
  *
  * @return 数値
  */
-static ldfl 
-to_numvalue(void)
+static dbl 
+number(void)
 {
-    ldfl x = 0, y = 1; /* 値 */
+    dbl x = 0, y = 1; /* 値 */
 
     dbglog("start");
 
     x = ch - '0';
-    readch();
-    while (isdigit(ch) && ch != '\0') { /* 整数 */
+    while (readch(), isdigit(ch)) /* 整数 */
         x = (x * 10) + (ch - '0');
-        dbglog("x[%.18Lg]", x);
-        readch();
-    }
+    dbglog("x=%.18g", x);
 
     if (ch == '.') { /* 小数 */
-        readch();
-        while (isdigit(ch) && ch != '\0') {
+        while (readch(), isdigit(ch))
             x += (y /= 10) * (ch - '0');
-            dbglog("x[%.18Lg]", x);
-            readch();
-        }
     }
+    dbglog("x=%.18g", x);
 
-    check_validate(x);
+    check_validate(1, x);
 
-    dbglog("x[%.18Lg]", x);
     return x;
 }
 
@@ -262,28 +261,29 @@ to_numvalue(void)
  * @param[in] val 値
  * @param[in] fmt フォーマット
  * @return 桁数
- * @retval -1 エラー
+ * @retval  0 fopenエラー
+ * @retval -1 fprintfエラー
  */
-static long
-get_digit(ldfl val, const char *fmt)
+static int
+get_digit(const dbl val, const char *fmt)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* fclose戻り値 */
-    long result = 0; /* 桁数 */
+    int result = 0;  /* 桁数 */
 
     dbglog("start");
 
     fp = fopen("/dev/null", "w");
     if (!fp) { /* fopen エラー */
-        outlog("fopen[%p]", fp);
+        outlog("fopen=%p", fp);
     } else {
         result = fprintf(fp, fmt, val);
         if (result < 0)
-            outlog("fprintf[%d]", retval);
+            outlog("fprintf=%d", retval);
 
         retval = fclose(fp);
         if (retval == EOF) /* fclose エラー */
-            outlog("fclose[%d]", retval);
+            outlog("fclose=%d", retval);
     }
 
     return result;
@@ -303,23 +303,24 @@ readch(void)
     dbglog("start");
 
     do {
-        ch = (int)*p;
-        dbglog("p[%p]: %c", p, ch);
+        ch = (int)*ptr;
+        dbglog("ptr=%p, ch=%c", ptr, ch);
         if (ch == '\0')
             break;
-        p++;
+        ptr++;
     } while (isblank(ch));
 }
 
 /**
  * 引数解析
  *
- * @param[out] val    引数
- * @param[in]  argnum 引数の数
+ * @param[in] num 引数の数
+ * @param[out] x 値
+ * @param[out] y 値
  * @return なし
  */
 void
-parse_func_args(struct arg_value *val, const int argnum)
+parse_func_args(const enum argtype num, dbl *x, dbl *y)
 {
     dbglog("start");
 
@@ -332,16 +333,17 @@ parse_func_args(struct arg_value *val, const int argnum)
     }
 
     readch();
-    val->x = expression();
+    *x = expression();
+    dbglog("val=%.18g", *x);
 
-    if (argnum == ARG_2) {
+    if (num == ARG_2) {
         if (ch != ',') {
             set_errorcode(E_SYNTAX);
             return;
         }
         readch();
-        val->y = expression();
-        dbglog("y[%.18Lg]", val->y);
+        *y = expression();
+        dbglog("val=%.18g", *x);
     }
 
     if (ch != ')') {
@@ -349,6 +351,7 @@ parse_func_args(struct arg_value *val, const int argnum)
         return;
     }
     readch();
+
 }
 
 /**
@@ -362,77 +365,94 @@ parse_func_args(struct arg_value *val, const int argnum)
 uchar *
 input(uchar *buf, const size_t len)
 {
-    ldfl val = 0;               /* 値 */
-    size_t slen = 0;            /* 文字数 */
-    ulong digit = 0;            /* 桁数 */
+    dbl val = 0;               /* 値 */
+    size_t length = 0;          /* 文字数 */
+    int digit = 0;              /* 桁数 */
     uchar *result = NULL;       /* 結果 */
-    uchar *tmp = NULL;          /* 一時ポインタ */
     uchar *errormsg = NULL;     /* エラーメッセージ */
     int retval = 0;             /* 戻り値 */
-    char fmt[sizeof("%.18Lg")]; /* フォーマット */
+    char fmt[sizeof("%.18g")]; /* フォーマット */
+    uint t = 0, time = 0;       /* タイマ用変数 */
 
-    dbglog("start");
+    dbglog("start: %p", input);
 
     /* 初期値設定 */
-    p = buf;  /* ポインタ設定 */
+    ptr = buf;  /* ポインタ設定 */
 
+    if (tflag)
+        start_timer(&t);
+    
     readch();
     val = expression();
-    dbglog("val[%Lg] p[%p]: %c", val, p, ch);
+    dbglog("val=%g, ptr=%p, ch=%c", val, ptr, ch);
 
-    check_validate(val);
-
+    check_validate(1, val);
     if (ch != '\0') /* エラー */
         set_errorcode(E_SYNTAX);
+
+    if (tflag) {
+        time = stop_timer(&t);   
+        print_timer(time);
+    }
 
     if (is_error()) { /* エラー */
         errormsg = get_errormsg();
         if (!errormsg)
             return NULL;
-        slen = strlen((char *)errormsg) + 1; /* 文字数 + 1 */
-        result = (uchar *)strndup((char *)errormsg, slen);
-        clear_error(errormsg);
+        length = strlen((char *)errormsg) + 1; /* 文字数 + 1 */
+        result = (uchar *)strndup((char *)errormsg, length);
+        clear_error(&errormsg);
+        dbglog("errormsg=%p", errormsg);
         if (!result) {
-            outlog("strndup[%p]", result);
+            outlog("strndup=%p", result);
             return NULL;
         }
-        dbglog("result[%p] slen[%u]", result, slen);
+        dbglog("result=%p, length=%u", result, length);
     } else {
         /* フォーマット設定 */
         if (precision == -1) /* デフォルト */
             precision = DEFAULT_PREC;
-        retval = snprintf(fmt, sizeof(fmt), "%s%ld%s",
-                          "%.", precision + 1, "Lg");
+        retval = snprintf(fmt, sizeof(fmt), "%s%d%s",
+                          "%.", precision + 1, "g");
         if (retval < 0) {
-            outlog("snprintf[%d]", retval);
+            outlog("snprintf=%d", retval);
             return NULL;
         }
-        dbglog("fmt[%s]", fmt);
+        dbglog("fmt=%s", fmt);
         /* 桁数取得 */
         digit = get_digit(val, fmt);
-        dbglog("digit[%lu]", digit);
-        if (digit < 0) {
-            outlog("digit[%lu]", digit);
+        dbglog("digit=%d, INT_MAX=%d", digit, INT_MAX);
+        if (digit <= 0) { /* エラー */
+            outlog("digit=%d", digit);
             return NULL;
         }
+        length = (size_t)digit + 1; /* 桁数 + 1 */
 
-        digit += 1; /* 桁数 + 1 */
         /* メモリ確保 */
-        tmp = (uchar *)calloc(digit, sizeof(uchar));
-        if (!tmp) {
-            outlog("calloc[%p]", tmp);
+        result = (uchar *)malloc(length * sizeof(uchar));
+        if (!result) {
+            outlog("calloc=%p", result);
             return NULL;
         }
-        result = tmp;
+        (void)memset(result, 0, length * sizeof(uchar));
+
         /* 値を文字列に変換 */
-        retval = snprintf((char *)result, digit, fmt, val);
+        retval = snprintf((char *)result, length, fmt, val);
         if (retval < 0) {
-            outlog("snprintf[%d]: result[%p] digit[%lu]",
-                   retval, result, digit);
+            outlog("snprintf=%d, result=%p, length=%u",
+                   retval, result, length);
             return NULL;
         }
-        dbglog("result[%s] val[%.18Lg] digit[%lu]", result, val, digit);
+        dbglog("result=%s, val=%.18g, length=%u", result, val, length);
     }
     return result;
 }
+
+#ifdef _UT
+int
+test_get_digit(const dbl val, const char *fmt)
+{
+    return get_digit(val, fmt);
+}
+#endif
 

@@ -1,8 +1,7 @@
 /**
- * @file  calc.h
+ * @file  calc/calc.h
  * @brief 関数電卓インタプリタ
  *
- * @sa calc.c
  * @author higashi
  * @date 2010-06-27 higashi 新規作成
  * @version \$Id$
@@ -27,31 +26,27 @@
 #ifndef _CALC_H_
 #define _CALC_H_
 
+#include <stdbool.h> /* bool */
+
 #include "def.h"
+#include "function.h"
 
-#define MAX_PREC      (long int)15 /**< 小数点以下の有効桁数最大値 */
-#define DEFAULT_PREC  (long int)12 /**< デフォルト小数点以下の有効桁数 */
+#define MAX_PREC      15 /**< 小数点以下有効桁数最大値 */
+#define DEFAULT_PREC  12 /**< 小数点以下有効桁数デフォルト値 */
 
-extern long int precision;
-
-/** 引数の数 */
-enum {
-    ARG_0 = 0,
-    ARG_1,
-    ARG_2
-};
-
-/** 数学関数の引数に渡す値 */
-struct arg_value {
-    ldfl x;
-    ldfl y;
-} value;
+/* 外部変数 */
+extern int precision; /**< 小数点以下桁数 */
+extern bool tflag;     /**< tオプションフラグ */
 
 /** 入力 */
 uchar *input(uchar *buf, const size_t len);
 
 /** 引数解析 */
-void parse_func_args(struct arg_value *val, const int argnum);
+void parse_func_args(const enum argtype num, dbl *x, dbl *y);
+
+#ifdef _UT
+int test_get_digit(const dbl val, const char *fmt);
+#endif
 
 #endif /* _CALC_H_ */
 

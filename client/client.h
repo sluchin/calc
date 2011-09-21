@@ -1,8 +1,7 @@
 /**
- * @file  client.h
+ * @file  client/client.h
  * @brief ソケット送受信
  *
- * @sa client.c
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
@@ -26,6 +25,12 @@
 
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
+
+#include <stdbool.h> /* bool */
+#include <signal.h>  /* sig_atomic_t */
+
+/* 外部変数 */
+extern volatile sig_atomic_t sig_handled; /**< シグナル */
 
 /** ソケット接続 */
 int connect_sock(const char *host, const char *port);

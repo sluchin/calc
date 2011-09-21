@@ -1,8 +1,7 @@
 /**
- * @file  data.c
+ * @file  lib/data.c
  * @brief 送受信データ構造体
  *
- * @sa data.h
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
@@ -48,16 +47,16 @@ set_client_data(struct client_data *dt,
     length = sizeof(struct header) + len;
     padding = length % 4;
     padding = padding ? 4 - padding : padding;
-    dbglog("length[%u] padding[%d]", length, padding);
+    dbglog("length=%u, padding=%d", length, padding);
     length += padding;
 
     dt = (struct client_data *)malloc(length);
     if (!dt) {
-        outlog("malloc[%p]", dt);
+        outlog("malloc=%p", dt);
         return NULL;
     }
     (void)memset(dt, 0, length);
-    dbglog("dt[%p]", dt);
+    dbglog("dt=%p", dt);
 
     dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     dt->hd.length = len;
@@ -84,16 +83,16 @@ set_server_data(struct server_data *dt,
     length = sizeof(struct header) + len;
     padding = length % 4;
     padding = padding ? 4 - padding : padding;
-    dbglog("length[%u] padding[%d]", length, padding);
+    dbglog("length=%u, padding=%d", length, padding);
     length += padding;
 
     dt = (struct server_data *)malloc(length);
     if (!dt) {
-        outlog("malloc[%p]", dt);
+        outlog("malloc=%p", dt);
         return NULL;
     }
     (void)memset(dt, 0, length);
-    dbglog("dt[%p]", dt);
+    dbglog("dt=%p", dt);
 
     dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     dt->hd.length = len;

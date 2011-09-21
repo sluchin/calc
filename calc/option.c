@@ -7,7 +7,6 @@
  *  -h ヘルプの表示\n
  *  -V バージョンの表示\n
  *
- * @sa option.h
  * @author higashi
  * @date 2010-06-27 higashi 新規作成
  * @version \$Id$
@@ -29,12 +28,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* fputs fprintf */
-#include <string.h>  /* memset */
-#include <stdlib.h>  /* EXIT_SUCCESS */
-#include <getopt.h>  /* getopt_long */
-#include <libgen.h>  /* basename */
-#include <stdbool.h> /* bool */
+#include <stdio.h>  /* fputs fprintf */
+#include <string.h> /* memset */
+#include <stdlib.h> /* EXIT_SUCCESS */
+#include <getopt.h> /* getopt_long */
+#include <libgen.h> /* basename */
 
 #include "log.h"
 #include "version.h"
@@ -45,13 +43,14 @@
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
     { "precision", required_argument, NULL, 'p' },
-    { "help", no_argument, NULL, 'h' },
-    { "version", no_argument, NULL, 'V' },
-    { NULL, 0, NULL, 0 }
+    { "time",      no_argument,       NULL, 't' },
+    { "help",      no_argument,       NULL, 'h' },
+    { "version",   no_argument,       NULL, 'V' },
+    { NULL,        0,                 NULL, 0   }
 };
 
 /** オプション情報文字列(ショート) */
-static const char *shortopts = "hVp:";
+static const char *shortopts = "hVtp:";
 
 /* 内部関数 */
 /** ヘルプの表示 */
@@ -73,8 +72,10 @@ print_help(const char *prog_name)
 {
     FILE *fp = stderr;
     (void)fprintf(fp, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(fp, "  -p, --precision        %s%ld%s",
+    (void)fprintf(fp, "  -p, --precision        %s%d%s",
                   "set precision(0-", MAX_PREC, ")");
+    (void)fprintf(fp, "  -t, --time             %s",
+                  "time test\n");
     (void)fprintf(fp, "  -h, --help             %s",
                   "display this help and exit\n");
     (void)fprintf(fp, "  -V, --version          %s",
@@ -127,16 +128,19 @@ parse_args(int argc, char *argv[])
     const int base = 10; /* 基数 */
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
-        dbglog("opt[%c] optarg[%s]", opt, optarg);
+        dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'p': /* 小数点以下有効桁数設定 */
             precision = strtol(optarg, NULL, base);
             if (0 <= precision && precision <= MAX_PREC) {
                 precision = strtol(optarg, NULL, base);
             } else if (MAX_PREC < precision) {
-                (void)fprintf(fp, "Maximum precision is %lu.\n", MAX_PREC);
+                (void)fprintf(fp, "Maximum precision is %d.\n", MAX_PREC);
                 exit(EXIT_FAILURE);
             }
+            break;
+        case 't':
+            tflag = true;
             break;
         case 'h': /* ヘルプ表示 */
             print_help(basename(argv[0]));
@@ -155,14 +159,5 @@ parse_args(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
-#if 0
-    if (optind < argc) {
-        while (optind < argc)
-            outlog("%s ", argv[optind++]);
-        outlog("\n");
-    } else if (optind == argc) ;
-    else
-        parse_error("missing optstring argument");
-#endif
 }
 
