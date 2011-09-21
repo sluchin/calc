@@ -302,7 +302,7 @@ get_factorial(dbl n)
 
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
-    dbglog("frac=%f, exp=%d", decimal, integer);
+    dbglog("decimal=%g, integer=%g", decimal, integer);
     if (decimal) { /* 自然数ではない */
         set_errorcode(E_MATH);
         return result;
