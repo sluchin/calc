@@ -47,7 +47,7 @@ $(PROGRAM): $(OBJECTS)
 	@#$(LINK) -o $@ $(LIBS) $(LIBSCLIENT) $^
 
 .PHONY: static
-static: all
+static: $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
 	@$(RM) $(PROGRAM)
 	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBCLIENT) $(LIBRARY)
 

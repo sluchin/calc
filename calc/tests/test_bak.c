@@ -1,18 +1,18 @@
 /*
-calc.h
+  calc.h
 
-typedef struct _ut_calc {
-    int (*get_digit)(const dbl val, const char *fmt);
-} ut_calc;
+  typedef struct _ut_calc {
+  int (*get_digit)(const dbl val, const char *fmt);
+  } ut_calc;
 
-void ut_calc_initialize(ut_calc *ts);
+  void ut_calc_initialize(ut_calc *ts);
 
-calc.c
+  calc.c
 
-void ut_calc_initialize(ut_calc *ts)
-{
-    ts->get_digit = &get_digit;
-}
+  void ut_calc_initialize(ut_calc *ts)
+  {
+  ts->get_digit = &get_digit;
+  }
 
 */
 #include <stdio.h>  /* printf */

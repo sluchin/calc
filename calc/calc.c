@@ -320,7 +320,7 @@ readch(void)
  * @return なし
  */
 void
-parse_func_args(const enum argtype num, dbl *x, dbl *y)
+parse_func_args(const enum argtype type, dbl *x, dbl *y)
 {
     dbglog("start");
 
@@ -336,7 +336,7 @@ parse_func_args(const enum argtype num, dbl *x, dbl *y)
     *x = expression();
     dbglog("val=%.18g", *x);
 
-    if (num == ARG_2) {
+    if (type == ARG_2) {
         if (ch != ',') {
             set_errorcode(E_SYNTAX);
             return;
@@ -366,13 +366,13 @@ uchar *
 input(uchar *buf, const size_t len)
 {
     dbl val = 0;               /* 値 */
-    size_t length = 0;          /* 文字数 */
-    int digit = 0;              /* 桁数 */
-    uchar *result = NULL;       /* 結果 */
-    uchar *errormsg = NULL;     /* エラーメッセージ */
-    int retval = 0;             /* 戻り値 */
+    size_t length = 0;         /* 文字数 */
+    int digit = 0;             /* 桁数 */
+    uchar *result = NULL;      /* 結果 */
+    uchar *errormsg = NULL;    /* エラーメッセージ */
+    int retval = 0;            /* 戻り値 */
     char fmt[sizeof("%.18g")]; /* フォーマット */
-    uint t = 0, time = 0;       /* タイマ用変数 */
+    uint t = 0, time = 0;      /* タイマ用変数 */
 
     dbglog("start: %p", input);
 
@@ -399,7 +399,7 @@ input(uchar *buf, const size_t len)
         errormsg = get_errormsg();
         if (!errormsg)
             return NULL;
-        length = strlen((char *)errormsg) + 1; /* 文字数 + 1 */
+        length = strlen((char *)errormsg); /* 文字数 */
         result = (uchar *)strndup((char *)errormsg, length);
         clear_error(&errormsg);
         dbglog("errormsg=%p", errormsg);

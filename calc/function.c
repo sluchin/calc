@@ -461,7 +461,7 @@ exec_func(const char *func)
         if (!strcmp(fstring[i].funcname, func)) {
             dbglog("finfo[%d]=%p", finfo[i]);
             switch (finfo[i].type) {
-            dbglog("type=%d", finfo[i].type);
+                dbglog("type=%d", finfo[i].type);
             case ARG_0:
                 result = finfo[i].func.func0();
                 break;
