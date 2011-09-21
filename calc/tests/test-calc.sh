@@ -2,8 +2,8 @@
 # $Id$
 
 # パス
-top_dir=.
-result=$top_dir/test_result
+top_dir=..
+result=$top_dir/tests/test_result
 program=$top_dir/calcp
 
 # 終了コード
