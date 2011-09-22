@@ -13,17 +13,18 @@ dll = cdll.LoadLibrary(sofile)
 
 class test_calc(unittest.TestCase):
     def setUp(self):
-        self.val = c_double(50000)
-        self.fmt = '%.18g'
+        pass
 
     def test_get_digit(self):
-        """test first"""
-        retval = dll.test_get_digit(self.val, self.fmt)
-        self.assertEqual(retval, 5)
+        """get_digit() """
+        fmt = '%.18g'
+        n = 50000
+        retval = dll.test_get_digit(c_double(n), fmt)
+        self.assertEqual(retval, len(str(n)))
 
-        n = 500000000000000
-        retval = dll.test_get_digit(c_double(n), self.fmt)
-        self.assertEqual(retval, int(math.log10(n) + 1))
+        n = 500000000000
+        retval = dll.test_get_digit(c_double(n), fmt)
+        self.assertEqual(retval, len(str(n)))
 
 if __name__ == '__main__':
 #    unittest.main()

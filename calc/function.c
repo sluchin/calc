@@ -76,29 +76,30 @@ enum functype {
 
 /** 関数文字列構造体 */
 struct funcstring {
+    enum functype type;
     char funcname[MAX_FUNC_STRING + 1];
 };
 
 /** 関数文字列構造体初期化 */
 static struct funcstring fstring[] = {
-    { "pi"   }, /**< pi */
-    { "e"    }, /**< ネイピア数(オイラー数) */
-    { "abs"  }, /**< 絶対値 */
-    { "sqrt" }, /**< 平方根 */
-    { "sin"  }, /**< 三角関数(sin) */
-    { "cos"  }, /**< 三角関数(cosin) */
-    { "tan"  }, /**< 三角関数(tangent) */
-    { "asin" }, /**< 逆三角関数(arcsin) */
-    { "acos" }, /**< 逆三角関数(arccosin) */
-    { "atan" }, /**< 逆三角関数(arctangent) */
-    { "exp"  }, /**< 指数関数 */
-    { "ln"   }, /**< 自然対数 */
-    { "log"  }, /**< 常用対数 */
-    { "rad"  }, /**< 角度をラジアンに変換 */
-    { "deg"  }, /**< ラジアンを角度に変換 */
-    { "n"    }, /**< 階乗 */
-    { "nPr"  }, /**< 順列 */
-    { "nCr"  }  /**< 組み合わせ */
+    { FN_PI,   "pi"   }, /**< pi */
+    { FN_E,    "e"    }, /**< ネイピア数(オイラー数) */
+    { FN_ABS,  "abs"  }, /**< 絶対値 */
+    { FN_SQRT, "sqrt" }, /**< 平方根 */
+    { FN_SIN,  "sin"  }, /**< 三角関数(sin) */
+    { FN_COS,  "cos"  }, /**< 三角関数(cosin) */
+    { FN_TAN,  "tan"  }, /**< 三角関数(tangent) */
+    { FN_ASIN, "asin" }, /**< 逆三角関数(arcsin) */
+    { FN_ACOS, "acos" }, /**< 逆三角関数(arccosin) */
+    { FN_ATAN, "atan" }, /**< 逆三角関数(arctangent) */
+    { FN_EXP,  "exp"  }, /**< 指数関数 */
+    { FN_LN,   "ln"   }, /**< 自然対数 */
+    { FN_LOG,  "log"  }, /**< 常用対数 */
+    { FN_RAD,  "rad"  }, /**< 角度をラジアンに変換 */
+    { FN_DEG,  "deg"  }, /**< ラジアンを角度に変換 */
+    { FN_FACT, "n"    }, /**< 階乗 */
+    { FN_PERM, "nPr"  }, /**< 順列 */
+    { FN_COMB, "nCr"  }  /**< 組み合わせ */
 };
 
 /** 関数共用体 */
@@ -110,7 +111,7 @@ union func {
 
 /** 関数情報構造体 */
 struct funcinfo {
-    enum functype type;
+    enum argtype type;
     union func func;
 };
 
@@ -186,7 +187,6 @@ init_func(void)
     /* 組み合わせ */
     finfo[FN_COMB].type = ARG_2;
     finfo[FN_COMB].func.func2 = get_combination;
-
 }
 
 /**
@@ -450,30 +450,32 @@ get_pow(dbl x, dbl y)
 dbl
 exec_func(const char *func)
 {
-    dbl result = 0;   /* 戻り値 */
-    dbl x = 0, y = 0; /* 値 */
-    int i;            /* 変数 */
-    bool exec;        /* 関数実行フラグ */
+    dbl result = 0;      /* 戻り値 */
+    dbl x = 0, y = 0;    /* 値 */
+    int i;               /* 変数 */
+    bool exec;           /* 関数実行フラグ */
+    enum functype ftype; /* 関数種別 */
 
     dbglog("start");
 
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
         if (!strcmp(fstring[i].funcname, func)) {
-            dbglog("finfo[%d]=%p", finfo[i]);
-            switch (finfo[i].type) {
-                dbglog("type=%d", finfo[i].type);
+            ftype = fstring[i].type;
+            dbglog("finfo[%d]=%p, ftype=%d", finfo[i], ftype);
+            switch (finfo[ftype].type) {
+                dbglog("type=%d", finfo[ftype].type);
             case ARG_0:
-                result = finfo[i].func.func0();
+                result = finfo[ftype].func.func0();
                 break;
             case ARG_1:
                 parse_func_args(ARG_1, &x, &y);
                 dbglog("x=%.18g, y=%.18g", x, y);
-                result = check_math(x, finfo[i].func.func1);
+                result = check_math(x, finfo[ftype].func.func1);
                 break;
             case ARG_2:
                 parse_func_args(ARG_2, &x, &y);
                 dbglog("x=%.18g, y=%.18g", x, y);
-                result = finfo[i].func.func2(x, y);
+                result = finfo[ftype].func.func2(x, y);
                 break;
             default:
                 break;
