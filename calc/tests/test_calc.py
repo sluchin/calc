@@ -21,10 +21,6 @@ class test_calc(unittest.TestCase):
         retval = dll.input(expr, len(expr))
         return retval
 
-    def memfree(self, mem):
-        dll.input.argtypes = [ c_int, c_void_p ]
-        dll.test_memfree(1, mem)
-
     def get_strlen(self, n, fmt):
         dll.test_get_strlen.restype = c_int
         dll.test_get_strlen.argtypes = [ c_double, c_char_p ]
@@ -33,9 +29,7 @@ class test_calc(unittest.TestCase):
 
     def test_input(self):
         """input() """
-        retval = self.input('(105+312)+2*(5-3)')
-        self.assertEqual(retval, '421')
-        self.memfree(retval)
+        self.assertEqual(self.input('(105+312)+2*(5-3)'), '421')
         self.assertEqual(self.input('(105+312)+2/(5-3)'), '418')
         self.assertEqual(self.input('1+2*(5-3)'), '5')
         self.assertEqual(self.input('1+2/(5-3)'), '2')
