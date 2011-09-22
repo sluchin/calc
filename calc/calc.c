@@ -39,6 +39,7 @@
 #include <math.h>     /* powl */
 #if defined(_DEBUG)
 #  include <limits.h> /* INT_MAX */
+#  include <float.h>  /* DBL_MAX */
 #endif
 
 #include "timer.h"
@@ -51,7 +52,7 @@
 #define EX_ERROR    0 /* エラー戻り値 */
 
 /* 外部変数 */
-int precision = -1; /**< 小数点以下桁数 */
+int digit = -1;     /**< 桁数 */
 bool tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
@@ -69,8 +70,8 @@ static dbl factor(void);
 static dbl token(void);
 /** 文字列を数値に変換 */
 static dbl number(void);
-/** 桁数取得 */
-static int get_digit(const dbl val, const char *fmt);
+/** 文字数取得 */
+static int get_strlen(const dbl val, const char *fmt);
 /** バッファ読込 */
 static void readch(void);
 
@@ -256,20 +257,20 @@ number(void)
 }
 
 /**
- * 桁数取得
+ * 文字数取得
  *
  * @param[in] val 値
  * @param[in] fmt フォーマット
- * @return 桁数
+ * @return 文字数
  * @retval  0 fopenエラー
  * @retval -1 fprintfエラー
  */
 static int
-get_digit(const dbl val, const char *fmt)
+get_strlen(const dbl val, const char *fmt)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* fclose戻り値 */
-    int result = 0;  /* 桁数 */
+    int result = 0;  /* 文字数数 */
 
     dbglog("start");
 
@@ -367,7 +368,6 @@ input(uchar *buf, const size_t len)
 {
     dbl val = 0;               /* 値 */
     size_t length = 0;         /* 文字数 */
-    int digit = 0;             /* 桁数 */
     uchar *result = NULL;      /* 結果 */
     uchar *errormsg = NULL;    /* エラーメッセージ */
     int retval = 0;            /* 戻り値 */
@@ -375,6 +375,7 @@ input(uchar *buf, const size_t len)
     uint t = 0, time = 0;      /* タイマ用変数 */
 
     dbglog("start: %p", input);
+    dbglog("sizeof(double)=%u, DBL_MAX=%g", sizeof(double), DBL_MAX);
 
     /* 初期値設定 */
     ptr = buf;  /* ポインタ設定 */
@@ -410,23 +411,24 @@ input(uchar *buf, const size_t len)
         dbglog("result=%p, length=%u", result, length);
     } else {
         /* フォーマット設定 */
-        if (precision == -1) /* デフォルト */
-            precision = DEFAULT_PREC;
+        if (digit == -1) /* デフォルト */
+            digit = DEFAULT_DIGIT;
         retval = snprintf(fmt, sizeof(fmt), "%s%d%s",
-                          "%.", precision + 1, "g");
+                          "%.", digit, "g");
+
         if (retval < 0) {
             outlog("snprintf=%d", retval);
             return NULL;
         }
         dbglog("fmt=%s", fmt);
-        /* 桁数取得 */
-        digit = get_digit(val, fmt);
-        dbglog("digit=%d, INT_MAX=%d", digit, INT_MAX);
-        if (digit <= 0) { /* エラー */
-            outlog("digit=%d", digit);
+        /* 文字数取得 */
+        retval = get_strlen(val, fmt);
+        dbglog("len=%d, INT_MAX=%d", len, INT_MAX);
+        if (retval <= 0) { /* エラー */
+            outlog("retval=%d", retval);
             return NULL;
         }
-        length = (size_t)digit + 1; /* 桁数 + 1 */
+        length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
         result = (uchar *)malloc(length * sizeof(uchar));
@@ -450,9 +452,9 @@ input(uchar *buf, const size_t len)
 
 #ifdef _UT
 int
-test_get_digit(const dbl val, const char *fmt)
+test_get_strlen(const dbl val, const char *fmt)
 {
-    return get_digit(val, fmt);
+    return get_strlen(val, fmt);
 }
 #endif
 

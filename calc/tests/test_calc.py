@@ -15,15 +15,15 @@ class test_calc(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_get_digit(self):
-        """get_digit() """
-        fmt = '%.18g'
+    def test_get_strlen(self):
+        """get_strlen() """
+        fmt = '%.15g'
         n = 50000
-        retval = dll.test_get_digit(c_double(n), fmt)
+        retval = dll.test_get_strlen(c_double(n), fmt)
         self.assertEqual(retval, len(str(n)))
 
-        n = 500000000000
-        retval = dll.test_get_digit(c_double(n), fmt)
+        n = 123456789012345
+        retval = dll.test_get_strlen(c_double(n), fmt)
         self.assertEqual(retval, len(str(n)))
 
 if __name__ == '__main__':

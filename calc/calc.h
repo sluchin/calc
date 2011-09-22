@@ -31,11 +31,11 @@
 #include "def.h"
 #include "function.h"
 
-#define MAX_PREC      15 /**< 小数点以下有効桁数最大値 */
-#define DEFAULT_PREC  12 /**< 小数点以下有効桁数デフォルト値 */
+#define MAX_DIGIT      15 /**< 有効桁数最大値 */
+#define DEFAULT_DIGIT  12 /**< 有効桁数デフォルト値 */
 
 /* 外部変数 */
-extern int precision; /**< 小数点以下桁数 */
+extern int digit;      /**< 桁数 */
 extern bool tflag;     /**< tオプションフラグ */
 
 /** 入力 */

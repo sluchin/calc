@@ -42,7 +42,7 @@
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
-    { "precision", required_argument, NULL, 'p' },
+    { "digit",     required_argument, NULL, 'd' },
     { "time",      no_argument,       NULL, 't' },
     { "help",      no_argument,       NULL, 'h' },
     { "version",   no_argument,       NULL, 'V' },
@@ -50,7 +50,7 @@ static struct option longopts[] = {
 };
 
 /** オプション情報文字列(ショート) */
-static const char *shortopts = "hVtp:";
+static const char *shortopts = "hVtd:";
 
 /* 内部関数 */
 /** ヘルプの表示 */
@@ -72,8 +72,8 @@ print_help(const char *prog_name)
 {
     FILE *fp = stderr;
     (void)fprintf(fp, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(fp, "  -p, --precision        %s%d%s",
-                  "set precision(0-", MAX_PREC, ")");
+    (void)fprintf(fp, "  -d, --digit            %s%d%s",
+                  "set digit(1-", MAX_DIGIT, ")\n");
     (void)fprintf(fp, "  -t, --time             %s",
                   "time test\n");
     (void)fprintf(fp, "  -h, --help             %s",
@@ -130,10 +130,10 @@ parse_args(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
-        case 'p': /* 小数点以下有効桁数設定 */
-            precision = strtol(optarg, NULL, base);
-            if (precision < 0 || MAX_PREC < precision) {
-                (void)fprintf(fp, "Maximum precision is %d.\n", MAX_PREC);
+        case 'd': /* 有効桁数設定 */
+            digit = strtol(optarg, NULL, base);
+            if (digit <= 0 || MAX_DIGIT < digit) {
+                (void)fprintf(fp, "Maximum digit is %d.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }
             break;
