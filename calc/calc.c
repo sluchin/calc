@@ -359,12 +359,11 @@ parse_func_args(const enum argtype type, dbl *x, dbl *y)
  * 入力
  *
  * @param[in] buf 文字列バッファポインタ
- * @param[in] len 文字列の長さ
  * @return 新たに領域確保された結果文字列ポインタ
  * @retval NULL エラー
  */
 uchar *
-input(uchar *buf, const size_t len)
+input(uchar *buf)
 {
     dbl val = 0;               /* 値 */
     size_t length = 0;         /* 文字数 */
@@ -415,15 +414,15 @@ input(uchar *buf, const size_t len)
             digit = DEFAULT_DIGIT;
         retval = snprintf(fmt, sizeof(fmt), "%s%d%s",
                           "%.", digit, "g");
-
         if (retval < 0) {
             outlog("snprintf=%d", retval);
             return NULL;
         }
         dbglog("fmt=%s", fmt);
+
         /* 文字数取得 */
         retval = get_strlen(val, fmt);
-        dbglog("len=%d, INT_MAX=%d", len, INT_MAX);
+        dbglog("retval=%d, INT_MAX=%d", retval, INT_MAX);
         if (retval <= 0) { /* エラー */
             outlog("retval=%d", retval);
             return NULL;
@@ -456,5 +455,5 @@ test_get_strlen(const dbl val, const char *fmt)
 {
     return get_strlen(val, fmt);
 }
-#endif
+#endif /* _UT */
 

@@ -39,13 +39,14 @@ extern int digit;      /**< 桁数 */
 extern bool tflag;     /**< tオプションフラグ */
 
 /** 入力 */
-uchar *input(uchar *buf, const size_t len);
+uchar *input(uchar *buf);
 
 /** 引数解析 */
 void parse_func_args(const enum argtype num, dbl *x, dbl *y);
 
 #ifdef _UT
 int test_get_digit(const dbl val, const char *fmt);
+void test_memfree(int num, void *p);
 #endif
 
 #endif /* _CALC_H_ */

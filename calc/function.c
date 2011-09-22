@@ -124,6 +124,7 @@ static struct funcinfo finfo[MAXFUNC];
  * @return なし
  */
 static void
+__attribute__((constructor))
 init_func(void)
 {
     dbglog("start");

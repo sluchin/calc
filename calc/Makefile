@@ -63,7 +63,7 @@ debug:
 	@$(MAKE) CFLAGS="$(DFLAGS)"
 
 .PHONY: test
-test: debug
+test:
 	@for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
