@@ -45,8 +45,17 @@ uchar *input(uchar *buf);
 void parse_func_args(const enum argtype num, dbl *x, dbl *y);
 
 #ifdef _UT
-int test_get_digit(const dbl val, const char *fmt);
-void test_memfree(int num, void *p);
+struct test_func {
+    dbl (*expression)(void);
+    dbl (*term)(void);
+    dbl (*factor)(void);
+    dbl (*token)(void);
+    dbl (*number)(void);
+    int (*get_strlen)(const dbl val, const char *fmt);
+    void (*readch)(void);
+};
+void test_initfunc(struct test_func *func);
+//int _test_get_strlen(const dbl val, const char *fmt);
 #endif
 
 #endif /* _CALC_H_ */

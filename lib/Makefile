@@ -1,6 +1,5 @@
 # Makefile
-# $Id$
-
+# $Id$ 
 srcdir = .
 top_srcdir = ..
 prefix = /usr/local
@@ -88,6 +87,6 @@ help:
 	@echo "... debug"
 	@echo "... test"
 	@echo "... install"
-	@echo "... doc"
 	@echo "... strip"
+	@echo "... help"
 

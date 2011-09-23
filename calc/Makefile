@@ -11,11 +11,12 @@ CC = gcc
 RM = rm -rf
 AR = ar rcsv
 STRIP = strip
+CUTTER = /usr/bin/cutter -v v
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
 DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG
-LDFLAGS = -L. -L$(top_srcdir)/lib
+LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
 LIBS = -lm #-lreadline -lpthread
 CALCLIBS = -lcalcp -lcalcutil
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
@@ -41,7 +42,7 @@ $(LIBCALC): $(OBJCALC)
 
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBRARY)
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
@@ -64,7 +65,8 @@ debug:
 
 .PHONY: test
 test:
-	@for file in `ls $(testdir)`; do \
+	$(CUTTER) $(srcdir)/tests
+	@#for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \
@@ -97,6 +99,6 @@ help:
 	@echo "... static"
 	@echo "... test"
 	@echo "... install"
-	@echo "... doc"
 	@echo "... strip"
+	@echo "... help"
 

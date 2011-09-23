@@ -450,10 +450,22 @@ input(uchar *buf)
 }
 
 #ifdef _UT
-int
-test_get_strlen(const dbl val, const char *fmt)
+void
+test_initfunc(struct test_func *func)
 {
-    return get_strlen(val, fmt);
+    func->expression = expression;
+    func->term = term;
+    func->factor = factor;
+    func->token = token;
+    func->number = number;
+    func->get_strlen = get_strlen;
+    func->readch = readch;
 }
+
+//int
+//_test_get_strlen(const dbl val, const char *fmt)
+//{
+//    return get_strlen(val, fmt);
+//}
 #endif /* _UT */
 

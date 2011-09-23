@@ -120,7 +120,7 @@ server_proc(void *arg)
         }
 
         /* サーバ処理 */
-        result = input(expr, length);
+        result = input(expr);
         dbglog("result=%s", result);
 
         length = strlen((char *)result) + 1; /* 文字列長保持 */

@@ -14,7 +14,7 @@ INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/calc
 CFLAGS = -g -Wall -O2 -DNDEBUG
 DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG
-LDFLAGS = -L. -L$(top_srcdir)/lib -L$(top_srcdir)/calc
+LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib -L$(top_srcdir)/calc
 LIBS = -lm -lpthread
 SERVERLIBS = -lcalcd -lcalcp -lcalcutil
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
@@ -95,6 +95,6 @@ help:
 	@echo "... test"
 	@echo "... static"
 	@echo "... install"
-	@echo "... doc"
 	@echo "... strip"
+	@echo "... help"
 

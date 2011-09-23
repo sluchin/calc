@@ -80,7 +80,6 @@ static void
 main_loop(void)
 {
     int retval = 0;      /* 戻り値 */
-    size_t length = 0;   /* 文字列長 */
 #ifdef HAVE_READLINE
     int hist_no = 0;     /* 履歴数 */
     char *prompt = NULL; /* プロンプト */
@@ -111,10 +110,10 @@ main_loop(void)
         if (!strcmp((char *)expr, "quit") ||
             !strcmp((char *)expr, "exit"))
             break;
-        length = strlen((char *)expr);
-        dbgdump(expr, length + 1, "expr=%u", length + 1);
+        dbgdump(expr, strlen((char *)expr) + 1,
+                "expr=%u", strlen((char *)expr) + 1);
 
-        result = input(expr, sizeof(expr));
+        result = input(expr);
         dbglog("expr=%p, result=%p", expr, result);
         if (result) {
             retval = fprintf(stdout, "%s\n", (char *)result);

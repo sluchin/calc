@@ -14,7 +14,7 @@ INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT #-DHAVE_READLINE
 DFLAGS = -g -Wall -O2 -D_USE_SELECT -D_UT -D_DEBUG #-DHAVE_READLINE
-LDFLAGS = -L. -L$(top_srcdir)/lib
+LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
 LIBS = -lreadline -lpthread
 CLIENTLIBS = -lcalcc -lcalcutil
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
@@ -43,7 +43,7 @@ $(SHAREDOBJ): $(OBJCLIENT)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
-	$(LINK) -o $@ $(LIBS) $^ $(LIBCLIENT) $(LIBRARY)
+	$(LINK) -o $@ $(LIBS) $(CLIENTLIBS) $^
 	@#$(LINK) -o $@ $(LIBS) $(LIBSCLIENT) $^
 
 .PHONY: static
@@ -95,6 +95,6 @@ help:
 	@echo "... test"
 	@echo "... static"
 	@echo "... install"
-	@echo "... doc"
 	@echo "... strip"
+	@echo "... help"
 
