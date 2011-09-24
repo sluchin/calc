@@ -444,7 +444,7 @@ number(void)
  * 文字数取得
  *
  * @param[in] val 値
- * @param[in] format フォーマット
+ * @param[in] fmt フォーマット
  * @return 文字数
  * @retval  0 fopenエラー
  * @retval -1 fprintfエラー
