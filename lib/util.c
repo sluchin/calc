@@ -25,14 +25,14 @@
 
 #include <stdlib.h> /* free */
 #include <stdarg.h> /* va_list va_arg */
- 
+
 #include "log.h"
 #include "util.h"
 
 /**
  * メモリ解放
  *
- * freeして, NULLを代入する.
+ * freeした後, NULLを代入する.
  *
  * @param[in] num 引数の数
  * @param[in,out] ... freeする変数

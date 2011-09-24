@@ -53,7 +53,67 @@ static void sig_handler(int signo);
 /** シグナルハンドラ(SIGHUP) */
 static void sighup_handler(int signo);
 
-/** 
+/**
+ * main関数
+ *
+ * @param[in] c 引数の数
+ * @param[in] v コマンド引数・オプション引数
+ * @param[in] ep 環境変数
+ * @return 常にEXIT_SUCCESS
+ */
+int main(int c, char *v[], char *ep[])
+{
+#ifndef _DEBUG
+    int retval = 0; /* 戻り値 */
+#endif
+    dbglog("start");
+
+    /* アドレスを保持 */
+    argc = &c;
+    argv = &v;
+    envp = &ep;
+
+    /* シグナルハンドラ */
+    set_sig_handler();
+
+    /* プログラム名を保持 */
+    progname = basename(v[0]);
+
+    /* オプション引数 */
+    parse_args(c, v);
+
+    /* ソケット接続 */
+    sockfd = server_sock(g_port_no);
+    if (sockfd < 0)
+        exit(EXIT_FAILURE);
+
+    /* デーモン化する */
+#ifndef _DEBUG
+    retval = daemon(0, 0);
+    if (retval < 0) {
+        outlog("daemon[%d]", retval);
+        exit(EXIT_FAILURE);
+    }
+#endif /* _DEBUG */
+
+    /* ソケット送受信 */
+    server_loop(sockfd);
+
+    /* ソケットクローズ */
+    close_sock(&sockfd);
+
+    if (sighup_handled) { /* 再起動 */
+        dbglog("signal hup");
+        (void)alarm(0);
+        sighup_handled = 0;
+        (void)execve((*argv)[0], (*argv), (*envp));
+    }
+
+    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
+}
+
+/**
  * シグナルハンドラ設定
  *
  * @return なし
@@ -104,11 +164,11 @@ set_sig_handler(void)
     chld.sa_handler = SIG_IGN;
     chld.sa_flags = SA_NOCLDWAIT;
     if (sigaction(SIGCHLD, &chld, NULL) < 0)
-        outlog("sigaction[%p]; SIGCHLD", chld);  
+        outlog("sigaction[%p]; SIGCHLD", chld);
 #endif
 }
 
-/** 
+/**
  * シグナルハンドラ
  *
  * @param[in] signo シグナル
@@ -119,7 +179,7 @@ static void sig_handler(int signo)
     sig_handled = 1;
 }
 
-/** 
+/**
  * シグナルハンドラ(SIGHUP)
  *
  * 再起動する.
@@ -131,121 +191,3 @@ static void sighup_handler(int signo)
     sighup_handled = 1;
 }
 
-/** 
- * main関数
- *
- * @param[in] c 引数の数
- * @param[in] v コマンド引数・オプション引数
- * @param[in] ep 環境変数
- * @return 常にEXIT_SUCCESS
- */
-int main(int c, char *v[], char *ep[])
-{
-#ifndef _DEBUG
-    int retval = 0; /* 戻り値 */
-#endif
-    dbglog("start");
-
-    /* アドレスを保持 */
-    argc = &c;
-    argv = &v;
-    envp = &ep;
-
-    /* シグナルハンドラ */
-    set_sig_handler();
-
-    /* プログラム名を保持 */
-    progname = basename(v[0]);
-
-    /* オプション引数 */
-    parse_args(c, v);
-
-    /* ソケット接続 */
-    sockfd = server_sock(port_no);
-    if (sockfd < 0)
-        exit(EXIT_FAILURE);
-
-    /* デーモン化する */
-#ifndef _DEBUG
-    retval = daemon(0, 0);
-    if (retval < 0) {
-        outlog("daemon[%d]", retval);
-        exit(EXIT_FAILURE);
-    }
-#endif /* _DEBUG */
-
-    /* ソケット送受信 */
-    server_loop(sockfd);
-
-    /* ソケットクローズ */
-    close_sock(&sockfd);
-
-    if (sighup_handled) { /* 再起動 */
-        dbglog("signal hup");
-        (void)alarm(0);
-        sighup_handled = 0;
-        (void)execve((*argv)[0], (*argv), (*envp));
-    }
-
-    exit(EXIT_SUCCESS);
-    return EXIT_SUCCESS;
-}
-
-/**
- * @mainpage 処理詳細
- *
- * @section server サーバ
- * -# ポート番号の設定\n
- * -# ソケット生成\n
- * -# ソケットオプション設定\n
- * -# ソケットにアドレス設定(bind)\n
- * -# アクセスバックログの設定(listen)\n
- * -# 接続受付(accept)\n
- * -# スレッド生成(server_proc)\n
- * -# ヘッダ受信\n
- * -# データ受信\n
- * -# データのチェックサムをチェック\n
- * -# サーバ処理\n
- * -# データ送信\n
- *
- * @section client クライアント
- * -# IPアドレスまたはホスト名の設定\n
- * -# ポート番号の設定\n
- * -# ソケット生成\n
- * -# サーバに接続(connect)\n
- * -# 標準入力から文字列取得\n
- * -# データ送信\n
- * -# ヘッダ受信\n
- * -# データ受信\n
- * -# データのチェックサムをチェック\n
- * -# 標準出力に文字列出力\n
- */
-/**
- * @page page1 処理シーケンス
- * @msc
- * server,calc,client;
- *
- * server<-server[label="server_sock()"];
- * server<-server[label="server_loop()"];
- * server<-server[label="server_proc()"];
- * client<-client[label="connect_sock()"];
- * client<-client[label="client_loop()"];
- * client box client[label="stdin"];
- * server<-client[label="send_data()"];
- * server<-server[label="recv_data()"];
- * server->calc[label="input()"];
- *
- * calc->calc[label="expression()"];
- * calc->calc[label="term()"];
- * calc->calc[label="factor()"];
- * calc->calc[label="number()"];
- * calc->calc[label="expression()"];
- * ...;
- *
- * server<<calc[label="result"];
- * server->client[label="send_data()"];
- * client<-client[label="recv_data()"];
- * client box client[label="stdout"];
- *
- * @endmsc
- */

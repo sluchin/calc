@@ -32,7 +32,7 @@
 #include <arpa/inet.h>  /* inet_aton */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
- 
+
 #include "log.h"
 #include "util.h"
 #include "net.h"

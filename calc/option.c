@@ -39,6 +39,9 @@
 #include "calc.h"
 #include "option.h"
 
+/* 外部変数 */
+long g_digit = DEFAULT_DIGIT; /**< 桁数 */
+
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
@@ -50,7 +53,7 @@ static struct option longopts[] = {
 };
 
 /** オプション情報文字列(ショート) */
-static const char *shortopts = "hVtd:";
+static const char *shortopts = "d:thV";
 
 /* 内部関数 */
 /** ヘルプの表示 */
@@ -58,7 +61,51 @@ static void print_help(const char *prog_name);
 /** バージョン情報表示 */
 static void print_version(const char *prog_name);
 /** getoptエラー表示 */
-static void parse_error(const char *msg);
+static void parse_error(const int c, const char *msg);
+
+/**
+ * オプション引数
+ *
+ * オプション引数ごとに処理を分岐する.
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @return なし
+ */
+void
+parse_args(int argc, char *argv[])
+{
+    int opt = 0;         /* getopt_longの戻り値格納 */
+    const int base = 10; /* 基数 */
+
+    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+        dbglog("opt=%c, optarg=%s", opt, optarg);
+        switch (opt) {
+        case 'd': /* 有効桁数設定 */
+            g_digit = strtol(optarg, NULL, base);
+            if (g_digit <= 0 || MAX_DIGIT < g_digit) {
+                (void)fprintf(stderr, "Maximum digit is %ld.\n", MAX_DIGIT);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 't':
+            g_tflag = true;
+            break;
+        case 'h': /* ヘルプ表示 */
+            print_help(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case 'V': /* バージョン情報表示 */
+            print_version(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case '?':
+        case ':':
+            parse_error(opt, NULL);
+            exit(EXIT_FAILURE);
+        default:
+            parse_error(opt, "internal error");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 /**
  * ヘルプ表示
@@ -72,7 +119,7 @@ print_help(const char *prog_name)
 {
     FILE *fp = stderr;
     (void)fprintf(fp, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(fp, "  -d, --digit            %s%d%s",
+    (void)fprintf(fp, "  -d, --digit            %s%ld%s",
                   "set digit(1-", MAX_DIGIT, ")\n");
     (void)fprintf(fp, "  -t, --time             %s",
                   "time test\n");
@@ -100,62 +147,16 @@ print_version(const char *prog_name)
  * getoptエラー表示
  *
  * getoptが異常な動作をした場合、エラーを表示する.
+ * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
  * @return なし
  */
 static void
-parse_error(const char *msg)
+parse_error(const int c, const char *msg)
 {
     FILE *fp = stderr;
     if (msg)
-        (void)fprintf(fp, "getopt: %s\n", msg);
+        (void)fprintf(fp, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(fp, "Try `getopt --help' for more information\n");
-}
-
-/**
- * オプション引数
- *
- * オプション引数ごとに処理を分岐する.
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @return なし
- */
-void
-parse_args(int argc, char *argv[])
-{
-    FILE *fp = stderr;   /* 標準エラー出力 */
-    int opt = 0;         /* getopt_longの戻り値格納 */
-    const int base = 10; /* 基数 */
-
-    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
-        dbglog("opt=%c, optarg=%s", opt, optarg);
-        switch (opt) {
-        case 'd': /* 有効桁数設定 */
-            digit = strtol(optarg, NULL, base);
-            if (digit <= 0 || MAX_DIGIT < digit) {
-                (void)fprintf(fp, "Maximum digit is %d.\n", MAX_DIGIT);
-                exit(EXIT_FAILURE);
-            }
-            break;
-        case 't':
-            tflag = true;
-            break;
-        case 'h': /* ヘルプ表示 */
-            print_help(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case 'V': /* バージョン情報表示 */
-            print_version(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case '?':
-        case ':':
-            (void)fprintf(fp, "getopt[%c]\n", opt);
-            parse_error(NULL);
-            exit(EXIT_FAILURE);
-        default:
-            (void)fprintf(fp, "getopt[%c]\n", opt);
-            parse_error("internal error");
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 

@@ -28,20 +28,16 @@
 
 #include <stdbool.h> /* bool */
 
-/** デフォルトのIPアドレス */
-#define DEFAULT_IPADDR    "127.0.0.1"
-/** デフォルトのポート番号 */
-#define DEFAULT_PORTNO    "12345"
-/** ホスト名サイズ */
-#define HOST_SIZE         48
-/** ポート名サイズ */
-#define PORT_SIZE         48
+#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
+#define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
+#define HOST_SIZE      48          /**< ホスト名サイズ */
+#define PORT_SIZE      48          /**< ポート名サイズ */
 
 /* 外部変数 */
-extern bool gflag;                /**< gオプションフラグ */
-extern bool tflag;                /**< tオプションフラグ */
-extern char host_name[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
-extern char port_no[PORT_SIZE];   /**< ポート番号またはサービス名 */
+extern bool g_gflag;                /**< gオプションフラグ */
+extern bool g_tflag;                /**< tオプションフラグ */
+extern char g_host_name[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
+extern char g_port_no[PORT_SIZE];   /**< ポート番号またはサービス名 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

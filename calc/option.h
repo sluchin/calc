@@ -26,10 +26,13 @@
 #ifndef _CALC_OPTION_H_
 #define _CALC_OPTION_H_
 
-/** デフォルトのIPアドレス */
-#define DEFAULT_IPADDR    "192.168.0.5"
-/** デフォルトのポート番号 */
-#define DEFAULT_PORTNO    "12345"
+#define DEFAULT_IPADDR "192.168.0.5" /**< デフォルトのIPアドレス */
+#define DEFAULT_PORTNO "12345"       /**< デフォルトのポート番号 */
+#define MAX_DIGIT      30L           /**< 有効桁数最大値 */
+#define DEFAULT_DIGIT  12L           /**< 有効桁数デフォルト値 */
+
+/* 外部変数 */
+extern long g_digit; /**< 桁数 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

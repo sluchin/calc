@@ -40,13 +40,16 @@
 #include "option.h"
 
 /* 外部変数 */
-bool gflag = false;            /**< gオプションフラグ */
-char port_no[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
+bool g_gflag = false;            /**< gオプションフラグ */
+char g_port_no[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
+long g_digit = DEFAULT_DIGIT;    /**< 桁数 */
+
 
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
     { "port", required_argument, NULL, 'p' },
+    { "digit",     required_argument, NULL, 'd' },
     { "debug", no_argument, NULL, 'g' },
     { "help", no_argument, NULL, 'h' },
     { "version", no_argument, NULL, 'V' },
@@ -54,7 +57,7 @@ static struct option longopts[] = {
 };
 
 /** オプション情報文字列(ショート) */
-static const char *shortopts = "p:hVg";
+static const char *shortopts = "p:d:hVg";
 
 /* 内部関数 */
 /** ヘルプの表示 */
@@ -62,7 +65,70 @@ static void print_help(const char *prog_name);
 /** バージョン情報表示 */
 static void print_version(const char *prog_name);
 /** getoptエラー表示 */
-static void parse_error(const char *msg);
+static void parse_error(const int c, const char *msg);
+
+/**
+ * オプション引数
+ *
+ * オプション引数ごとに処理を分岐する.
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @return なし
+ */
+void
+parse_args(int argc, char *argv[])
+{
+    int opt = 0;         /* getopt_longの戻り値格納 */
+    const int base = 10; /* 基数 */
+
+    dbglog("start");
+
+    /* デフォルトのポート番号を設定 */
+    (void)memset(g_port_no, 0, sizeof(g_port_no));
+    (void)strncpy(g_port_no, DEFAULT_PORTNO, sizeof(g_port_no));
+
+    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+        dbglog("opt=%c, optarg=%s", opt, optarg);
+        switch (opt) {
+        case 'p':
+            if (!optarg) {
+                outlog("opt=%c, optarg=%s", opt, optarg);
+                exit(EXIT_FAILURE);
+            }
+            if (strlen(optarg) < sizeof(g_port_no)) {
+                (void)memset(g_port_no, 0, sizeof(g_port_no));
+                (void)strncpy(g_port_no, optarg, sizeof(g_port_no));
+            } else {
+                print_help(basename(argv[0]));
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'd': /* 有効桁数設定 */
+            g_digit = strtol(optarg, NULL, base);
+            if (g_digit <= 0 || MAX_DIGIT < g_digit) {
+                (void)fprintf(stderr, "Maximum digit is %ld.\n", MAX_DIGIT);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'g':
+            g_gflag = true;
+            break;
+        case 'h':
+            print_help(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case 'V':
+            print_version(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case '?':
+        case ':':
+            parse_error(opt, NULL);
+            exit(EXIT_FAILURE);
+        default:
+            parse_error(opt, "internal error");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 /**
  * ヘルプ表示
@@ -100,74 +166,16 @@ print_version(const char *prog_name)
  * getoptエラー表示
  *
  * getoptが異常な動作をした場合、エラーを表示する.
+ * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
  * @return なし
  */
 static void
-parse_error(const char *msg)
+parse_error(const int c, const char *msg)
 {
     FILE *fp = stderr;
     if (msg)
-        (void)fprintf(fp, "getopt: %s\n", msg);
+        (void)fprintf(fp, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(fp, "Try `getopt --help' for more information\n");
-}
-
-/**
- * オプション引数
- *
- * オプション引数ごとに処理を分岐する.
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @return なし
- */
-void
-parse_args(int argc, char *argv[])
-{
-    FILE *fp = stderr; /* 標準エラー出力 */
-    int opt = 0;       /* getopt_longの戻り値格納 */
-
-    dbglog("start");
-
-    /* デフォルトのポート番号を設定 */
-    (void)memset(port_no, 0, sizeof(port_no));
-    (void)strncpy(port_no, DEFAULT_PORTNO, sizeof(port_no));
-
-    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
-        dbglog("opt=%c, optarg=%s", opt, optarg);
-        switch (opt) {
-        case 'p':
-            if (!optarg) {
-                outlog("opt=%c, optarg=%s", opt, optarg);
-                exit(EXIT_FAILURE);
-            }
-            if (strlen(optarg) < sizeof(port_no)) {
-                (void)memset(port_no, 0, sizeof(port_no));
-                (void)strncpy(port_no, optarg, sizeof(port_no));
-            } else {
-                (void)fprintf(fp, "port_no=%s\n", optarg);
-                print_help(basename(argv[0]));
-                exit(EXIT_FAILURE);
-            }
-            break;
-        case 'h':
-            print_help(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case 'V':
-            print_version(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case 'g':
-            gflag = true;
-            break;
-        case '?':
-        case ':':
-            (void)fprintf(fp, "getopt=%c\n", opt);
-            parse_error(NULL);
-            exit(EXIT_FAILURE);
-        default:
-            (void)fprintf(fp, "getopt=%c\n", opt);
-            parse_error("internal error");
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 

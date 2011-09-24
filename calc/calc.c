@@ -37,13 +37,14 @@
 #include <string.h>   /* memcpy memset */
 #include <ctype.h>    /* isdigit isalpha */
 #include <math.h>     /* powl */
-#if defined(_DEBUG)
+#ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
 #  include <float.h>  /* DBL_MAX */
 #endif
 
 #include "timer.h"
 #include "log.h"
+#include "util.h"
 #include "data.h"
 #include "error.h"
 #include "option.h"
@@ -52,12 +53,13 @@
 #define EX_ERROR    0 /* エラー戻り値 */
 
 /* 外部変数 */
-int digit = -1;     /**< 桁数 */
-bool tflag = false; /**< tオプションフラグ */
+bool g_tflag = false;         /**< tオプションフラグ */
 
 /* 内部変数 */
-static int ch = 0;        /**< 文字 */
-static uchar *ptr = NULL; /**< 文字列ポインタ */
+static int ch = 0;                /**< 文字 */
+static uchar *ptr = NULL;         /**< 文字列走査用ポインタ */
+static uchar *result = NULL;      /**< 結果 */
+static char format[sizeof("%.18g")]; /**< フォーマット */
 
 /* 内部関数 */
 /** 式 */
@@ -76,6 +78,188 @@ static int get_strlen(const dbl val, const char *fmt);
 static void readch(void);
 
 /**
+ * 初期化
+ *
+ * @param[in] expr 式
+ * @param[in] digit 桁数
+ * @return なし
+ */
+void
+init_calc(void *expr, long digit)
+{
+    int retval = 0; /* 戻り値 */
+
+    ptr = (uchar *)expr; /* 走査用ポインタ */
+
+    /* フォーマット設定 */
+    retval = snprintf(format, sizeof(format), "%s%ld%s",
+                      "%.", digit, "g");
+    if (retval < 0) {
+        outlog("snprintf=%d", retval);
+        return;
+    }
+    dbglog("format=%s", format);
+}
+
+/**
+ * メモリ解放
+ *
+ * @return なし
+ */
+void
+destroy_calc(void)
+{
+    dbglog("start: result=%p", result);
+    memfree(1, &result);
+    dbglog("result=%p", result);
+}
+
+/**
+ * 計算結果
+ *
+ * @return 新たに領域確保された結果文字列ポインタ
+ * @retval NULL エラー
+ */
+uchar *
+answer(void)
+{
+    dbl val = 0;            /* 値 */
+    size_t length = 0;      /* 文字数 */
+    uchar *errormsg = NULL; /* エラーメッセージ */
+    int retval = 0;         /* 戻り値 */
+    uint t = 0, time = 0;   /* タイマ用変数 */
+
+    dbglog("start: %p", answer);
+    dbglog("sizeof(dbl)=%u, DBL_MAX=%f", sizeof(dbl), DBL_MAX);
+    dbglog("sizeof(ldbl)=%u, LDBL_MAX=%Lf", sizeof(ldbl), LDBL_MAX);
+
+    if (g_tflag)
+        start_timer(&t);
+
+    readch();
+    val = expression();
+    dbglog(format, val);
+    dbglog("ptr=%p, ch=%c", ptr, ch);
+
+    check_validate(1, val);
+    if (ch != '\0') /* エラー */
+        set_errorcode(E_SYNTAX);
+
+    if (g_tflag) {
+        time = stop_timer(&t);
+        print_timer(time);
+    }
+
+    if (is_error()) { /* エラー */
+        errormsg = get_errormsg();
+        if (!errormsg)
+            return NULL;
+        length = strlen((char *)errormsg); /* 文字数 */
+        result = (uchar *)strndup((char *)errormsg, length);
+        clear_error();
+        dbglog("errormsg=%p", errormsg);
+        if (!result) {
+            outlog("strndup=%p", result);
+            return NULL;
+        }
+        dbglog("result=%p, length=%u", result, length);
+    } else {
+        /* 文字数取得 */
+        retval = get_strlen(val, format);
+        dbglog("retval=%d, INT_MAX=%d", retval, INT_MAX);
+        if (retval <= 0) { /* エラー */
+            outlog("retval=%d", retval);
+            return NULL;
+        }
+        length = (size_t)retval + 1; /* 文字数 + 1 */
+
+        /* メモリ確保 */
+        result = (uchar *)malloc(length * sizeof(uchar));
+        if (!result) {
+            outlog("calloc=%p", result);
+            return NULL;
+        }
+        (void)memset(result, 0, length * sizeof(uchar));
+
+        /* 値を文字列に変換 */
+        retval = snprintf((char *)result, length, format, val);
+        if (retval < 0) {
+            outlog("snprintf=%d, result=%p, length=%u",
+                   retval, result, length);
+            return NULL;
+        }
+        dbglog(format, val);
+        dbglog("result=%s, length=%u", result, length);
+    }
+    return result;
+}
+
+/**
+ * 引数解析
+ *
+ * @param[in] type 引数のタイプ
+ * @param[out] x 値
+ * @param[out] y 値
+ * @return なし
+ */
+void
+parse_func_args(const enum argtype type, dbl *x, dbl *y)
+{
+    dbglog("start");
+
+    if (is_error())
+        return;
+
+    if (ch != '(') {
+        set_errorcode(E_SYNTAX);
+        return;
+    }
+
+    readch();
+    *x = expression();
+    dbglog("x=%s", format, *x);
+
+    if (type == ARG_2) {
+        if (ch != ',') {
+            set_errorcode(E_SYNTAX);
+            return;
+        }
+        readch();
+        *y = expression();
+        dbglog("y=%s", format, *y);
+    }
+
+    if (ch != ')') {
+        set_errorcode(E_SYNTAX);
+        return;
+    }
+    readch();
+
+}
+
+/**
+ * バッファ読込
+ *
+ * バッファから一文字読み込む.
+ * 空白, タブは読み飛ばす.
+ *
+ * @return なし
+ */
+static void
+readch(void)
+{
+    dbglog("start");
+
+    do {
+        ch = (int)*ptr;
+        dbglog("ptr=%p, ch=%c", ptr, ch);
+        if (ch == '\0')
+            break;
+        ptr++;
+    } while (isblank(ch));
+}
+
+/**
  * 式
  *
  * @return 値
@@ -91,7 +275,7 @@ expression(void)
         return EX_ERROR;
 
     x = term();
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
 
     while (true) {
         if (ch == '+') {
@@ -105,7 +289,7 @@ expression(void)
         }
     }
 
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
     return x;
 }
 
@@ -125,7 +309,7 @@ term(void)
         return EX_ERROR;
 
     x = factor();
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
 
     while (true) {
         if (ch == '*') {
@@ -147,7 +331,7 @@ term(void)
             break;
         }
     }
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
     return x;
 }
 
@@ -156,7 +340,7 @@ term(void)
  *
  * @return 値
  */
-static dbl 
+static dbl
 factor(void)
 {
     dbl x = 0; /* 値 */
@@ -178,7 +362,7 @@ factor(void)
     }
     readch();
 
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
     return x;
 }
 
@@ -190,7 +374,7 @@ factor(void)
 static dbl
 token(void)
 {
-    dbl result = 0;                /* 結果 */
+    dbl result = 0;                 /* 結果 */
     int sign = '+';                 /* 単項+- */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
@@ -224,7 +408,7 @@ token(void)
         set_errorcode(E_SYNTAX);
     }
 
-    dbglog("result=%.18g", result);
+    dbglog(format, result);
     return (sign == '+') ? result : -result;
 }
 
@@ -233,7 +417,7 @@ token(void)
  *
  * @return 数値
  */
-static dbl 
+static dbl
 number(void)
 {
     dbl x = 0, y = 1; /* 値 */
@@ -243,13 +427,13 @@ number(void)
     x = ch - '0';
     while (readch(), isdigit(ch)) /* 整数 */
         x = (x * 10) + (ch - '0');
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
 
     if (ch == '.') { /* 小数 */
         while (readch(), isdigit(ch))
             x += (y /= 10) * (ch - '0');
     }
-    dbglog("x=%.18g", x);
+    dbglog(format, x);
 
     check_validate(1, x);
 
@@ -260,7 +444,7 @@ number(void)
  * 文字数取得
  *
  * @param[in] val 値
- * @param[in] fmt フォーマット
+ * @param[in] format フォーマット
  * @return 文字数
  * @retval  0 fopenエラー
  * @retval -1 fprintfエラー
@@ -272,7 +456,8 @@ get_strlen(const dbl val, const char *fmt)
     int retval = 0;  /* fclose戻り値 */
     int result = 0;  /* 文字数数 */
 
-    dbglog("start");
+    dbglog("start: fmt=%s", fmt);
+    dbglog(fmt, val);
 
     fp = fopen("/dev/null", "w");
     if (!fp) { /* fopen エラー */
@@ -287,171 +472,13 @@ get_strlen(const dbl val, const char *fmt)
             outlog("fclose=%d", retval);
     }
 
-    return result;
-}
-
-/**
- * バッファ読込
- *
- * バッファから一文字読み込む.
- * 空白, タブは読み飛ばす.
- *
- * @return なし
- */
-static void
-readch(void)
-{
-    dbglog("start");
-
-    do {
-        ch = (int)*ptr;
-        dbglog("ptr=%p, ch=%c", ptr, ch);
-        if (ch == '\0')
-            break;
-        ptr++;
-    } while (isblank(ch));
-}
-
-/**
- * 引数解析
- *
- * @param[in] num 引数の数
- * @param[out] x 値
- * @param[out] y 値
- * @return なし
- */
-void
-parse_func_args(const enum argtype type, dbl *x, dbl *y)
-{
-    dbglog("start");
-
-    if (is_error())
-        return;
-
-    if (ch != '(') {
-        set_errorcode(E_SYNTAX);
-        return;
-    }
-
-    readch();
-    *x = expression();
-    dbglog("val=%.18g", *x);
-
-    if (type == ARG_2) {
-        if (ch != ',') {
-            set_errorcode(E_SYNTAX);
-            return;
-        }
-        readch();
-        *y = expression();
-        dbglog("val=%.18g", *x);
-    }
-
-    if (ch != ')') {
-        set_errorcode(E_SYNTAX);
-        return;
-    }
-    readch();
-
-}
-
-/**
- * 入力
- *
- * @param[in] buf 文字列バッファポインタ
- * @return 新たに領域確保された結果文字列ポインタ
- * @retval NULL エラー
- */
-uchar *
-input(uchar *buf)
-{
-    dbl val = 0;               /* 値 */
-    size_t length = 0;         /* 文字数 */
-    uchar *result = NULL;      /* 結果 */
-    uchar *errormsg = NULL;    /* エラーメッセージ */
-    int retval = 0;            /* 戻り値 */
-    char fmt[sizeof("%.18g")]; /* フォーマット */
-    uint t = 0, time = 0;      /* タイマ用変数 */
-
-    dbglog("start: %p", input);
-    dbglog("sizeof(double)=%u, DBL_MAX=%g", sizeof(double), DBL_MAX);
-
-    /* 初期値設定 */
-    ptr = buf;  /* ポインタ設定 */
-
-    if (tflag)
-        start_timer(&t);
-    
-    readch();
-    val = expression();
-    dbglog("val=%g, ptr=%p, ch=%c", val, ptr, ch);
-
-    check_validate(1, val);
-    if (ch != '\0') /* エラー */
-        set_errorcode(E_SYNTAX);
-
-    if (tflag) {
-        time = stop_timer(&t);   
-        print_timer(time);
-    }
-
-    if (is_error()) { /* エラー */
-        errormsg = get_errormsg();
-        if (!errormsg)
-            return NULL;
-        length = strlen((char *)errormsg); /* 文字数 */
-        result = (uchar *)strndup((char *)errormsg, length);
-        clear_error(&errormsg);
-        dbglog("errormsg=%p", errormsg);
-        if (!result) {
-            outlog("strndup=%p", result);
-            return NULL;
-        }
-        dbglog("result=%p, length=%u", result, length);
-    } else {
-        /* フォーマット設定 */
-        if (digit == -1) /* デフォルト */
-            digit = DEFAULT_DIGIT;
-        retval = snprintf(fmt, sizeof(fmt), "%s%d%s",
-                          "%.", digit, "g");
-        if (retval < 0) {
-            outlog("snprintf=%d", retval);
-            return NULL;
-        }
-        dbglog("fmt=%s", fmt);
-
-        /* 文字数取得 */
-        retval = get_strlen(val, fmt);
-        dbglog("retval=%d, INT_MAX=%d", retval, INT_MAX);
-        if (retval <= 0) { /* エラー */
-            outlog("retval=%d", retval);
-            return NULL;
-        }
-        length = (size_t)retval + 1; /* 文字数 + 1 */
-
-        /* メモリ確保 */
-        result = (uchar *)malloc(length * sizeof(uchar));
-        if (!result) {
-            outlog("calloc=%p", result);
-            return NULL;
-        }
-        (void)memset(result, 0, length * sizeof(uchar));
-
-        /* 値を文字列に変換 */
-        retval = snprintf((char *)result, length, fmt, val);
-        if (retval < 0) {
-            outlog("snprintf=%d, result=%p, length=%u",
-                   retval, result, length);
-            return NULL;
-        }
-        dbglog("result=%s, val=%.18g, length=%u", result, val, length);
-    }
+    dbglog("result=%d", result);
     return result;
 }
 
 #ifdef _UT
 void
-test_initfunc(struct test_func *func)
+test_init_calc(struct test_calc_func *func)
 {
     func->expression = expression;
     func->term = term;
@@ -462,10 +489,10 @@ test_initfunc(struct test_func *func)
     func->readch = readch;
 }
 
-//int
-//_test_get_strlen(const dbl val, const char *fmt)
-//{
-//    return get_strlen(val, fmt);
-//}
+int
+_test_get_strlen(const dbl val, const char *fmt)
+{
+    return get_strlen(val, fmt);
+}
 #endif /* _UT */
 

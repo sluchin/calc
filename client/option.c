@@ -43,10 +43,10 @@
 #include "option.h"
 
 /* 外部変数 */
-bool gflag = false;              /**< gオプションフラグ */
-bool tflag = false;              /**< tオプションフラグ */
-char host_name[HOST_SIZE] = {0}; /**< IPアドレスまたはホスト名 */
-char port_no[PORT_SIZE] = {0};   /**< ポート番号またはサービス名 */
+bool g_gflag = false;              /**< gオプションフラグ */
+bool g_tflag = false;              /**< tオプションフラグ */
+char g_host_name[HOST_SIZE] = {0}; /**< IPアドレスまたはホスト名 */
+char g_port_no[PORT_SIZE] = {0};   /**< ポート番号またはサービス名 */
 
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
@@ -69,7 +69,82 @@ static void print_help(const char *prog_name);
 /** バージョン情報表示 */
 static void print_version(const char *prog_name);
 /** getoptエラー表示 */
-static void parse_error(const char *msg);
+static void parse_error(const int c, const char *msg);
+
+/**
+ * オプション引数
+ *
+ * オプション引数ごとに処理を分岐する.
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @return なし
+ */
+void
+parse_args(int argc, char *argv[])
+{
+    int opt = 0;       /* getopt_longの戻り値格納 */
+
+    dbglog("start");
+
+    /* デフォルトのIPアドレスを設定 */
+    (void)memset(g_host_name, 0, sizeof(g_host_name));
+    (void)strncpy(g_host_name, DEFAULT_IPADDR, sizeof(g_host_name));
+
+    /* デフォルトのポート番号を設定 */
+    (void)memset(g_port_no, 0, sizeof(g_port_no));
+    (void)strncpy(g_port_no, DEFAULT_PORTNO, sizeof(g_port_no));
+
+    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+        dbglog("opt=%c, optarg=%s", opt, optarg);
+        switch (opt) {
+        case 'i':
+            if (!optarg) {
+                outlog("opt=%c, optarg=%s", opt, optarg);
+                exit(EXIT_FAILURE);
+            }
+            if (strlen(optarg) < sizeof(g_host_name)) {
+                (void)memset(g_host_name, 0, sizeof(g_host_name));
+                (void)strncpy(g_host_name, optarg, sizeof(g_host_name));
+            } else {
+                print_help(basename(argv[0]));
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'p':
+            if (!optarg) {
+                outlog("opt=%c, optarg=%s", opt, optarg);
+                exit(EXIT_FAILURE);
+            }
+            if (strlen(optarg) < sizeof(g_port_no)) {
+                (void)memset(g_port_no, 0, sizeof(g_port_no));
+                (void)strncpy(g_port_no, optarg, sizeof(g_port_no));
+            } else {
+                print_help(basename(argv[0]));
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 't':
+            g_tflag = true;
+            break;
+        case 'h':
+            print_help(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case 'V':
+            print_version(basename(argv[0]));
+            exit(EXIT_SUCCESS);
+        case 'g':
+            g_gflag = true;
+            break;
+        case '?':
+        case ':':
+            parse_error(opt, NULL);
+            exit(EXIT_FAILURE);
+        default:
+            parse_error(opt, "internal error");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 /**
  * ヘルプ表示
@@ -109,95 +184,16 @@ print_version(const char *prog_name)
  * getoptエラー表示
  *
  * getoptが異常な動作をした場合、エラーを表示する.
+ * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
  * @return なし
  */
 static void
-parse_error(const char *msg)
+parse_error(const int c, const char *msg)
 {
     FILE *fp = stderr;
     if (msg)
-        (void)fprintf(fp, "getopt: %s\n", msg);
+        (void)fprintf(fp, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(fp, "Try `getopt --help' for more information\n");
-}
-
-/**
- * オプション引数
- *
- * オプション引数ごとに処理を分岐する.
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @return なし
- */
-void
-parse_args(int argc, char *argv[])
-{
-    FILE *fp = stderr; /* 標準エラー出力 */
-    int opt = 0;       /* getopt_longの戻り値格納 */
-
-    dbglog("start");
-
-    /* デフォルトのIPアドレスを設定 */
-    (void)memset(host_name, 0, sizeof(host_name));
-    (void)strncpy(host_name, DEFAULT_IPADDR, sizeof(host_name));
-
-    /* デフォルトのポート番号を設定 */
-    (void)memset(port_no, 0, sizeof(port_no));
-    (void)strncpy(port_no, DEFAULT_PORTNO, sizeof(port_no));
-
-    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
-        dbglog("opt=%c, optarg=%s", opt, optarg);
-        switch (opt) {
-        case 'i':
-            if (!optarg) {
-                outlog("opt=%c, optarg=%s", opt, optarg);
-                exit(EXIT_FAILURE);
-            }
-            if (strlen(optarg) < sizeof(host_name)) {
-                (void)memset(host_name, 0, sizeof(host_name));
-                (void)strncpy(host_name, optarg, sizeof(host_name));
-            } else {
-                (void)fprintf(fp, "ip_address=%s\n", optarg);
-                print_help(basename(argv[0]));
-                exit(EXIT_FAILURE);
-            }
-            break;
-        case 'p':
-            if (!optarg) {
-                outlog("opt=%c, optarg=%s", opt, optarg);
-                exit(EXIT_FAILURE);
-            }
-            if (strlen(optarg) < sizeof(port_no)) {
-                (void)memset(port_no, 0, sizeof(port_no));
-                (void)strncpy(port_no, optarg, sizeof(port_no));
-            } else {
-                (void)fprintf(fp, "port_no=%s\n", optarg);
-                print_help(basename(argv[0]));
-                exit(EXIT_FAILURE);
-            }
-            break;
-        case 't':
-            tflag = true;
-            break;
-        case 'h':
-            print_help(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case 'V':
-            print_version(basename(argv[0]));
-            exit(EXIT_SUCCESS);
-        case 'g':
-            gflag = true;
-            break;
-        case '?':
-        case ':':
-            (void)fprintf(fp, "getopt=%c\n", opt);
-            parse_error(NULL);
-            exit(EXIT_FAILURE);
-        default:
-            (void)fprintf(fp, "getopt=%c\n", opt);
-            parse_error("internal error");
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 

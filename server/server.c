@@ -53,105 +53,43 @@
 static void *server_proc(void *arg);
 
 /**
- * サーバプロセス
+ * 接続受付
  *
- * @param[in] arg ソケットディスクリプタ
- * @return 常にNULL
+ * @param[in] sock ソケット
+ * @return なし
  */
-static void *
-server_proc(void *arg)
+void
+server_loop(int sock)
 {
-    size_t length = 0;                /* 長さ */
-    struct header hd;                 /* ヘッダ構造体 */
-    int retval = 0;                   /* 戻り値 */
-    ushort cs = 0;                    /* チェックサム */
-    int acc = -1;                     /* アクセプト */
-    struct server_data *sdata = NULL; /* 送信データ構造体 */
-    uchar *expr = NULL;               /* 受信データ */
-    uchar *result = NULL;             /* 処理結果 */
+    struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
+    int addrlen = 0;         /* sockaddr_in構造体のサイズ */
+    pthread_t thread_id;     /* スレッドID */
+    int retval = 0;          /* 戻り値 */
+    int acc = -1;            /* accept戻り値 */
 
     dbglog("start");
 
-    /* スレッドデタッチ */
-    pthread_detach(pthread_self());
-
-    /* 引数の取得 */
-    acc = (int)arg;
-
+    addrlen = sizeof(addr);
     do {
-        /* ヘッダ受信 */
-        length = sizeof(struct header);
-        (void)memset(&hd, 0, length);
-        retval = recv_data(acc, &hd, length);
-        if (retval < 0) /* エラー */
-            break;
-        dbglog("recv_data=%d, hd=%p, length=%u, hd.length=%d",
-               retval, &hd, length, hd.length);
-        if (gflag)
-            outdump(&hd, length, "hd=%p, length=%u", &hd, length);
-        stddump(&hd, length, "hd=%p, length=%u", &hd, length);
-
-        length = hd.length; /* データ長を保持 */
-
-        /* データ受信 */
-        expr = recv_data_new(acc, length);
-        if (!expr) { /* エラー */
-            memfree(1, &expr);
-            break;
+        /* 接続受付 */
+        errno = 0;
+        acc = accept(sock, (struct sockaddr *)&addr, (socklen_t *)&addrlen);
+        if (acc < 0) {
+            if (errno != EINTR)
+                outlog("accept=%d", acc);
+            continue;
         }
-        dbglog("expr=%p, length=%u", expr, length);
-
-        if (gflag)
-            outdump(expr, length, "expr%p, length=%u", expr, length);
-        stddump(expr, length, "expr=%p, length=%u", expr, length);
-
-        /* チェックサム */
-        cs = in_cksum((ushort *)expr, length);
-        if (cs != hd.checksum) { /* チェックサムエラー */
-            outlog("checksum error: 0x%x!=0x%x", cs, hd.checksum);
-            memfree(1, &expr);
-            break;
+        dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
+               acc, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+        /* スレッド生成 */
+        retval = pthread_create(&thread_id, NULL, server_proc, (void *)acc);
+        if (retval) {
+            outlog("pthread_create=%d", thread_id);
+            /* アクセプトクローズ */
+            close_sock(&acc);
         }
-
-        if (!strcmp((char *)expr, "exit") ||
-            !strcmp((char *)expr, "quit")) {
-            memfree(1, &expr);
-            break;
-        }
-
-        /* サーバ処理 */
-        result = input(expr);
-        dbglog("result=%s", result);
-
-        length = strlen((char *)result) + 1; /* 文字列長保持 */
-        dbgdump(result, length, "result=%p, length=%u", result, length);
-
-        /* データ送信 */
-        sdata = set_server_data(sdata, result, length);
-        if (!sdata) {
-            memfree(2, &expr, &result);
-            break;
-        }
-        length += sizeof(struct header);
-
-        if (gflag)
-            outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
-        stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
-
-        retval = send_data(acc, sdata, length);
-        if (retval < 0) { /* エラー */
-            memfree(3, &expr, &result, &sdata);
-            break;
-        }
-        dbglog("send_data%d, sdata=%p, length=%u", retval, sdata, length);
-
-        memfree(3, &expr, &result, &sdata);
-
+        dbglog("pthread_create=%d", thread_id);
     } while (!sig_handled && !sighup_handled);
-
-    close_sock(&acc);
-
-    return NULL;
 }
 
 /**
@@ -218,42 +156,107 @@ error_handler:
 }
 
 /**
- * 接続受付
+ * サーバプロセス
  *
- * @param[in] sock ソケット
- * @return なし
+ * @param[in] arg ソケットディスクリプタ
+ * @return 常にNULL
  */
-void
-server_loop(int sock)
+static void *
+server_proc(void *arg)
 {
-    struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
-    int addrlen = 0;         /* sockaddr_in構造体のサイズ */
-    pthread_t thread_id;     /* スレッドID */
-    int retval = 0;          /* 戻り値 */
-    int acc = -1;            /* accept戻り値 */
+    size_t length = 0;                /* 長さ */
+    struct header hd;                 /* ヘッダ構造体 */
+    int retval = 0;                   /* 戻り値 */
+    ushort cs = 0;                    /* チェックサム */
+    int acc = -1;                     /* アクセプト */
+    struct server_data *sdata = NULL; /* 送信データ構造体 */
+    uchar *expr = NULL;               /* 受信データ */
+    uchar *result = NULL;             /* 処理結果 */
 
     dbglog("start");
 
-    addrlen = sizeof(addr);
+    /* スレッドデタッチ */
+    pthread_detach(pthread_self());
+
+    /* 引数の取得 */
+    acc = (int)arg;
+
     do {
-        /* 接続受付 */
-        errno = 0;
-        acc = accept(sock, (struct sockaddr *)&addr, (socklen_t *)&addrlen);
-        if (acc < 0) {
-            if (errno != EINTR)
-                outlog("accept=%d", acc);
-            continue;
+        /* ヘッダ受信 */
+        length = sizeof(struct header);
+        (void)memset(&hd, 0, length);
+        retval = recv_data(acc, &hd, length);
+        if (retval < 0) /* エラー */
+            break;
+        dbglog("recv_data=%d, hd=%p, length=%u, hd.length=%d",
+               retval, &hd, length, hd.length);
+        if (g_gflag)
+            outdump(&hd, length, "hd=%p, length=%u", &hd, length);
+        stddump(&hd, length, "hd=%p, length=%u", &hd, length);
+
+        length = hd.length; /* データ長を保持 */
+
+        /* データ受信 */
+        expr = recv_data_new(acc, length);
+        if (!expr) /* エラー */
+            break;
+
+        dbglog("expr=%p, length=%u", expr, length);
+
+        if (g_gflag)
+            outdump(expr, length, "expr%p, length=%u", expr, length);
+        stddump(expr, length, "expr=%p, length=%u", expr, length);
+
+        /* チェックサム */
+        cs = in_cksum((ushort *)expr, length);
+        if (cs != hd.checksum) { /* チェックサムエラー */
+            outlog("checksum error: 0x%x!=0x%x", cs, hd.checksum);
+            memfree(1, &expr);
+            break;
         }
-        dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
-               acc, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-        /* スレッド生成 */
-        retval = pthread_create(&thread_id, NULL, server_proc, (void *)acc);
-        if (retval) {
-            outlog("pthread_create=%d", thread_id);
-            /* アクセプトクローズ */
-            close_sock(&acc);
+
+        if (!strcmp((char *)expr, "exit") ||
+            !strcmp((char *)expr, "quit")) {
+            memfree(1, &expr);
+            break;
         }
-        dbglog("pthread_create=%d", thread_id);
+
+        /* サーバ処理 */
+        init_calc(expr, g_digit);
+        result = answer();
+        dbglog("result=%s", result);
+
+        length = strlen((char *)result) + 1; /* 文字列長保持 */
+        dbgdump(result, length, "result=%p, length=%u", result, length);
+
+        /* データ送信 */
+        sdata = set_server_data(sdata, result, length);
+        if (!sdata) {
+            destroy_calc();
+            memfree(1, &expr);
+            break;
+        }
+        length += sizeof(struct header);
+
+        if (g_gflag)
+            outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
+        stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
+
+        retval = send_data(acc, sdata, length);
+        if (retval < 0) { /* エラー */
+            destroy_calc();
+            memfree(2, &expr, &sdata);
+            break;
+        }
+        dbglog("send_data%d, sdata=%p, length=%u", retval, sdata, length);
+
+        destroy_calc();
+        memfree(2, &expr, &sdata);
+
     } while (!sig_handled && !sighup_handled);
+
+    close_sock(&acc);
+
+    return NULL;
 }
 

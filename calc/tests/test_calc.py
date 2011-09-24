@@ -15,43 +15,66 @@ class test_calc(unittest.TestCase):
     def setUp(self):
         pass
 
-    def input(self, expr):
-        dll.input.restype = c_char_p
-        dll.input.argtypes = [ c_char_p, c_uint ]
-        retval = dll.input(expr, len(expr))
+    def answer(self, expr):
+        dll.init_calc.argtypes = [ c_char_p ]
+        dll.init_calc(expr)
+        dll.answer.restype = c_char_p
+        retval = dll.answer()
         return retval
 
     def get_strlen(self, n, fmt):
-        dll.test_get_strlen.restype = c_int
-        dll.test_get_strlen.argtypes = [ c_double, c_char_p ]
-        retval = dll.test_get_strlen(n, fmt)
+        dll._test_get_strlen.restype = c_int
+        dll._test_get_strlen.argtypes = [ c_double, c_char_p ]
+        retval = dll._test_get_strlen(n, fmt)
         return retval
 
-    def test_input(self):
-        """input() """
-        # メモリリークする
-        #self.assertEqual(self.input('(105+312)+2*(5-3)'), '421')
-        #self.assertEqual(self.input('(105+312)+2/(5-3)'), '418')
-        #self.assertEqual(self.input('1+2*(5-3)'), '5')
-        #self.assertEqual(self.input('1+2/(5-3)'), '2')
-        #self.assertEqual(self.input('pi'), '3.14159265359')
-        #self.assertEqual(self.input('e'), '2.71828182846')
-        #self.assertEqual(self.input('abs(-2)'), '2')
-        #self.assertEqual(self.input('sqrt(2)'), '1.41421356237')
-        #self.assertEqual(self.input('sin(2)'), '0.909297426826')
-        #self.assertEqual(self.input('cos(2)'), '-0.416146836547')
-        #self.assertEqual(self.input('tan(2)'), '-2.18503986326')
-        #self.assertEqual(self.input('asin(0.5)'), '0.523598775598')
-        #self.assertEqual(self.input('acos(0.5)'), '1.0471975512')
-        #self.assertEqual(self.input('atan(0.5)'), '0.463647609001')
-        #self.assertEqual(self.input('exp(2)'), '7.38905609893')
-        #self.assertEqual(self.input('ln(2)'), '0.69314718056')
-        #self.assertEqual(self.input('log(2)'), '0.301029995664')
-        #self.assertEqual(self.input('deg(2)'), '114.591559026')
-        #self.assertEqual(self.input('rad(2)'), '0.0349065850399')
-        #self.assertEqual(self.input('n(10)'), '3628800')
-        #self.assertEqual(self.input('nPr(5,2)'), '20')
-        #self.assertEqual(self.input('nCr(5,2)'), '10')
+    def test_answer(self):
+        """answer() memory leak"""
+        pass
+        #self.assertEqual(self.answer('(105+312)+2*(5-3)'), '421')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('(105+312)+2/(5-3)'), '418')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('1+2*(5-3)'), '5')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('1+2/(5-3)'), '2')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('pi'), '3.14159265359')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('e'), '2.71828182846')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('abs(-2)'), '2')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('sqrt(2)'), '1.41421356237')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('sin(2)'), '0.909297426826')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('cos(2)'), '-0.416146836547')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('tan(2)'), '-2.18503986326')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('asin(0.5)'), '0.523598775598')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('acos(0.5)'), '1.0471975512')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('atan(0.5)'), '0.463647609001')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('exp(2)'), '7.38905609893')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('ln(2)'), '0.69314718056')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('log(2)'), '0.301029995664')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('deg(2)'), '114.591559026')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('rad(2)'), '0.0349065850399')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('n(10)'), '3628800')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('nPr(5,2)'), '20')
+        #dll.destroy_calc()
+        #self.assertEqual(self.answer('nCr(5,2)'), '10')
+        #dll.destroy_calc()
 
     def test_get_strlen(self):
         """get_strlen() """

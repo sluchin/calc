@@ -119,12 +119,88 @@ struct funcinfo {
 static struct funcinfo finfo[MAXFUNC];
 
 /**
+ * 関数実行
+ *
+ * @param[in] func 関数名
+ * return なし
+ */
+dbl
+exec_func(const char *func)
+{
+    dbl result = 0;      /* 戻り値 */
+    dbl x = 0, y = 0;    /* 値 */
+    int i;               /* 変数 */
+    bool exec;           /* 関数実行フラグ */
+    enum functype ftype; /* 関数種別 */
+
+    dbglog("start");
+
+    for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
+        if (!strcmp(fstring[i].funcname, func)) {
+            ftype = fstring[i].type;
+            dbglog("finfo[%d]=%p, ftype=%d", finfo[i], ftype);
+            switch (finfo[ftype].type) {
+                dbglog("type=%d", finfo[ftype].type);
+            case ARG_0:
+                result = finfo[ftype].func.func0();
+                break;
+            case ARG_1:
+                parse_func_args(ARG_1, &x, &y);
+                dbglog("x=%.18g, y=%.18g", x, y);
+                result = check_math(x, finfo[ftype].func.func1);
+                break;
+            case ARG_2:
+                parse_func_args(ARG_2, &x, &y);
+                dbglog("x=%.18g, y=%.18g", x, y);
+                result = finfo[ftype].func.func2(x, y);
+                break;
+            default:
+                break;
+            }
+            exec = true;
+        }
+    }
+    if (!exec) /* エラー */
+        set_errorcode(E_NOFUNC);
+
+    dbglog("result=%.18g", result);
+    return result;
+}
+
+/**
+ * 指数取得
+ *
+ * @param[in] x 値
+ * @param[in] y 値
+ * @return 指数
+ */
+dbl
+get_pow(dbl x, dbl y)
+{
+    dbl result = 0; /* 計算結果 */
+
+    dbglog("start");
+
+    check_validate(2, x, y);
+    if (is_error())
+        return result;
+
+    errno = 0;
+    feclearexcept(FE_ALL_EXCEPT);
+
+    result = pow(x, y);
+
+    check_math_feexcept(result);
+
+    return result;
+}
+
+/**
  * 関数情報構造体初期化
  *
  * @return なし
  */
 static void
-__attribute__((constructor))
 init_func(void)
 {
     dbglog("start");
@@ -271,6 +347,7 @@ check_math(dbl x, dbl (*callback)(dbl))
 /**
  * 階乗
  *
+ * @param[in] n 値
  * @return 階乗
  */
 static dbl
@@ -282,7 +359,7 @@ factorial(dbl n)
 /**
  * 階乗取得
  *
- * @param[in] val arg_value構造体
+ * @param[in] n 値
  * @return 階乗
  */
 static dbl
@@ -311,7 +388,7 @@ get_factorial(dbl n)
 
     if (isless(n, 0)) { /* マイナス */
         n = check_math(n, fabs);
-        minus = true; 
+        minus = true;
     }
 
     result = factorial(n);
@@ -334,7 +411,8 @@ get_factorial(dbl n)
  * 順列 nPr を求める関数.\n
  * nPr = n! / (n - r)！
  *
- * @param[in] val arg_value構造体
+ * @param[in] n 値
+ * @param[in] r 値
  * return nPr
  */
 static dbl
@@ -378,7 +456,8 @@ get_permutation(dbl n, dbl r)
  * 組み合わせ数 nCr を求める関数.\n
  * nCr = n! / r! (n - r)！
  *
- * @param[in] val arg_value構造体
+ * @param[in] n 値
+ * @param[in] r 値
  * return nCr
  */
 static dbl
@@ -411,83 +490,6 @@ get_combination(dbl n, dbl r)
 
     check_validate(1, result);
 
-    return result;
-}
-
-/**
- * 指数取得
- *
- * @param[in] x 値
- * @param[in] y 値
- * @return 指数
- */
-dbl
-get_pow(dbl x, dbl y)
-{
-    dbl result = 0; /* 計算結果 */
-
-    dbglog("start");
-
-    check_validate(2, x, y);
-    if (is_error())
-        return result;
-
-    errno = 0;
-    feclearexcept(FE_ALL_EXCEPT);
-
-    result = pow(x, y);
-
-    check_math_feexcept(result);
-
-    return result;
-}
-
-/**
- * 関数実行
- *
- * @param[in] func 関数名
- * return なし
- */
-dbl
-exec_func(const char *func)
-{
-    dbl result = 0;      /* 戻り値 */
-    dbl x = 0, y = 0;    /* 値 */
-    int i;               /* 変数 */
-    bool exec;           /* 関数実行フラグ */
-    enum functype ftype; /* 関数種別 */
-
-    dbglog("start");
-
-    for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
-        if (!strcmp(fstring[i].funcname, func)) {
-            ftype = fstring[i].type;
-            dbglog("finfo[%d]=%p, ftype=%d", finfo[i], ftype);
-            switch (finfo[ftype].type) {
-                dbglog("type=%d", finfo[ftype].type);
-            case ARG_0:
-                result = finfo[ftype].func.func0();
-                break;
-            case ARG_1:
-                parse_func_args(ARG_1, &x, &y);
-                dbglog("x=%.18g, y=%.18g", x, y);
-                result = check_math(x, finfo[ftype].func.func1);
-                break;
-            case ARG_2:
-                parse_func_args(ARG_2, &x, &y);
-                dbglog("x=%.18g, y=%.18g", x, y);
-                result = finfo[ftype].func.func2(x, y);
-                break;
-            default:
-                break;
-            }
-            exec = true;
-        }
-    }
-    if (!exec) /* エラー */
-        set_errorcode(E_NOFUNC);
-
-    dbglog("result=%.18g", result);
     return result;
 }
 

@@ -13,8 +13,7 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * This program is distributed in the hope that it will be useful, * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -62,6 +61,8 @@ static HIST_ENTRY *history = NULL;            /**< 履歴 */
 #endif /* HAVE_READLINE */
 
 /* 内部関数 */
+/** ループ処理 */
+static void main_loop(void);
 /* イベントフック */
 #ifdef HAVE_READLINE
 static int check_state(void);
@@ -70,6 +71,36 @@ static int check_state(void);
 static void set_sig_handler(void);
 /** シグナルハンドラ */
 static void sig_handler(int signo);
+
+/**
+ * main関数
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @return 常にEXIT_SUCCESS
+ */
+int main(int argc, char *argv[])
+{
+    dbglog("start");
+
+    progname = basename(argv[0]);
+
+    /* シグナルハンドラ */
+    set_sig_handler();
+
+    /* オプション引数 */
+    parse_args(argc, argv);
+
+    /* メインループ */
+    main_loop();
+
+#ifdef HAVE_READLINE
+    FREEHISTORY;
+#endif /* HAVE_READLINE */
+
+    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
+}
 
 /**
  * ループ処理
@@ -113,7 +144,8 @@ main_loop(void)
         dbgdump(expr, strlen((char *)expr) + 1,
                 "expr=%u", strlen((char *)expr) + 1);
 
-        result = input(expr);
+        init_calc(expr, g_digit);
+        result = answer();
         dbglog("expr=%p, result=%p", expr, result);
         if (result) {
             retval = fprintf(stdout, "%s\n", (char *)result);
@@ -129,13 +161,15 @@ main_loop(void)
         }
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
-        memfree(2, &expr, &result);
-        dbglog("expr=%p, result=%p", expr, result);
 
-    } while(!sig_handled);
+        destroy_calc();
+        memfree(1, &expr);
+        expr = result = NULL;
+
+    } while (!sig_handled);
 }
 
-/** 
+/**
  * イベントフック
  *
  * readline 内から定期的に呼ばれる関数
@@ -158,7 +192,7 @@ static int check_state(void) {
 }
 #endif /* HAVE_READLINE */
 
-/** 
+/**
  * シグナルハンドラ設定
  *
  * @return なし
@@ -190,7 +224,7 @@ set_sig_handler(void)
         outlog("sigaction=%p, SIGQUIT", sa);
 }
 
-/** 
+/**
  * シグナルハンドラ
  *
  * @param[in] signo シグナル
@@ -199,37 +233,5 @@ set_sig_handler(void)
 static void sig_handler(int signo)
 {
     sig_handled = 1;
-}
-
-/** 
- * main関数
- *
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @return 常にEXIT_SUCCESS
- */
-int main(int argc, char *argv[])
-{
-    dbglog("start");
-
-    progname = basename(argv[0]);
-
-    /* シグナルハンドラ */
-    set_sig_handler();
-
-    /* オプション引数 */
-    parse_args(argc, argv);
-
-    /* メインループ */
-    main_loop();
-
-    /* 終了処理 */
-    memfree(2, &expr, &result);
-#ifdef HAVE_READLINE
-    FREEHISTORY;
-#endif /* HAVE_READLINE */
-
-    exit(EXIT_SUCCESS);
-    return EXIT_SUCCESS;
 }
 

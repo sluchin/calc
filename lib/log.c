@@ -94,7 +94,7 @@ void system_log(const char *pname,
            getppid(), !thread_id ? t_buf : "", fname, line,
            func, message, err_no);
 
-#if 0 
+#if 0
     syslog(SYS_PRIO,
            "ppid=%d%s in %s (%s) %m(%d) at %s:%d",
            getppid(),
@@ -128,7 +128,7 @@ void system_dbg_log(const char *pname,
     int err_no = errno;               /* errno退避 */
     int retval = 0;                   /* 戻り値 */
     struct tm ts;                     /* tm構造体 */
-    struct tm *tsp;                   /* localtime_r戻り値 */ 
+    struct tm *tsp;                   /* localtime_r戻り値 */
     struct timeval tv;                /* timeval構造体 */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     char d_buf[sizeof("00")] = {0};   /* 秒格納用バッファ */

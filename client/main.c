@@ -48,7 +48,45 @@ static void set_sig_handler(void);
 /* シグナルハンドラ */
 static void sig_handler(int signo);
 
-/** 
+/**
+ * main関数
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @retval EXIT_FAILURE ソケット接続失敗
+ */
+int main(int argc, char *argv[])
+{
+    dbglog("start");
+
+    progname = basename(argv[0]);
+
+    /* シグナルハンドラ */
+    set_sig_handler();
+
+    /* オプション引数 */
+    parse_args(argc, argv);
+
+    /* ソケット接続 */
+    sockfd = connect_sock(g_host_name, g_port_no);
+    if (sockfd < 0) {
+        (void)fprintf(stderr, "connect error\n");
+        return EXIT_FAILURE;
+    }
+
+    dbglog("sockfd=%d", sockfd);
+
+    /* ソケット送受信 */
+    client_loop(sockfd);
+
+    /* ソケットクローズ */
+    close_sock(&sockfd);
+
+    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
+}
+
+/**
  * シグナルハンドラ設定
  *
  * @return なし
@@ -78,10 +116,9 @@ set_sig_handler(void)
         outlog("sigaction=%p, SIGTERM", sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
         outlog("sigaction=%p, SIGQUIT", sa);
-
 }
 
-/** 
+/**
  * シグナルハンドラ
  *
  * @param[in] signo シグナル
@@ -90,43 +127,5 @@ set_sig_handler(void)
 static void sig_handler(int signo)
 {
     sig_handled = 1;
-}
-
-/** 
- * main関数
- *
- * @param[in] argc 引数の数
- * @param[in] argv コマンド引数・オプション引数
- * @retval EXIT_FAILURE ソケット接続失敗
- */
-int main(int argc, char *argv[])
-{
-    dbglog("start");
-
-    progname = basename(argv[0]);
-
-    /* シグナルハンドラ */
-    set_sig_handler();
-
-    /* オプション引数 */
-    parse_args(argc, argv);
-
-    /* ソケット接続 */
-    sockfd = connect_sock(host_name, port_no);
-    if (sockfd < 0) {
-        (void)fprintf(stderr, "connect error\n");
-        return EXIT_FAILURE;
-    }
-
-    dbglog("sockfd=%d", sockfd);
-
-    /* ソケット送受信 */
-    client_loop(sockfd);
-
-    /* ソケットクローズ */
-    close_sock(&sockfd);
-
-    exit(EXIT_SUCCESS);
-    return EXIT_SUCCESS;
 }
 

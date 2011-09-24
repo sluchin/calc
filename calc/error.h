@@ -53,7 +53,7 @@ uchar *get_errormsg(void);
 void set_errorcode(ER error);
 
 /** エラークリア */
-void clear_error(uchar **msg);
+void clear_error(void);
 
 /** エラー判定 */
 bool is_error(void);

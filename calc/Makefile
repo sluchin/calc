@@ -9,7 +9,7 @@ bindir = $(prefix)/bin
 testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
-AR = ar rcsv
+AR = ar rcs
 STRIP = strip
 CUTTER = /usr/bin/cutter -v v
 INSTALL = install -c
@@ -17,8 +17,8 @@ INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
 DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lm #-lreadline -lpthread
-CALCLIBS = -lcalcp -lcalcutil
+LIBS = -lm -lcalcutil #-lreadline -lpthread
+CALCLIBS = -lcalcp
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a
@@ -42,7 +42,8 @@ $(LIBCALC): $(OBJCALC)
 
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^
+	@#$(CC) -shared -Wl,-soname,$@ -o $@ $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
@@ -65,8 +66,8 @@ debug:
 
 .PHONY: test
 test:
-	$(CUTTER) $(srcdir)/tests
-	@#for file in `ls $(testdir)`; do \
+	@#$(CUTTER) $(srcdir)/tests
+	for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \

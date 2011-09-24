@@ -1,6 +1,6 @@
 /**
  * @file  lib/readline.h
- * @brief readline
+ * @brief 一行読込
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成

@@ -1,5 +1,6 @@
-/** * @file  lib/readline.c
- * @brief readline
+/**
+ * @file  lib/readline.c
+ * @brief 一行読込
  *
  * @author higashi
  * @date 2010-09-10 higashi 新規作成
@@ -25,7 +26,7 @@
 #include <stdlib.h>  /* realloc free */
 #include <string.h>  /* memcpy memset */
 #include <errno.h>   /* errno */
- 
+
 #include "log.h"
 #include "readline.h"
 

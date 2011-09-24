@@ -31,9 +31,13 @@
 #include <stdarg.h> /* va_list va_arg */
 
 #include "log.h"
+#include "util.h"
 #include "error.h"
 
-/** エラーメッセージ */
+/* 内部変数 */
+static uchar *msg = NULL; /** エラーメッセージ */
+
+/** エラーメッセージ文字列構造体 */
 static const char *errormsg[] = {
     NULL,
     "Divide by zero.",
@@ -60,10 +64,9 @@ static ER errorcode = E_NONE;
 uchar *
 get_errormsg(void)
 {
-    dbglog("start: errorcode=%d", errorcode);
+    size_t slen = 0; /* 文字列長 */
 
-    size_t slen = 0;   /* 文字列長 */
-    uchar *msg = NULL; /* エラーメッセージ */
+    dbglog("start: errorcode=%d", errorcode);
 
     if (errorcode != E_NONE) {
         slen = strlen(errormsg[errorcode]) + 1;
@@ -99,17 +102,14 @@ set_errorcode(ER error)
 /**
  * エラークリア
  *
- * @param[in] msg 領域解放するポインタ
  * @return なし
  */
 void
-clear_error(uchar **msg)
+clear_error(void)
 {
     dbglog("start");
 
-    if (*msg)
-        free(*msg);
-    *msg = NULL;
+    memfree(1, &msg);
     errorcode = E_NONE;
 }
 
@@ -121,12 +121,10 @@ clear_error(uchar **msg)
 bool
 is_error(void)
 {
-    dbglog("start");
+    dbglog("start: errorcode=%d", errorcode);
 
     if (errorcode)
         return true;
-
-    dbglog("errorcode=%d", errorcode);
 
     return false;
 }
@@ -162,7 +160,7 @@ check_validate(int num, ...)
         else if (fpclassify(val) == FP_SUBNORMAL)
             set_errorcode(E_NORMSMALL);
 #else
-        int retval = 0; 
+        int retval = 0;
         if ((retval = isnan(val)) != 0) {
             dbglog("isnan(%g)=%d", val, retval);
             set_errorcode(E_NAN);
