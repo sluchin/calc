@@ -488,11 +488,5 @@ test_init_calc(struct test_calc_func *func)
     func->get_strlen = get_strlen;
     func->readch = readch;
 }
-
-int
-_test_get_strlen(const dbl val, const char *fmt)
-{
-    return get_strlen(val, fmt);
-}
 #endif /* _UT */
 

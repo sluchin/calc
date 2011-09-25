@@ -40,7 +40,7 @@ debug:
 	$(MAKE) CFLAGS="$(DFLAGS)"
 
 .PHONY: test
-test:
+test: debug
 	$(CUTTER) $(srcdir)
 
 .PHONY: strip

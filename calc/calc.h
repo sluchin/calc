@@ -62,8 +62,6 @@ struct test_calc_func {
     void (*readch)(void);
 };
 void test_init_calc(struct test_calc_func *func);
-
-int _test_get_strlen(const dbl val, const char *fmt);
 #endif
 
 #endif /* _CALC_H_ */

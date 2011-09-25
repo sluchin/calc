@@ -66,8 +66,9 @@ debug:
 
 .PHONY: test
 test:
-	@#$(CUTTER) $(srcdir)/tests
-	for file in `ls $(testdir)`; do \
+	$(MAKE) -C $(testdir)
+	$(CUTTER) $(testdir)
+	@#for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \

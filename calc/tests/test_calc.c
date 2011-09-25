@@ -32,19 +32,15 @@
 #include "log.h"
 #include "calc.h"
 
-struct test_calc_func func;
 
 /* 内部変数 */
-static uchar *expr = NULL;   /* 式 */
-static uchar *result = NULL; /* 結果 */
-
-#define CALCFREE destroy_calc();                \
-    memfree(1, &expr);                          \
-    expr = result = NULL
+static uchar *expr = NULL;         /**< 式 */
+static uchar *result = NULL;       /**< 結果 */
+static struct test_calc_func func; /**< 関数構造体 */
 
 /* 内部関数 */
 /** バッファセット */
-static uchar *set_buf(char *str);
+static char *exec_calc(char *str);
 
 void
 cut_setup(void)
@@ -60,122 +56,122 @@ cut_teardown(void)
 
 void test_answer()
 {
-    cut_assert_equal_string("421", (char *)set_buf("(105+312)+2*(5-3)"));
-    CALCFREE;
-    cut_assert_equal_string("418", (char *)set_buf("(105+312)+2/(5-3)"));
-    CALCFREE;
-    cut_assert_equal_string("5", (char *)set_buf("1+2*(5-3)"));
-    CALCFREE;
-    cut_assert_equal_string("2", (char *)set_buf("1+2/(5-3)"));
-    CALCFREE;
-    cut_assert_equal_string("3.14159265359", (char *)set_buf("pi"));
-    CALCFREE;
-    cut_assert_equal_string("2.71828182846", (char *)set_buf("e"));
-    CALCFREE;
-    cut_assert_equal_string("2", (char *)set_buf("abs(-2)"));
-    CALCFREE;
-    cut_assert_equal_string("1.41421356237", (char *)set_buf("sqrt(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.909297426826", (char *)set_buf("sin(2)"));
-    CALCFREE;
-    cut_assert_equal_string("-0.416146836547", (char *)set_buf("cos(2)"));
-    CALCFREE;
-    cut_assert_equal_string("-2.18503986326", (char *)set_buf("tan(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.523598775598", (char *)set_buf("asin(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("1.0471975512", (char *)set_buf("acos(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("0.463647609001", (char *)set_buf("atan(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("7.38905609893", (char *)set_buf("exp(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.69314718056", (char *)set_buf("ln(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.301029995664", (char *)set_buf("log(2)"));
-    CALCFREE;
-    cut_assert_equal_string("114.591559026", (char *)set_buf("deg(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.0349065850399", (char *)set_buf("rad(2)"));
-    CALCFREE;
-    cut_assert_equal_string("3628800", (char *)set_buf("n(10)"));
-    CALCFREE;
-    cut_assert_equal_string("20", (char *)set_buf("nPr(5,2)"));
-    CALCFREE;
-    cut_assert_equal_string("10", (char *)set_buf("nCr(5,2)"));
-    CALCFREE;
-    cut_assert_equal_string("15.7079632679", (char *)set_buf("5*pi"));
-    CALCFREE;
-    cut_assert_equal_string("15.7079632679", (char *)set_buf("pi*5"));
-    CALCFREE;
-    cut_assert_equal_string("13.5914091423", (char *)set_buf("5*e"));
-    CALCFREE;
-    cut_assert_equal_string("13.5914091423", (char *)set_buf("e*5"));
-    CALCFREE;
-    cut_assert_equal_string("10", (char *)set_buf("5*abs(-2)"));
-    CALCFREE;
-    cut_assert_equal_string("10", (char *)set_buf("abs(-2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("7.07106781187", (char *)set_buf("5*sqrt(2)"));
-    CALCFREE;
-    cut_assert_equal_string("7.07106781187", (char *)set_buf("sqrt(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("4.54648713413", (char *)set_buf("5*sin(2)"));
-    CALCFREE;
-    cut_assert_equal_string("4.54648713413", (char *)set_buf("sin(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("-2.08073418274", (char *)set_buf("5*cos(2)"));
-    CALCFREE;
-    cut_assert_equal_string("-2.08073418274", (char *)set_buf("cos(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("-10.9251993163", (char *)set_buf("5*tan(2)"));
-    CALCFREE;
-    cut_assert_equal_string("-10.9251993163", (char *)set_buf("tan(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("1.0471975512", (char *)set_buf("2*asin(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("1.0471975512", (char *)set_buf("asin(0.5)*2"));
-    CALCFREE;
-    cut_assert_equal_string("2.09439510239", (char *)set_buf("2*acos(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("2.09439510239", (char *)set_buf("acos(0.5)*2"));
-    CALCFREE;
-    cut_assert_equal_string("2.318238045", (char *)set_buf("5*atan(0.5)"));
-    CALCFREE;
-    cut_assert_equal_string("2.318238045", (char *)set_buf("atan(0.5)*5"));
-    CALCFREE;
-    cut_assert_equal_string("36.9452804947", (char *)set_buf("5*exp(2)"));
-    CALCFREE;
-    cut_assert_equal_string("36.9452804947", (char *)set_buf("exp(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("3.4657359028", (char *)set_buf("5*ln(2)"));
-    CALCFREE;
-    cut_assert_equal_string("3.4657359028", (char *)set_buf("ln(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("1.50514997832", (char *)set_buf("5*log(2)"));
-    CALCFREE;
-    cut_assert_equal_string("1.50514997832", (char *)set_buf("log(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("572.957795131", (char *)set_buf("5*deg(2)"));
-    CALCFREE;
-    cut_assert_equal_string("572.957795131", (char *)set_buf("deg(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("0.174532925199", (char *)set_buf("5*rad(2)"));
-    CALCFREE;
-    cut_assert_equal_string("0.174532925199", (char *)set_buf("rad(2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("18144000", (char *)set_buf("5*n(10)"));
-    CALCFREE;
-    cut_assert_equal_string("18144000", (char *)set_buf("n(10)*5"));
-    CALCFREE;
-    cut_assert_equal_string("100", (char *)set_buf("5*nPr(5,2)"));
-    CALCFREE;
-    cut_assert_equal_string("100", (char *)set_buf("nPr(5,2)*5"));
-    CALCFREE;
-    cut_assert_equal_string("50", (char *)set_buf("5*nCr(5,2)"));
-    CALCFREE;
-    cut_assert_equal_string("4.43749076323e+14", (char *)set_buf("nCr(50,22)*5"));
-    CALCFREE;
+    cut_assert_equal_string("421", exec_calc("(105+312)+2*(5-3)"));
+    destroy_calc();
+    cut_assert_equal_string("418", exec_calc("(105+312)+2/(5-3)"));
+    destroy_calc();
+    cut_assert_equal_string("5", exec_calc("1+2*(5-3)"));
+    destroy_calc();
+    cut_assert_equal_string("2", exec_calc("1+2/(5-3)"));
+    destroy_calc();
+    cut_assert_equal_string("3.14159265359", exec_calc("pi"));
+    destroy_calc();
+    cut_assert_equal_string("2.71828182846", exec_calc("e"));
+    destroy_calc();
+    cut_assert_equal_string("2", exec_calc("abs(-2)"));
+    destroy_calc();
+    cut_assert_equal_string("1.41421356237", exec_calc("sqrt(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.909297426826", exec_calc("sin(2)"));
+    destroy_calc();
+    cut_assert_equal_string("-0.416146836547", exec_calc("cos(2)"));
+    destroy_calc();
+    cut_assert_equal_string("-2.18503986326", exec_calc("tan(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.523598775598", exec_calc("asin(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("1.0471975512", exec_calc("acos(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("0.463647609001", exec_calc("atan(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("7.38905609893", exec_calc("exp(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.69314718056", exec_calc("ln(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.301029995664", exec_calc("log(2)"));
+    destroy_calc();
+    cut_assert_equal_string("114.591559026", exec_calc("deg(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.0349065850399", exec_calc("rad(2)"));
+    destroy_calc();
+    cut_assert_equal_string("3628800", exec_calc("n(10)"));
+    destroy_calc();
+    cut_assert_equal_string("20", exec_calc("nPr(5,2)"));
+    destroy_calc();
+    cut_assert_equal_string("10", exec_calc("nCr(5,2)"));
+    destroy_calc();
+    cut_assert_equal_string("15.7079632679", exec_calc("5*pi"));
+    destroy_calc();
+    cut_assert_equal_string("15.7079632679", exec_calc("pi*5"));
+    destroy_calc();
+    cut_assert_equal_string("13.5914091423", exec_calc("5*e"));
+    destroy_calc();
+    cut_assert_equal_string("13.5914091423", exec_calc("e*5"));
+    destroy_calc();
+    cut_assert_equal_string("10", exec_calc("5*abs(-2)"));
+    destroy_calc();
+    cut_assert_equal_string("10", exec_calc("abs(-2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("7.07106781187", exec_calc("5*sqrt(2)"));
+    destroy_calc();
+    cut_assert_equal_string("7.07106781187", exec_calc("sqrt(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("4.54648713413", exec_calc("5*sin(2)"));
+    destroy_calc();
+    cut_assert_equal_string("4.54648713413", exec_calc("sin(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("-2.08073418274", exec_calc("5*cos(2)"));
+    destroy_calc();
+    cut_assert_equal_string("-2.08073418274", exec_calc("cos(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("-10.9251993163", exec_calc("5*tan(2)"));
+    destroy_calc();
+    cut_assert_equal_string("-10.9251993163", exec_calc("tan(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("1.0471975512", exec_calc("2*asin(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("1.0471975512", exec_calc("asin(0.5)*2"));
+    destroy_calc();
+    cut_assert_equal_string("2.09439510239", exec_calc("2*acos(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("2.09439510239", exec_calc("acos(0.5)*2"));
+    destroy_calc();
+    cut_assert_equal_string("2.318238045", exec_calc("5*atan(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("2.318238045", exec_calc("atan(0.5)*5"));
+    destroy_calc();
+    cut_assert_equal_string("36.9452804947", exec_calc("5*exp(2)"));
+    destroy_calc();
+    cut_assert_equal_string("36.9452804947", exec_calc("exp(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("3.4657359028", exec_calc("5*ln(2)"));
+    destroy_calc();
+    cut_assert_equal_string("3.4657359028", exec_calc("ln(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("1.50514997832", exec_calc("5*log(2)"));
+    destroy_calc();
+    cut_assert_equal_string("1.50514997832", exec_calc("log(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("572.957795131", exec_calc("5*deg(2)"));
+    destroy_calc();
+    cut_assert_equal_string("572.957795131", exec_calc("deg(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("0.174532925199", exec_calc("5*rad(2)"));
+    destroy_calc();
+    cut_assert_equal_string("0.174532925199", exec_calc("rad(2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("18144000", exec_calc("5*n(10)"));
+    destroy_calc();
+    cut_assert_equal_string("18144000", exec_calc("n(10)*5"));
+    destroy_calc();
+    cut_assert_equal_string("100", exec_calc("5*nPr(5,2)"));
+    destroy_calc();
+    cut_assert_equal_string("100", exec_calc("nPr(5,2)*5"));
+    destroy_calc();
+    cut_assert_equal_string("50", exec_calc("5*nCr(5,2)"));
+    destroy_calc();
+    cut_assert_equal_string("4.43749076323e+14", exec_calc("nCr(50,22)*5"));
+    destroy_calc();
 }
 
 void test_get_strlen()
@@ -217,15 +213,15 @@ void test_get_strlen()
  * @param[in] str 文字列
  * @return なし
  */
-static uchar *
-set_buf(char *str)
+static char *
+exec_calc(char *str)
 {
     size_t length = 0; /* 文字列長 */
 
     length = strlen(str);
-    expr = (uchar *)strndup(str, length);
+    expr = (uchar *)cut_take_strndup(str, length);
     if (!expr) {
-        outlog("strndup=%p", expr);
+        outlog("cut_take_strndup=%p", expr);
         return NULL;
     }
     dbglog("length=%d, expr=%p: %s", length, expr, expr);
@@ -235,6 +231,6 @@ set_buf(char *str)
     dbglog("%s=%s", expr, result);
     dbglog("expr=%p, result=%p", expr, result);
 
-    return result;
+    return (char *)result;
 }
 
