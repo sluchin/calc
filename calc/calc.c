@@ -14,21 +14,20 @@
  * @version \$Id$
  *
  * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
- */
-/* This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- */
+ */ /* This program is free software; you can redistribute it and/or modify
+     * it under the terms of the GNU General Public License as published by
+     * the Free Software Foundation; either version 2 of the License, or
+     * (at your option) any later version.
+     *
+     * This program is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     * GNU General Public License for more details.
+     *
+     * You should have received a copy of the GNU General Public License
+     * along with this program; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+     */
 
 #include <stdio.h>    /* FILE */
 #include <stdlib.h>   /* realloc */
@@ -50,15 +49,13 @@
 #include "option.h"
 #include "calc.h"
 
-#define EX_ERROR    0 /* エラー戻り値 */
-
 /* 外部変数 */
-bool g_tflag = false;         /**< tオプションフラグ */
+bool g_tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
-static int ch = 0;                /**< 文字 */
-static uchar *ptr = NULL;         /**< 文字列走査用ポインタ */
-static uchar *result = NULL;      /**< 結果 */
+static int ch = 0;                   /**< 文字 */
+static uchar *ptr = NULL;            /**< 文字列走査用ポインタ */
+static uchar *result = NULL;         /**< 結果 */
 static char format[sizeof("%.18g")]; /**< フォーマット */
 
 /* 内部関数 */
@@ -130,8 +127,8 @@ answer(void)
     uint t = 0, time = 0;   /* タイマ用変数 */
 
     dbglog("start: %p", answer);
-    dbglog("sizeof(dbl)=%u, DBL_MAX=%f", sizeof(dbl), DBL_MAX);
-    dbglog("sizeof(ldbl)=%u, LDBL_MAX=%Lf", sizeof(ldbl), LDBL_MAX);
+//    dbglog("sizeof(dbl)=%u, DBL_MAX=%f", sizeof(dbl), DBL_MAX);
+//    dbglog("sizeof(ldbl)=%u, LDBL_MAX=%Lf", sizeof(ldbl), LDBL_MAX);
 
     if (g_tflag)
         start_timer(&t);
@@ -141,7 +138,7 @@ answer(void)
     dbglog(format, val);
     dbglog("ptr=%p, ch=%c", ptr, ch);
 
-    check_validate(1, val);
+    check_validate(val);
     if (ch != '\0') /* エラー */
         set_errorcode(E_SYNTAX);
 
@@ -218,6 +215,7 @@ parse_func_args(const enum argtype type, dbl *x, dbl *y)
     readch();
     *x = expression();
     dbglog("x=%s", format, *x);
+    check_validate(*x);
 
     if (type == ARG_2) {
         if (ch != ',') {
@@ -227,6 +225,7 @@ parse_func_args(const enum argtype type, dbl *x, dbl *y)
         readch();
         *y = expression();
         dbglog("y=%s", format, *y);
+        check_validate(*y);
     }
 
     if (ch != ')') {
@@ -435,7 +434,7 @@ number(void)
     }
     dbglog(format, x);
 
-    check_validate(1, x);
+    check_validate(x);
 
     return x;
 }

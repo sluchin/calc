@@ -32,10 +32,13 @@
 #include "log.h"
 #include "calc.h"
 
+void test_answer_four(void);
+void test_answer_func(void);
+void test_answer_four_func(void);
+void test_answer_error(void);
+void test_get_strlen(void);
 
 /* 内部変数 */
-static uchar *expr = NULL;         /**< 式 */
-static uchar *result = NULL;       /**< 結果 */
 static struct test_calc_func func; /**< 関数構造体 */
 
 /* 内部関数 */
@@ -54,7 +57,10 @@ cut_teardown(void)
 
 }
 
-void test_answer()
+/**
+ * 四則演算テスト
+ */
+void test_answer_four(void)
 {
     cut_assert_equal_string("421", exec_calc("(105+312)+2*(5-3)"));
     destroy_calc();
@@ -64,6 +70,13 @@ void test_answer()
     destroy_calc();
     cut_assert_equal_string("2", exec_calc("1+2/(5-3)"));
     destroy_calc();
+}
+
+/**
+ * 関数テスト
+ */
+void test_answer_func(void)
+{
     cut_assert_equal_string("3.14159265359", exec_calc("pi"));
     destroy_calc();
     cut_assert_equal_string("2.71828182846", exec_calc("e"));
@@ -100,6 +113,13 @@ void test_answer()
     destroy_calc();
     cut_assert_equal_string("10", exec_calc("nCr(5,2)"));
     destroy_calc();
+}
+
+/**
+ * 四則演算と関数の組み合わせテスト
+ */
+void test_answer_four_func(void)
+{
     cut_assert_equal_string("15.7079632679", exec_calc("5*pi"));
     destroy_calc();
     cut_assert_equal_string("15.7079632679", exec_calc("pi*5"));
@@ -174,7 +194,44 @@ void test_answer()
     destroy_calc();
 }
 
-void test_get_strlen()
+/**
+ * 関数エラー時
+ */
+void
+test_answer_error(void)
+{
+    cut_assert_equal_string("Divide by zero.", exec_calc("5/0"));
+    cut_assert_equal_string("Syntax error.", exec_calc("sin(5"));
+    destroy_calc();
+    cut_assert_equal_string("Syntax error.", exec_calc("nCr(5)"));
+    destroy_calc();
+    cut_assert_equal_string("Function not defined.", exec_calc("nofunc(5)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("n(0.5)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("nPr(-1,2)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("nPr(3,5)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("nCr(-1,2)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("nCr(3,5)"));
+    destroy_calc();
+    cut_assert_equal_string("Nan.", exec_calc("sqrt(-5)"));
+    destroy_calc();
+    cut_assert_equal_string("Infinity.", exec_calc("10^1000000"));
+    destroy_calc();
+    cut_assert_equal_string("Infinity.", exec_calc("n(5000)"));
+    destroy_calc();
+    cut_assert_equal_string("Infinity.", exec_calc("n(-5000)"));
+    destroy_calc();
+
+}
+
+/**
+ * get_strlen() 関数テスト
+ */
+void test_get_strlen(void)
 {
     cut_assert_equal_int(5, func.get_strlen(50000, "%.18g"));
     cut_assert_equal_int(15, func.get_strlen(123456789012345, "%.18g"));
@@ -208,7 +265,7 @@ void test_get_strlen()
 }
 
 /**
- * バッファセット
+ * 計算実行
  *
  * @param[in] str 文字列
  * @return なし
@@ -216,7 +273,9 @@ void test_get_strlen()
 static char *
 exec_calc(char *str)
 {
-    size_t length = 0; /* 文字列長 */
+    size_t length = 0;    /* 文字列長 */
+    uchar *expr = NULL;   /**< 式 */
+    uchar *result = NULL; /**< 結果 */
 
     length = strlen(str);
     expr = (uchar *)cut_take_strndup(str, length);
@@ -224,12 +283,11 @@ exec_calc(char *str)
         outlog("cut_take_strndup=%p", expr);
         return NULL;
     }
-    dbglog("length=%d, expr=%p: %s", length, expr, expr);
 
     init_calc(expr, 12L);
     result = answer();
     dbglog("%s=%s", expr, result);
-    dbglog("expr=%p, result=%p", expr, result);
+    dbglog("length=%u, expr=%p, result=%p", length,  expr, result);
 
     return (char *)result;
 }

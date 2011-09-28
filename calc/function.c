@@ -40,9 +40,6 @@
 /** ネイピア数(オイラー数) */
 #define DEF_E        2.71828182845904523536028747135266249
 
-/** 配列要素数 */
-#define arraysize(a)    sizeof(a) / sizeof(a[0])
-
 /* 内部関数 */
 /** 関数情報構造体初期化 */
 static void init_func(void) __attribute__((constructor));
@@ -50,14 +47,16 @@ static void init_func(void) __attribute__((constructor));
 static dbl get_pi(void);
 /** ネイピア数(オイラー数)取得 */
 static dbl get_e(void);
-/** 関数エラーチェック */
-static dbl check_math(dbl x, dbl (*callback)(dbl));
 /** 角度をラジアンに変換 */
 static dbl get_rad(dbl x);
 /** ラジアンを角度に変換 */
 static dbl get_deg(dbl x);
+/** 平方根 */
+static dbl get_sqrt(dbl x);
+/** 関数エラーチェック */
+static dbl check_math(dbl x, dbl (*callback)(dbl));
 /** 階乗 */
-static dbl factorial(dbl n);
+static void factorial(dbl *x, dbl n);
 /** 階乗取得 */
 static dbl get_factorial(dbl n);
 /** 順列(nPr) */
@@ -147,7 +146,11 @@ exec_func(const char *func)
             case ARG_1:
                 parse_func_args(ARG_1, &x, &y);
                 dbglog("x=%.18g, y=%.18g", x, y);
-                result = check_math(x, finfo[ftype].func.func1);
+                if (ftype == FN_SQRT) {
+                    dbglog("ftype[%d]==FN_SQRT[%d]", ftype, FN_SQRT);
+                    result = finfo[ftype].func.func1(x);
+                } else
+                    result = check_math(x, finfo[ftype].func.func1);
                 break;
             case ARG_2:
                 parse_func_args(ARG_2, &x, &y);
@@ -181,9 +184,12 @@ get_pow(dbl x, dbl y)
 
     dbglog("start");
 
-    check_validate(2, x, y);
     if (is_error())
-        return result;
+        return EX_ERROR;
+
+    if (((x == 0.f) && islessequal(y, 0)) ||
+        (isless(x, 0))) /* 定義域エラー */
+        set_errorcode(E_NAN);
 
     errno = 0;
     feclearexcept(FE_ALL_EXCEPT);
@@ -205,8 +211,8 @@ init_func(void)
 {
     dbglog("start");
 
-    assert(arraysize(fstring) == MAXFUNC);
-    assert(arraysize(finfo) == MAXFUNC);
+    assert(MAXFUNC == arraysize(fstring));
+    assert(MAXFUNC == arraysize(finfo));
 
     memset(finfo, 0, sizeof(finfo));
 
@@ -221,7 +227,7 @@ init_func(void)
     finfo[FN_ABS].func.func1 = fabs;
     /* 平方根 */
     finfo[FN_SQRT].type = ARG_1;
-    finfo[FN_SQRT].func.func1 = sqrt;
+    finfo[FN_SQRT].func.func1 = get_sqrt;
     /* 三角関数(sin) */
     finfo[FN_SIN].type = ARG_1;
     finfo[FN_SIN].func.func1 = sin;
@@ -317,6 +323,32 @@ get_deg(dbl x)
 }
 
 /**
+ * 平方根
+ *
+ * 平方根には, 値域エラーは存在しない.
+ * @param[in] x 値
+ * @return 平方根
+ */
+static dbl
+get_sqrt(dbl x)
+{
+    dbl result = 0; /* 計算結果 */
+
+    dbglog("start");
+
+    if (is_error())
+        return EX_ERROR;
+
+    if (isless(x, 0)) { /* 定義域エラー */
+        set_errorcode(E_NAN);
+        return EX_ERROR;
+    }
+
+    result = sqrt(x);
+    return result;
+}
+
+/**
  * 関数エラーチェック
  *
  * @param[in] x 値
@@ -330,9 +362,8 @@ check_math(dbl x, dbl (*callback)(dbl))
 
     dbglog("start");
 
-    check_validate(1, x);
     if (is_error())
-        return result;
+        return EX_ERROR;
 
     errno = 0;
     feclearexcept(FE_ALL_EXCEPT);
@@ -347,13 +378,18 @@ check_math(dbl x, dbl (*callback)(dbl))
 /**
  * 階乗
  *
+ * n! = n * (n - 1)!
+ *
+ * @param[in] x 値
  * @param[in] n 値
- * @return 階乗
  */
-static dbl
-factorial(dbl n)
+static void
+factorial(dbl *x, dbl n)
 {
-    return (n == 0 || n == 1) ? 1 : n * factorial(n - 1);
+    if (n <= 1)
+        return;
+    *x = (*x) * n;
+    factorial(x, n - 1);
 }
 
 /**
@@ -372,9 +408,8 @@ get_factorial(dbl n)
 
     dbglog("start");
 
-    check_validate(1, n);
     if (is_error())
-        return result;
+        return EX_ERROR;
 
     dbglog("n=%.18g", n);
 
@@ -382,8 +417,8 @@ get_factorial(dbl n)
     decimal = modf(n, &integer);
     dbglog("decimal=%g, integer=%g", decimal, integer);
     if (decimal) { /* 自然数ではない */
-        set_errorcode(E_MATH);
-        return result;
+        set_errorcode(E_NAN);
+        return EX_ERROR;
     }
 
     if (isless(n, 0)) { /* マイナス */
@@ -391,15 +426,22 @@ get_factorial(dbl n)
         minus = true;
     }
 
-    result = factorial(n);
+    errno = 0;
+    feclearexcept(FE_ALL_EXCEPT);
 
-    if (minus) {
-        result *= -1;
-        minus = false;
-    }
+    result = 1;
+    factorial(&result, n);
 
     dbglog("result=%.18g", result);
-    check_validate(1, result);
+    if (minus) {
+        result *= -1;
+    }
+    minus = false;
+
+    dbglog("result=%.18g", result);
+    check_validate(result);
+
+    check_math_feexcept(result);
 
     return result;
 }
@@ -423,15 +465,13 @@ get_permutation(dbl n, dbl r)
 
     dbglog("start");
 
-    check_validate(2, n, r);
     if (is_error())
-        return result;
+        return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
-        isless(n, r)) {
-        /* 計算不能 */
-        set_errorcode(E_MATH);
-        return 0;
+        isless(n, r)) { /* 定義域エラー */
+        set_errorcode(E_NAN);
+        return EX_ERROR;
     }
 
     x = get_factorial(n);
@@ -444,7 +484,7 @@ get_permutation(dbl n, dbl r)
     result = x / y;
     dbglog("result=%.18g", result);
 
-    check_validate(1, result);
+    check_validate(result);
 
     return result;
 }
@@ -468,15 +508,13 @@ get_combination(dbl n, dbl r)
 
     dbglog("start");
 
-    check_validate(2, n, r);
     if (is_error())
-        return result;
+        return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
-        isless(n, r)) {
-        /* 計算不能 */
-        set_errorcode(E_MATH);
-        return 0;
+        isless(n, r)) { /* 定義域エラー */
+        set_errorcode(E_NAN);
+        return EX_ERROR;
     }
 
     x = get_factorial(n);
@@ -488,7 +526,7 @@ get_combination(dbl n, dbl r)
     result = x / (y * z);
     dbglog("result=%.18g", result);
 
-    check_validate(1, result);
+    check_validate(result);
 
     return result;
 }

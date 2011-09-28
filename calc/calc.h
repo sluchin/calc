@@ -64,8 +64,6 @@ struct test_calc_func {
 void test_init_calc(struct test_calc_func *func);
 #endif
 
-#endif /* _CALC_H_ */
-
 /**
  * @mainpage 処理詳細
  *
@@ -124,4 +122,5 @@ void test_init_calc(struct test_calc_func *func);
  *
  * @endmsc
  */
+#endif /* _CALC_H_ */
 

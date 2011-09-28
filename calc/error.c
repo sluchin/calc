@@ -29,6 +29,7 @@
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* FE_INVALID */
 #include <stdarg.h> /* va_list va_arg */
+#include <assert.h> /* assert */
 
 #include "log.h"
 #include "util.h"
@@ -43,13 +44,8 @@ static const char *errormsg[] = {
     "Divide by zero.",
     "Syntax error.",
     "Function not defined.",
-    "Math error.",
-    "Not a Number.",
-    "Overflow.",
-    "Underflow.",
-    "Positive infinity.",
-    "Negative infinity.",
-    "Too small to be represented in normalized format."
+    "Nan.",
+    "Infinity."
 };
 
 /** エラーコード */
@@ -67,6 +63,7 @@ get_errormsg(void)
     size_t slen = 0; /* 文字列長 */
 
     dbglog("start: errorcode=%d", errorcode);
+    assert(MAXERROR == arraysize(errormsg));
 
     if (errorcode != E_NONE) {
         slen = strlen(errormsg[errorcode]) + 1;
@@ -132,54 +129,28 @@ is_error(void)
 /**
  * 数値の妥当性チェック
  *
- * @param[in] num 引数の数
- * @param[in] ... double型引数
+ * @param[in] val 値
  * @return なし
  */
 void
-check_validate(int num, ...)
+check_validate(dbl val)
 {
-    dbl val = 0; /* 値 */
-    va_list ap;  /* va_list */
-    int i;       /* 汎用変数 */
-
     dbglog("start");
 
-    va_start(ap, num);
+    if (isnan(val))
+        set_errorcode(E_NAN);
+    else if (isinf(val) != 0)
+        set_errorcode(E_INFINITY);
 
-    for (i = 0; i < num; i++) {
-        val = va_arg(ap, double);
-
-#ifndef _DEBUG
-        if (isnan(val))
-            set_errorcode(E_NAN);
-        else if (isinf(val) == 1)
-            set_errorcode(E_PLUSINF);
-        else if (isinf(val) == -1)
-            set_errorcode(E_MINUSINF);
-        else if (fpclassify(val) == FP_SUBNORMAL)
-            set_errorcode(E_NORMSMALL);
-#else
-        int retval = 0;
-        if ((retval = isnan(val)) != 0) {
-            dbglog("isnan(%g)=%d", val, retval);
-            set_errorcode(E_NAN);
-        }
-        if ((retval = isinf(val)) == 1) {
-            dbglog("isinf(%g)=%d", val, retval);
-            set_errorcode(E_PLUSINF);
-        }
-        if ((retval = isinf(val)) == -1) {
-            dbglog("isinf(%g)=%d", val, retval);
-            set_errorcode(E_MINUSINF);
-        }
-        if ((retval = fpclassify(val)) == FP_SUBNORMAL) {
-            dbglog("fpclassify(%g)=%d", val, retval);
-            set_errorcode(E_NORMSMALL);
-        }
-#endif
-    }
-    va_end(ap);
+#ifdef _DEBUG
+    int retval = 0;
+    if ((retval = isnan(val)) != 0)
+        dbglog("isnan(%g)=%d", val, retval);
+    if ((retval = isinf(val)) != 0)
+        dbglog("isinf(%g)=%d", val, retval);
+    if ((retval = fpclassify(val)) == FP_SUBNORMAL)
+        dbglog("fpclassify(%g)=%d", val, retval);
+#endif /* _DEBUG */
 }
 
 /**
@@ -195,44 +166,30 @@ check_math_feexcept(dbl val)
 {
     dbglog("start: val=%g", val);
 
-#ifndef _DEBUG
     if (fetestexcept(FE_INVALID)) {
         set_errorcode(E_NAN);
-    } else if (fetestexcept(FE_DIVBYZERO)) {
-        if (val == HUGE_VALL) {
-            set_errorcode(E_PLUSINF);
-        } else if (val == -HUGE_VALL) {
-            set_errorcode(E_MINUSINF);
-        }
-    } else if (fetestexcept(FE_OVERFLOW)) {
-        set_errorcode(E_OVERFLOW);
-    } else if (fetestexcept(FE_UNDERFLOW)) {
-        set_errorcode(E_UNDERFLOW);
+    } else if (fetestexcept(FE_DIVBYZERO |
+                            FE_OVERFLOW  |
+                            FE_UNDERFLOW)) {
+        set_errorcode(E_INFINITY);
     }
-#else
+#ifdef _DEBUG
     int retval = 0;
-    if ((retval = fetestexcept(FE_INVALID)) != 0) {
+
+    if ((retval = fetestexcept(FE_INVALID)) != 0)
         dbglog("fetestexcept(FE_INVALID)=%d)", retval);
-        set_errorcode(E_NAN);
-    }
-    if ((retval = fetestexcept(FE_DIVBYZERO)) != 0) {
+    if ((retval = fetestexcept(FE_DIVBYZERO)) != 0)
         dbglog("fetestexcept(FE_DIVBYZERO)=%d)", retval);
-        if (val == HUGE_VALL) {
-            dbglog("%g==HUGE_VALL", val);
-            set_errorcode(E_PLUSINF);
-        } else if (val == -HUGE_VALL) {
-            dbglog("%g==-HUGE_VALL", val);
-            set_errorcode(E_MINUSINF);
-        }
-    }
-    if ((retval = fetestexcept(FE_OVERFLOW)) != 0) {
+    if ((retval = fetestexcept(FE_OVERFLOW)) != 0)
         dbglog("fetestexcept(FE_OVERFLOW)=%d)", retval);
-        set_errorcode(E_OVERFLOW);
-    }
-    if ((retval = fetestexcept(FE_UNDERFLOW)) != 0) {
+    if ((retval = fetestexcept(FE_UNDERFLOW)) != 0)
         dbglog("fetestexcept(FE_UNDERFLOW)=%d)", retval);
-        set_errorcode(E_UNDERFLOW);
-    }
-#endif
+    if ((retval = fetestexcept(FE_INEXACT)) != 0)
+        dbglog("fetestexcept(FE_INEXACT)=%d)", retval);
+    if (val == HUGE_VALL)
+        dbglog("%g==HUGE_VALL", val);
+    else if (val == -HUGE_VALL)
+        dbglog("%g==-HUGE_VALL", val);
+#endif /* _DEBUG */
 }
 

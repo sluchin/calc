@@ -37,13 +37,9 @@ typedef enum {
     E_DIVBYZERO, /**< ゼロ除算エラー */
     E_SYNTAX,    /**< 文法エラー */
     E_NOFUNC,    /**< 関数名なし */
-    E_MATH,      /**< 計算不能なエラー */
-    E_NAN,       /**< 数値ではない */
-    E_OVERFLOW,  /**< オーバーフロー */
-    E_UNDERFLOW, /**< アンダーフロー */
-    E_PLUSINF,   /**< 正の無限大 */
-    E_MINUSINF,  /**< 負の無限大 */
-    E_NORMSMALL  /**< 小さすぎて正規化表現できない */
+    E_NAN,       /**< 定義域エラー */
+    E_INFINITY,  /**< 値域エラー */
+    MAXERROR     /**< エラーコード最大数 */
 } ER;
 
 /** エラーメッセージ取得 */
@@ -59,7 +55,7 @@ void clear_error(void);
 bool is_error(void);
 
 /** 数値の妥当性チェック */
-void check_validate(int num, ...);
+void check_validate(dbl val);
 
 /** 浮動小数点例外チェック */
 void check_math_feexcept(dbl val);

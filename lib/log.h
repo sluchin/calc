@@ -31,17 +31,18 @@
 extern char *progname; /* プログラム名 */
 
 #define SYS_PRIO  LOG_INFO
-#define ARGS      progname, __FILE__, __LINE__, __FUNCTION__
+#define LOGARGS   progname, __FILE__, __LINE__, __FUNCTION__
 
-#define outlog(fmt, ...)         system_log(ARGS, fmt, ## __VA_ARGS__)
-#define outstd(fmt, ...)         stderr_log(ARGS, fmt, ## __VA_ARGS__)
-#define outdump(a, b, fmt, ...)  dump_sys(ARGS, a, b, fmt, ## __VA_ARGS__)
+/* エラー時ログメッセージ出力 */
+#define outlog(fmt, ...)        system_log(LOGARGS, fmt, ## __VA_ARGS__)
+#define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
+#define outdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
 
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
-#  define dbglog(fmt, ...)        system_dbg_log(ARGS, fmt, ## __VA_ARGS__)
-#  define stdlog(fmt, ...)        stderr_log(ARGS, fmt, ## __VA_ARGS__)
-#  define dbgdump(a, b, fmt, ...) dump_sys(ARGS, a, b, fmt, ## __VA_ARGS__)
+#  define dbglog(fmt, ...)        system_dbg_log(LOGARGS, fmt, ## __VA_ARGS__)
+#  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
+#  define dbgdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
 #  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ## __VA_ARGS__)
 #else
 #  define dbglog(fmt, ...)        do { } while (0)
