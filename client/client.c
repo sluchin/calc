@@ -339,7 +339,7 @@ read_sock(int sock)
     (void)memset(&hd, 0, length);
     retval = recv_data(sock, &hd, length);
     if (retval < 0) /* エラー */
-        return true;
+        return false;
     dbglog("recv_data=%d, hd=%p, length=%u",
            retval, &hd, length);
     if (g_gflag)
