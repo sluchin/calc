@@ -32,7 +32,6 @@
 
 #include "log.h"
 #include "error.h"
-#include "calc.h"
 #include "function.h"
 
 /** pi(4*atan(1)) */
@@ -120,11 +119,12 @@ static struct funcinfo finfo[MAXFUNC];
 /**
  * 関数実行
  *
+ * @param[in] tsd calc情報構造体
  * @param[in] func 関数名
  * return なし
  */
 dbl
-exec_func(const char *func)
+exec_func(calcinfo *tsd, const char *func)
 {
     dbl result = 0;      /* 戻り値 */
     dbl x = 0, y = 0;    /* 値 */
@@ -144,8 +144,8 @@ exec_func(const char *func)
                 result = finfo[ftype].func.func0();
                 break;
             case ARG_1:
-                parse_func_args(ARG_1, &x, &y);
-                dbglog("x=%.18g, y=%.18g", x, y);
+                parse_func_args(tsd, ARG_1, &x, &y);
+                dbglog("x=%.15g, y=%.15g", x, y);
                 if (ftype == FN_SQRT) {
                     dbglog("ftype[%d]==FN_SQRT[%d]", ftype, FN_SQRT);
                     result = finfo[ftype].func.func1(x);
@@ -153,8 +153,8 @@ exec_func(const char *func)
                     result = check_math(x, finfo[ftype].func.func1);
                 break;
             case ARG_2:
-                parse_func_args(ARG_2, &x, &y);
-                dbglog("x=%.18g, y=%.18g", x, y);
+                parse_func_args(tsd, ARG_2, &x, &y);
+                dbglog("x=%.15g, y=%.15g", x, y);
                 result = finfo[ftype].func.func2(x, y);
                 break;
             default:
@@ -166,7 +166,7 @@ exec_func(const char *func)
     if (!exec) /* エラー */
         set_errorcode(E_NOFUNC);
 
-    dbglog("result=%.18g", result);
+    dbglog("result=%.15g", result);
     return result;
 }
 
@@ -187,7 +187,7 @@ get_pow(dbl x, dbl y)
     if (is_error())
         return EX_ERROR;
 
-    if (((x == 0.f) && islessequal(y, 0)) ||
+    if (((fpclassify(x) == FP_ZERO) && islessequal(y, 0)) ||
         (isless(x, 0))) /* 定義域エラー */
         set_errorcode(E_NAN);
 
@@ -281,6 +281,8 @@ static dbl
 get_pi(void)
 {
     dbglog("start");
+    if (is_error())
+        return EX_ERROR;
     return DEF_PI;
 }
 
@@ -293,6 +295,8 @@ static dbl
 get_e(void)
 {
     dbglog("start");
+    if (is_error())
+        return EX_ERROR;
     return DEF_E;
 }
 
@@ -306,6 +310,8 @@ static dbl
 get_rad(dbl x)
 {
     dbglog("start");
+    if (is_error())
+        return EX_ERROR;
     return (x * DEF_PI / 180);
 }
 
@@ -319,6 +325,8 @@ static dbl
 get_deg(dbl x)
 {
     dbglog("start");
+    if (is_error())
+        return EX_ERROR;
     return (x * 180 / DEF_PI);
 }
 
@@ -382,6 +390,7 @@ check_math(dbl x, dbl (*callback)(dbl))
  *
  * @param[in] x 値
  * @param[in] n 値
+ * @return なし
  */
 static void
 factorial(dbl *x, dbl n)
@@ -411,7 +420,7 @@ get_factorial(dbl n)
     if (is_error())
         return EX_ERROR;
 
-    dbglog("n=%.18g", n);
+    dbglog("n=%.15g", n);
 
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
@@ -426,22 +435,16 @@ get_factorial(dbl n)
         minus = true;
     }
 
-    errno = 0;
-    feclearexcept(FE_ALL_EXCEPT);
-
     result = 1;
     factorial(&result, n);
 
-    dbglog("result=%.18g", result);
-    if (minus) {
+    dbglog("result=%.15g", result);
+    if (minus)
         result *= -1;
-    }
     minus = false;
 
-    dbglog("result=%.18g", result);
+    dbglog("result=%.15g", result);
     check_validate(result);
-
-    check_math_feexcept(result);
 
     return result;
 }
@@ -455,7 +458,7 @@ get_factorial(dbl n)
  *
  * @param[in] n 値
  * @param[in] r 値
- * return nPr
+ * return 順列
  */
 static dbl
 get_permutation(dbl n, dbl r)
@@ -475,14 +478,14 @@ get_permutation(dbl n, dbl r)
     }
 
     x = get_factorial(n);
-    dbglog("x=%.18g", x);
+    dbglog("x=%.15g", x);
     if (isgreater((n - r), 0))
         y = get_factorial(n - r);
 
-    dbglog("x=%.18g, y=%.18g", x, y);
+    dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
-    dbglog("result=%.18g", result);
+    dbglog("result=%.15g", result);
 
     check_validate(result);
 
@@ -498,7 +501,7 @@ get_permutation(dbl n, dbl r)
  *
  * @param[in] n 値
  * @param[in] r 値
- * return nCr
+ * return 組み合わせ
  */
 static dbl
 get_combination(dbl n, dbl r)
@@ -521,10 +524,10 @@ get_combination(dbl n, dbl r)
     y = get_factorial(r);
     if (isgreater((n - r), 0))
         z = get_factorial(n - r);
-    dbglog("x=%.18g, y=%.18g, z=%.18g", x, y, z);
+    dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
-    dbglog("result=%.18g", result);
+    dbglog("result=%.15g", result);
 
     check_validate(result);
 

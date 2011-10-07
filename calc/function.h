@@ -27,28 +27,16 @@
 #define _FUNCTION_H_
 
 #include "def.h"
+#include "calc.h"
 
 /** 関数最大文字数 */
 #define MAX_FUNC_STRING    4
-
-/** 引数の数 */
-enum argtype {
-    ARG_0 = 0,
-    ARG_1,
-    ARG_2
-};
-
-/** 数学関数の引数に渡す値 */
-//struct arg_value {
-//    dbl x;
-//    dbl y;
-//};
 
 /** 指数取得 */
 dbl get_pow(dbl x, dbl y);
 
 /** 関数実行 */
-dbl exec_func(const char *func);
+dbl exec_func(calcinfo *tsd, const char *func);
 
 #endif /* _FUNCTION_H_ */
 

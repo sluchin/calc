@@ -179,7 +179,7 @@ void system_dbg_log(const char *pname,
                        (unsigned long int)thread_id);
 
     syslog(SYS_PRIO, "ppid=%d%s: #%lu %s.%ld: %s[%d]: %s(%s): %m(%d)",
-           getppid(), !thread_id ? t_buf : "",
+           getppid(), thread_id ? t_buf : "",
            number, d_buf, tv.tv_usec, fname, line, func, message, err_no);
 
 #if 0
@@ -187,7 +187,7 @@ void system_dbg_log(const char *pname,
            "%s.%ld: ppid=%d%s #%lu in %s (%s) %m(%d) at %s:%d",
            d_buf, tv.tv_usec,
            getppid(),
-           !thread_id ? t_buf : "",
+           thread_id ? t_buf : "",
            number, func, message, err_no, fname, line);
 #endif
 
@@ -268,13 +268,13 @@ void stderr_log(const char *pname,
 
     (void)fprintf(fp, "%s.%ld: %s %s[%d]: %s[%d]: ppid=%d%s: %s(",
                   d_buf, tv.tv_usec, h_buf, pname ? : "", getpid(),
-                  fname, line, getppid(), !thread_id ? t_buf : "", func);
+                  fname, line, getppid(), thread_id ? t_buf : "", func);
 #if 0
     (void)fprintf(fp,
                   "%s.%ld: %s %s[%d] ppid=%d%s in %s(",
                   d_buf, tv.tv_usec, h_buf, pname ? : "",
                   getpid(), getppid(),
-                  thread_id != 0 ? t_buf : "", func);
+                  thread_id ? t_buf : "", func);
 #endif
 
     va_start(ap, format);

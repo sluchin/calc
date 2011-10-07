@@ -29,40 +29,57 @@
 #include <stdbool.h> /* bool */
 
 #include "def.h"
-#include "function.h"
 
-// test
-//#define MAX_DIGIT      15L /**< 有効桁数最大値 */
-#define MAX_DIGIT      30L /**< 有効桁数最大値 */
+#ifdef _DEBUG
+#  define MAX_DIGIT    30L /**< 有効桁数最大値 */
+#else
+#  define MAX_DIGIT    15L /**< 有効桁数最大値 */
+#endif /* _DEBUG */
 #define DEFAULT_DIGIT  12L /**< 有効桁数デフォルト値 */
 
 /* 外部変数 */
 extern bool g_tflag; /**< tオプションフラグ */
 
+/** 引数の数 */
+enum argtype {
+    ARG_0 = 0,
+    ARG_1,
+    ARG_2
+};
+
+/** calc情報構造体 */
+typedef struct _calcinfo {
+    int ch;                    /**< 文字 */
+    uchar *ptr;                /**< 文字列走査用ポインタ */
+    uchar *result;             /**< 結果文字列 */
+    char fmt[sizeof("%.18g")]; /**< フォーマット */
+} calcinfo;
+
 /** 初期化 */
-void init_calc(void *buf, long digit);
+calcinfo *init_calc(void *buf, long digit);
 
 /** メモリ解放 */
-void destroy_calc(void);
+void destroy_calc(calcinfo *tsd);
 
 /** 入力 */
-uchar *answer(void);
+uchar *answer(calcinfo *tsd);
 
 /** 引数解析 */
-void parse_func_args(const enum argtype num, dbl *x, dbl *y);
+void parse_func_args(calcinfo *tsd, const enum argtype num, dbl *x, dbl *y);
 
-#ifdef _UT
-struct test_calc_func {
-    dbl (*expression)(void);
-    dbl (*term)(void);
-    dbl (*factor)(void);
-    dbl (*token)(void);
-    dbl (*number)(void);
+#ifdef UNITTEST
+typedef struct _testcalc {
+    dbl (*expression)(calcinfo *tsd);
+    dbl (*term)(calcinfo *tsd);
+    dbl (*factor)(calcinfo *tsd);
+    dbl (*token)(calcinfo *tsd);
+    dbl (*number)(calcinfo *tsd);
     int (*get_strlen)(const dbl val, const char *fmt);
-    void (*readch)(void);
-};
-void test_init_calc(struct test_calc_func *func);
-#endif
+    void (*readch)(calcinfo *tsd);
+} testcalc;
+
+void test_init_calc(testcalc *calc);
+#endif /* UNITTEST */
 
 /**
  * @mainpage 処理詳細

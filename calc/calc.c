@@ -14,20 +14,21 @@
  * @version \$Id$
  *
  * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
- */ /* This program is free software; you can redistribute it and/or modify
-     * it under the terms of the GNU General Public License as published by
-     * the Free Software Foundation; either version 2 of the License, or
-     * (at your option) any later version.
-     *
-     * This program is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-     * GNU General Public License for more details.
-     *
-     * You should have received a copy of the GNU General Public License
-     * along with this program; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-     */
+ */
+ /* This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+  */
 
 #include <stdio.h>    /* FILE */
 #include <stdlib.h>   /* realloc */
@@ -36,6 +37,7 @@
 #include <string.h>   /* memcpy memset */
 #include <ctype.h>    /* isdigit isalpha */
 #include <math.h>     /* powl */
+#include <pthread.h>  /* pthread_once */
 #ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
 #  include <float.h>  /* DBL_MAX */
@@ -47,78 +49,125 @@
 #include "data.h"
 #include "error.h"
 #include "option.h"
+#include "function.h"
 #include "calc.h"
 
 /* 外部変数 */
 bool g_tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
-static int ch = 0;                   /**< 文字 */
-static uchar *ptr = NULL;            /**< 文字列走査用ポインタ */
-static uchar *result = NULL;         /**< 結果 */
-static char format[sizeof("%.18g")]; /**< フォーマット */
+static pthread_key_t calc_key; /**< スレッド固有バッファのキー */
+static pthread_once_t calc_once = PTHREAD_ONCE_INIT; /**< キー初期化 */
 
 /* 内部関数 */
+/** キー確保 */
+static void alloc_key(void);
+/** バッファ固有のキー確保 */
+static void destroy_thread(void *ptr);
 /** 式 */
-static dbl expression(void);
+static dbl expression(calcinfo *tsd);
 /** 項 */
-static dbl term(void);
+static dbl term(calcinfo *tsd);
 /** 因子 */
-static dbl factor(void);
+static dbl factor(calcinfo *tsd);
 /** 数または関数 */
-static dbl token(void);
+static dbl token(calcinfo *tsd);
 /** 文字列を数値に変換 */
-static dbl number(void);
+static dbl number(calcinfo *tsd);
 /** 文字数取得 */
 static int get_strlen(const dbl val, const char *fmt);
 /** バッファ読込 */
-static void readch(void);
+static void readch(calcinfo *tsd);
 
 /**
  * 初期化
  *
  * @param[in] expr 式
  * @param[in] digit 桁数
- * @return なし
+ * @return calcinfo構造体
  */
-void
+calcinfo *
 init_calc(void *expr, long digit)
 {
-    int retval = 0; /* 戻り値 */
+    int retval = 0;       /* 戻り値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    ptr = (uchar *)expr; /* 走査用ポインタ */
+    /* 1 回限りのキー初期化 */
+    pthread_once(&calc_once, alloc_key);
+    /* スレッド固有のバッファ取得 */
+    tsd = pthread_getspecific(calc_key);
+    if (!tsd) { /* 取得できない場合 */
+        /* スレッド固有のバッファ確保 */
+        tsd = calloc(1, sizeof(calcinfo));
+        if (!tsd) {
+            outlog("tsd=%p", tsd);
+            return NULL;
+        }
+        dbglog("tsd=%p", tsd);
+        pthread_setspecific(calc_key, tsd);
+    }
+
+    tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
+    dbglog("expr=%p, ptr=%p", expr, tsd->ptr); 
 
     /* フォーマット設定 */
-    retval = snprintf(format, sizeof(format), "%s%ld%s",
-                      "%.", digit, "g");
+    retval = snprintf(tsd->fmt, sizeof(tsd->fmt),
+                      "%s%ld%s", "%.", digit, "g");
     if (retval < 0) {
         outlog("snprintf=%d", retval);
-        return;
+        return NULL;
     }
-    dbglog("format=%s", format);
+    dbglog("fmt=%s", tsd->fmt);
+
+    return tsd;
+}
+
+/**
+ * キー確保
+ *
+ * @return なし
+ */
+static void
+alloc_key(void)
+{
+    pthread_key_create(&calc_key, destroy_thread);
+}
+
+/**
+ * スレッド固有バッファ解放
+ *
+ * @param[in] ptr 解放するポインタ
+ * @return なし
+ */
+static void
+destroy_thread(void *ptr)
+{
+    memfree(1, &ptr);
 }
 
 /**
  * メモリ解放
  *
+ * @param[in] tsd calcinfo構造体
  * @return なし
  */
 void
-destroy_calc(void)
+destroy_calc(calcinfo *tsd)
 {
-    dbglog("start: result=%p", result);
-    memfree(1, &result);
-    dbglog("result=%p", result);
+    dbglog("start: result=%p", tsd->result);
+    memfree(1, &tsd->result);
+    dbglog("result=%p", tsd->result);
 }
 
 /**
  * 計算結果
  *
+ * @param[in] tsd calcinfo構造体
  * @return 新たに領域確保された結果文字列ポインタ
  * @retval NULL エラー
  */
 uchar *
-answer(void)
+answer(calcinfo *tsd)
 {
     dbl val = 0;            /* 値 */
     size_t length = 0;      /* 文字数 */
@@ -133,13 +182,13 @@ answer(void)
     if (g_tflag)
         start_timer(&t);
 
-    readch();
-    val = expression();
-    dbglog(format, val);
-    dbglog("ptr=%p, ch=%c", ptr, ch);
+    readch(tsd);
+    val = expression(tsd);
+    dbglog(tsd->fmt, val);
+    dbglog("ptr=%p, ch=%c", tsd->ptr, tsd->ch);
 
     check_validate(val);
-    if (ch != '\0') /* エラー */
+    if (tsd->ch != '\0') /* エラー */
         set_errorcode(E_SYNTAX);
 
     if (g_tflag) {
@@ -152,17 +201,17 @@ answer(void)
         if (!errormsg)
             return NULL;
         length = strlen((char *)errormsg); /* 文字数 */
-        result = (uchar *)strndup((char *)errormsg, length);
+        tsd->result = (uchar *)strndup((char *)errormsg, length);
         clear_error();
         dbglog("errormsg=%p", errormsg);
-        if (!result) {
-            outlog("strndup=%p", result);
+        if (!tsd->result) {
+            outlog("strndup=%p", tsd->result);
             return NULL;
         }
-        dbglog("result=%p, length=%u", result, length);
+        dbglog("result=%p, length=%u", tsd->result, length);
     } else {
         /* 文字数取得 */
-        retval = get_strlen(val, format);
+        retval = get_strlen(val, tsd->fmt);
         dbglog("retval=%d, INT_MAX=%d", retval, INT_MAX);
         if (retval <= 0) { /* エラー */
             outlog("retval=%d", retval);
@@ -171,68 +220,67 @@ answer(void)
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        result = (uchar *)malloc(length * sizeof(uchar));
-        if (!result) {
-            outlog("calloc=%p", result);
+        tsd->result = (uchar *)malloc(length * sizeof(uchar));
+        if (!tsd->result) {
+            outlog("calloc=%p", tsd->result);
             return NULL;
         }
-        (void)memset(result, 0, length * sizeof(uchar));
+        (void)memset(tsd->result, 0, length * sizeof(uchar));
 
         /* 値を文字列に変換 */
-        retval = snprintf((char *)result, length, format, val);
+        retval = snprintf((char *)tsd->result, length, tsd->fmt, val);
         if (retval < 0) {
             outlog("snprintf=%d, result=%p, length=%u",
-                   retval, result, length);
+                   retval, tsd->result, length);
             return NULL;
         }
-        dbglog(format, val);
-        dbglog("result=%s, length=%u", result, length);
+        dbglog(tsd->fmt, val);
+        dbglog("result=%s, length=%u", tsd->result, length);
     }
-    return result;
+    return tsd->result;
 }
 
 /**
  * 引数解析
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] type 引数のタイプ
  * @param[out] x 値
  * @param[out] y 値
  * @return なし
  */
 void
-parse_func_args(const enum argtype type, dbl *x, dbl *y)
+parse_func_args(calcinfo *tsd, const enum argtype type, dbl *x, dbl *y)
 {
     dbglog("start");
 
     if (is_error())
         return;
 
-    if (ch != '(') {
+    if (tsd->ch != '(') {
         set_errorcode(E_SYNTAX);
         return;
     }
 
-    readch();
-    *x = expression();
-    dbglog("x=%s", format, *x);
-    check_validate(*x);
+    readch(tsd);
+    *x = expression(tsd);
+    dbglog("x=%s", tsd->fmt, *x);
 
     if (type == ARG_2) {
-        if (ch != ',') {
+        if (tsd->ch != ',') {
             set_errorcode(E_SYNTAX);
             return;
         }
-        readch();
-        *y = expression();
-        dbglog("y=%s", format, *y);
-        check_validate(*y);
+        readch(tsd);
+        *y = expression(tsd);
+        dbglog("y=%s", tsd->fmt, *y);
     }
 
-    if (ch != ')') {
+    if (tsd->ch != ')') {
         set_errorcode(E_SYNTAX);
         return;
     }
-    readch();
+    readch(tsd);
 
 }
 
@@ -242,29 +290,31 @@ parse_func_args(const enum argtype type, dbl *x, dbl *y)
  * バッファから一文字読み込む.
  * 空白, タブは読み飛ばす.
  *
- * @return なし
+ * @param[in] tsd calcinfo構造体
+ * @return 文字
  */
 static void
-readch(void)
+readch(calcinfo *tsd)
 {
     dbglog("start");
 
     do {
-        ch = (int)*ptr;
-        dbglog("ptr=%p, ch=%c", ptr, ch);
-        if (ch == '\0')
+        tsd->ch = (int)*tsd->ptr;
+        dbglog("ptr=%p, ch=%c", tsd->ptr, tsd->ch);
+        if (tsd->ch == '\0')
             break;
-        ptr++;
-    } while (isblank(ch));
+        tsd->ptr++;
+    } while (isblank(tsd->ch));
 }
 
 /**
  * 式
  *
+ * @param[in] tsd calcinfo構造体
  * @return 値
  */
 static dbl
-expression(void)
+expression(calcinfo *tsd)
 {
     dbl x = 0; /* 値 */
 
@@ -273,32 +323,33 @@ expression(void)
     if (is_error())
         return EX_ERROR;
 
-    x = term();
-    dbglog(format, x);
+    x = term(tsd);
+    dbglog(tsd->fmt, x);
 
     while (true) {
-        if (ch == '+') {
-            readch();
-            x += term();
-        } else if (ch == '-') {
-            readch();
-            x -= term();
+        if (tsd->ch == '+') {
+            readch(tsd);
+            x += term(tsd);
+        } else if (tsd->ch == '-') {
+            readch(tsd);
+            x -= term(tsd);
         } else {
             break;
         }
     }
 
-    dbglog(format, x);
+    dbglog(tsd->fmt, x);
     return x;
 }
 
 /**
  * 項
  *
+ * @param[in] tsd calcinfo構造体
  * @return 結果
  */
 static dbl
-term(void)
+term(calcinfo *tsd)
 {
     dbl x = 0, y = 0;     /* 値 */
 
@@ -307,40 +358,41 @@ term(void)
     if (is_error())
         return EX_ERROR;
 
-    x = factor();
-    dbglog(format, x);
+    x = factor(tsd);
+    dbglog(tsd->fmt, x);
 
     while (true) {
-        if (ch == '*') {
-            readch();
-            x *= factor();
-        } else if (ch == '/') {
-            readch();
-            y = factor();
+        if (tsd->ch == '*') {
+            readch(tsd);
+            x *= factor(tsd);
+        } else if (tsd->ch == '/') {
+            readch(tsd);
+            y = factor(tsd);
             if (y == 0) { /* ゼロ除算エラー */
                 set_errorcode(E_DIVBYZERO);
                 return EX_ERROR;
             }
             x /= y;
-        } else if (ch == '^') {
-            readch();
-            y = factor();
+        } else if (tsd->ch == '^') {
+            readch(tsd);
+            y = factor(tsd);
             x = get_pow(x, y);
         } else {
             break;
         }
     }
-    dbglog(format, x);
+    dbglog(tsd->fmt, x);
     return x;
 }
 
 /**
  * 因子
  *
+ * @param[in] tsd calcinfo構造体
  * @return 値
  */
 static dbl
-factor(void)
+factor(calcinfo *tsd)
 {
     dbl x = 0; /* 値 */
 
@@ -349,29 +401,30 @@ factor(void)
     if (is_error())
         return EX_ERROR;
 
-    if (ch != '(')
-        return token();
+    if (tsd->ch != '(')
+        return token(tsd);
 
-    readch();
-    x = expression();
+    readch(tsd);
+    x = expression(tsd);
 
-    if (ch != ')') { /* シンタックスエラー */
+    if (tsd->ch != ')') { /* シンタックスエラー */
         set_errorcode(E_SYNTAX);
         return EX_ERROR;
     }
-    readch();
+    readch(tsd);
 
-    dbglog(format, x);
+    dbglog(tsd->fmt, x);
     return x;
 }
 
 /**
  * 数または関数
  *
+ * @param[in] tsd calcinfo構造体
  * @return 結果
  */
 static dbl
-token(void)
+token(calcinfo *tsd)
 {
     dbl result = 0;                 /* 結果 */
     int sign = '+';                 /* 単項+- */
@@ -386,53 +439,55 @@ token(void)
     /* 初期化 */
     (void)memset(func, 0, sizeof(func));
 
-    if (ch == '+' || ch == '-') { /* 単項+- */
-        sign = ch;
-        readch();
+    if (tsd->ch == '+' || tsd->ch == '-') { /* 単項+- */
+        sign = tsd->ch;
+        readch(tsd);
     }
 
-    if (isdigit(ch)) { /* 数値 */
-        result = number();
-    } else if (isalpha(ch)) { /* 関数 */
-        while (isalpha(ch) && ch != '\0' && pos <= MAX_FUNC_STRING) {
-            func[pos++] = ch;
-            readch();
+    if (isdigit(tsd->ch)) { /* 数値 */
+        result = number(tsd);
+    } else if (isalpha(tsd->ch)) { /* 関数 */
+        while (isalpha(tsd->ch) && tsd->ch != '\0' &&
+               pos <= MAX_FUNC_STRING) {
+            func[pos++] = tsd->ch;
+            readch(tsd);
         }
         dbglog("func=%s", func);
 
-        result = exec_func(func);
+        result = exec_func(tsd, func);
 
     } else { /* エラー */
         dbglog("not isdigit && not isalpha");
         set_errorcode(E_SYNTAX);
     }
 
-    dbglog(format, result);
+    dbglog(tsd->fmt, result);
     return (sign == '+') ? result : -result;
 }
 
 /**
  * 文字列を数値に変換
  *
+ * @param[in] tsd calcinfo構造体
  * @return 数値
  */
 static dbl
-number(void)
+number(calcinfo *tsd)
 {
     dbl x = 0, y = 1; /* 値 */
 
     dbglog("start");
 
-    x = ch - '0';
-    while (readch(), isdigit(ch)) /* 整数 */
-        x = (x * 10) + (ch - '0');
-    dbglog(format, x);
+    x = tsd->ch - '0';
+    while (readch(tsd), isdigit(tsd->ch)) /* 整数 */
+        x = (x * 10) + (tsd->ch - '0');
+    dbglog(tsd->fmt, x);
 
-    if (ch == '.') { /* 小数 */
-        while (readch(), isdigit(ch))
-            x += (y /= 10) * (ch - '0');
+    if (tsd->ch == '.') { /* 小数 */
+        while (readch(tsd), isdigit(tsd->ch))
+            x += (y /= 10) * (tsd->ch - '0');
     }
-    dbglog(format, x);
+    dbglog(tsd->fmt, x);
 
     check_validate(x);
 
@@ -453,7 +508,7 @@ get_strlen(const dbl val, const char *fmt)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* fclose戻り値 */
-    int result = 0;  /* 文字数数 */
+    int result = 0;  /* 文字数 */
 
     dbglog("start: fmt=%s", fmt);
     dbglog(fmt, val);
@@ -475,17 +530,17 @@ get_strlen(const dbl val, const char *fmt)
     return result;
 }
 
-#ifdef _UT
+#ifdef UNITTEST
 void
-test_init_calc(struct test_calc_func *func)
+test_init_calc(testcalc *calc)
 {
-    func->expression = expression;
-    func->term = term;
-    func->factor = factor;
-    func->token = token;
-    func->number = number;
-    func->get_strlen = get_strlen;
-    func->readch = readch;
+    calc->expression = expression;
+    calc->term = term;
+    calc->factor = factor;
+    calc->token = token;
+    calc->number = number;
+    calc->get_strlen = get_strlen;
+    calc->readch = readch;
 }
-#endif /* _UT */
+#endif /* UNITTEST */
 

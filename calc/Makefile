@@ -15,9 +15,9 @@ CUTTER = /usr/bin/cutter -v v
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
-DFLAGS = -g -Wall -O2 -D_UT -D_DEBUG
+DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lm -lcalcutil #-lreadline -lpthread
+LIBS = -lm -lcalcutil -lpthread #-lreadline
 CALCLIBS = -lcalcp
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
@@ -43,7 +43,7 @@ $(LIBCALC): $(OBJCALC)
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
 	@#$(CC) -shared -Wl,-soname,$@ -o $@ $^
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@

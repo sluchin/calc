@@ -96,7 +96,7 @@ void
 client_loop(int sock)
 {
     int ready = 0;          /* select戻り値 */
-    bool status = false;    /* ステータス */
+    bool status = true;     /* ステータス */
 #ifdef _USE_SELECT
     fd_set fds, tfds;       /* selectマスク */
     struct timeval timeout; /* タイムアウト値 */
@@ -123,7 +123,7 @@ client_loop(int sock)
         errno = 0;    /* errno初期化 */
 #ifdef _USE_SELECT
         fds = tfds; /* マスクの代入 */
-        timeout.tv_sec = 1;   /* 1秒に設定 */
+        timeout.tv_sec = 1; /* 1秒に設定 */
         timeout.tv_usec = 0;
         ready = select(sock + 1, &fds, NULL, NULL, &timeout);
 #else
@@ -162,7 +162,6 @@ client_loop(int sock)
             if (targets[SOCK_POLL].revents & POLLIN) /* ソケットレディ */
                 status = read_sock(sock);
 #endif /* _USE_SELECT */
-            break;
         } /* switch */
     } while (status && !sig_handled);
 
@@ -248,7 +247,7 @@ read_stdin(int sock)
     expr = _readline(stdin);
 #endif /* HAVE_READLINE */
 
-#ifdef _UT
+#ifdef UNITTEST
     if (expr)
         free(expr);
     expr = NULL;
@@ -264,7 +263,7 @@ read_stdin(int sock)
     }
     (void)memset(expr, 0x31, test_len);
     *(expr + (test_len - 1)) = '\0';
-#endif /* _UT */
+#endif /* UNITTEST */
 
     if (!expr) /* メモリ確保できない */
         return true;

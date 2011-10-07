@@ -88,7 +88,7 @@ server_loop(int sock)
             /* アクセプトクローズ */
             close_sock(&acc);
         }
-        dbglog("pthread_create=%d", thread_id);
+        dbglog("pthread_create=%lu", thread_id);
     } while (!sig_handled && !sighup_handled);
 }
 
@@ -171,7 +171,8 @@ server_proc(void *arg)
     int acc = -1;                     /* アクセプト */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     uchar *expr = NULL;               /* 受信データ */
-    uchar *result = NULL;             /* 処理結果 */
+    //uchar *result = NULL;             /* 処理結果 */
+    calcinfo *tsd = NULL;             /* calc情報構造体 */
 
     dbglog("start");
 
@@ -222,17 +223,28 @@ server_proc(void *arg)
         }
 
         /* サーバ処理 */
-        init_calc(expr, g_digit);
-        result = answer();
-        dbglog("result=%s", result);
+        tsd = init_calc(expr, g_digit);
+        if (!tsd) { /* エラー */
+            outlog("tsd=%p", tsd);
+            memfree(1, &expr);
+            break;
+        }
+        tsd->result = answer(tsd);
+        if (!tsd->result) { /* エラー */
+            outlog("result=%p", tsd->result);
+            memfree(1, &expr);
+            break;
+        }
+        dbglog("result=%s", tsd->result);
 
-        length = strlen((char *)result) + 1; /* 文字列長保持 */
-        dbgdump(result, length, "result=%p, length=%u", result, length);
+        length = strlen((char *)tsd->result) + 1; /* 文字列長保持 */
+        dbgdump(tsd->result, length,
+                "result=%p, length=%u", tsd->result, length);
 
         /* データ送信 */
-        sdata = set_server_data(sdata, result, length);
+        sdata = set_server_data(sdata, tsd->result, length);
         if (!sdata) {
-            destroy_calc();
+            destroy_calc(tsd);
             memfree(1, &expr);
             break;
         }
@@ -244,13 +256,13 @@ server_proc(void *arg)
 
         retval = send_data(acc, sdata, length);
         if (retval < 0) { /* エラー */
-            destroy_calc();
+            destroy_calc(tsd);
             memfree(2, &expr, &sdata);
             break;
         }
         dbglog("send_data%d, sdata=%p, length=%u", retval, sdata, length);
 
-        destroy_calc();
+        destroy_calc(tsd);
         memfree(2, &expr, &sdata);
 
     } while (!sig_handled && !sighup_handled);

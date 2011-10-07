@@ -110,10 +110,11 @@ int main(int argc, char *argv[])
 static void
 main_loop(void)
 {
-    int retval = 0;      /* 戻り値 */
+    int retval = 0;       /* 戻り値 */
+    calcinfo *tsd = NULL; /* calc情報構造体 */
 #ifdef HAVE_READLINE
-    int hist_no = 0;     /* 履歴数 */
-    char *prompt = NULL; /* プロンプト */
+    int hist_no = 0;      /* 履歴数 */
+    char *prompt = NULL;  /* プロンプト */
 
     rl_event_hook = &check_state;
 #endif /* HAVE_READLINE */
@@ -133,7 +134,7 @@ main_loop(void)
         if (!expr)
             break;
 
-        if (*expr == 0) {
+        if (*expr == 0) { /* 空 */
             dbglog("expr=%p", expr);
             memfree(1, &expr);
             continue;
@@ -144,8 +145,13 @@ main_loop(void)
         dbgdump(expr, strlen((char *)expr) + 1,
                 "expr=%u", strlen((char *)expr) + 1);
 
-        init_calc(expr, g_digit);
-        result = answer();
+        tsd = init_calc(expr, g_digit);
+        if (!tsd) { /* エラー */
+            outlog("tsd=%p", tsd);
+            memfree(1, &expr);
+            continue;
+        }
+        result = answer(tsd);
         dbglog("expr=%p, result=%p", expr, result);
         if (result) {
             retval = fprintf(stdout, "%s\n", (char *)result);
@@ -162,7 +168,7 @@ main_loop(void)
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
-        destroy_calc();
+        destroy_calc(tsd);
         memfree(1, &expr);
         expr = result = NULL;
 
