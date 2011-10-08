@@ -72,9 +72,9 @@ _readline(FILE *fp)
         dbglog("line=%p: %s", line, line);
         dbgdump(line, total + 1, "line=%u", total + 1);
 
-    } while (*(line + total - 1) != '\n');
+    } while ((*(line + total - 1) != '\n') && (*(line + total) != '\0'));
 
-    if (line)
+    if (line && *(line + total - 1) == '\n')
         *(line + total - 1) = '\0'; /* 改行削除 */
 
     return line;

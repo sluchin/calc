@@ -130,6 +130,7 @@ init_calc(void *expr, long digit)
 static void
 alloc_key(void)
 {
+    dbglog("start");
     pthread_key_create(&calc_key, destroy_thread);
 }
 
@@ -142,6 +143,7 @@ alloc_key(void)
 static void
 destroy_thread(void *ptr)
 {
+    dbglog("start: ptr=%p", ptr);
     memfree(1, &ptr);
 }
 
@@ -156,7 +158,6 @@ destroy_calc(calcinfo *tsd)
 {
     dbglog("start: result=%p", tsd->result);
     memfree(1, &tsd->result);
-    dbglog("result=%p", tsd->result);
 }
 
 /**
