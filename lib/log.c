@@ -35,7 +35,6 @@
 #include <ctype.h>     /* isprint */
 #include <pthread.h>   /* pthread_self */
 #include <syslog.h>    /* syslog */
-#include <limits.h>    /* INT_MAX */
 #include <execinfo.h>  /* backtrace */
 
 #include "log.h"
@@ -67,7 +66,7 @@ void system_log(const char *pname,
     int retval = 0;                   /* 戻り値 */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                       /* va_list */
-    pthread_t thread_id = 0;          /* スレッドID */
+    pthread_t tid = 0;                /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -85,22 +84,14 @@ void system_log(const char *pname,
         return;
     }
 
-    thread_id = pthread_self();
-    if (thread_id)
+    tid = pthread_self();
+    if (tid)
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)thread_id);
+                       (unsigned long int)tid);
 
     syslog(SYS_PRIO, "ppid=%d%s: %s[%d]: %s(%s): %m(%d)",
-           getppid(), !thread_id ? t_buf : "", fname, line,
+           getppid(), !tid ? t_buf : "", fname, line,
            func, message, err_no);
-
-#if 0
-    syslog(SYS_PRIO,
-           "ppid=%d%s in %s (%s) %m(%d) at %s:%d",
-           getppid(),
-           thread_id != 0 ? t_buf : "",
-           func, message, err_no, fname, line);
-#endif
 
     /* シスログクローズ */
     closelog();
@@ -133,8 +124,7 @@ void system_dbg_log(const char *pname,
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     char d_buf[sizeof("00")] = {0};   /* 秒格納用バッファ */
     va_list ap;                       /* va_list */
-    static unsigned long number;      /* ナンバリング */
-    pthread_t tid = 0;          /* スレッドID */
+    pthread_t tid = 0;                /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -178,14 +168,9 @@ void system_dbg_log(const char *pname,
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
                        (unsigned long int)tid);
 
-    syslog(SYS_PRIO, "ppid=%d%s: #%lu %s.%ld: %s[%d]: %s(%s): %m(%d)",
+    syslog(SYS_PRIO, "ppid=%d%s: %s.%ld: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "",
-           number, d_buf, tv.tv_usec, fname, line, func, message, err_no);
-
-    if (number >= ULONG_MAX)
-        number = 0; /* 初期化 */
-    else
-        number++;
+           d_buf, tv.tv_usec, fname, line, func, message, err_no);
 
     /* シスログクローズ */
     closelog();
@@ -218,7 +203,7 @@ void stderr_log(const char *pname,
     va_list ap;         /* va_list */
     char d_buf[sizeof("xxx 00 00:00:00")] = {0}; /* 時間用バッファ */
     char h_buf[MAX_HOST_SIZE] = {0};             /* ホスト用バッファ */
-    pthread_t tid = 0;                     /* スレッドID */
+    pthread_t tid = 0;                           /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -364,7 +349,7 @@ void dump_sys(const char *pname,
 {
     int retval = 0;                   /* 戻り値 */
     unsigned int i, k;                /* 汎用変数 */
-    static int pt = 0;                /* アドレス用変数 */
+    int pt = 0;                       /* アドレス用変数 */
     unsigned char *p;                 /* バッファポインタ */
     char tmp[4] = {0};                /* 一時バッファ */
     char hexdump[68];                 /* ログ出力用バッファ */
