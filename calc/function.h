@@ -33,7 +33,7 @@
 #define MAX_FUNC_STRING    4
 
 /** 指数取得 */
-dbl get_pow(dbl x, dbl y);
+dbl get_pow(calcinfo *tsd, dbl x, dbl y);
 
 /** 関数実行 */
 dbl exec_func(calcinfo *tsd, const char *func);

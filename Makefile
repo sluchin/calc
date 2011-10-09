@@ -62,6 +62,7 @@ strip:
 
 .PHONY: clean
 clean:
+	@rm -rf doc
 	cd $(top_srcdir)/lib && $(MAKE) clean
 	cd $(top_srcdir)/calc && $(MAKE) clean
 	cd $(top_srcdir)/server && $(MAKE) clean

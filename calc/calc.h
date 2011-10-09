@@ -47,16 +47,22 @@ enum argtype {
     ARG_2
 };
 
+typedef enum argtype argtype;
+
 /** calc情報構造体 */
-typedef struct _calcinfo {
+struct calcinfo {
     int ch;                    /**< 文字 */
     uchar *ptr;                /**< 文字列走査用ポインタ */
     uchar *result;             /**< 結果文字列 */
     char fmt[sizeof("%.18g")]; /**< フォーマット */
-} calcinfo;
+    int errorcode;             /**< エラーコード */
+    uchar *errormsg;           /**< エラーメッセージ */
+};
+
+typedef struct calcinfo calcinfo;
 
 /** 初期化 */
-calcinfo *init_calc(void *buf, long digit);
+struct calcinfo *init_calc(void *buf, long digit);
 
 /** メモリ解放 */
 void destroy_calc(calcinfo *tsd);
@@ -65,18 +71,19 @@ void destroy_calc(calcinfo *tsd);
 uchar *answer(calcinfo *tsd);
 
 /** 引数解析 */
-void parse_func_args(calcinfo *tsd, const enum argtype num, dbl *x, dbl *y);
+void parse_func_args(calcinfo *tsd, const argtype num, dbl *x, dbl *y);
 
 #ifdef UNITTEST
-typedef struct _testcalc {
-    dbl (*expression)(calcinfo *tsd);
-    dbl (*term)(calcinfo *tsd);
-    dbl (*factor)(calcinfo *tsd);
-    dbl (*token)(calcinfo *tsd);
-    dbl (*number)(calcinfo *tsd);
+struct testcalc {
+    dbl (*expression)(struct calcinfo *tsd);
+    dbl (*term)(struct calcinfo *tsd);
+    dbl (*factor)(struct calcinfo *tsd);
+    dbl (*token)(struct calcinfo *tsd);
+    dbl (*number)(struct calcinfo *tsd);
     int (*get_strlen)(const dbl val, const char *fmt);
-    void (*readch)(calcinfo *tsd);
-} testcalc;
+    void (*readch)(struct calcinfo *tsd);
+};
+typedef struct testcalc testcalc;
 
 void test_init_calc(testcalc *calc);
 #endif /* UNITTEST */

@@ -29,10 +29,11 @@
 #include <stdbool.h> /* bool */
 
 #include "def.h"
+#include "calc.h"
 #include "function.h"
 
 /** エラー種別 */
-typedef enum {
+enum ER {
     E_NONE = 0,  /**< エラーなし */
     E_DIVBYZERO, /**< ゼロ除算エラー */
     E_SYNTAX,    /**< 文法エラー */
@@ -40,25 +41,27 @@ typedef enum {
     E_NAN,       /**< 定義域エラー */
     E_INFINITY,  /**< 値域エラー */
     MAXERROR     /**< エラーコード最大数 */
-} ER;
+};
+
+typedef enum ER ER;
 
 /** エラーメッセージ取得 */
-uchar *get_errormsg(void);
+uchar *get_errormsg(calcinfo *tsd);
 
 /** エラーコード設定 */
-void set_errorcode(ER error);
+void set_errorcode(calcinfo *tsd, ER error);
 
 /** エラークリア */
-void clear_error(void);
+void clear_error(calcinfo *tsd);
 
 /** エラー判定 */
-bool is_error(void);
+bool is_error(calcinfo *tsd);
 
 /** 数値の妥当性チェック */
-void check_validate(dbl val);
+void check_validate(calcinfo *tsd, dbl val);
 
 /** 浮動小数点例外チェック */
-void check_math_feexcept(dbl val);
+void check_math_feexcept(calcinfo *tsd, dbl val);
 
 #endif /* _ERROR_H_ */
 

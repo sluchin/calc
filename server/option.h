@@ -32,8 +32,6 @@
 #define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
 #define HOST_SIZE      48          /**< ホスト名サイズ */
 #define PORT_SIZE      48          /**< ポート名サイズ */
-#define MAX_DIGIT      30L         /**< 有効桁数最大値 */
-#define DEFAULT_DIGIT  12L         /**< 有効桁数デフォルト値 */
 
 /* 外部変数 */
 extern bool g_gflag;              /**< gオプションフラグ */

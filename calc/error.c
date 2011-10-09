@@ -35,92 +35,91 @@
 #include "util.h"
 #include "error.h"
 
-/* 内部変数 */
-static uchar *msg = NULL; /** エラーメッセージ */
-
 /** エラーメッセージ文字列構造体 */
 static const char *errormsg[] = {
     NULL,
     "Divide by zero.",
     "Syntax error.",
     "Function not defined.",
-    "Nan.",
+    "NaN.",
     "Infinity."
 };
-
-/** エラーコード */
-static ER errorcode = E_NONE;
 
 /**
  * エラーメッセージ取得
  *
+ * @param[in] tsd calcinfo構造体
  * @return エラーメッセージ
  * @attention 呼び出し元で, clear_error()すること.
  */
 uchar *
-get_errormsg(void)
+get_errormsg(calcinfo *tsd)
 {
     size_t slen = 0; /* 文字列長 */
 
-    dbglog("start: errorcode=%d", errorcode);
+    dbglog("start: errorcode=%d", tsd->errorcode);
     assert(MAXERROR == arraysize(errormsg));
 
-    if (errorcode != E_NONE) {
-        slen = strlen(errormsg[errorcode]) + 1;
+    if (tsd->errorcode != E_NONE) {
+        slen = strlen(errormsg[tsd->errorcode]) + 1;
         dbglog("slen=%u", slen);
-        msg = (uchar *)malloc(slen * sizeof(uchar));
-        if (!msg) {
-            outlog("malloc=%p", msg);
+        tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
+        if (!tsd->errormsg) {
+            outlog("malloc=%p", tsd->errormsg);
             return NULL;
         }
-        (void)memset(msg, 0, slen);
-        (void)strncpy((char *)msg, errormsg[errorcode], slen);
-        dbglog("errormsg=%s, errorcode=%d", errormsg[errorcode], errorcode);
+        (void)memset(tsd->errormsg, 0, slen);
+        (void)strncpy((char *)tsd->errormsg, errormsg[tsd->errorcode], slen);
+        dbglog("errormsg=%s, errorcode=%d",
+               errormsg[tsd->errorcode], tsd->errorcode);
     }
-    return msg;
+    return tsd->errormsg;
 }
 
 /**
  * エラーコード設定
  *
- * param[in] error エラー種別
+ * @param[in] tsd calcinfo構造体
+ * @param[in] error エラー種別
  * @return なし
  */
 void
-set_errorcode(ER error)
+set_errorcode(calcinfo *tsd, ER error)
 {
     dbglog("start");
 
-    if (errorcode == E_NONE)
-        errorcode = error;
-    dbglog("errorcode=%d", errorcode);
+    if (tsd->errorcode == E_NONE)
+        tsd->errorcode = error;
+    dbglog("errorcode=%d", tsd->errorcode);
 }
 
 /**
  * エラークリア
  *
+ * @param[in] tsd calcinfo構造体
  * @return なし
  */
 void
-clear_error(void)
+clear_error(calcinfo *tsd)
 {
     dbglog("start");
 
-    memfree(1, &msg);
-    errorcode = E_NONE;
+    memfree(1, &tsd->errormsg);
+    tsd->errorcode = E_NONE;
 }
 
 /**
  * エラー判定
  *
+ * @param[in] tsd calcinfo構造体
  * @retval true エラー
  */
 bool
-is_error(void)
+is_error(calcinfo *tsd)
 {
-    dbglog("start: errorcode=%d", errorcode);
+    dbglog("start: errorcode=%d", tsd->errorcode);
 
-    if (errorcode)
+    if (tsd->errorcode)
         return true;
 
     return false;
@@ -129,18 +128,19 @@ is_error(void)
 /**
  * 数値の妥当性チェック
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] val 値
  * @return なし
  */
 void
-check_validate(dbl val)
+check_validate(calcinfo *tsd, dbl val)
 {
     dbglog("start");
 
     if (isnan(val))
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
     else if (isinf(val) != 0)
-        set_errorcode(E_INFINITY);
+        set_errorcode(tsd, E_INFINITY);
 
 #ifdef _DEBUG
     int retval = 0;
@@ -159,19 +159,21 @@ check_validate(dbl val)
  * math.h で宣言されている数学関数使用時,\n
  * 浮動小数点例外をチェックする.
  *
+ * @param[in] tsd calcinfo構造体
+ * @param[in] val 値
  * @return なし
  */
 void
-check_math_feexcept(dbl val)
+check_math_feexcept(calcinfo *tsd, dbl val)
 {
     dbglog("start: val=%g", val);
 
     if (fetestexcept(FE_INVALID)) {
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
     } else if (fetestexcept(FE_DIVBYZERO |
                             FE_OVERFLOW  |
                             FE_UNDERFLOW)) {
-        set_errorcode(E_INFINITY);
+        set_errorcode(tsd, E_INFINITY);
     }
 #ifdef _DEBUG
     int retval = 0;

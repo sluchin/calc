@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
 static void
 main_loop(void)
 {
-    int retval = 0;       /* 戻り値 */
-    calcinfo *tsd = NULL; /* calc情報構造体 */
+    int retval = 0;              /* 戻り値 */
+    struct calcinfo *tsd = NULL; /* calc情報構造体 */
 #ifdef HAVE_READLINE
     int hist_no = 0;      /* 履歴数 */
     char *prompt = NULL;  /* プロンプト */

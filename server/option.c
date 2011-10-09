@@ -37,6 +37,7 @@
 
 #include "log.h"
 #include "version.h"
+#include "calc.h"
 #include "option.h"
 
 /* 外部変数 */

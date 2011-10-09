@@ -26,11 +26,6 @@
 #ifndef _CALC_OPTION_H_
 #define _CALC_OPTION_H_
 
-#define DEFAULT_IPADDR "192.168.0.5" /**< デフォルトのIPアドレス */
-#define DEFAULT_PORTNO "12345"       /**< デフォルトのポート番号 */
-#define MAX_DIGIT      30L           /**< 有効桁数最大値 */
-#define DEFAULT_DIGIT  12L           /**< 有効桁数デフォルト値 */
-
 /* 外部変数 */
 extern long g_digit; /**< 桁数 */
 

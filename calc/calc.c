@@ -15,20 +15,20 @@
  *
  * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
  */
- /* This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; either version 2 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-  */
+/* This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
 
 #include <stdio.h>    /* FILE */
 #include <stdlib.h>   /* realloc */
@@ -108,7 +108,7 @@ init_calc(void *expr, long digit)
     }
 
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
-    dbglog("expr=%p, ptr=%p", expr, tsd->ptr); 
+    dbglog("expr=%p, ptr=%p", expr, tsd->ptr);
 
     /* フォーマット設定 */
     retval = snprintf(tsd->fmt, sizeof(tsd->fmt),
@@ -172,7 +172,6 @@ answer(calcinfo *tsd)
 {
     dbl val = 0;            /* 値 */
     size_t length = 0;      /* 文字数 */
-    uchar *errormsg = NULL; /* エラーメッセージ */
     int retval = 0;         /* 戻り値 */
     uint t = 0, time = 0;   /* タイマ用変数 */
 
@@ -188,23 +187,23 @@ answer(calcinfo *tsd)
     dbglog(tsd->fmt, val);
     dbglog("ptr=%p, ch=%c", tsd->ptr, tsd->ch);
 
-    check_validate(val);
+    check_validate(tsd, val);
     if (tsd->ch != '\0') /* エラー */
-        set_errorcode(E_SYNTAX);
+        set_errorcode(tsd, E_SYNTAX);
 
     if (g_tflag) {
         time = stop_timer(&t);
         print_timer(time);
     }
 
-    if (is_error()) { /* エラー */
-        errormsg = get_errormsg();
-        if (!errormsg)
+    if (is_error(tsd)) { /* エラー */
+        tsd->errormsg = get_errormsg(tsd);
+        if (!tsd->errormsg)
             return NULL;
-        length = strlen((char *)errormsg); /* 文字数 */
-        tsd->result = (uchar *)strndup((char *)errormsg, length);
-        clear_error();
-        dbglog("errormsg=%p", errormsg);
+        length = strlen((char *)tsd->errormsg); /* 文字数 */
+        tsd->result = (uchar *)strndup((char *)tsd->errormsg, length);
+        clear_error(tsd);
+        dbglog("errormsg=%p", tsd->errormsg);
         if (!tsd->result) {
             outlog("strndup=%p", tsd->result);
             return NULL;
@@ -251,15 +250,15 @@ answer(calcinfo *tsd)
  * @return なし
  */
 void
-parse_func_args(calcinfo *tsd, const enum argtype type, dbl *x, dbl *y)
+parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
 {
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return;
 
     if (tsd->ch != '(') {
-        set_errorcode(E_SYNTAX);
+        set_errorcode(tsd, E_SYNTAX);
         return;
     }
 
@@ -269,7 +268,7 @@ parse_func_args(calcinfo *tsd, const enum argtype type, dbl *x, dbl *y)
 
     if (type == ARG_2) {
         if (tsd->ch != ',') {
-            set_errorcode(E_SYNTAX);
+            set_errorcode(tsd, E_SYNTAX);
             return;
         }
         readch(tsd);
@@ -278,7 +277,7 @@ parse_func_args(calcinfo *tsd, const enum argtype type, dbl *x, dbl *y)
     }
 
     if (tsd->ch != ')') {
-        set_errorcode(E_SYNTAX);
+        set_errorcode(tsd, E_SYNTAX);
         return;
     }
     readch(tsd);
@@ -321,7 +320,7 @@ expression(calcinfo *tsd)
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     x = term(tsd);
@@ -356,7 +355,7 @@ term(calcinfo *tsd)
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     x = factor(tsd);
@@ -370,14 +369,14 @@ term(calcinfo *tsd)
             readch(tsd);
             y = factor(tsd);
             if (y == 0) { /* ゼロ除算エラー */
-                set_errorcode(E_DIVBYZERO);
+                set_errorcode(tsd, E_DIVBYZERO);
                 return EX_ERROR;
             }
             x /= y;
         } else if (tsd->ch == '^') {
             readch(tsd);
             y = factor(tsd);
-            x = get_pow(x, y);
+            x = get_pow(tsd, x, y);
         } else {
             break;
         }
@@ -399,7 +398,7 @@ factor(calcinfo *tsd)
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     if (tsd->ch != '(')
@@ -409,7 +408,7 @@ factor(calcinfo *tsd)
     x = expression(tsd);
 
     if (tsd->ch != ')') { /* シンタックスエラー */
-        set_errorcode(E_SYNTAX);
+        set_errorcode(tsd, E_SYNTAX);
         return EX_ERROR;
     }
     readch(tsd);
@@ -434,7 +433,7 @@ token(calcinfo *tsd)
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     /* 初期化 */
@@ -459,7 +458,7 @@ token(calcinfo *tsd)
 
     } else { /* エラー */
         dbglog("not isdigit && not isalpha");
-        set_errorcode(E_SYNTAX);
+        set_errorcode(tsd, E_SYNTAX);
     }
 
     dbglog(tsd->fmt, result);
@@ -490,7 +489,7 @@ number(calcinfo *tsd)
     }
     dbglog(tsd->fmt, x);
 
-    check_validate(x);
+    check_validate(tsd, x);
 
     return x;
 }

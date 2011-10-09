@@ -43,25 +43,25 @@
 /** 関数情報構造体初期化 */
 static void init_func(void) __attribute__((constructor));
 /** Pi取得 */
-static dbl get_pi(void);
+static dbl get_pi(calcinfo *tsd);
 /** ネイピア数(オイラー数)取得 */
-static dbl get_e(void);
+static dbl get_e(calcinfo *tsd);
 /** 角度をラジアンに変換 */
-static dbl get_rad(dbl x);
+static dbl get_rad(calcinfo *tsd, dbl x);
 /** ラジアンを角度に変換 */
-static dbl get_deg(dbl x);
+static dbl get_deg(calcinfo *tsd, dbl x);
 /** 平方根 */
-static dbl get_sqrt(dbl x);
+static dbl get_sqrt(calcinfo *tsd, dbl x);
 /** 関数エラーチェック */
-static dbl check_math(dbl x, dbl (*callback)(dbl));
+static dbl check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl));
 /** 階乗 */
 static void factorial(dbl *x, dbl n);
 /** 階乗取得 */
-static dbl get_factorial(dbl n);
+static dbl get_factorial(calcinfo *tsd, dbl n);
 /** 順列(nPr) */
-static dbl get_permutation(dbl n, dbl r);
+static dbl get_permutation(calcinfo *tsd, dbl n, dbl r);
 /** 組み合わせ(nCr) */
-static dbl get_combination(dbl n, dbl r);
+static dbl get_combination(calcinfo *tsd, dbl n, dbl r);
 
 /** 関数種別 */
 enum functype {
@@ -102,14 +102,22 @@ static struct funcstring fstring[] = {
 
 /** 関数共用体 */
 union func {
-    dbl (*func0)(void);
-    dbl (*func1)(dbl x);
-    dbl (*func2)(dbl x, dbl y);
+    dbl (*func0)(calcinfo *tsd);
+    dbl (*func1)(calcinfo *tsd, dbl x);
+    dbl (*func2)(calcinfo *tsd, dbl x, dbl y);
+    dbl (*math)(dbl x);
+};
+
+enum uniontype {
+    FUNC0,
+    FUNC1,
+    FUNC2,
+    MATH
 };
 
 /** 関数情報構造体 */
 struct funcinfo {
-    enum argtype type;
+    enum uniontype type;
     union func func;
 };
 
@@ -119,7 +127,7 @@ static struct funcinfo finfo[MAXFUNC];
 /**
  * 関数実行
  *
- * @param[in] tsd calc情報構造体
+ * @param[in] tsd calcinfo構造体
  * @param[in] func 関数名
  * return なし
  */
@@ -140,23 +148,23 @@ exec_func(calcinfo *tsd, const char *func)
             dbglog("finfo[%d]=%p, ftype=%d", finfo[i], ftype);
             switch (finfo[ftype].type) {
                 dbglog("type=%d", finfo[ftype].type);
-            case ARG_0:
-                result = finfo[ftype].func.func0();
+            case FUNC0:
+                result = finfo[ftype].func.func0(tsd);
                 break;
-            case ARG_1:
+            case FUNC1:
                 parse_func_args(tsd, ARG_1, &x, &y);
                 dbglog("x=%.15g, y=%.15g", x, y);
-                if (ftype == FN_SQRT) {
-                    dbglog("ftype[%d]==FN_SQRT[%d]", ftype, FN_SQRT);
-                    result = finfo[ftype].func.func1(x);
-                } else
-                    result = check_math(x, finfo[ftype].func.func1);
+                result = finfo[ftype].func.func1(tsd, x);
                 break;
-            case ARG_2:
+            case FUNC2:
                 parse_func_args(tsd, ARG_2, &x, &y);
                 dbglog("x=%.15g, y=%.15g", x, y);
-                result = finfo[ftype].func.func2(x, y);
+                result = finfo[ftype].func.func2(tsd, x, y);
                 break;
+            case MATH:
+                parse_func_args(tsd, ARG_1, &x, &y);
+                dbglog("x=%.15g, y=%.15g", x, y);
+                result = check_math(tsd, x, finfo[ftype].func.math);
             default:
                 break;
             }
@@ -164,7 +172,7 @@ exec_func(calcinfo *tsd, const char *func)
         }
     }
     if (!exec) /* エラー */
-        set_errorcode(E_NOFUNC);
+        set_errorcode(tsd, E_NOFUNC);
 
     dbglog("result=%.15g", result);
     return result;
@@ -173,30 +181,31 @@ exec_func(calcinfo *tsd, const char *func)
 /**
  * 指数取得
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] x 値
  * @param[in] y 値
  * @return 指数
  */
 dbl
-get_pow(dbl x, dbl y)
+get_pow(calcinfo *tsd, dbl x, dbl y)
 {
     dbl result = 0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     if (((fpclassify(x) == FP_ZERO) && islessequal(y, 0)) ||
         (isless(x, 0))) /* 定義域エラー */
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
 
     errno = 0;
     feclearexcept(FE_ALL_EXCEPT);
 
     result = pow(x, y);
 
-    check_math_feexcept(result);
+    check_math_feexcept(tsd, result);
 
     return result;
 }
@@ -217,71 +226,72 @@ init_func(void)
     memset(finfo, 0, sizeof(finfo));
 
     /* pi */
-    finfo[FN_PI].type = ARG_0;
+    finfo[FN_PI].type = FUNC0;
     finfo[FN_PI].func.func0 = get_pi;
     /* ネイピア数(オイラー数) */
-    finfo[FN_E].type = ARG_0;
+    finfo[FN_E].type = FUNC0;
     finfo[FN_E].func.func0 = get_e;
     /* 絶対値 */
-    finfo[FN_ABS].type = ARG_1;
-    finfo[FN_ABS].func.func1 = fabs;
+    finfo[FN_ABS].type = MATH;
+    finfo[FN_ABS].func.math = fabs;
     /* 平方根 */
-    finfo[FN_SQRT].type = ARG_1;
+    finfo[FN_SQRT].type = FUNC1;
     finfo[FN_SQRT].func.func1 = get_sqrt;
     /* 三角関数(sin) */
-    finfo[FN_SIN].type = ARG_1;
-    finfo[FN_SIN].func.func1 = sin;
+    finfo[FN_SIN].type = MATH;
+    finfo[FN_SIN].func.math = sin;
     /* 三角関数(cosin) */
-    finfo[FN_COS].type = ARG_1;
-    finfo[FN_COS].func.func1 = cos;
+    finfo[FN_COS].type = MATH;
+    finfo[FN_COS].func.math = cos;
     /* 三角関数(tangent) */
-    finfo[FN_TAN].type = ARG_1;
-    finfo[FN_TAN].func.func1 = tan;
+    finfo[FN_TAN].type = MATH;
+    finfo[FN_TAN].func.math = tan;
     /* 逆三角関数(arcsin) */
-    finfo[FN_ASIN].type = ARG_1;
-    finfo[FN_ASIN].func.func1 = asin;
+    finfo[FN_ASIN].type = MATH;
+    finfo[FN_ASIN].func.math = asin;
     /* 逆三角関数(arccosin) */
-    finfo[FN_ACOS].type = ARG_1;
-    finfo[FN_ACOS].func.func1 = acos;
+    finfo[FN_ACOS].type = MATH;
+    finfo[FN_ACOS].func.math = acos;
     /* 逆三角関数(arccosin) */
-    finfo[FN_ATAN].type = ARG_1;
-    finfo[FN_ATAN].func.func1 = atan;
+    finfo[FN_ATAN].type = MATH;
+    finfo[FN_ATAN].func.math = atan;
     /* 指数関数 */
-    finfo[FN_EXP].type = ARG_1;
-    finfo[FN_EXP].func.func1 = exp;
+    finfo[FN_EXP].type = MATH;
+    finfo[FN_EXP].func.math = exp;
     /* 自然対数 */
-    finfo[FN_LN].type = ARG_1;
-    finfo[FN_LN].func.func1 = log;
+    finfo[FN_LN].type = MATH;
+    finfo[FN_LN].func.math = log;
     /* 常用対数 */
-    finfo[FN_LOG].type = ARG_1;
-    finfo[FN_LOG].func.func1 = log10;
+    finfo[FN_LOG].type = MATH;
+    finfo[FN_LOG].func.math = log10;
     /* 角度をラジアンに変換 */
-    finfo[FN_RAD].type = ARG_1;
+    finfo[FN_RAD].type = FUNC1;
     finfo[FN_RAD].func.func1 = get_rad;
     /* ラジアンを角度に変換 */
-    finfo[FN_DEG].type = ARG_1;
+    finfo[FN_DEG].type = FUNC1;
     finfo[FN_DEG].func.func1 = get_deg;
     /* 階乗 */
-    finfo[FN_FACT].type = ARG_1;
+    finfo[FN_FACT].type = FUNC1;
     finfo[FN_FACT].func.func1 = get_factorial;
     /* 順列 */
-    finfo[FN_PERM].type = ARG_2;
+    finfo[FN_PERM].type = FUNC2;
     finfo[FN_PERM].func.func2 = get_permutation;
     /* 組み合わせ */
-    finfo[FN_COMB].type = ARG_2;
+    finfo[FN_COMB].type = FUNC2;
     finfo[FN_COMB].func.func2 = get_combination;
 }
 
 /**
  * pi取得
  *
+ * @param[in] tsd calcinfo構造体
  * @return pi
  */
 static dbl
-get_pi(void)
+get_pi(calcinfo *tsd)
 {
     dbglog("start");
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
     return DEF_PI;
 }
@@ -289,13 +299,14 @@ get_pi(void)
 /**
  * ネイピア数(オイラー数)を取得
  *
+ * @param[in] tsd calcinfo構造体
  * @return ネイピア数(オイラー数)
  */
 static dbl
-get_e(void)
+get_e(calcinfo *tsd)
 {
     dbglog("start");
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
     return DEF_E;
 }
@@ -303,14 +314,15 @@ get_e(void)
 /**
  * 角度をラジアンに変換
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] x 値
  * @return ラジアン
  */
 static dbl
-get_rad(dbl x)
+get_rad(calcinfo *tsd, dbl x)
 {
     dbglog("start");
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
     return (x * DEF_PI / 180);
 }
@@ -318,14 +330,15 @@ get_rad(dbl x)
 /**
  * ラジアンを角度に変換
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] x 値
  * @return 角度
  */
 static dbl
-get_deg(dbl x)
+get_deg(calcinfo *tsd, dbl x)
 {
     dbglog("start");
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
     return (x * 180 / DEF_PI);
 }
@@ -334,21 +347,22 @@ get_deg(dbl x)
  * 平方根
  *
  * 平方根には, 値域エラーは存在しない.
+ * @param[in] tsd calcinfo構造体
  * @param[in] x 値
  * @return 平方根
  */
 static dbl
-get_sqrt(dbl x)
+get_sqrt(calcinfo *tsd, dbl x)
 {
     dbl result = 0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     if (isless(x, 0)) { /* 定義域エラー */
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
 
@@ -359,18 +373,19 @@ get_sqrt(dbl x)
 /**
  * 関数エラーチェック
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] x 値
  * @param[in] callback コールバック関数
  * @return 絶対値
  */
 static dbl
-check_math(dbl x, dbl (*callback)(dbl))
+check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
 {
     dbl result = 0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     errno = 0;
@@ -378,7 +393,7 @@ check_math(dbl x, dbl (*callback)(dbl))
 
     result = callback(x);
 
-    check_math_feexcept(result);
+    check_math_feexcept(tsd, result);
 
     return result;
 }
@@ -404,11 +419,12 @@ factorial(dbl *x, dbl n)
 /**
  * 階乗取得
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] n 値
  * @return 階乗
  */
 static dbl
-get_factorial(dbl n)
+get_factorial(calcinfo *tsd, dbl n)
 {
     dbl result = 0;     /* 計算結果 */
     dbl decimal = 0;    /* 小数 */
@@ -417,7 +433,7 @@ get_factorial(dbl n)
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     dbglog("n=%.15g", n);
@@ -426,12 +442,12 @@ get_factorial(dbl n)
     decimal = modf(n, &integer);
     dbglog("decimal=%g, integer=%g", decimal, integer);
     if (decimal) { /* 自然数ではない */
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
 
     if (isless(n, 0)) { /* マイナス */
-        n = check_math(n, fabs);
+        n = check_math(tsd, n, fabs);
         minus = true;
     }
 
@@ -444,7 +460,7 @@ get_factorial(dbl n)
     minus = false;
 
     dbglog("result=%.15g", result);
-    check_validate(result);
+    check_validate(tsd, result);
 
     return result;
 }
@@ -456,38 +472,39 @@ get_factorial(dbl n)
  * 順列 nPr を求める関数.\n
  * nPr = n! / (n - r)！
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
  * return 順列
  */
 static dbl
-get_permutation(dbl n, dbl r)
+get_permutation(calcinfo *tsd, dbl n, dbl r)
 {
     dbl result = 0;   /* 計算結果 */
     dbl x = 0, y = 1; /* 値 */
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
 
-    x = get_factorial(n);
+    x = get_factorial(tsd, n);
     dbglog("x=%.15g", x);
     if (isgreater((n - r), 0))
-        y = get_factorial(n - r);
+        y = get_factorial(tsd, n - r);
 
     dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
     dbglog("result=%.15g", result);
 
-    check_validate(result);
+    check_validate(tsd, result);
 
     return result;
 }
@@ -499,37 +516,38 @@ get_permutation(dbl n, dbl r)
  * 組み合わせ数 nCr を求める関数.\n
  * nCr = n! / r! (n - r)！
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
  * return 組み合わせ
  */
 static dbl
-get_combination(dbl n, dbl r)
+get_combination(calcinfo *tsd, dbl n, dbl r)
 {
     dbl result = 0;          /* 計算結果 */
     dbl x = 0, y = 0, z = 1; /* 値 */
 
     dbglog("start");
 
-    if (is_error())
+    if (is_error(tsd))
         return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
-        set_errorcode(E_NAN);
+        set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
 
-    x = get_factorial(n);
-    y = get_factorial(r);
+    x = get_factorial(tsd, n);
+    y = get_factorial(tsd, r);
     if (isgreater((n - r), 0))
-        z = get_factorial(n - r);
+        z = get_factorial(tsd, n - r);
     dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
     dbglog("result=%.15g", result);
 
-    check_validate(result);
+    check_validate(tsd, result);
 
     return result;
 }

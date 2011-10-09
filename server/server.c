@@ -63,7 +63,7 @@ server_loop(int sock)
 {
     struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
     int addrlen = 0;         /* sockaddr_in構造体のサイズ */
-    pthread_t thread_id;     /* スレッドID */
+    pthread_t tid;           /* スレッドID */
     int retval = 0;          /* 戻り値 */
     int acc = -1;            /* accept戻り値 */
 
@@ -82,13 +82,13 @@ server_loop(int sock)
         dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
                acc, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
         /* スレッド生成 */
-        retval = pthread_create(&thread_id, NULL, server_proc, (void *)acc);
+        retval = pthread_create(&tid, NULL, server_proc, (void *)acc);
         if (retval) {
-            outlog("pthread_create=%d", thread_id);
+            outlog("pthread_create=%lu", tid);
             /* アクセプトクローズ */
             close_sock(&acc);
         }
-        dbglog("pthread_create=%lu", thread_id);
+        dbglog("pthread_create=%lu", tid);
     } while (!sig_handled && !sighup_handled);
 }
 

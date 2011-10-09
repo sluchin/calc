@@ -137,12 +137,12 @@ static struct test_data error_data [] = {
     { "sin(5",      "Syntax error."         },
     { "nCr(5)",     "Syntax error."         },
     { "nofunc(5)",  "Function not defined." },
-    { "n(0.5)",     "Nan."                  },
-    { "nPr(-1,2)",  "Nan."                  },
-    { "nPr(3,5)",   "Nan."                  },
-    { "nCr(-1,2)",  "Nan."                  },
-    { "nCr(3,5)",   "Nan."                  },
-    { "sqrt(-5)",   "Nan."                  },
+    { "n(0.5)",     "NaN."                  },
+    { "nPr(-1,2)",  "NaN."                  },
+    { "nPr(3,5)",   "NaN."                  },
+    { "nCr(-1,2)",  "NaN."                  },
+    { "nCr(3,5)",   "NaN."                  },
+    { "sqrt(-5)",   "NaN."                  },
     { "10^1000000", "Infinity."             },
     { "n(5000)",    "Infinity."             },
     { "n(-5000)",   "Infinity."             }
@@ -366,7 +366,7 @@ set_string(char *str)
  * 計算実行
  *
  * @param[in] str 文字列
- * @return calcinfo構造体 
+ * @return calcinfo構造体
  */
 static calcinfo *
 exec_calc(char *str)
