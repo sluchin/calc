@@ -134,7 +134,7 @@ void system_dbg_log(const char *pname,
     char d_buf[sizeof("00")] = {0};   /* 秒格納用バッファ */
     va_list ap;                       /* va_list */
     static unsigned long number;      /* ナンバリング */
-    pthread_t thread_id = 0;          /* スレッドID */
+    pthread_t tid = 0;          /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -173,23 +173,14 @@ void system_dbg_log(const char *pname,
         return;
     }
 
-    thread_id = pthread_self();
-    if (thread_id)
+    tid = pthread_self();
+    if (tid)
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)thread_id);
+                       (unsigned long int)tid);
 
     syslog(SYS_PRIO, "ppid=%d%s: #%lu %s.%ld: %s[%d]: %s(%s): %m(%d)",
-           getppid(), thread_id ? t_buf : "",
+           getppid(), tid ? t_buf : "",
            number, d_buf, tv.tv_usec, fname, line, func, message, err_no);
-
-#if 0
-    syslog(SYS_PRIO,
-           "%s.%ld: ppid=%d%s #%lu in %s (%s) %m(%d) at %s:%d",
-           d_buf, tv.tv_usec,
-           getppid(),
-           thread_id ? t_buf : "",
-           number, func, message, err_no, fname, line);
-#endif
 
     if (number >= ULONG_MAX)
         number = 0; /* 初期化 */
@@ -227,7 +218,7 @@ void stderr_log(const char *pname,
     va_list ap;         /* va_list */
     char d_buf[sizeof("xxx 00 00:00:00")] = {0}; /* 時間用バッファ */
     char h_buf[MAX_HOST_SIZE] = {0};             /* ホスト用バッファ */
-    pthread_t thread_id = 0;                     /* スレッドID */
+    pthread_t tid = 0;                     /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -261,21 +252,14 @@ void stderr_log(const char *pname,
         return;
     }
 
-    thread_id = pthread_self();
-    if (thread_id)
+    tid = pthread_self();
+    if (tid)
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)thread_id);
+                       (unsigned long int)tid);
 
     (void)fprintf(fp, "%s.%ld: %s %s[%d]: %s[%d]: ppid=%d%s: %s(",
                   d_buf, tv.tv_usec, h_buf, pname ? : "", getpid(),
-                  fname, line, getppid(), thread_id ? t_buf : "", func);
-#if 0
-    (void)fprintf(fp,
-                  "%s.%ld: %s %s[%d] ppid=%d%s in %s(",
-                  d_buf, tv.tv_usec, h_buf, pname ? : "",
-                  getpid(), getppid(),
-                  thread_id ? t_buf : "", func);
-#endif
+                  fname, line, getppid(), tid ? t_buf : "", func);
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);

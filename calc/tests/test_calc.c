@@ -51,9 +51,9 @@ static testcalc calc; /**< テスト用データ構造体 */
 
 /* 内部関数 */
 /** 文字列設定 */
-static calcinfo *set_string(char *str);
+static calcinfo *set_string(const char *str);
 /** バッファセット */
-static calcinfo *exec_calc(char *str);
+static calcinfo *exec_calc(const char *str);
 
 /** テストデータ構造体 */
 struct test_data {
@@ -62,7 +62,7 @@ struct test_data {
 };
 
 /** 四則演算テスト用データ */
-static struct test_data four_data [] = {
+static const struct test_data four_data [] = {
     { "(105+312)+2*(5-3)", "421" },
     { "(105+312)+2/(5-3)", "418" },
     { "1+2*(5-3)",         "5"   },
@@ -70,7 +70,7 @@ static struct test_data four_data [] = {
 };
 
 /** 関数テスト用データ */
-static struct test_data func_data [] = {
+static const struct test_data func_data [] = {
     { "pi",        "3.14159265359"   },
     { "e",         "2.71828182846"   },
     { "abs(-2)",   "2"               },
@@ -92,7 +92,7 @@ static struct test_data func_data [] = {
 };
 
 /** 四則演算と関数の組み合わせテスト用データ */
-static struct test_data four_func_data [] = {
+static const struct test_data four_func_data [] = {
     { "5*pi",        "15.7079632679"  },
     { "pi*5",        "15.7079632679"  },
     { "5*e",         "13.5914091423"  },
@@ -132,7 +132,7 @@ static struct test_data four_func_data [] = {
 };
 
 /** 関数エラー時テスト用データ */
-static struct test_data error_data [] = {
+static const struct test_data error_data [] = {
     { "5/0",        "Divide by zero."       },
     { "sin(5",      "Syntax error."         },
     { "nCr(5)",     "Syntax error."         },
@@ -339,7 +339,7 @@ void test_get_strlen(void)
  * @return calcinfo構造体
  */
 static calcinfo *
-set_string(char *str)
+set_string(const char *str)
 {
     size_t length = 0;    /* 文字列長 */
     uchar *expr = NULL;   /* 式 */
@@ -369,7 +369,7 @@ set_string(char *str)
  * @return calcinfo構造体
  */
 static calcinfo *
-exec_calc(char *str)
+exec_calc(const char *str)
 {
     calcinfo *tsd = NULL;
     tsd = set_string(str);
