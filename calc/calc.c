@@ -98,7 +98,7 @@ init_calc(void *expr, long digit)
     tsd = pthread_getspecific(calc_key);
     if (!tsd) { /* 取得できない場合 */
         /* スレッド固有のバッファ確保 */
-        tsd = calloc(1, sizeof(calcinfo));
+        tsd = malloc(sizeof(calcinfo));
         if (!tsd) {
             outlog("tsd=%p", tsd);
             return NULL;
@@ -106,6 +106,8 @@ init_calc(void *expr, long digit)
         dbglog("tsd=%p", tsd);
         pthread_setspecific(calc_key, tsd);
     }
+
+    (void)memset(tsd, 0, sizeof(calcinfo));
 
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
     dbglog("expr=%p, ptr=%p", expr, tsd->ptr);
@@ -119,33 +121,11 @@ init_calc(void *expr, long digit)
     }
     dbglog("fmt=%s", tsd->fmt);
 
+    //clear_error(tsd);
+
     return tsd;
 }
 
-/**
- * キー確保
- *
- * @return なし
- */
-static void
-alloc_key(void)
-{
-    dbglog("start");
-    pthread_key_create(&calc_key, destroy_thread);
-}
-
-/**
- * スレッド固有バッファ解放
- *
- * @param[in] ptr 解放するポインタ
- * @return なし
- */
-static void
-destroy_thread(void *ptr)
-{
-    dbglog("start: ptr=%p", ptr);
-    memfree(1, &ptr);
-}
 
 /**
  * メモリ解放
@@ -282,6 +262,31 @@ parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
     }
     readch(tsd);
 
+}
+
+/**
+ * キー確保
+ *
+ * @return なし
+ */
+static void
+alloc_key(void)
+{
+    dbglog("start");
+    pthread_key_create(&calc_key, destroy_thread);
+}
+
+/**
+ * スレッド固有バッファ解放
+ *
+ * @param[in] ptr 解放するポインタ
+ * @return なし
+ */
+static void
+destroy_thread(void *ptr)
+{
+    dbglog("start: ptr=%p", ptr);
+    memfree(1, &ptr);
 }
 
 /**
@@ -457,7 +462,7 @@ token(calcinfo *tsd)
         result = exec_func(tsd, func);
 
     } else { /* エラー */
-        dbglog("not isdigit && not isalpha");
+        dbglog("ch=%c", tsd->ch);
         set_errorcode(tsd, E_SYNTAX);
     }
 

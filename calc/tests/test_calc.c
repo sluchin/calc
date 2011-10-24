@@ -43,6 +43,20 @@ void test_answer_func(void);
 void test_answer_four_func(void);
 /** 関数エラー時テスト */
 void test_answer_error(void);
+/** parse_func_args() 関数テスト */
+void test_parse_func_args(void);
+/** readch() 関数テスト */
+void test_readch(void);
+/** expression() 関数テスト */
+void test_expression(void);
+/** term() 関数テスト */
+void test_term(void);
+/** factor() 関数テスト */
+void test_factor(void);
+/** token() 関数テスト */
+void test_token(void);
+/** number() 関数テスト */
+void test_number(void);
 /** get_strlen() 関数テスト */
 void test_get_strlen(void);
 
@@ -55,14 +69,20 @@ static calcinfo *set_string(const char *str);
 /** バッファセット */
 static calcinfo *exec_calc(const char *str);
 
-/** テストデータ構造体 */
-struct test_data {
+/** テストデータ構造体(answer char) */
+struct test_data_char {
     char expr[MAX_STRING];
     char answer[MAX_STRING];
 };
 
+/** テストデータ構造体(answer double) */
+struct test_data_dbl {
+    char expr[MAX_STRING];
+    dbl answer;
+};
+
 /** 四則演算テスト用データ */
-static const struct test_data four_data [] = {
+static const struct test_data_char four_data [] = {
     { "(105+312)+2*(5-3)", "421" },
     { "(105+312)+2/(5-3)", "418" },
     { "1+2*(5-3)",         "5"   },
@@ -70,7 +90,7 @@ static const struct test_data four_data [] = {
 };
 
 /** 関数テスト用データ */
-static const struct test_data func_data [] = {
+static const struct test_data_char func_data [] = {
     { "pi",        "3.14159265359"   },
     { "e",         "2.71828182846"   },
     { "abs(-2)",   "2"               },
@@ -92,7 +112,7 @@ static const struct test_data func_data [] = {
 };
 
 /** 四則演算と関数の組み合わせテスト用データ */
-static const struct test_data four_func_data [] = {
+static const struct test_data_char four_func_data [] = {
     { "5*pi",        "15.7079632679"  },
     { "pi*5",        "15.7079632679"  },
     { "5*e",         "13.5914091423"  },
@@ -132,20 +152,28 @@ static const struct test_data four_func_data [] = {
 };
 
 /** 関数エラー時テスト用データ */
-static const struct test_data error_data [] = {
+static const struct test_data_char error_data [] = {
     { "5/0",        "Divide by zero."       },
     { "sin(5",      "Syntax error."         },
     { "nCr(5)",     "Syntax error."         },
     { "nofunc(5)",  "Function not defined." },
     { "n(0.5)",     "NaN."                  },
-    { "nPr(-1,2)",  "NaN."                  },
+    { "nPr(-1,-2)", "NaN."                  },
+    { "nPr(1,-2)",  "NaN."                  },
     { "nPr(3,5)",   "NaN."                  },
-    { "nCr(-1,2)",  "NaN."                  },
+    { "nCr(-1,-2)", "NaN."                  },
+    { "nCr(1,-2)",  "NaN."                  },
     { "nCr(3,5)",   "NaN."                  },
     { "sqrt(-5)",   "NaN."                  },
     { "10^1000000", "Infinity."             },
     { "n(5000)",    "Infinity."             },
     { "n(-5000)",   "Infinity."             }
+};
+
+/** expression() 関数テスト用データ */
+static const struct test_data_dbl expression_data [] = {
+    { "5+7", 12 },
+    { "5-1", 4  }
 };
 
 /**
@@ -175,7 +203,8 @@ cut_teardown(void)
  *
  * @return なし
  */
-void test_answer_four(void)
+void
+test_answer_four(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
@@ -196,7 +225,8 @@ void test_answer_four(void)
  *
  * @return なし
  */
-void test_answer_func(void)
+void
+test_answer_func(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
@@ -217,7 +247,8 @@ void test_answer_func(void)
  *
  * @return なし
  */
-void test_answer_four_func(void)
+void
+test_answer_four_func(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
@@ -256,11 +287,23 @@ test_answer_error(void)
 }
 
 /**
+ * parse_func_args() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_parse_func_args(void)
+{
+
+}
+
+/**
  * readch() 関数テスト
  *
  * @return なし
  */
-void test_readch(void)
+void
+test_readch(void)
 {
     uchar *ptr = NULL;    /* ポインタ */
     calcinfo *tsd = NULL; /* calc情報構造体 */
@@ -295,11 +338,84 @@ void test_readch(void)
 }
 
 /**
+ * expression() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_expression(void)
+{
+    dbl x = 0;            /* 値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
+
+    int i;
+    for (i = 0; i < arraysize(expression_data); i++) {
+        tsd = set_string(expression_data[i].expr);
+        if (!tsd)
+            return;
+        calc.readch(tsd);
+        x = calc.expression(tsd);
+        cut_assert_equal_double(expression_data[i].answer,
+                                0.0,
+                                x,
+                                cut_message("%g == %s",
+                                            expression_data[i].answer,
+                                            expression_data[i].expr));
+        destroy_calc(tsd);
+    }
+}
+
+/**
+ * term() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_term(void)
+{
+
+}
+
+/**
+ * factor() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_factor(void)
+{
+
+}
+
+/**
+ * factor() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_token(void)
+{
+
+}
+
+/**
+ * number() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_number(void)
+{
+
+}
+
+/**
  * get_strlen() 関数テスト
  *
  * @return なし
  */
-void test_get_strlen(void)
+void
+test_get_strlen(void)
 {
     cut_assert_equal_int(5, calc.get_strlen(50000, "%.18g"));
     cut_assert_equal_int(15, calc.get_strlen(123456789012345, "%.18g"));
@@ -358,7 +474,7 @@ set_string(const char *str)
         return NULL;
     }
     dbglog("tsd=%p", tsd);
-    dbglog("length=%u, expr=%p, %s", length,  expr, expr);
+    dbglog("%p expr=%s, length=%u", expr, expr, length);
     return tsd;
 }
 
@@ -378,7 +494,7 @@ exec_calc(const char *str)
     tsd->result = answer(tsd);
     if (!tsd->result)
         return NULL;
-    dbglog("result=%p, %s", tsd->result, tsd->result);
+    dbglog("%p result=%s", tsd->result, tsd->result);
 
     return tsd;
 }

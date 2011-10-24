@@ -39,7 +39,7 @@ $(LIBRARY): $(OBJECTS)
 
 $(SHAREDOBJ): $(OBJECTS)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<

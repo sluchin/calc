@@ -39,7 +39,7 @@ $(LIBCLIENT): $(OBJCLIENT)
 
 $(SHAREDOBJ): $(OBJCLIENT)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^
+	$(CC) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@

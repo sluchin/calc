@@ -42,13 +42,11 @@ $(LIBCALC): $(OBJCALC)
 
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
-	@#$(CC) -shared -Wl,-soname,$@ -o $@ $^
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
 	$(LINK) -o $@ $(LIBS) $(CALCLIBS) $^
-	@#$(LINK) -o $@ $(LIBS) $^ $(LIBCALC) $(LIBRARY)
 
 .PHONY: static
 static: $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
