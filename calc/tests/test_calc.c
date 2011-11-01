@@ -176,6 +176,35 @@ static const struct test_data_dbl expression_data [] = {
     { "5-1", 4  }
 };
 
+/** term() 関数テスト用データ */
+static const struct test_data_dbl term_data [] = {
+    { "5*7", 35 },
+    { "6/2", 3  },
+    { "6/0", 0  },
+    { "6^2", 36 }
+};
+
+/** factor() 関数テスト用データ */
+static const struct test_data_dbl factor_data [] = {
+    { "(5+4)", 9 },
+    { "(5+4",  0 }
+};
+
+/** token() 関数テスト用データ */
+static const struct test_data_dbl token_data [] = {
+    { "+54231",   54231  },
+    { "-54231",   -54231 },
+    { "54231",    54231  },
+    { "nCr(5,2)", 10     },
+    { "テスト",   0      }
+};
+
+/** number() 関数テスト用データ */
+static const struct test_data_dbl number_data [] = {
+    { "54231",   54231  },
+    { "54.231",  54.231 },
+};
+
 /**
  * 初期化処理
  *
@@ -294,7 +323,29 @@ test_answer_error(void)
 void
 test_parse_func_args(void)
 {
+    dbl x = 0, y = 0;
+    calcinfo *tsd = NULL; /* calc情報構造体 */
 
+    tsd = set_string("(235)");
+    if (!tsd) {
+        outlog("tsd=%p", tsd);
+        return;
+    }
+    dbglog("ch=%p", tsd->ch);
+    parse_func_args(tsd, ARG_1, &x, &y);
+    cut_assert_equal_double(235, 0.0, x);
+    destroy_calc(tsd);
+
+    tsd = set_string("(123,235)");
+    if (!tsd) {
+        outlog("tsd=%p", tsd);
+        return;
+    }
+    dbglog("ch=%p", tsd->ch);
+    parse_func_args(tsd, ARG_2, &x, &y);
+    cut_assert_equal_double(123, 0.0, x);
+    cut_assert_equal_double(235, 0.0, y);
+    destroy_calc(tsd);
 }
 
 /**
@@ -313,8 +364,7 @@ test_readch(void)
         outlog("tsd=%p", tsd);
         return;
     }
-    dbglog("calc.ch=%p", tsd->ch);
-    calc.readch(tsd);
+    dbglog("ch=%p", tsd->ch);
     cut_assert_equal_int('t', tsd->ch,
                          cut_message("%c == %c", 't', tsd->ch));
     calc.readch(tsd);
@@ -353,7 +403,6 @@ test_expression(void)
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
             return;
-        calc.readch(tsd);
         x = calc.expression(tsd);
         cut_assert_equal_double(expression_data[i].answer,
                                 0.0,
@@ -373,7 +422,23 @@ test_expression(void)
 void
 test_term(void)
 {
+    dbl x = 0;            /* 値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(term_data); i++) {
+        tsd = set_string(term_data[i].expr);
+        if (!tsd)
+            return;
+        x = calc.term(tsd);
+        cut_assert_equal_double(term_data[i].answer,
+                                0.0,
+                                x,
+                                cut_message("%g == %s",
+                                            term_data[i].answer,
+                                            term_data[i].expr));
+        destroy_calc(tsd);
+    }
 }
 
 /**
@@ -384,7 +449,23 @@ test_term(void)
 void
 test_factor(void)
 {
+    dbl x = 0;            /* 値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(factor_data); i++) {
+        tsd = set_string(factor_data[i].expr);
+        if (!tsd)
+            return;
+        x = calc.factor(tsd);
+        cut_assert_equal_double(factor_data[i].answer,
+                                0.0,
+                                x,
+                                cut_message("%g == %s",
+                                            factor_data[i].answer,
+                                            factor_data[i].expr));
+        destroy_calc(tsd);
+    }
 }
 
 /**
@@ -395,7 +476,23 @@ test_factor(void)
 void
 test_token(void)
 {
+    dbl x = 0;            /* 値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(token_data); i++) {
+        tsd = set_string(token_data[i].expr);
+        if (!tsd)
+            return;
+        x = calc.token(tsd);
+        cut_assert_equal_double(token_data[i].answer,
+                                0.0,
+                                x,
+                                cut_message("%g == %s",
+                                            token_data[i].answer,
+                                            token_data[i].expr));
+        destroy_calc(tsd);
+    }
 }
 
 /**
@@ -406,7 +503,23 @@ test_token(void)
 void
 test_number(void)
 {
+    dbl x = 0;            /* 値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(number_data); i++) {
+        tsd = set_string(number_data[i].expr);
+        if (!tsd)
+            return;
+        x = calc.number(tsd);
+        cut_assert_equal_double(number_data[i].answer,
+                                0.0,
+                                x,
+                                cut_message("%g == %s",
+                                            number_data[i].answer,
+                                            number_data[i].expr));
+        destroy_calc(tsd);
+    }
 }
 
 /**

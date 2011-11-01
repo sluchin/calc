@@ -121,7 +121,7 @@ init_calc(void *expr, long digit)
     }
     dbglog("fmt=%s", tsd->fmt);
 
-    //clear_error(tsd);
+    readch(tsd);
 
     return tsd;
 }
@@ -162,7 +162,6 @@ answer(calcinfo *tsd)
     if (g_tflag)
         start_timer(&t);
 
-    readch(tsd);
     val = expression(tsd);
     dbglog(tsd->fmt, val);
     dbglog("ptr=%p, ch=%c", tsd->ptr, tsd->ch);
