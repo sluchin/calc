@@ -23,8 +23,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>  /* snprintf */
-#include <string.h> /* strdup */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
@@ -61,7 +59,7 @@ void test_number(void);
 void test_get_strlen(void);
 
 /* 内部変数 */
-static testcalc calc; /**< テスト用データ構造体 */
+static testcalc calc; /**< 関数構造体 */
 
 /* 内部関数 */
 /** 文字列設定 */
@@ -192,8 +190,8 @@ static const struct test_data_dbl factor_data [] = {
 
 /** token() 関数テスト用データ */
 static const struct test_data_dbl token_data [] = {
-    { "+54231",   54231  },
-    { "-54231",   -54231 },
+    { "+54321",   54321  },
+    { "-54321",   -54321 },
     { "54231",    54231  },
     { "nCr(5,2)", 10     },
     { "テスト",   0      }
@@ -210,21 +208,9 @@ static const struct test_data_dbl number_data [] = {
  *
  * @return なし
  */
-void
-cut_setup(void)
+void cut_startup(void)
 {
     test_init_calc(&calc);
-}
-
-/**
- * 終了処理
- *
- * @return なし
- */
-void
-cut_teardown(void)
-{
-
 }
 
 /**
@@ -323,7 +309,7 @@ test_answer_error(void)
 void
 test_parse_func_args(void)
 {
-    dbl x = 0, y = 0;
+    dbl x = 0, y = 0;     /* 値 */
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
     tsd = set_string("(235)");

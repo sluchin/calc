@@ -17,16 +17,28 @@ LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcutil -lcalcp
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
-SHAREDOBJ = test_calc.so
+CALCSOBJ = test_calc.so
+FUNCSOBJ = test_function.so
+ERRORSOBJ = test_error.so
 LIBCALC = $(pardir)/libcalcp.a
-OBJECTS = test_calc.o
+CALCOBJ = test_calc.o
+FUNCOBJ = test_function.o
+ERROROBJ = test_error.o
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(SHAREDOBJ)
+all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 
-$(SHAREDOBJ): $(OBJECTS)
+$(CALCSOBJ): $(CALCOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+
+$(FUNCSOBJ): $(FUNCOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+
+$(ERRORSOBJ): $(ERROROBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 

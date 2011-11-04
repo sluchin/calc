@@ -75,13 +75,13 @@ void parse_func_args(calcinfo *tsd, const argtype num, dbl *x, dbl *y);
 
 #ifdef UNITTEST
 struct testcalc {
-    dbl (*expression)(struct calcinfo *tsd);
-    dbl (*term)(struct calcinfo *tsd);
-    dbl (*factor)(struct calcinfo *tsd);
-    dbl (*token)(struct calcinfo *tsd);
-    dbl (*number)(struct calcinfo *tsd);
+    dbl (*expression)(calcinfo *tsd);
+    dbl (*term)(calcinfo *tsd);
+    dbl (*factor)(calcinfo *tsd);
+    dbl (*token)(calcinfo *tsd);
+    dbl (*number)(calcinfo *tsd);
     int (*get_strlen)(const dbl val, const char *fmt);
-    void (*readch)(struct calcinfo *tsd);
+    void (*readch)(calcinfo *tsd);
 };
 typedef struct testcalc testcalc;
 

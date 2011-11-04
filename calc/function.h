@@ -32,11 +32,29 @@
 /** 関数最大文字数 */
 #define MAX_FUNC_STRING    4
 
+/** 関数実行 */
+dbl exec_func(calcinfo *tsd, const char *func);
+
 /** 指数取得 */
 dbl get_pow(calcinfo *tsd, dbl x, dbl y);
 
-/** 関数実行 */
-dbl exec_func(calcinfo *tsd, const char *func);
+#ifdef UNITTEST
+struct testfunction {
+    dbl (*get_pi)(calcinfo *tsd);
+    dbl (*get_e)(calcinfo *tsd);
+    dbl (*get_rad)(calcinfo *tsd, dbl x);
+    dbl (*get_deg)(calcinfo *tsd, dbl x);
+    dbl (*get_sqrt)(calcinfo *tsd, dbl x);
+    dbl (*check_math)(calcinfo *tsd, dbl x, dbl (*callback)(dbl));
+    void (*factorial)(dbl *x, dbl n);
+    dbl (*get_factorial)(calcinfo *tsd, dbl n);
+    dbl (*get_permutation)(calcinfo *tsd, dbl n, dbl r);
+    dbl (*get_combination)(calcinfo *tsd, dbl n, dbl r);
+};
+typedef struct testfunction testfunction;
+
+void test_init_function(testfunction *func);
+#endif /* UNITTEST */
 
 #endif /* _FUNCTION_H_ */
 

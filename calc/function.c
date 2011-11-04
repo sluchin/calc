@@ -165,6 +165,7 @@ exec_func(calcinfo *tsd, const char *func)
                 parse_func_args(tsd, ARG_1, &x, &y);
                 dbglog("x=%.15g, y=%.15g", x, y);
                 result = check_math(tsd, x, finfo[ftype].func.math);
+                break;
             default:
                 break;
             }
@@ -552,3 +553,19 @@ get_combination(calcinfo *tsd, dbl n, dbl r)
     return result;
 }
 
+#ifdef UNITTEST
+void
+test_init_function(testfunction *func)
+{
+    func->get_pi = get_pi;
+    func->get_e = get_e;
+    func->get_rad = get_rad;
+    func->get_deg = get_deg;
+    func->get_sqrt = get_sqrt;
+    func->check_math = check_math;
+    func->factorial = factorial;
+    func->get_factorial = get_factorial;
+    func->get_permutation = get_permutation;
+    func->get_combination = get_combination;
+}
+#endif /* UNITTEST */
