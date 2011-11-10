@@ -108,6 +108,7 @@ union func {
     dbl (*math)(dbl x);
 };
 
+/** 関数種別列挙体 */
 enum uniontype {
     FUNC0,
     FUNC1,
@@ -140,12 +141,12 @@ exec_func(calcinfo *tsd, const char *func)
     bool exec;           /* 関数実行フラグ */
     enum functype ftype; /* 関数種別 */
 
-    dbglog("start");
+    dbglog("start: func=%s", func);
 
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
         if (!strcmp(fstring[i].funcname, func)) {
             ftype = fstring[i].type;
-            dbglog("finfo[%d]=%p, ftype=%d", finfo[i], ftype);
+            dbglog("i=%d, ftype=%d", i, ftype);
             switch (finfo[ftype].type) {
                 dbglog("type=%d", finfo[ftype].type);
             case FUNC0:
@@ -153,17 +154,14 @@ exec_func(calcinfo *tsd, const char *func)
                 break;
             case FUNC1:
                 parse_func_args(tsd, ARG_1, &x, &y);
-                dbglog("x=%.15g, y=%.15g", x, y);
                 result = finfo[ftype].func.func1(tsd, x);
                 break;
             case FUNC2:
                 parse_func_args(tsd, ARG_2, &x, &y);
-                dbglog("x=%.15g, y=%.15g", x, y);
                 result = finfo[ftype].func.func2(tsd, x, y);
                 break;
             case MATH:
                 parse_func_args(tsd, ARG_1, &x, &y);
-                dbglog("x=%.15g, y=%.15g", x, y);
                 result = check_math(tsd, x, finfo[ftype].func.math);
                 break;
             default:
@@ -175,7 +173,8 @@ exec_func(calcinfo *tsd, const char *func)
     if (!exec) /* エラー */
         set_errorcode(tsd, E_NOFUNC);
 
-    dbglog("result=%.15g", result);
+    dbglog("x=%.12g, y=%.12g", x, y);
+    dbglog(tsd->fmt, result);
     return result;
 }
 
@@ -197,12 +196,13 @@ get_pow(calcinfo *tsd, dbl x, dbl y)
     if (is_error(tsd))
         return EX_ERROR;
 
-    if (((fpclassify(x) == FP_ZERO) && islessequal(y, 0)) ||
-        (isless(x, 0))) /* 定義域エラー */
+    if ((fpclassify(x) == FP_ZERO) && isless(y, 0)) {
+        /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
+        return EX_ERROR;
+    }
 
-    errno = 0;
-    feclearexcept(FE_ALL_EXCEPT);
+    clear_math_feexcept();
 
     result = pow(x, y);
 
@@ -357,7 +357,7 @@ get_sqrt(calcinfo *tsd, dbl x)
 {
     dbl result = 0; /* 計算結果 */
 
-    dbglog("start");
+    dbglog("start: x=%g", x);
 
     if (is_error(tsd))
         return EX_ERROR;
@@ -389,8 +389,7 @@ check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
     if (is_error(tsd))
         return EX_ERROR;
 
-    errno = 0;
-    feclearexcept(FE_ALL_EXCEPT);
+    clear_math_feexcept();
 
     result = callback(x);
 
@@ -567,5 +566,6 @@ test_init_function(testfunction *func)
     func->get_factorial = get_factorial;
     func->get_permutation = get_permutation;
     func->get_combination = get_combination;
+    func->fstring = fstring;
 }
 #endif /* UNITTEST */

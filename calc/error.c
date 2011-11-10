@@ -26,6 +26,7 @@
 #include <stdio.h>  /* NULL */
 #include <stdlib.h> /* malloc free */
 #include <string.h> /* strlen */
+#include <errno.h>  /* errno */
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* FE_INVALID */
 #include <stdarg.h> /* va_list va_arg */
@@ -151,6 +152,20 @@ check_validate(calcinfo *tsd, dbl val)
     if ((retval = fpclassify(val)) == FP_SUBNORMAL)
         dbglog("fpclassify(%g)=%d", val, retval);
 #endif /* _DEBUG */
+}
+
+/**
+ * 浮動小数点例外チェッククリア
+ *
+ * 浮動小数点例外をチェックする前に必ずクリアする.
+ *
+ * @return なし
+ */
+void
+clear_math_feexcept(void)
+{
+    feclearexcept(FE_ALL_EXCEPT);
+    errno = 0;
 }
 
 /**

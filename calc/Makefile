@@ -64,6 +64,7 @@ debug:
 
 .PHONY: test
 test:
+	@#cd $(testdir) && $(MAKE)
 	$(MAKE) -C $(testdir)
 	$(CUTTER) $(testdir)
 	@#for file in `ls $(testdir)`; do \

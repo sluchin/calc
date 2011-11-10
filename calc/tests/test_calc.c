@@ -29,8 +29,7 @@
 #include "util.h"
 #include "log.h"
 #include "calc.h"
-
-#define MAX_STRING  32 /**< 最大文字列 */
+#include "test_common.h"
 
 /* プロトタイプ */
 /** 四則演算テスト */
@@ -62,8 +61,6 @@ void test_get_strlen(void);
 static testcalc calc; /**< 関数構造体 */
 
 /* 内部関数 */
-/** 文字列設定 */
-static calcinfo *set_string(const char *str);
 /** バッファセット */
 static calcinfo *exec_calc(const char *str);
 
@@ -226,11 +223,14 @@ test_answer_four(void)
     int i;
     for (i = 0; i < arraysize(four_data); i++) {
         tsd = exec_calc(four_data[i].expr);
+        if (!tsd)
+            cut_error("tsd=%p", tsd);
+
         cut_assert_equal_string(four_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s == %s",
-                                            four_data[i].answer,
-                                            four_data[i].expr));
+                                cut_message("%s = %s",
+                                            four_data[i].expr,
+                                            four_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -248,11 +248,14 @@ test_answer_func(void)
     int i;
     for (i = 0; i < arraysize(func_data); i++) {
         tsd = exec_calc(func_data[i].expr);
+        if (!tsd)
+            cut_error("tsd=%p", tsd);
+
         cut_assert_equal_string(func_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s == %s",
-                                            func_data[i].answer,
-                                            func_data[i].expr));
+                                cut_message("%s = %s",
+                                            func_data[i].expr,
+                                            func_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -270,11 +273,14 @@ test_answer_four_func(void)
     int i;
     for (i = 0; i < arraysize(four_func_data); i++) {
         tsd = exec_calc(four_func_data[i].expr);
+        if (!tsd)
+            cut_error("tsd=%p", tsd);
+
         cut_assert_equal_string(four_func_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s == %s",
-                                            four_func_data[i].answer,
-                                            four_func_data[i].expr));
+                                cut_message("%s = %s",
+                                            four_func_data[i].expr,
+                                            four_func_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -292,11 +298,14 @@ test_answer_error(void)
     int i;
     for (i = 0; i < arraysize(error_data); i++) {
         tsd = exec_calc(error_data[i].expr);
+        if (!tsd)
+            cut_error("tsd=%p", tsd);
+
         cut_assert_equal_string(error_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s == %s",
-                                            error_data[i].answer,
-                                            error_data[i].expr));
+                                cut_message("%s = %s",
+                                            error_data[i].expr,
+                                            error_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -313,20 +322,18 @@ test_parse_func_args(void)
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
     tsd = set_string("(235)");
-    if (!tsd) {
-        outlog("tsd=%p", tsd);
-        return;
-    }
+    if (!tsd)
+        cut_error("tsd=%p", tsd);
+
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_1, &x, &y);
     cut_assert_equal_double(235, 0.0, x);
     destroy_calc(tsd);
 
     tsd = set_string("(123,235)");
-    if (!tsd) {
-        outlog("tsd=%p", tsd);
-        return;
-    }
+    if (!tsd)
+        cut_error("tsd=%p", tsd);
+
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_2, &x, &y);
     cut_assert_equal_double(123, 0.0, x);
@@ -346,10 +353,9 @@ test_readch(void)
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
     tsd = set_string("test");
-    if (!tsd) {
-        outlog("tsd=%p", tsd);
-        return;
-    }
+    if (!tsd)
+        cut_error("tsd=%p", tsd);
+
     dbglog("ch=%p", tsd->ch);
     cut_assert_equal_int('t', tsd->ch,
                          cut_message("%c == %c", 't', tsd->ch));
@@ -381,21 +387,22 @@ test_readch(void)
 void
 test_expression(void)
 {
-    dbl x = 0;            /* 値 */
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < arraysize(expression_data); i++) {
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
-            return;
-        x = calc.expression(tsd);
+            cut_error("tsd=%p", tsd);
+
+        result = calc.expression(tsd);
         cut_assert_equal_double(expression_data[i].answer,
                                 0.0,
-                                x,
-                                cut_message("%g == %s",
-                                            expression_data[i].answer,
-                                            expression_data[i].expr));
+                                result,
+                                cut_message("%s = %.12g",
+                                            expression_data[i].expr,
+                                            expression_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -408,21 +415,22 @@ test_expression(void)
 void
 test_term(void)
 {
-    dbl x = 0;            /* 値 */
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < arraysize(term_data); i++) {
         tsd = set_string(term_data[i].expr);
         if (!tsd)
-            return;
-        x = calc.term(tsd);
+            cut_error("tsd=%p", tsd);
+
+        result = calc.term(tsd);
         cut_assert_equal_double(term_data[i].answer,
                                 0.0,
-                                x,
-                                cut_message("%g == %s",
-                                            term_data[i].answer,
-                                            term_data[i].expr));
+                                result,
+                                cut_message("%s = %.12g",
+                                            term_data[i].expr,
+                                            term_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -435,21 +443,22 @@ test_term(void)
 void
 test_factor(void)
 {
-    dbl x = 0;            /* 値 */
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < arraysize(factor_data); i++) {
         tsd = set_string(factor_data[i].expr);
         if (!tsd)
-            return;
-        x = calc.factor(tsd);
+            cut_error("tsd=%p", tsd);
+
+        result = calc.factor(tsd);
         cut_assert_equal_double(factor_data[i].answer,
                                 0.0,
-                                x,
-                                cut_message("%g == %s",
-                                            factor_data[i].answer,
-                                            factor_data[i].expr));
+                                result,
+                                cut_message("%s = %.12g",
+                                            factor_data[i].expr,
+                                            factor_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -462,21 +471,22 @@ test_factor(void)
 void
 test_token(void)
 {
-    dbl x = 0;            /* 値 */
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < arraysize(token_data); i++) {
         tsd = set_string(token_data[i].expr);
         if (!tsd)
-            return;
-        x = calc.token(tsd);
+            cut_error("tsd=%p", tsd);
+
+        result = calc.token(tsd);
         cut_assert_equal_double(token_data[i].answer,
                                 0.0,
-                                x,
-                                cut_message("%g == %s",
-                                            token_data[i].answer,
-                                            token_data[i].expr));
+                                result,
+                                cut_message("%s = %.12g",
+                                            token_data[i].expr,
+                                            token_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -489,21 +499,22 @@ test_token(void)
 void
 test_number(void)
 {
-    dbl x = 0;            /* 値 */
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < arraysize(number_data); i++) {
         tsd = set_string(number_data[i].expr);
         if (!tsd)
-            return;
-        x = calc.number(tsd);
+            cut_error("tsd=%p", tsd);
+
+        result = calc.number(tsd);
         cut_assert_equal_double(number_data[i].answer,
                                 0.0,
-                                x,
-                                cut_message("%g == %s",
-                                            number_data[i].answer,
-                                            number_data[i].expr));
+                                result,
+                                cut_message("%s = %.12g",
+                                            number_data[i].expr,
+                                            number_data[i].answer));
         destroy_calc(tsd);
     }
 }
@@ -548,36 +559,6 @@ test_get_strlen(void)
 }
 
 /**
- * 文字列設定
- *
- * @param[in] str 文字列
- * @return calcinfo構造体
- */
-static calcinfo *
-set_string(const char *str)
-{
-    size_t length = 0;    /* 文字列長 */
-    uchar *expr = NULL;   /* 式 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
-
-    length = strlen(str);
-    expr = (uchar *)cut_take_strndup(str, length);
-    if (!expr) {
-        outlog("cut_take_strndup=%p", expr);
-        return NULL;
-    }
-
-    tsd = init_calc(expr, 12L);
-    if (!tsd) {
-        outlog("tsd=%p", tsd);
-        return NULL;
-    }
-    dbglog("tsd=%p", tsd);
-    dbglog("%p expr=%s, length=%u", expr, expr, length);
-    return tsd;
-}
-
-/**
  * 計算実行
  *
  * @param[in] str 文字列
@@ -586,7 +567,8 @@ set_string(const char *str)
 static calcinfo *
 exec_calc(const char *str)
 {
-    calcinfo *tsd = NULL;
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
+
     tsd = set_string(str);
     if (!tsd)
         return NULL;

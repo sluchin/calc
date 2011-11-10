@@ -30,7 +30,21 @@
 #include "log.h"
 #include "error.h"
 
-/* 内部関数 */
+/* プロトタイプ */
+/* get_errormsg() 関数テスト */
+void test_get_errormsg(void);
+/* set_errormsg() 関数テスト */
+void test_set_errorcode(void);
+/* clear_error() 関数テスト */
+void test_clear_error(void);
+/* is_error() 関数テスト */
+void test_is_error(void);
+/* check_validate() 関数テスト */
+void test_check_validate(void);
+/* clear_math_feexcept() 関数テスト */
+void test_clear_math_feexcept(void);
+/* check_math_feexcept() 関数テスト */
+void test_check_math_feexcept(void);
 
 /**
  * get_errormsg() 関数テスト
@@ -83,6 +97,17 @@ test_is_error(void)
  */
 void
 test_check_validate(void)
+{
+
+}
+
+/**
+ * get_clear_math_feexcept() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_clear_math_feexcept(void)
 {
 
 }

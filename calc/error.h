@@ -60,6 +60,9 @@ bool is_error(calcinfo *tsd);
 /** 数値の妥当性チェック */
 void check_validate(calcinfo *tsd, dbl val);
 
+/** 浮動小数点例外チェッククリア */
+void clear_math_feexcept(void);
+
 /** 浮動小数点例外チェック */
 void check_math_feexcept(calcinfo *tsd, dbl val);
 

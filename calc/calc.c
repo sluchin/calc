@@ -32,9 +32,7 @@
 
 #include <stdio.h>    /* FILE */
 #include <stdlib.h>   /* realloc */
-#include <string.h>   /* strndup */
-#include <stdbool.h>  /* bool */
-#include <string.h>   /* memcpy memset */
+#include <string.h>   /* strndup memcpy memset */
 #include <ctype.h>    /* isdigit isalpha */
 #include <math.h>     /* powl */
 #include <pthread.h>  /* pthread_once */
@@ -243,7 +241,7 @@ parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
 
     readch(tsd);
     *x = expression(tsd);
-    dbglog("x=%s", tsd->fmt, *x);
+    dbglog(tsd->fmt, *x);
 
     if (type == ARG_2) {
         if (tsd->ch != ',') {
@@ -252,7 +250,7 @@ parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
         }
         readch(tsd);
         *y = expression(tsd);
-        dbglog("y=%s", tsd->fmt, *y);
+        dbglog(tsd->fmt, *y);
     }
 
     if (tsd->ch != ')') {
