@@ -129,13 +129,6 @@ static const struct test_data sqrt_data[] = {
     { "sqrt(-1)",             0, -1, 0, 0             }
 };
 
-static const struct test_data fact_data[] = {
-    { "", 1, 0, 0, 0.0 },
-    { "", 1, 1, 0, 0.0 },
-    { "", 2, 2, 0, 0.0 },
-    { "", 6, 3, 0, 0.0 }
-};
-
 static const struct test_data_math math_data[] = {
     { "abs(-2)",    2,              -2,   fabs,  0.0            },
     { "sin(2)" ,    0.909297426826,  2,   sin,   0.000000000001 },
@@ -148,6 +141,46 @@ static const struct test_data_math math_data[] = {
     { "ln(2)",      0.69314718056,   2,   log,   0.00000000001  },
     { "log(2)",     0.301029995664,  2,   log10, 0.000000000001 },
 };
+
+static const struct test_data fact_data[] = {
+    { "",       1, 1,  0, 0.0 },
+    { "",       1, 1,  0, 0.0 },
+    { "",       2, 2,  0, 0.0 },
+    { "",       6, 3,  0, 0.0 },
+    { "",      24, 4,  0, 0.0 },
+    { "",     120, 5,  0, 0.0 },
+    { "",     720, 6,  0, 0.0 },
+    { "",    5040, 7,  0, 0.0 },
+    { "",   40320, 8,  0, 0.0 },
+    { "",  362880, 9,  0, 0.0 },
+    { "", 3628800, 10, 0, 0.0 }
+};
+
+static const struct test_data factorial_data[] = {
+    { "n(0)",        1,  0,   0, 0.0 },
+    { "n(1)",        1,  1,   0, 0.0 },
+    { "n(2)",        2,  2,   0, 0.0 },
+    { "n(3)",        6,  3,   0, 0.0 },
+    { "n(9)",   362880,  9,   0, 0.0 },
+    { "n(-3)",      -6, -3,   0, 0.0 },
+    { "n(-9)", -362880, -9,   0, 0.0 },
+    { "n(0.5)",      0,  0.5, 0, 0.0 }
+};
+
+static const struct test_data permutation_data[] = {
+    { "nPr(5,2)",  20,  5,  2, 0.0 },
+    { "nPr(-5,2)",  0, -5,  2, 0.0 },
+    { "nPr(5,-2)",  0,  5, -2, 0.0 },
+    { "nPr(2,5)",   0,  2,  5, 0.0 }
+};
+
+static const struct test_data combination_data[] = {
+    { "nCr(5,2)",  10,  5,  2, 0.0 },
+    { "nCr(-5,2)",  0, -5,  2, 0.0 },
+    { "nCr(5,-2)",  0,  5, -2, 0.0 },
+    { "nCr(2,5)",   0,  2,  5, 0.0 }
+};
+
 /**
  * 初期化処理
  *
@@ -176,7 +209,7 @@ test_exec_func(void)
     for (i = 0; i < arraysize(func_data); i++) {
         tsd = set_string(func_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, func_data[i].expr);
 
         pos = 0;
         (void)memset(func, 0, sizeof(func));
@@ -192,7 +225,7 @@ test_exec_func(void)
         cut_assert_equal_double(func_data[i].answer,
                                 func_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             func_data[i].expr,
                                             func_data[i].answer));
         destroy_calc(tsd);
@@ -214,13 +247,13 @@ test_get_pow(void)
     for (i = 0; i < arraysize(pow_data); i++) {
         tsd = set_string(pow_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, pow_data[i].expr);
 
         result = get_pow(tsd, pow_data[i].x, pow_data[i].y);
         cut_assert_equal_double(pow_data[i].answer,
                                 pow_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             pow_data[i].expr,
                                             pow_data[i].answer));
         destroy_calc(tsd);
@@ -241,13 +274,13 @@ test_get_pi(void)
 
     tsd = set_string("pi");
     if (!tsd)
-        cut_error("tsd=%p", tsd);
+        cut_error("tsd=%p, expr=%s", tsd, "pi");
 
     result = function.get_pi(tsd);
     cut_assert_equal_double(pi,
                             0.00000000001,
                             result,
-                            cut_message("%s = %.12g",
+                            cut_message("%s=%.12g",
                                         "pi",
                                         pi));
     destroy_calc(tsd);
@@ -267,13 +300,13 @@ test_get_e(void)
 
     tsd = set_string("e");
     if (!tsd)
-        cut_error("tsd=%p", tsd);
+        cut_error("tsd=%p, expr=%s", tsd, "e");
 
     result = function.get_e(tsd);
     cut_assert_equal_double(e,
                             0.00000000001,
                             result,
-                            cut_message("%s = %.12g",
+                            cut_message("%s=%.12g",
                                         "e",
                                         e));
     destroy_calc(tsd);
@@ -295,13 +328,13 @@ test_get_rad(void)
     for (i = 0; i < arraysize(rad_data); i++) {
         tsd = set_string(rad_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, rad_data[i].expr);
 
         result = function.get_rad(tsd, rad_data[i].x);
         cut_assert_equal_double(rad_data[i].answer,
                                 rad_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             rad_data[i].expr,
                                             rad_data[i].answer));
         destroy_calc(tsd);
@@ -323,13 +356,13 @@ test_get_deg(void)
     for (i = 0; i < arraysize(deg_data); i++) {
         tsd = set_string(deg_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, deg_data[i].expr);
 
         result = function.get_deg(tsd, deg_data[i].x);
         cut_assert_equal_double(deg_data[i].answer,
                                 deg_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             deg_data[i].expr,
                                             deg_data[i].answer));
         destroy_calc(tsd);
@@ -351,13 +384,13 @@ test_get_sqrt(void)
     for (i = 0; i < arraysize(sqrt_data); i++) {
         tsd = set_string(sqrt_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, sqrt_data[i].expr);
 
         result = function.get_sqrt(tsd, sqrt_data[i].x);
         cut_assert_equal_double(sqrt_data[i].answer,
                                 sqrt_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             sqrt_data[i].expr,
                                             sqrt_data[i].answer));
         destroy_calc(tsd);
@@ -379,14 +412,14 @@ test_check_math(void)
     for (i = 0; i < arraysize(math_data); i++) {
         tsd = set_string(math_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, math_data[i].expr);
 
         result = function.check_math(tsd, math_data[i].x,
                                      math_data[i].callback);
         cut_assert_equal_double(math_data[i].answer,
                                 math_data[i].error,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             math_data[i].expr,
                                             math_data[i].answer));
         destroy_calc(tsd);
@@ -421,7 +454,25 @@ test_factorial(void)
 void
 test_get_factorial(void)
 {
+    dbl result = 0;       /* 結果 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(factorial_data); i++) {
+        tsd = set_string(factorial_data[i].expr);
+        if (!tsd)
+            cut_error("i=%d, tsd=%p, expr=%s",
+                      i, tsd, factorial_data[i].expr);
+
+        result = function.get_factorial(tsd, factorial_data[i].x);
+        cut_assert_equal_double(factorial_data[i].answer,
+                                factorial_data[i].error,
+                                result,
+                                cut_message("%s=%.12g",
+                                            factorial_data[i].expr,
+                                            factorial_data[i].answer));
+        destroy_calc(tsd);
+    }
 }
 
 /**
@@ -432,7 +483,27 @@ test_get_factorial(void)
 void
 test_get_permutation(void)
 {
+    dbl result = 0;       /* 結果 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(permutation_data); i++) {
+        tsd = set_string(permutation_data[i].expr);
+        if (!tsd)
+            cut_error("i=%d, tsd=%p, expr=%s",
+                      i, tsd, permutation_data[i].expr);
+
+        result = function.get_permutation(tsd,
+                                          permutation_data[i].x,
+                                          permutation_data[i].y);
+        cut_assert_equal_double(permutation_data[i].answer,
+                                permutation_data[i].error,
+                                result,
+                                cut_message("%s=%.12g",
+                                            permutation_data[i].expr,
+                                            permutation_data[i].answer));
+        destroy_calc(tsd);
+    }
 }
 
 /**
@@ -443,6 +514,26 @@ test_get_permutation(void)
 void
 test_get_combination(void)
 {
+    dbl result = 0;       /* 結果 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    int i;
+    for (i = 0; i < arraysize(combination_data); i++) {
+        tsd = set_string(combination_data[i].expr);
+        if (!tsd)
+            cut_error("i=%d, tsd=%p, expr=%s",
+                      i, tsd, combination_data[i].expr);
+
+        result = function.get_combination(tsd,
+                                          combination_data[i].x,
+                                          combination_data[i].y);
+        cut_assert_equal_double(combination_data[i].answer,
+                                combination_data[i].error,
+                                result,
+                                cut_message("%s=%.12g",
+                                            combination_data[i].expr,
+                                            combination_data[i].answer));
+        destroy_calc(tsd);
+    }
 }
 

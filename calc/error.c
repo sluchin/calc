@@ -61,19 +61,22 @@ get_errormsg(calcinfo *tsd)
     dbglog("start: errorcode=%d", tsd->errorcode);
     assert(MAXERROR == arraysize(errormsg));
 
-    if (tsd->errorcode != E_NONE) {
-        slen = strlen(errormsg[tsd->errorcode]) + 1;
-        dbglog("slen=%u", slen);
-        tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
-        if (!tsd->errormsg) {
-            outlog("malloc=%p", tsd->errormsg);
-            return NULL;
-        }
-        (void)memset(tsd->errormsg, 0, slen);
-        (void)strncpy((char *)tsd->errormsg, errormsg[tsd->errorcode], slen);
-        dbglog("errormsg=%s, errorcode=%d",
-               errormsg[tsd->errorcode], tsd->errorcode);
+    if (tsd->errorcode == E_NONE)
+        return NULL;
+
+    slen = strlen(errormsg[tsd->errorcode]) + 1;
+    dbglog("slen=%u", slen);
+    tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
+    if (!tsd->errormsg) {
+        outlog("malloc=%p", tsd->errormsg);
+        return NULL;
     }
+    (void)memset(tsd->errormsg, 0, slen);
+    (void)strncpy((char *)tsd->errormsg,
+                  errormsg[tsd->errorcode], slen);
+    dbglog("errormsg=%s, errorcode=%d",
+           errormsg[tsd->errorcode], (int)tsd->errorcode);
+
     return tsd->errormsg;
 }
 
@@ -209,4 +212,12 @@ check_math_feexcept(calcinfo *tsd, dbl val)
         dbglog("%g==-HUGE_VALL", val);
 #endif /* _DEBUG */
 }
+
+#ifdef UNITTEST
+void
+test_init_error(testerror *error)
+{
+    error->errormsg = errormsg;
+}
+#endif /* UNITTEST */
 

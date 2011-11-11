@@ -33,17 +33,17 @@
 #include "function.h"
 
 /** エラー種別 */
-enum ER {
-    E_NONE = 0,  /**< エラーなし */
-    E_DIVBYZERO, /**< ゼロ除算エラー */
-    E_SYNTAX,    /**< 文法エラー */
-    E_NOFUNC,    /**< 関数名なし */
-    E_NAN,       /**< 定義域エラー */
-    E_INFINITY,  /**< 値域エラー */
-    MAXERROR     /**< エラーコード最大数 */
-};
+//enum ER {
+//    E_NONE = 0,  /**< エラーなし */
+//    E_DIVBYZERO, /**< ゼロ除算エラー */
+//    E_SYNTAX,    /**< 文法エラー */
+//    E_NOFUNC,    /**< 関数名なし */
+//    E_NAN,       /**< 領域エラー */
+//    E_INFINITY,  /**< 極エラーまたは範囲エラー */
+//    MAXERROR     /**< エラーコード最大数 */
+//};
 
-typedef enum ER ER;
+//typedef enum ER ER;
 
 /** エラーメッセージ取得 */
 uchar *get_errormsg(calcinfo *tsd);
@@ -65,6 +65,15 @@ void clear_math_feexcept(void);
 
 /** 浮動小数点例外チェック */
 void check_math_feexcept(calcinfo *tsd, dbl val);
+
+#ifdef UNITTEST
+struct testerror {
+    const char **errormsg;
+};
+typedef struct testerror testerror;
+
+void test_init_error(testerror *error);
+#endif /* UNITTEST */
 
 #endif /* _ERROR_H_ */
 

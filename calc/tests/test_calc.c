@@ -224,11 +224,11 @@ test_answer_four(void)
     for (i = 0; i < arraysize(four_data); i++) {
         tsd = exec_calc(four_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, four_data[i].expr);
 
         cut_assert_equal_string(four_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s = %s",
+                                cut_message("%s=%s",
                                             four_data[i].expr,
                                             four_data[i].answer));
         destroy_calc(tsd);
@@ -249,11 +249,11 @@ test_answer_func(void)
     for (i = 0; i < arraysize(func_data); i++) {
         tsd = exec_calc(func_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, func_data[i].expr);
 
         cut_assert_equal_string(func_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s = %s",
+                                cut_message("%s=%s",
                                             func_data[i].expr,
                                             func_data[i].answer));
         destroy_calc(tsd);
@@ -274,11 +274,12 @@ test_answer_four_func(void)
     for (i = 0; i < arraysize(four_func_data); i++) {
         tsd = exec_calc(four_func_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s",
+                      i, tsd, four_func_data[i].expr);
 
         cut_assert_equal_string(four_func_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s = %s",
+                                cut_message("%s=%s",
                                             four_func_data[i].expr,
                                             four_func_data[i].answer));
         destroy_calc(tsd);
@@ -299,11 +300,11 @@ test_answer_error(void)
     for (i = 0; i < arraysize(error_data); i++) {
         tsd = exec_calc(error_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, error_data[i].expr);
 
         cut_assert_equal_string(error_data[i].answer,
                                 (char *)tsd->result,
-                                cut_message("%s = %s",
+                                cut_message("%s=%s",
                                             error_data[i].expr,
                                             error_data[i].answer));
         destroy_calc(tsd);
@@ -323,7 +324,7 @@ test_parse_func_args(void)
 
     tsd = set_string("(235)");
     if (!tsd)
-        cut_error("tsd=%p", tsd);
+        cut_error("tsd=%p, expr=%s", tsd, "(235)");
 
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_1, &x, &y);
@@ -332,7 +333,7 @@ test_parse_func_args(void)
 
     tsd = set_string("(123,235)");
     if (!tsd)
-        cut_error("tsd=%p", tsd);
+        cut_error("tsd=%p, expr=%s", tsd, "(123,235)");
 
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_2, &x, &y);
@@ -352,22 +353,23 @@ test_readch(void)
     uchar *ptr = NULL;    /* ポインタ */
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
-    tsd = set_string("test");
+    /* スペース・タブを含んだ文字列を設定 */
+    tsd = set_string("te s  t");
     if (!tsd)
-        cut_error("tsd=%p", tsd);
+        cut_error("tsd=%p, expr=%s", tsd, "te s  t");
 
     dbglog("ch=%p", tsd->ch);
     cut_assert_equal_int('t', tsd->ch,
-                         cut_message("%c == %c", 't', tsd->ch));
+                         cut_message("%c==%c", 't', tsd->ch));
     calc.readch(tsd);
     cut_assert_equal_int('e', tsd->ch,
-                         cut_message("%c == %c", 'e', tsd->ch));
+                         cut_message("%c==%c", 'e', tsd->ch));
     calc.readch(tsd);
     cut_assert_equal_int('s', tsd->ch,
-                         cut_message("%c == %c", 's', tsd->ch));
+                         cut_message("%c==%c", 's', tsd->ch));
     calc.readch(tsd);
     cut_assert_equal_int('t', tsd->ch,
-                         cut_message("%c == %c", 't', tsd->ch));
+                         cut_message("%c==%c", 't', tsd->ch));
     calc.readch(tsd);
     cut_assert_equal_int('\0', tsd->ch,
                          cut_message("ptr=%p", tsd->ptr));
@@ -394,13 +396,14 @@ test_expression(void)
     for (i = 0; i < arraysize(expression_data); i++) {
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s",
+                      i, tsd, expression_data[i].expr);
 
         result = calc.expression(tsd);
         cut_assert_equal_double(expression_data[i].answer,
                                 0.0,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             expression_data[i].expr,
                                             expression_data[i].answer));
         destroy_calc(tsd);
@@ -422,13 +425,13 @@ test_term(void)
     for (i = 0; i < arraysize(term_data); i++) {
         tsd = set_string(term_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, term_data[i].expr);
 
         result = calc.term(tsd);
         cut_assert_equal_double(term_data[i].answer,
                                 0.0,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             term_data[i].expr,
                                             term_data[i].answer));
         destroy_calc(tsd);
@@ -450,13 +453,13 @@ test_factor(void)
     for (i = 0; i < arraysize(factor_data); i++) {
         tsd = set_string(factor_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, factor_data[i].expr);
 
         result = calc.factor(tsd);
         cut_assert_equal_double(factor_data[i].answer,
                                 0.0,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             factor_data[i].expr,
                                             factor_data[i].answer));
         destroy_calc(tsd);
@@ -478,13 +481,13 @@ test_token(void)
     for (i = 0; i < arraysize(token_data); i++) {
         tsd = set_string(token_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, token_data[i].expr);
 
         result = calc.token(tsd);
         cut_assert_equal_double(token_data[i].answer,
                                 0.0,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             token_data[i].expr,
                                             token_data[i].answer));
         destroy_calc(tsd);
@@ -506,13 +509,13 @@ test_number(void)
     for (i = 0; i < arraysize(number_data); i++) {
         tsd = set_string(number_data[i].expr);
         if (!tsd)
-            cut_error("tsd=%p", tsd);
+            cut_error("i=%d tsd=%p, expr=%s", i, tsd, number_data[i].expr);
 
         result = calc.number(tsd);
         cut_assert_equal_double(number_data[i].answer,
                                 0.0,
                                 result,
-                                cut_message("%s = %.12g",
+                                cut_message("%s=%.12g",
                                             number_data[i].expr,
                                             number_data[i].answer));
         destroy_calc(tsd);

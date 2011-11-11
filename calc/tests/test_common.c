@@ -26,7 +26,8 @@
 #include <cutter.h> /* cutter library */
 
 #include "log.h"
-#include "calc.h"
+#include "def.h"
+#include "test_common.h"
 
 /**
  * 文字列設定

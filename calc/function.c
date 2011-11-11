@@ -362,6 +362,7 @@ get_sqrt(calcinfo *tsd, dbl x)
     if (is_error(tsd))
         return EX_ERROR;
 
+    /* 複素数・虚数には対応しない */
     if (isless(x, 0)) { /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
         return EX_ERROR;
@@ -429,18 +430,16 @@ get_factorial(calcinfo *tsd, dbl n)
     dbl result = 0;     /* 計算結果 */
     dbl decimal = 0;    /* 小数 */
     dbl integer = 0;    /* 整数 */
-    bool minus = false; /* マイナス */
+    bool minus = false; /* マイナスフラグ */
 
     dbglog("start");
 
     if (is_error(tsd))
         return EX_ERROR;
 
-    dbglog("n=%.15g", n);
-
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
-    dbglog("decimal=%g, integer=%g", decimal, integer);
+    dbglog("decimal=%f, integer=%f", decimal, integer);
     if (decimal) { /* 自然数ではない */
         set_errorcode(tsd, E_NAN);
         return EX_ERROR;
@@ -454,14 +453,13 @@ get_factorial(calcinfo *tsd, dbl n)
     result = 1;
     factorial(&result, n);
 
-    dbglog("result=%.15g", result);
     if (minus)
         result *= -1;
     minus = false;
 
-    dbglog("result=%.15g", result);
     check_validate(tsd, result);
 
+    dbglog(tsd->fmt, result);
     return result;
 }
 
@@ -495,17 +493,17 @@ get_permutation(calcinfo *tsd, dbl n, dbl r)
     }
 
     x = get_factorial(tsd, n);
-    dbglog("x=%.15g", x);
+    dbglog(tsd->fmt, x);
     if (isgreater((n - r), 0))
         y = get_factorial(tsd, n - r);
 
     dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
-    dbglog("result=%.15g", result);
 
     check_validate(tsd, result);
 
+    dbglog(tsd->fmt, result);
     return result;
 }
 
@@ -545,10 +543,10 @@ get_combination(calcinfo *tsd, dbl n, dbl r)
     dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
-    dbglog("result=%.15g", result);
 
     check_validate(tsd, result);
 
+    dbglog(tsd->fmt, result);
     return result;
 }
 
@@ -569,3 +567,4 @@ test_init_function(testfunction *func)
     func->fstring = fstring;
 }
 #endif /* UNITTEST */
+

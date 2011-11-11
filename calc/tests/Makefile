@@ -39,7 +39,7 @@ $(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-$(ERRORSOBJ): $(ERROROBJ)
+$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 

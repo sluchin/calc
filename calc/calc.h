@@ -49,13 +49,25 @@ enum argtype {
 
 typedef enum argtype argtype;
 
+/** エラー種別 */
+enum ER {
+    E_NONE = 0,  /**< エラーなし */
+    E_DIVBYZERO, /**< ゼロ除算エラー */
+    E_SYNTAX,    /**< 文法エラー */
+    E_NOFUNC,    /**< 関数名なし */
+    E_NAN,       /**< 領域エラー */
+    E_INFINITY,  /**< 極エラーまたは範囲エラー */
+    MAXERROR     /**< エラーコード最大数 */
+};
+
+typedef enum ER ER;
 /** calc情報構造体 */
 struct calcinfo {
     int ch;                    /**< 文字 */
     uchar *ptr;                /**< 文字列走査用ポインタ */
     uchar *result;             /**< 結果文字列 */
     char fmt[sizeof("%.18g")]; /**< フォーマット */
-    int errorcode;             /**< エラーコード */
+    ER errorcode;              /**< エラーコード */
     uchar *errormsg;           /**< エラーメッセージ */
 };
 

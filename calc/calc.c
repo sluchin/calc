@@ -45,9 +45,9 @@
 #include "log.h"
 #include "util.h"
 #include "data.h"
-#include "error.h"
 #include "option.h"
 #include "function.h"
+#include "error.h"
 #include "calc.h"
 
 /* 外部変数 */

@@ -26,6 +26,8 @@
 #ifndef _TEST_COMMON_H_
 #define _TEST_COMMON_H_
 
+#include "calc.h"
+
 #define MAX_STRING  32 /**< 最大文字列 */
 
 /** 文字列設定 */
