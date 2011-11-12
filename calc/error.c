@@ -158,40 +158,26 @@ check_validate(calcinfo *tsd, dbl val)
 }
 
 /**
- * 浮動小数点例外チェッククリア
- *
- * 浮動小数点例外をチェックする前に必ずクリアする.
- *
- * @return なし
- */
-void
-clear_math_feexcept(void)
-{
-    feclearexcept(FE_ALL_EXCEPT);
-    errno = 0;
-}
-
-/**
  * 浮動小数点例外チェック
  *
  * math.h で宣言されている数学関数使用時,\n
  * 浮動小数点例外をチェックする.
  *
  * @param[in] tsd calcinfo構造体
- * @param[in] val 値
  * @return なし
  */
 void
-check_math_feexcept(calcinfo *tsd, dbl val)
+check_math_feexcept(calcinfo *tsd)
 {
-    dbglog("start: val=%g", val);
+    dbglog("start");
 
-    if (fetestexcept(FE_INVALID)) {
-        set_errorcode(tsd, E_NAN);
-    } else if (fetestexcept(FE_DIVBYZERO |
-                            FE_OVERFLOW  |
-                            FE_UNDERFLOW)) {
+    if (fetestexcept(FE_DIVBYZERO |
+                     FE_OVERFLOW  |
+                     FE_UNDERFLOW)) {
         set_errorcode(tsd, E_INFINITY);
+    } else {
+        if (fetestexcept(FE_INVALID))
+            set_errorcode(tsd, E_NAN);
     }
 #ifdef _DEBUG
     int retval = 0;
@@ -206,11 +192,21 @@ check_math_feexcept(calcinfo *tsd, dbl val)
         dbglog("fetestexcept(FE_UNDERFLOW)=%d)", retval);
     if ((retval = fetestexcept(FE_INEXACT)) != 0)
         dbglog("fetestexcept(FE_INEXACT)=%d)", retval);
-    if (val == HUGE_VALL)
-        dbglog("%g==HUGE_VALL", val);
-    else if (val == -HUGE_VALL)
-        dbglog("%g==-HUGE_VALL", val);
 #endif /* _DEBUG */
+}
+
+/**
+ * 浮動小数点例外チェッククリア
+ *
+ * 浮動小数点例外をチェックする前に必ずクリアする.
+ *
+ * @return なし
+ */
+void
+clear_math_feexcept(void)
+{
+    feclearexcept(FE_ALL_EXCEPT);
+    errno = 0;
 }
 
 #ifdef UNITTEST

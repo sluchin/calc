@@ -28,6 +28,7 @@
 #include "def.h"
 #include "util.h"
 #include "log.h"
+#include "error.h"
 #include "calc.h"
 #include "test_common.h"
 
@@ -74,6 +75,7 @@ struct test_data_char {
 struct test_data_dbl {
     char expr[MAX_STRING];
     dbl answer;
+    ER errorcode;
 };
 
 /** 四則演算テスト用データ */
@@ -167,37 +169,37 @@ static const struct test_data_char error_data [] = {
 
 /** expression() 関数テスト用データ */
 static const struct test_data_dbl expression_data [] = {
-    { "5+7", 12 },
-    { "5-1", 4  }
+    { "5+7", 12, E_NONE },
+    { "5-1",  4, E_NONE }
 };
 
 /** term() 関数テスト用データ */
 static const struct test_data_dbl term_data [] = {
-    { "5*7", 35 },
-    { "6/2", 3  },
-    { "6/0", 0  },
-    { "6^2", 36 }
+    { "5*7", 35, E_NONE      },
+    { "6/2",  3, E_NONE      },
+    { "6^2", 36, E_NONE      },
+    { "6/0",  0, E_DIVBYZERO }
 };
 
 /** factor() 関数テスト用データ */
 static const struct test_data_dbl factor_data [] = {
-    { "(5+4)", 9 },
-    { "(5+4",  0 }
+    { "(5+4)", 9, E_NONE   },
+    { "(5+4",  0, E_SYNTAX }
 };
 
 /** token() 関数テスト用データ */
 static const struct test_data_dbl token_data [] = {
-    { "+54321",   54321  },
-    { "-54321",   -54321 },
-    { "54231",    54231  },
-    { "nCr(5,2)", 10     },
-    { "テスト",   0      }
+    { "+54321",    54321, E_NONE   },
+    { "-54321",   -54321, E_NONE   },
+    { "54231",     54231, E_NONE   },
+    { "nCr(5,2)",     10, E_NONE   },
+    { "テスト",        0, E_SYNTAX }
 };
 
 /** number() 関数テスト用データ */
 static const struct test_data_dbl number_data [] = {
-    { "54231",   54231  },
-    { "54.231",  54.231 },
+    { "54321",   54321,  E_NONE },
+    { "54.321",  54.321, E_NONE },
 };
 
 /**
@@ -434,6 +436,11 @@ test_term(void)
                                 cut_message("%s=%.12g",
                                             term_data[i].expr,
                                             term_data[i].answer));
+        cut_assert_equal_int((int)term_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         term_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -462,6 +469,11 @@ test_factor(void)
                                 cut_message("%s=%.12g",
                                             factor_data[i].expr,
                                             factor_data[i].answer));
+        cut_assert_equal_int((int)factor_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         factor_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -490,6 +502,11 @@ test_token(void)
                                 cut_message("%s=%.12g",
                                             token_data[i].expr,
                                             token_data[i].answer));
+        cut_assert_equal_int((int)token_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         token_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }

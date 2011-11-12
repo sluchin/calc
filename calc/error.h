@@ -32,19 +32,6 @@
 #include "calc.h"
 #include "function.h"
 
-/** エラー種別 */
-//enum ER {
-//    E_NONE = 0,  /**< エラーなし */
-//    E_DIVBYZERO, /**< ゼロ除算エラー */
-//    E_SYNTAX,    /**< 文法エラー */
-//    E_NOFUNC,    /**< 関数名なし */
-//    E_NAN,       /**< 領域エラー */
-//    E_INFINITY,  /**< 極エラーまたは範囲エラー */
-//    MAXERROR     /**< エラーコード最大数 */
-//};
-
-//typedef enum ER ER;
-
 /** エラーメッセージ取得 */
 uchar *get_errormsg(calcinfo *tsd);
 
@@ -60,11 +47,11 @@ bool is_error(calcinfo *tsd);
 /** 数値の妥当性チェック */
 void check_validate(calcinfo *tsd, dbl val);
 
+/** 浮動小数点例外チェック */
+void check_math_feexcept(calcinfo *tsd);
+
 /** 浮動小数点例外チェッククリア */
 void clear_math_feexcept(void);
-
-/** 浮動小数点例外チェック */
-void check_math_feexcept(calcinfo *tsd, dbl val);
 
 #ifdef UNITTEST
 struct testerror {

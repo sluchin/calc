@@ -30,10 +30,10 @@
 #include "def.h"
 #include "util.h"
 #include "log.h"
+#include "error.h"
 #include "calc.h"
 #include "function.h"
 #include "test_common.h"
-
 
 /* プロトタイプ */
 /** exec_func() 関数テスト */
@@ -73,6 +73,7 @@ struct test_data {
     dbl answer;
     dbl x;
     dbl y;
+    ER errorcode;
     dbl error;
 };
 
@@ -82,103 +83,114 @@ struct test_data_math {
     dbl answer;
     dbl x;
     dbl (*callback)(dbl);
+    ER errorcode;
     dbl error;
 };
 
+/** exec_func() 関数テスト用データ */
 static const struct test_data func_data[] = {
-    { "pi",           3.14159265359,   0, 0, 0.00000000001   },
-    { "e",            2.71828182846,   0, 0, 0.00000000001   },
-    { "abs(-2)",      2,               0, 0, 0.0             },
-    { "sqrt(2)",      1.41421356237,   0, 0, 0.00000000001   },
-    { "sin(2)" ,      0.909297426826,  0, 0, 0.000000000001  },
-    { "cos(2)",      -0.416146836547,  0, 0, 0.000000000001  },
-    { "tan(2)",      -2.18503986326,   0, 0, 0.00000000001   },
-    { "asin(0.5)",    0.523598775598,  0, 0, 0.000000000001  },
-    { "acos(0.5)",    1.0471975512,    0, 0, 0.0000000001    },
-    { "atan(0.5)",    0.463647609001,  0, 0, 0.000000000001  },
-    { "exp(2)" ,      7.38905609893,   0, 0, 0.00000000001   },
-    { "ln(2)",        0.69314718056,   0, 0, 0.00000000001   },
-    { "log(2)",       0.301029995664,  0, 0, 0.000000000001  },
-    { "deg(2)",     114.591559026,     0, 0, 0.000000001     },
-    { "rad(2)",       0.0349065850399, 0, 0, 0.0000000000001 },
-    { "n(10)",        3628800,         0, 0, 0.0             },
-    { "nPr(5,2)",     20,              0, 0, 0.0             },
-    { "nCr(5,2)",     10,              0, 0, 0.0             },
-    { "nofunc(5)",    0,               0, 0, 0.0             }
+    { "pi",           3.14159265359,   0, 0, E_NONE,   0.00000000001   },
+    { "e",            2.71828182846,   0, 0, E_NONE,   0.00000000001   },
+    { "abs(-2)",      2,               0, 0, E_NONE,   0.0             },
+    { "sqrt(2)",      1.41421356237,   0, 0, E_NONE,   0.00000000001   },
+    { "sin(2)" ,      0.909297426826,  0, 0, E_NONE,   0.000000000001  },
+    { "cos(2)",      -0.416146836547,  0, 0, E_NONE,   0.000000000001  },
+    { "tan(2)",      -2.18503986326,   0, 0, E_NONE,   0.00000000001   },
+    { "asin(0.5)",    0.523598775598,  0, 0, E_NONE,   0.000000000001  },
+    { "acos(0.5)",    1.0471975512,    0, 0, E_NONE,   0.0000000001    },
+    { "atan(0.5)",    0.463647609001,  0, 0, E_NONE,   0.000000000001  },
+    { "exp(2)" ,      7.38905609893,   0, 0, E_NONE,   0.00000000001   },
+    { "ln(2)",        0.69314718056,   0, 0, E_NONE,   0.00000000001   },
+    { "log(2)",       0.301029995664,  0, 0, E_NONE,   0.000000000001  },
+    { "deg(2)",     114.591559026,     0, 0, E_NONE,   0.000000001     },
+    { "rad(2)",       0.0349065850399, 0, 0, E_NONE,   0.0000000000001 },
+    { "n(10)",        3628800,         0, 0, E_NONE,   0.0             },
+    { "nPr(5,2)",     20,              0, 0, E_NONE,   0.0             },
+    { "nCr(5,2)",     10,              0, 0, E_NONE,   0.0             },
+    { "nofunc(5)",    0,               0, 0, E_NOFUNC, 0.0             }
 };
 
+/** get_pow() 関数テスト用データ */
 static const struct test_data pow_data[] = {
-    { "2^3",   8,  2,  3, 0 },
-    { "0^0",   1,  0,  0, 0 },
-    { "0^2",   0,  0,  2, 0 },
-    { "2^0",   1,  2,  0, 0 },
-    { "-1^3", -1, -1,  3, 0 },
-    { "0^-1",  0,  0, -1, 0 },
+    { "2^3",   8,  2,  3, E_NONE, 0 },
+    { "0^0",   1,  0,  0, E_NONE, 0 },
+    { "0^2",   0,  0,  2, E_NONE, 0 },
+    { "2^0",   1,  2,  0, E_NONE, 0 },
+    { "-1^3", -1, -1,  3, E_NONE, 0 },
+    { "0^-1",  0,  0, -1, E_NAN,  0 },
 };
 
+/** get_rad() 関数テスト用データ */
 static const struct test_data rad_data[] = {
-    { "rad(2)", 0.0349065850399, 2, 0, 0.0000000000001 }
+    { "rad(2)", 0.0349065850399, 2, 0, E_NONE, 0.0000000000001 }
 };
 
+/** get_deg() 関数テスト用データ */
 static const struct test_data deg_data[] = {
-    { "deg(2)", 114.591559026, 2, 0, 0.000000001 }
+    { "deg(2)", 114.591559026, 2, 0, E_NONE, 0.000000001 }
 };
 
+/** get_sqrt() 関数テスト用データ */
 static const struct test_data sqrt_data[] = {
-    { "sqrt(2)",  1.41421356237,  2, 0, 0.00000000001 },
-    { "sqrt(-1)",             0, -1, 0, 0             }
+    { "sqrt(2)",  1.41421356237,  2, 0, E_NONE, 0.00000000001 },
+    { "sqrt(-1)",             0, -1, 0, E_NAN,  0             }
 };
 
+/** check_math() 関数テスト用データ */
 static const struct test_data_math math_data[] = {
-    { "abs(-2)",    2,              -2,   fabs,  0.0            },
-    { "sin(2)" ,    0.909297426826,  2,   sin,   0.000000000001 },
-    { "cos(2)",    -0.416146836547,  2,   cos,   0.000000000001 },
-    { "tan(2)",    -2.18503986326,   2,   tan,   0.00000000001  },
-    { "asin(0.5)",  0.523598775598,  0.5, asin,  0.000000000001 },
-    { "acos(0.5)",  1.0471975512,    0.5, acos,  0.0000000001   },
-    { "atan(0.5)",  0.463647609001,  0.5, atan,  0.000000000001 },
-    { "exp(2)" ,    7.38905609893,   2,   exp,   0.00000000001  },
-    { "ln(2)",      0.69314718056,   2,   log,   0.00000000001  },
-    { "log(2)",     0.301029995664,  2,   log10, 0.000000000001 },
+    { "abs(-2)",    2,              -2,   fabs,  E_NONE, 0.0            },
+    { "sin(2)" ,    0.909297426826,  2,   sin,   E_NONE, 0.000000000001 },
+    { "cos(2)",    -0.416146836547,  2,   cos,   E_NONE, 0.000000000001 },
+    { "tan(2)",    -2.18503986326,   2,   tan,   E_NONE, 0.00000000001  },
+    { "asin(0.5)",  0.523598775598,  0.5, asin,  E_NONE, 0.000000000001 },
+    { "acos(0.5)",  1.0471975512,    0.5, acos,  E_NONE, 0.0000000001   },
+    { "atan(0.5)",  0.463647609001,  0.5, atan,  E_NONE, 0.000000000001 },
+    { "exp(2)" ,    7.38905609893,   2,   exp,   E_NONE, 0.00000000001  },
+    { "ln(2)",      0.69314718056,   2,   log,   E_NONE, 0.00000000001  },
+    { "log(2)",     0.301029995664,  2,   log10, E_NONE, 0.000000000001 },
 };
 
+/** factorial() 関数テスト用データ */
 static const struct test_data fact_data[] = {
-    { "",       1, 1,  0, 0.0 },
-    { "",       1, 1,  0, 0.0 },
-    { "",       2, 2,  0, 0.0 },
-    { "",       6, 3,  0, 0.0 },
-    { "",      24, 4,  0, 0.0 },
-    { "",     120, 5,  0, 0.0 },
-    { "",     720, 6,  0, 0.0 },
-    { "",    5040, 7,  0, 0.0 },
-    { "",   40320, 8,  0, 0.0 },
-    { "",  362880, 9,  0, 0.0 },
-    { "", 3628800, 10, 0, 0.0 }
+    { "",       1,  1, 0, E_NONE, 0.0 },
+    { "",       1,  1, 0, E_NONE, 0.0 },
+    { "",       2,  2, 0, E_NONE, 0.0 },
+    { "",       6,  3, 0, E_NONE, 0.0 },
+    { "",      24,  4, 0, E_NONE, 0.0 },
+    { "",     120,  5, 0, E_NONE, 0.0 },
+    { "",     720,  6, 0, E_NONE, 0.0 },
+    { "",    5040,  7, 0, E_NONE, 0.0 },
+    { "",   40320,  8, 0, E_NONE, 0.0 },
+    { "",  362880,  9, 0, E_NONE, 0.0 },
+    { "", 3628800, 10, 0, E_NONE, 0.0 }
 };
 
+/** get_factorial() 関数テスト用データ */
 static const struct test_data factorial_data[] = {
-    { "n(0)",        1,  0,   0, 0.0 },
-    { "n(1)",        1,  1,   0, 0.0 },
-    { "n(2)",        2,  2,   0, 0.0 },
-    { "n(3)",        6,  3,   0, 0.0 },
-    { "n(9)",   362880,  9,   0, 0.0 },
-    { "n(-3)",      -6, -3,   0, 0.0 },
-    { "n(-9)", -362880, -9,   0, 0.0 },
-    { "n(0.5)",      0,  0.5, 0, 0.0 }
+    { "n(0)",        1,  0,   0, E_NONE, 0.0 },
+    { "n(1)",        1,  1,   0, E_NONE, 0.0 },
+    { "n(2)",        2,  2,   0, E_NONE, 0.0 },
+    { "n(3)",        6,  3,   0, E_NONE, 0.0 },
+    { "n(9)",   362880,  9,   0, E_NONE, 0.0 },
+    { "n(-3)",      -6, -3,   0, E_NONE, 0.0 },
+    { "n(-9)", -362880, -9,   0, E_NONE, 0.0 },
+    { "n(0.5)",      0,  0.5, 0, E_NAN,  0.0 }
 };
 
+/** get_permutation() 関数テスト用データ */
 static const struct test_data permutation_data[] = {
-    { "nPr(5,2)",  20,  5,  2, 0.0 },
-    { "nPr(-5,2)",  0, -5,  2, 0.0 },
-    { "nPr(5,-2)",  0,  5, -2, 0.0 },
-    { "nPr(2,5)",   0,  2,  5, 0.0 }
+    { "nPr(5,2)",  20,  5,  2, E_NONE, 0.0 },
+    { "nPr(-5,2)",  0, -5,  2, E_NAN,  0.0 },
+    { "nPr(5,-2)",  0,  5, -2, E_NAN,  0.0 },
+    { "nPr(2,5)",   0,  2,  5, E_NAN,  0.0 }
 };
 
+/** get_combination() 関数テスト用データ */
 static const struct test_data combination_data[] = {
-    { "nCr(5,2)",  10,  5,  2, 0.0 },
-    { "nCr(-5,2)",  0, -5,  2, 0.0 },
-    { "nCr(5,-2)",  0,  5, -2, 0.0 },
-    { "nCr(2,5)",   0,  2,  5, 0.0 }
+    { "nCr(5,2)",  10,  5,  2, E_NONE, 0.0 },
+    { "nCr(-5,2)",  0, -5,  2, E_NAN,  0.0 },
+    { "nCr(5,-2)",  0,  5, -2, E_NAN,  0.0 },
+    { "nCr(2,5)",   0,  2,  5, E_NAN,  0.0 }
 };
 
 /**
@@ -215,8 +227,8 @@ test_exec_func(void)
         (void)memset(func, 0, sizeof(func));
         while (isalpha(tsd->ch) && tsd->ch != '\0' &&
                pos <= MAX_FUNC_STRING) {
-               func[pos++] = tsd->ch;
-               calc.readch(tsd);
+            func[pos++] = tsd->ch;
+            calc.readch(tsd);
         }
         dbglog("func=%s", func);
 
@@ -228,6 +240,11 @@ test_exec_func(void)
                                 cut_message("%s=%.12g",
                                             func_data[i].expr,
                                             func_data[i].answer));
+        cut_assert_equal_int((int)func_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         func_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -256,6 +273,11 @@ test_get_pow(void)
                                 cut_message("%s=%.12g",
                                             pow_data[i].expr,
                                             pow_data[i].answer));
+        cut_assert_equal_int((int)pow_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         pow_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -393,6 +415,11 @@ test_get_sqrt(void)
                                 cut_message("%s=%.12g",
                                             sqrt_data[i].expr,
                                             sqrt_data[i].answer));
+        cut_assert_equal_int((int)sqrt_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         sqrt_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -471,6 +498,11 @@ test_get_factorial(void)
                                 cut_message("%s=%.12g",
                                             factorial_data[i].expr,
                                             factorial_data[i].answer));
+        cut_assert_equal_int((int)factorial_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         factorial_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -502,6 +534,11 @@ test_get_permutation(void)
                                 cut_message("%s=%.12g",
                                             permutation_data[i].expr,
                                             permutation_data[i].answer));
+        cut_assert_equal_int((int)permutation_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         permutation_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }
@@ -533,6 +570,11 @@ test_get_combination(void)
                                 cut_message("%s=%.12g",
                                             combination_data[i].expr,
                                             combination_data[i].answer));
+        cut_assert_equal_int((int)combination_data[i].errorcode,
+                             (int)tsd->errorcode,
+                             cut_message("%s error",
+                                         combination_data[i].expr));
+        clear_error(tsd);
         destroy_calc(tsd);
     }
 }

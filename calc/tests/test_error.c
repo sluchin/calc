@@ -23,13 +23,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <math.h>   /* sqrt log */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
 #include "util.h"
 #include "log.h"
+#include "calc.h"
+#include "error.h"
 #include "test_common.h"
-#include "error.h" 
 
 /* プロトタイプ */
 /* get_errormsg() 関数テスト */
@@ -171,18 +173,34 @@ test_is_error(void)
 void
 test_check_validate(void)
 {
+    dbl result = 0;       /* 結果 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-}
+    tsd = set_string("dammy");
+    if (!tsd)
+        cut_error("tsd=%p, expr=%s", tsd, "dammy");
 
-/**
- * get_clear_math_feexcept() 関数テスト
- *
- * @return なし
- */
-void
-test_clear_math_feexcept(void)
-{
+    result = sqrt(-1);
+    dbglog("result=%g", result);
+    check_validate(tsd, result);
+    cut_assert_equal_int((int)E_NAN,
+                         (int)tsd->errorcode,
+                         cut_message("E_NAN"));
+    clear_error(tsd);
+    destroy_calc(tsd);
 
+    tsd = set_string("dammy");
+    if (!tsd)
+        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+
+    result = pow(10, 10000);
+    dbglog("result=%g", result);
+    check_validate(tsd, result);
+    cut_assert_equal_int((int)E_INFINITY,
+                         (int)tsd->errorcode,
+                         cut_message("E_INFINITY"));
+    clear_error(tsd);
+    destroy_calc(tsd);
 }
 
 /**
@@ -193,6 +211,58 @@ test_clear_math_feexcept(void)
 void
 test_check_math_feexcept(void)
 {
+    dbl result = 0;       /* 結果 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
+    tsd = set_string("dammy");
+    if (!tsd)
+        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+
+    clear_math_feexcept();
+    result = log(-1);
+    dbglog("result=%g", result);
+    check_math_feexcept(tsd);
+    cut_assert_equal_int((int)E_NAN,
+                         (int)tsd->errorcode,
+                         cut_message("E_NAN"));
+    clear_error(tsd);
+    destroy_calc(tsd);
+
+    tsd = set_string("dammy");
+    if (!tsd)
+        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+
+    clear_math_feexcept();
+    result = log(0);
+    dbglog("result=%g", result);
+    check_math_feexcept(tsd);
+    cut_assert_equal_int((int)E_INFINITY,
+                         (int)tsd->errorcode,
+                         cut_message("E_INFINITY"));
+    clear_error(tsd);
+    destroy_calc(tsd);
+}
+
+/**
+ * get_clear_math_feexcept() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_clear_math_feexcept(void)
+{
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
+
+    tsd = set_string("dammy");
+    if (!tsd)
+        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+
+    clear_math_feexcept();
+    check_math_feexcept(tsd);
+    cut_assert_equal_int((int)E_NONE,
+                         (int)tsd->errorcode,
+                         cut_message("E_NONE"));
+    clear_error(tsd);
+    destroy_calc(tsd);
 }
 

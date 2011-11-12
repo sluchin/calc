@@ -206,7 +206,7 @@ get_pow(calcinfo *tsd, dbl x, dbl y)
 
     result = pow(x, y);
 
-    check_math_feexcept(tsd, result);
+    check_math_feexcept(tsd);
 
     return result;
 }
@@ -394,7 +394,7 @@ check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
 
     result = callback(x);
 
-    check_math_feexcept(tsd, result);
+    check_math_feexcept(tsd);
 
     return result;
 }
