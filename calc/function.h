@@ -50,7 +50,6 @@ struct testfunction {
     dbl (*get_factorial)(calcinfo *tsd, dbl n);
     dbl (*get_permutation)(calcinfo *tsd, dbl n, dbl r);
     dbl (*get_combination)(calcinfo *tsd, dbl n, dbl r);
-    struct funcstring *fstring;
 };
 typedef struct testfunction testfunction;
 

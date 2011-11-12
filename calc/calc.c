@@ -148,17 +148,17 @@ destroy_calc(calcinfo *tsd)
 uchar *
 answer(calcinfo *tsd)
 {
-    dbl val = 0;            /* 値 */
-    size_t length = 0;      /* 文字数 */
-    int retval = 0;         /* 戻り値 */
-    uint t = 0, time = 0;   /* タイマ用変数 */
+    dbl val = 0;       /* 値 */
+    size_t length = 0; /* 文字数 */
+    int retval = 0;    /* 戻り値 */
+    uint start = 0;    /* タイマ開始 */
 
     dbglog("start: %p", answer);
 //    dbglog("sizeof(dbl)=%u, DBL_MAX=%f", sizeof(dbl), DBL_MAX);
 //    dbglog("sizeof(ldbl)=%u, LDBL_MAX=%Lf", sizeof(ldbl), LDBL_MAX);
 
     if (g_tflag)
-        start_timer(&t);
+        start_timer(&start);
 
     val = expression(tsd);
     dbglog(tsd->fmt, val);
@@ -168,10 +168,8 @@ answer(calcinfo *tsd)
     if (tsd->ch != '\0') /* エラー */
         set_errorcode(tsd, E_SYNTAX);
 
-    if (g_tflag) {
-        time = stop_timer(&t);
-        print_timer(time);
-    }
+    if (g_tflag)
+        print_timer(stop_timer(&start));
 
     if (is_error(tsd)) { /* エラー */
         tsd->errormsg = get_errormsg(tsd);

@@ -146,7 +146,7 @@ exec_func(calcinfo *tsd, const char *func)
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
         if (!strcmp(fstring[i].funcname, func)) {
             ftype = fstring[i].type;
-            dbglog("i=%d, ftype=%d", i, ftype);
+            dbglog("i=%d, ftype=%d", i, (int)ftype);
             switch (finfo[ftype].type) {
                 dbglog("type=%d", finfo[ftype].type);
             case FUNC0:
@@ -564,7 +564,6 @@ test_init_function(testfunction *func)
     func->get_factorial = get_factorial;
     func->get_permutation = get_permutation;
     func->get_combination = get_combination;
-    func->fstring = fstring;
 }
 #endif /* UNITTEST */
 

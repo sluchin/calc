@@ -11,7 +11,6 @@ CC = gcc
 RM = rm -rf
 AR = ar rcs
 STRIP = strip
-CUTTER = /usr/bin/cutter -v v
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
@@ -28,8 +27,9 @@ OBJECTS = main.o \
           option.o
 SHAREDOBJ = libcalcp.so
 PROGRAM = calcp
-PYTHON = python
-TESTOPT = -Wd -3 -E -tt
+CUTTER = /usr/bin/cutter -v v
+#PYTHON = python
+#TESTOPT = -Wd -3 -E -tt
 
 .SUFFIXES: .c .o
 
@@ -90,6 +90,7 @@ strip:
 .PHONY: clean
 clean:
 	$(RM) $(PROGRAM) $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
+	$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

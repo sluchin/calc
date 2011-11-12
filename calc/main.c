@@ -134,7 +134,7 @@ main_loop(void)
         if (!expr)
             break;
 
-        if (*expr == 0) { /* 空 */
+        if (*expr == '\0') { /* 文字列長ゼロ */
             dbglog("expr=%p", expr);
             memfree(1, &expr);
             continue;

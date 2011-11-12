@@ -6,6 +6,7 @@ top_srcdir = ..
 prefix = /usr/local
 libdir = $(prefix)/lib
 bindir = $(prefix)/bin
+testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
 AR = ar rcs
@@ -25,8 +26,9 @@ OBJCLIENT = client.o
 OBJECTS = main.o option.o
 SHAREDOBJ = libcalcc.so
 PROGRAM = calcc
-PYTHON = python
-TESTOPT = -Wd -3 -E -tt
+CUTTER = /usr/bin/cutter -v v
+#PYTHON = python
+#TESTOPT = -Wd -3 -E -tt
 
 .SUFFIXES: .c .o
 
@@ -62,7 +64,9 @@ debug:
 
 .PHONY: test
 test:
-	@for file in `ls $(testdir)`; do \
+	$(MAKE) -C $(testdir)
+	$(CUTTER) $(testdir)
+	#@for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \
@@ -85,6 +89,7 @@ strip:
 .PHONY: clean
 clean:
 	$(RM) $(PROGRAM) $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
+	$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

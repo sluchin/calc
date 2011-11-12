@@ -17,13 +17,13 @@ LIBS = -lcutter -lcalcutil -lcalcp
 TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
-CALCSOBJ = test_calc.so
-FUNCSOBJ = test_function.so
-ERRORSOBJ = test_error.so
-CALCOBJ = test_calc.o
-FUNCOBJ = test_function.o
-ERROROBJ = test_error.o
-COMMONOBJ = test_common.o
+#CALCSOBJ = test_calc.so
+#FUNCSOBJ = test_function.so
+#ERRORSOBJ = test_error.so
+#CALCOBJ = test_calc.o
+#FUNCOBJ = test_function.o
+#ERROROBJ = test_error.o
+#COMMONOBJ = test_common.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
@@ -31,17 +31,17 @@ CUTTER = /usr/bin/cutter -v v
 .PHONY: all
 all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 
-$(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
-	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-
-$(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
-	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-
-$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
-	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+#$(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
+#	@$(RM) $@
+#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+#
+#$(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
+#	@$(RM) $@
+#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+#
+#$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
+#	@$(RM) $@
+#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<

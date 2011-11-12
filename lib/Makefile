@@ -5,13 +5,13 @@ top_srcdir = ..
 prefix = /usr/local
 libdir = $(prefix)/lib
 bindir = $(prefix)/bin
-libutil = ../../lib
+testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
 AR = ar rcs
 STRIP = strip
 INSTALL = install -c
-INCLUDES = -I$(libutil)/include
+INCLUDES = -I$(srcdir)/include
 CFLAGS = -g -Wall -O2 -DNDEBUG
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =
@@ -25,8 +25,9 @@ OBJECTS = data.o \
           net.o \
           readline.o \
           log.o
-PYTHON = python
-TESTOPT = -Wd -3 -E -tt
+CUTTER = /usr/bin/cutter -v v
+#PYTHON = python
+#TESTOPT = -Wd -3 -E -tt
 
 .SUFFIXES: .c .o
 
@@ -58,7 +59,9 @@ debug:
 
 .PHONY: test
 test:
-	@for file in `ls $(testdir)`; do \
+	$(MAKE) -C $(testdir)
+	$(CUTTER) $(testdir)
+	#@for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \
@@ -78,6 +81,7 @@ strip:
 .PHONY: clean
 clean:
 	$(RM) $(OBJECTS) $(LIBRARY) $(SHAREDOBJ)
+	$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

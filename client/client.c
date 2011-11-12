@@ -73,8 +73,7 @@ enum {
 #endif /* _USE_SELECT */
 
 /* 内部変数 */
-static uint t = 0;  /**< タイマ */
-static uint tm = 0; /**< タイマ用変数 */
+static uint start_time = 0; /**< タイマ開始 */
 
 /* 内部関数 */
 /** 標準入力読込 */
@@ -268,7 +267,7 @@ read_stdin(int sock)
     if (!expr) /* メモリ確保できない */
         return true;
 
-    if (*expr == 0) { /* 文字列長ゼロ */
+    if (*expr == '\0') { /* 文字列長ゼロ */
         outlog("expr=%p, %c", expr, *expr);
         memfree(1, &expr);
         return true;
@@ -278,7 +277,7 @@ read_stdin(int sock)
     dbgdump(expr, length, "expr=%u", length);
 
     if (g_tflag)
-        start_timer(&t);
+        start_timer(&start_time);
 
     /* データ設定 */
     sdata = set_client_data(sdata, expr, length);
@@ -295,7 +294,7 @@ read_stdin(int sock)
     stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
 
     retval = send_data(sock, sdata, length);
-    if (retval < 0) {/* エラー */
+    if (retval < 0) { /* エラー */
         memfree(2, &expr, &sdata);
         return true;
     }
@@ -368,10 +367,8 @@ read_sock(int sock)
         return true;
     }
 
-    if (g_tflag) {
-        tm = stop_timer(&t);
-        print_timer(tm);
-    }
+    if (g_tflag)
+        print_timer(stop_timer(&start_time));
 
     retval = fprintf(stdout, "%s\n", answer);
     if (retval < 0) {
@@ -379,6 +376,7 @@ read_sock(int sock)
         memfree(1, &answer);
         return true;
     }
+
     retval = fflush(stdout);
     if (retval == EOF) {
         outlog("fflush=%d", retval);
