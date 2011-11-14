@@ -23,7 +23,7 @@ ERRORSOBJ = test_error.so
 CALCOBJ = test_calc.o
 FUNCOBJ = test_function.o
 ERROROBJ = test_error.o
-COMMONOBJ = test_common.o
+COMMONOBJ = common.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o

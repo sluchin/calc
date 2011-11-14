@@ -34,20 +34,22 @@
 #include <unistd.h>    /* getpid gethostname */
 #include <ctype.h>     /* isprint */
 #include <pthread.h>   /* pthread_self */
-#include <syslog.h>    /* syslog */
 #include <execinfo.h>  /* backtrace */
 
+#include "def.h"
 #include "log.h"
 
-#define MAX_HOST_SIZE   25 /**< 最大ホスト文字列サイズ */
-#define MAX_MES_SIZE   256 /**< 最大メッセージサイズ */
+/* 内部変数 */
+#define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
+#define MAX_MES_SIZE  256 /**< 最大メッセージサイズ */
 
 /* 外部変数 */
-char *progname = NULL;  /**< プログラム名 */
+char *progname = NULL; /**< プログラム名 */
 
 /**
  * シスログ出力
  *
+ * @param[in] level ログレベル
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -56,13 +58,14 @@ char *progname = NULL;  /**< プログラム名 */
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_log(const char *pname,
+void system_log(const int level,
+                const char *pname,
                 const char *fname,
                 const int line,
                 const char *func,
                 const char *format, ...)
 {
-    int err_no = errno;               /* errno退避 */
+    int errsv = errno;                /* errno退避 */
     int retval = 0;                   /* 戻り値 */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                       /* va_list */
@@ -70,28 +73,27 @@ void system_log(const char *pname,
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
-    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
+    char t_buf[sizeof("tid=18446744073709551615")] = {0};
 
     /* シスログオープン */
-    openlog (pname, LOG_PID, LOG_SYSLOG);
+    openlog (pname, SYS_OPT, SYS_FACILITY);
 
     va_start(ap, format);
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
+        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+        (void)snprintf(t_buf, sizeof(t_buf), "tid=%lu",
                        (unsigned long int)tid);
 
-    syslog(SYS_PRIO, "ppid=%d%s: %s[%d]: %s(%s): %m(%d)",
-           getppid(), !tid ? t_buf : "", fname, line,
-           func, message, err_no);
+    syslog(level, "ppid=%d, %s: %s[%d]: %s(%s): %m(%d)",
+           getppid(), tid ? t_buf : "", fname, line, func, message, errsv);
 
     /* シスログクローズ */
     closelog();
@@ -102,6 +104,7 @@ void system_log(const char *pname,
 /**
  * シスログ出力(デバッグ用)
  *
+ * @param[in] level ログレベル
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -110,13 +113,14 @@ void system_log(const char *pname,
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_dbg_log(const char *pname,
+void system_dbg_log(const int level,
+                    const char *pname,
                     const char *fname,
                     const int line,
                     const char *func,
                     const char *format, ...)
 {
-    int err_no = errno;               /* errno退避 */
+    int errsv = errno;                /* errno退避 */
     int retval = 0;                   /* 戻り値 */
     struct tm ts;                     /* tm構造体 */
     struct tm *tsp;                   /* localtime_r戻り値 */
@@ -128,28 +132,28 @@ void system_dbg_log(const char *pname,
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
-    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
+    char t_buf[sizeof("tid=18446744073709551615")] = {0};
 
     /* シスログオープン */
-    openlog(pname, LOG_PID, LOG_SYSLOG);
+    openlog(pname, SYS_OPT, SYS_FACILITY);
 
     retval = gettimeofday (&tv, NULL);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: gettimeofday=%d(%d)",
+        syslog(level, "%s[%d]: gettimeofday=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
     tsp = localtime_r(&tv.tv_sec, &ts);
     if (!tsp) {
-        syslog(SYS_PRIO, "%s[%d]: localtime=%p(%d)",
+        syslog(level, "%s[%d]: localtime=%p(%d)",
                __FILE__, __LINE__, tsp, errno);
         return;
     }
 
     retval = strftime(d_buf, sizeof(d_buf), "%S", &ts);
     if (!retval) {
-        syslog(SYS_PRIO, "%s[%d] strftime=%d(%d)",
+        syslog(level, "%s[%d] strftime=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
@@ -158,19 +162,19 @@ void system_dbg_log(const char *pname,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
+        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+        (void)snprintf(t_buf, sizeof(t_buf), "tid=%lu",
                        (unsigned long int)tid);
 
-    syslog(SYS_PRIO, "ppid=%d%s: %s.%ld: %s[%d]: %s(%s): %m(%d)",
+    syslog(level, "ppid=%d, %s: %s.%ld: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "",
-           d_buf, tv.tv_usec, fname, line, func, message, err_no);
+           d_buf, tv.tv_usec, fname, line, func, message, errsv);
 
     /* シスログクローズ */
     closelog();
@@ -195,7 +199,7 @@ void stderr_log(const char *pname,
                 const char *format, ...)
 {
     FILE *fp = stderr;  /* 標準エラー出力 */
-    int err_no = errno; /* errno退避 */
+    int errsv = errno;  /* errno退避 */
     int retval = 0;     /* 戻り値 */
     struct tm ts;       /* tm構造体 */
     struct tm *tsp;     /* localtime_rの戻り値 */
@@ -207,7 +211,7 @@ void stderr_log(const char *pname,
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
-    char t_buf[sizeof(", tid=18446744073709551615")] = {0};
+    char t_buf[sizeof("tid=18446744073709551615")] = {0};
 
     retval = gettimeofday(&tv, NULL);
     if (retval < 0) {
@@ -239,10 +243,10 @@ void stderr_log(const char *pname,
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
+        (void)snprintf(t_buf, sizeof(t_buf), "tid=%lu",
                        (unsigned long int)tid);
 
-    (void)fprintf(fp, "%s.%ld: %s %s[%d]: %s[%d]: ppid=%d%s: %s(",
+    (void)fprintf(fp, "%s.%ld: %s %s[%d]: %s[%d]: ppid=%d, %s: %s(",
                   d_buf, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
 
@@ -255,10 +259,7 @@ void stderr_log(const char *pname,
         return;
     }
 
-    (void)fprintf(fp, "): %m(%d)\n", err_no);
-#if 0
-    (void)fprintf(fp, "): %m(%d) at %s:%d\n", err_no, fname, line);
-#endif
+    (void)fprintf(fp, "): %m(%d)\n", errsv);
 
     errno = 0; /* errno初期化 */
 }
@@ -318,8 +319,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
         }
         for (k = 0; (i < len) && (k < 16) ;k++, i++) {
             (void)fprintf(stderr, "%c",
-                          (*(p + i) < ' ' || *(p + i) >= 0x80 ?
-                           '.' : *(p + i)));
+                          *(p + i) < ' ' || *(p + i) >= 0x80 ? '.' : *(p + i));
         }
         (void)fprintf(stderr, "\n");
         pt += k;
@@ -330,6 +330,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 /**
  * シスログにHEXダンプ
  *
+ * @param[in] level ログレベル
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -339,7 +340,8 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
  * @param[in] format フォーマット
  * @return なし
  */
-void dump_sys(const char *pname,
+void dump_sys(const int level,
+              const char *pname,
               const char *fname,
               const int line,
               const char *func,
@@ -360,7 +362,7 @@ void dump_sys(const char *pname,
     openlog(pname, LOG_CONS | LOG_PID, LOG_SYSLOG);
 
     if (!buf) {
-        syslog(SYS_PRIO, "%s[%d]: buf=%p, format=%p, len=%u",
+        syslog(level, "%s[%d]: buf=%p, format=%p, len=%u",
                __FILE__, __LINE__, buf, format, len);
         return;
     }
@@ -370,14 +372,14 @@ void dump_sys(const char *pname,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(SYS_PRIO, "%s[%d]: vsnprintf=%d(%d)",
+        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
                __FILE__, __LINE__, retval, errno);
         return;
     }
 #if 0
-    syslog(SYS_PRIO, "%s",
+    syslog(level, "%s",
            "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F 0123456789ABCDEF");
-    syslog(SYS_PRIO, "%s",
+    syslog(level, "%s",
            "--------   ---- ---- ---- ---- ---- ---- ---- ---- ----------------");
 #endif
     for (i = 0; i < len; ) {
@@ -404,7 +406,7 @@ void dump_sys(const char *pname,
                             '.' : *(p + i)));
             (void)strncat(hexdump, tmp, (sizeof(hexdump) - strlen(hexdump) - 1));
         }
-        syslog(SYS_PRIO, "%s[%d]: %s(%s): %s",
+        syslog(level, "%s[%d]: %s(%s): %s",
                fname, line, func, message, hexdump);
         pt += k;
     }
@@ -422,14 +424,16 @@ void dump_sys(const char *pname,
  * @param[in] len 長さ
  * @return なし
  */
-void dump_file(const char *pname, const char *fname,
-               const char *buf, const size_t len)
+void dump_file(const char *pname,
+               const char *fname,
+               const char *buf,
+               const size_t len)
 {
     FILE *fp = NULL; /* ファイルディスクリプタ */
     int retval = 0;  /* 戻り値 */
 
     /* シスログオープン */
-    openlog(pname, LOG_PID, LOG_SYSLOG);
+    openlog(pname, SYS_OPT, SYS_FACILITY);
 
     if (!buf) {
         syslog(SYS_PRIO, "%s[%d]: buf=%p, len=%u(%d)",
@@ -486,10 +490,10 @@ print_trace(void)
     size = backtrace(array, 10);
     strings = backtrace_symbols(array, size);
 
-    printf("Obtained %zd stack frames.\n", size);
+    (void)printf("Obtained %zd stack frames.\n", size);
 
     for (i = 0; i < size; i++)
-        printf("%p, %s\n", array[i], strings[i]);
+        (void)printf("%p, %s\n", array[i], strings[i]);
 
     free(strings);
 }

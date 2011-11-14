@@ -39,7 +39,7 @@ dbl exec_func(calcinfo *tsd, const char *func);
 dbl get_pow(calcinfo *tsd, dbl x, dbl y);
 
 #ifdef UNITTEST
-struct testfunction {
+struct _testfunction {
     dbl (*get_pi)(calcinfo *tsd);
     dbl (*get_e)(calcinfo *tsd);
     dbl (*get_rad)(calcinfo *tsd, dbl x);
@@ -51,7 +51,7 @@ struct testfunction {
     dbl (*get_permutation)(calcinfo *tsd, dbl n, dbl r);
     dbl (*get_combination)(calcinfo *tsd, dbl n, dbl r);
 };
-typedef struct testfunction testfunction;
+typedef struct _testfunction testfunction;
 
 void test_init_function(testfunction *func);
 #endif /* UNITTEST */

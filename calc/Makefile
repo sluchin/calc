@@ -13,10 +13,10 @@ AR = ar rcs
 STRIP = strip
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS = -g -Wall -O2 -DNDEBUG #-DHAVE_READLINE
-DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
+CFLAGS = -g -Wall -O2 -DNDEBUG -DHAVE_READLINE
+DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG -DHAVE_READLINE
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lm -lcalcutil -lpthread #-lreadline
+LIBS = -lm -lcalcutil -lpthread -lreadline
 CALCLIBS = -lcalcp
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
@@ -64,7 +64,6 @@ debug:
 
 .PHONY: test
 test:
-	@#cd $(testdir) && $(MAKE)
 	$(MAKE) -C $(testdir)
 	$(CUTTER) $(testdir)
 	@#for file in `ls $(testdir)`; do \

@@ -41,16 +41,16 @@
 extern bool g_tflag; /**< tオプションフラグ */
 
 /** 引数の数 */
-enum argtype {
+enum _argtype {
     ARG_0 = 0,
     ARG_1,
     ARG_2
 };
 
-typedef enum argtype argtype;
+typedef enum _argtype argtype;
 
 /** エラー種別 */
-enum ER {
+enum _ER {
     E_NONE = 0,  /**< エラーなし */
     E_DIVBYZERO, /**< ゼロ除算エラー */
     E_SYNTAX,    /**< 文法エラー */
@@ -60,9 +60,10 @@ enum ER {
     MAXERROR     /**< エラーコード最大数 */
 };
 
-typedef enum ER ER;
+typedef enum _ER ER;
+
 /** calc情報構造体 */
-struct calcinfo {
+struct _calcinfo {
     int ch;                    /**< 文字 */
     uchar *ptr;                /**< 文字列走査用ポインタ */
     uchar *result;             /**< 結果文字列 */
@@ -71,10 +72,10 @@ struct calcinfo {
     uchar *errormsg;           /**< エラーメッセージ */
 };
 
-typedef struct calcinfo calcinfo;
+typedef struct _calcinfo calcinfo;
 
 /** 初期化 */
-struct calcinfo *init_calc(void *buf, long digit);
+calcinfo *init_calc(void *buf, long digit);
 
 /** メモリ解放 */
 void destroy_calc(calcinfo *tsd);
@@ -86,7 +87,7 @@ uchar *answer(calcinfo *tsd);
 void parse_func_args(calcinfo *tsd, const argtype num, dbl *x, dbl *y);
 
 #ifdef UNITTEST
-struct testcalc {
+struct _testcalc {
     dbl (*expression)(calcinfo *tsd);
     dbl (*term)(calcinfo *tsd);
     dbl (*factor)(calcinfo *tsd);
@@ -95,7 +96,7 @@ struct testcalc {
     int (*get_strlen)(const dbl val, const char *fmt);
     void (*readch)(calcinfo *tsd);
 };
-typedef struct testcalc testcalc;
+typedef struct _testcalc testcalc;
 
 void test_init_calc(testcalc *calc);
 #endif /* UNITTEST */

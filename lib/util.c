@@ -33,22 +33,28 @@
  * メモリ解放
  *
  * freeした後, NULLを代入する.
+ * 最後の引数はNULLにする.
+ * memfree((void **)pointer, NULL);
  *
- * @param[in] num 引数の数
- * @param[in,out] ... freeする変数
+ * @param[in,out] ptr freeするポインタ
+ * @param[in,out] ... 可変引数
  * @return なし
  */
 void
-memfree(const int num, ...)
+memfree(void** ptr, ...)
 {
     va_list ap;        /* va_list */
     void **mem = NULL; /* ポインタ */
-    int i;             /* 汎用変数 */
 
-    va_start(ap, num);
+    if (!*ptr)
+        return;
+    else
+        free(*ptr);
+    *ptr = NULL;
 
-    for (i = 0; i < num; i++) {
-        mem = va_arg(ap, void **);
+    va_start(ap, ptr);
+
+    while ((mem = va_arg(ap, void **)) != NULL) {
         dbglog("mem=%p", *mem);
         if (*mem)
             free(*mem);

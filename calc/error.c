@@ -28,8 +28,7 @@
 #include <string.h> /* strlen */
 #include <errno.h>  /* errno */
 #include <math.h>   /* isnan isinf fpclassify */
-#include <fenv.h>   /* FE_INVALID */
-#include <stdarg.h> /* va_list va_arg */
+#include <fenv.h>   /* fetestexcept FE_INVALID */
 #include <assert.h> /* assert */
 
 #include "log.h"
@@ -56,7 +55,8 @@ static const char *errormsg[] = {
 uchar *
 get_errormsg(calcinfo *tsd)
 {
-    size_t slen = 0; /* 文字列長 */
+    size_t slen = 0;   /* 文字列長 */
+    uchar *msg = NULL; /* エラーメッセージ */
 
     dbglog("start: errorcode=%d", tsd->errorcode);
     assert(MAXERROR == arraysize(errormsg));
@@ -66,18 +66,17 @@ get_errormsg(calcinfo *tsd)
 
     slen = strlen(errormsg[tsd->errorcode]) + 1;
     dbglog("slen=%u", slen);
-    tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
-    if (!tsd->errormsg) {
-        outlog("malloc=%p", tsd->errormsg);
+    msg = (uchar *)malloc(slen * sizeof(uchar));
+    if (!msg) {
+        outlog("malloc=%p", msg);
         return NULL;
     }
-    (void)memset(tsd->errormsg, 0, slen);
-    (void)strncpy((char *)tsd->errormsg,
-                  errormsg[tsd->errorcode], slen);
+    (void)memset(msg, 0, slen);
+    (void)strncpy((char *)msg, errormsg[tsd->errorcode], slen);
     dbglog("errormsg=%s, errorcode=%d",
            errormsg[tsd->errorcode], (int)tsd->errorcode);
 
-    return tsd->errormsg;
+    return msg;
 }
 
 /**
@@ -108,7 +107,7 @@ clear_error(calcinfo *tsd)
 {
     dbglog("start");
 
-    memfree(1, &tsd->errormsg);
+    memfree((void **)&tsd->errormsg, NULL);
     tsd->errorcode = E_NONE;
 }
 

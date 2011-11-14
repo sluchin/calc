@@ -31,7 +31,8 @@
 #include "def.h"
 
 /** メモリ解放 */
-void memfree(const int num, ...);
+//void memfree(const int num, ...);
+void memfree(void **ptr, ...);
 
 /** チェックサム */
 ushort in_cksum(ushort *addr, const size_t len);

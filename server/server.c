@@ -212,13 +212,13 @@ server_proc(void *arg)
         cs = in_cksum((ushort *)expr, length);
         if (cs != hd.checksum) { /* チェックサムエラー */
             outlog("checksum error: 0x%x!=0x%x", cs, hd.checksum);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             break;
         }
 
         if (!strcmp((char *)expr, "exit") ||
             !strcmp((char *)expr, "quit")) {
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             break;
         }
 
@@ -226,13 +226,13 @@ server_proc(void *arg)
         tsd = init_calc(expr, g_digit);
         if (!tsd) { /* エラー */
             outlog("tsd=%p", tsd);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             break;
         }
         tsd->result = answer(tsd);
         if (!tsd->result) { /* エラー */
             outlog("result=%p", tsd->result);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             break;
         }
         dbglog("result=%s", tsd->result);
@@ -245,7 +245,7 @@ server_proc(void *arg)
         sdata = set_server_data(sdata, tsd->result, length);
         if (!sdata) {
             destroy_calc(tsd);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             break;
         }
         length += sizeof(struct header);
@@ -257,13 +257,13 @@ server_proc(void *arg)
         retval = send_data(acc, sdata, length);
         if (retval < 0) { /* エラー */
             destroy_calc(tsd);
-            memfree(2, &expr, &sdata);
+            memfree((void **)&expr, (void **)&sdata, NULL);
             break;
         }
         dbglog("send_data%d, sdata=%p, length=%u", retval, sdata, length);
 
         destroy_calc(tsd);
-        memfree(2, &expr, &sdata);
+        memfree((void **)&expr, (void **)&sdata, NULL);
 
     } while (!sig_handled && !sighup_handled);
 

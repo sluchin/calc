@@ -135,7 +135,7 @@ void
 destroy_calc(calcinfo *tsd)
 {
     dbglog("start: result=%p", tsd->result);
-    memfree(1, &tsd->result);
+    memfree((void **)&tsd->result, NULL);
 }
 
 /**
@@ -281,7 +281,7 @@ static void
 destroy_thread(void *ptr)
 {
     dbglog("start: ptr=%p", ptr);
-    memfree(1, &ptr);
+    memfree((void **)&ptr, NULL);
 }
 
 /**

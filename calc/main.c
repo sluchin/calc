@@ -45,27 +45,19 @@
 
 /* 内部変数 */
 static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
-static uchar *expr = NULL;                    /**< 式 */
-static uchar *result = NULL;                  /**< メッセージ */
 #ifdef HAVE_READLINE
 static HIST_ENTRY *history = NULL;            /**< 履歴 */
-#endif /* HAVE_READLINE */
-
-#ifdef HAVE_READLINE
-#  define FREEHISTORY                           \
-    if (history) {                              \
-        history = remove_history(0);            \
-        free(history); }                        \
-    history = NULL;
-#  define MAX_HISTORY    100 /**< 最大履歴数 */
+static const uint MAX_HISTORY = 100;          /**< 最大履歴数 */
 #endif /* HAVE_READLINE */
 
 /* 内部関数 */
 /** ループ処理 */
 static void main_loop(void);
-/* イベントフック */
 #ifdef HAVE_READLINE
+/* イベントフック */
 static int check_state(void);
+/* history クリア */
+static void freehistory(HIST_ENTRY **hist);
 #endif /* HAVE_READLINE */
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
@@ -95,7 +87,7 @@ int main(int argc, char *argv[])
     main_loop();
 
 #ifdef HAVE_READLINE
-    FREEHISTORY;
+    freehistory(&history);
 #endif /* HAVE_READLINE */
 
     exit(EXIT_SUCCESS);
@@ -110,8 +102,10 @@ int main(int argc, char *argv[])
 static void
 main_loop(void)
 {
-    int retval = 0;              /* 戻り値 */
-    struct calcinfo *tsd = NULL; /* calc情報構造体 */
+    int retval = 0;       /* 戻り値 */
+    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    uchar *expr = NULL;   /* 式 */
+    uchar *result = NULL; /* 結果 */
 #ifdef HAVE_READLINE
     int hist_no = 0;      /* 履歴数 */
     char *prompt = NULL;  /* プロンプト */
@@ -136,7 +130,7 @@ main_loop(void)
 
         if (*expr == '\0') { /* 文字列長ゼロ */
             dbglog("expr=%p", expr);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             continue;
         }
         if (!strcmp((char *)expr, "quit") ||
@@ -148,7 +142,7 @@ main_loop(void)
         tsd = init_calc(expr, g_digit);
         if (!tsd) { /* エラー */
             outlog("tsd=%p", tsd);
-            memfree(1, &expr);
+            memfree((void **)&expr, NULL);
             continue;
         }
         result = answer(tsd);
@@ -163,14 +157,14 @@ main_loop(void)
         }
 #ifdef HAVE_READLINE
         if (MAX_HISTORY <= ++hist_no) {
-            FREEHISTORY;
+            freehistory(&history);
         }
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
+        memfree((void **)&expr, NULL);
         destroy_calc(tsd);
-        memfree(1, &expr);
-        expr = result = NULL;
+        result = NULL;
 
     } while (!sig_handled);
 }
@@ -195,6 +189,21 @@ static int check_state(void) {
         //close(STDIN_FILENO);
     }
     return EX_OK;
+}
+
+/**
+ * history クリア
+ *
+ * @return なし
+ */
+static void
+freehistory(HIST_ENTRY **hist)
+{
+    if (*hist) {
+        *hist = remove_history(0);
+        free(*hist);
+    }
+    *hist = NULL;
 }
 #endif /* HAVE_READLINE */
 

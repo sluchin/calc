@@ -31,7 +31,7 @@
 #include "log.h"
 #include "calc.h"
 #include "error.h"
-#include "test_common.h"
+#include "common.h"
 
 /* プロトタイプ */
 /* get_errormsg() 関数テスト */
@@ -157,11 +157,11 @@ test_is_error(void)
         cut_error("tsd=%p, expr=%s", tsd, "dammy");
 
     /* エラー時, trueを返す */
-    tsd->errorcode = E_SYNTAX;
+    set_errorcode(tsd, E_SYNTAX);
     cut_assert_true((cut_boolean)is_error(tsd));
 
     /* 正常時, falseを返す */
-    tsd->errorcode = E_NONE;
+    clear_error(tsd);
     cut_assert_false((cut_boolean)is_error(tsd));
 }
 
@@ -224,7 +224,7 @@ test_check_math_feexcept(void)
     check_math_feexcept(tsd);
     cut_assert_equal_int((int)E_NAN,
                          (int)tsd->errorcode,
-                         cut_message("E_NAN"));
+                         cut_message("NaN: log(-1)=%g", result));
     clear_error(tsd);
     destroy_calc(tsd);
 
@@ -238,7 +238,7 @@ test_check_math_feexcept(void)
     check_math_feexcept(tsd);
     cut_assert_equal_int((int)E_INFINITY,
                          (int)tsd->errorcode,
-                         cut_message("E_INFINITY"));
+                         cut_message("Infinity: log(0)=%g", result));
     clear_error(tsd);
     destroy_calc(tsd);
 }
@@ -251,17 +251,20 @@ test_check_math_feexcept(void)
 void
 test_clear_math_feexcept(void)
 {
+    dbl result = 0;       /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     tsd = set_string("dammy");
     if (!tsd)
         cut_error("tsd=%p, expr=%s", tsd, "dammy");
 
+    result = log(-1);
+    dbglog("result=%g", result);
     clear_math_feexcept();
     check_math_feexcept(tsd);
     cut_assert_equal_int((int)E_NONE,
                          (int)tsd->errorcode,
-                         cut_message("E_NONE"));
+                         cut_message("None: log(-1)=%g clear", result));
     clear_error(tsd);
     destroy_calc(tsd);
 }

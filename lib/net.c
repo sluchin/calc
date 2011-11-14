@@ -210,7 +210,7 @@ recv_data_new(const int sock, const size_t length)
     /* データ受信 */
     retval = recv_data(sock, rdata, length);
     if (retval < 0) { /* エラー */
-        memfree(1, &rdata);
+        memfree((void **)&rdata, NULL);
         return NULL;
     }
 

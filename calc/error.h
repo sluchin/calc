@@ -54,10 +54,10 @@ void check_math_feexcept(calcinfo *tsd);
 void clear_math_feexcept(void);
 
 #ifdef UNITTEST
-struct testerror {
+struct _testerror {
     const char **errormsg;
 };
-typedef struct testerror testerror;
+typedef struct _testerror testerror;
 
 void test_init_error(testerror *error);
 #endif /* UNITTEST */

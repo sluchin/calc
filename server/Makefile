@@ -26,6 +26,7 @@ OBJSERVER = server.o
 OBJECTS = main.o option.o
 SHAREDOBJ = libcalcd.so
 PROGRAM = calcd
+CUTTER = /usr/bin/cutter -v v
 #PYTHON = python
 #TESTOPT = -Wd -3 -E -tt
 
@@ -64,7 +65,7 @@ debug:
 test:
 	$(MAKE) -C $(testdir)
 	$(CUTTER) $(testdir)
-	#@for file in `ls $(testdir)`; do \
+	@#for file in `ls $(testdir)`; do \
 	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
 	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
 	    fi; \

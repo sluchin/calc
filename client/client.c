@@ -269,7 +269,7 @@ read_stdin(int sock)
 
     if (*expr == '\0') { /* 文字列長ゼロ */
         outlog("expr=%p, %c", expr, *expr);
-        memfree(1, &expr);
+        memfree((void **)&expr, NULL);
         return true;
     }
 
@@ -282,7 +282,7 @@ read_stdin(int sock)
     /* データ設定 */
     sdata = set_client_data(sdata, expr, length);
     if (!sdata) { /* メモリ確保できない */
-        memfree(2, &expr, &sdata);
+        memfree((void **)&expr, (void **)&sdata, NULL);
         return true;
     }
 
@@ -295,13 +295,13 @@ read_stdin(int sock)
 
     retval = send_data(sock, sdata, length);
     if (retval < 0) { /* エラー */
-        memfree(2, &expr, &sdata);
+        memfree((void **)&expr, (void **)&sdata, NULL);
         return true;
     }
 
     if (!strcmp((char *)expr, "quit") ||
         !strcmp((char *)expr, "exit")) {
-        memfree(2, &expr, &sdata);
+        memfree((void **)&expr, (void **)&sdata, NULL);
         return false;
     }
 #ifdef HAVE_READLINE
@@ -310,7 +310,7 @@ read_stdin(int sock)
     }
     add_history((char *)expr);
 #endif /* HAVE_READLINE */
-    memfree(2, &expr, &sdata);
+    memfree((void **)&expr, (void **)&sdata, NULL);
 
     return true;
 }
@@ -350,7 +350,7 @@ read_sock(int sock)
     /* データ受信 */
     answer = recv_data_new(sock, length);
     if (!answer) { /* エラー */
-        memfree(1, &answer);
+        memfree((void **)&answer, NULL);
         return true;
     }
     dbglog("answer=%p, length=%u", answer, length);
@@ -363,7 +363,7 @@ read_sock(int sock)
     if (cs != hd.checksum) { /* チェックサムエラー */
         outlog("checksum error: 0x%x!=0x%x",
                cs, hd.checksum);
-        memfree(1, &answer);
+        memfree((void **)&answer, NULL);
         return true;
     }
 
@@ -373,17 +373,17 @@ read_sock(int sock)
     retval = fprintf(stdout, "%s\n", answer);
     if (retval < 0) {
         outlog("fprintf=%d", retval);
-        memfree(1, &answer);
+        memfree((void **)&answer, NULL);
         return true;
     }
 
     retval = fflush(stdout);
     if (retval == EOF) {
         outlog("fflush=%d", retval);
-        memfree(1, &answer);
+        memfree((void **)&answer, NULL);
         return true;
     }
-    memfree(1, &answer);
+    memfree((void **)&answer, NULL);
 
     return true;
 }
