@@ -80,13 +80,14 @@ server_loop(int sock)
         return;
 
     do {
+        fds = rfds;
         ready = select(sock + 1, &fds, NULL, NULL, NULL);
         dbglog("ready=%d", ready);
         if (ready < 0) {
             if (errno == EINTR) /* 割り込み */
                 continue;
             outlog("select=%d", ready);
-            continue;
+            break;
         }
         if (FD_ISSET(sock, &fds)) {
             /* 接続受付 */
@@ -107,9 +108,10 @@ server_loop(int sock)
             /* スレッド生成 */
             retval = pthread_create(&tid, NULL,
                                     server_proc, (void *)acc);
-            if (retval) {
+            if (retval) { /* エラー(非0) */
                 outlog("pthread_create=%lu", tid);
                 close_sock(&acc); /* アクセプトクローズ */
+                continue;
             }
             dbglog("pthread_create=%lu", tid);
         }
