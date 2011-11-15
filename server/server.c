@@ -36,6 +36,7 @@
 #include <pthread.h>    /* pthread */
 #include <signal.h>     /* sig_atomic_t */
 #include <errno.h>      /* errno */
+#include <sys/select.h> /* select */
 
 #include "def.h"
 #include "log.h"
@@ -61,34 +62,57 @@ static void *server_proc(void *arg);
 void
 server_loop(int sock)
 {
+    int ready = 0;           /* selec戻り値 */
     struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
     int addrlen = 0;         /* sockaddr_in構造体のサイズ */
     pthread_t tid;           /* スレッドID */
     int retval = 0;          /* 戻り値 */
     int acc = -1;            /* accept戻り値 */
+    fd_set fds, rfds;        /* selectマスク */
 
-    dbglog("start");
+    dbglog("start: sock=%d", sock);
 
-    addrlen = sizeof(addr);
+    FD_ZERO(&rfds);
+    FD_SET(sock, &rfds);
+
+    /* ノンブロッキングに設定 */
+    if (set_block(sock, NONBLOCK) < 0)
+        return;
+
     do {
-        /* 接続受付 */
-        errno = 0;
-        acc = accept(sock, (struct sockaddr *)&addr, (socklen_t *)&addrlen);
-        if (acc < 0) {
-            if (errno != EINTR)
-                outlog("accept=%d", acc);
+        ready = select(sock + 1, &fds, NULL, NULL, NULL);
+        dbglog("ready=%d", ready);
+        if (ready < 0) {
+            if (errno == EINTR) /* 割り込み */
+                continue;
+            outlog("select=%d", ready);
             continue;
         }
-        dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
-               acc, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-        /* スレッド生成 */
-        retval = pthread_create(&tid, NULL, server_proc, (void *)acc);
-        if (retval) {
-            outlog("pthread_create=%lu", tid);
-            /* アクセプトクローズ */
-            close_sock(&acc);
+        if (FD_ISSET(sock, &fds)) {
+            /* 接続受付 */
+            addrlen = (int)sizeof(addr);
+            acc = accept(sock, (struct sockaddr *)&addr,
+                         (socklen_t *)&addrlen);
+            if (acc < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    /* 接続先が存在しない */
+                    continue;
+                outlog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
+                       acc, inet_ntoa(addr.sin_addr),
+                       ntohs(addr.sin_port));
+                break;
+            }
+            dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
+                   acc, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+            /* スレッド生成 */
+            retval = pthread_create(&tid, NULL,
+                                    server_proc, (void *)acc);
+            if (retval) {
+                outlog("pthread_create=%lu", tid);
+                close_sock(&acc); /* アクセプトクローズ */
+            }
+            dbglog("pthread_create=%lu", tid);
         }
-        dbglog("pthread_create=%lu", tid);
     } while (!sig_handled && !sighup_handled);
 }
 
@@ -171,7 +195,6 @@ server_proc(void *arg)
     int acc = -1;                     /* アクセプト */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     uchar *expr = NULL;               /* 受信データ */
-    //uchar *result = NULL;             /* 処理結果 */
     calcinfo *tsd = NULL;             /* calc情報構造体 */
 
     dbglog("start");
@@ -229,6 +252,7 @@ server_proc(void *arg)
             memfree((void **)&expr, NULL);
             break;
         }
+
         tsd->result = answer(tsd);
         if (!tsd->result) { /* エラー */
             outlog("result=%p", tsd->result);

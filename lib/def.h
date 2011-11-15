@@ -26,10 +26,10 @@
 #ifndef _DEF_H_
 #define _DEF_H_
 
-/** エラー戻り値 */
-#define EX_ERROR    0
-/** 配列要素数 */
-#define arraysize(a)    sizeof(a) / sizeof(a[0])
+/* エラー戻り値 */
+#define EX_ERROR  0
+/* 配列要素数 */
+#define arraysize(a) (sizeof(a) / sizeof(a[0]))
 
 typedef unsigned char uchar;
 typedef unsigned int uint;
@@ -40,8 +40,8 @@ typedef long double ldbl;
 
 /** 関数戻り値 */
 enum {
-    EX_NG = -1, /**< エラー戻り値 */
-    EX_OK = 0   /**< 正常時戻り値 */
+    EX_NG = -1, /**< エラー時 */
+    EX_OK =  0  /**< 正常時 */
 };
 
 #endif /* _DEF_H_ */

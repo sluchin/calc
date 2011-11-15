@@ -16,8 +16,8 @@ INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/calc
 CFLAGS = -g -Wall -O2 -DNDEBUG
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib -L$(top_srcdir)/calc
-LIBS = -lpthread
-SERVERLIBS = -lcalcd -lcalcp -lcalcutil
+LIBS = -lcalcutil -lcalcp -lm -lpthread
+SERVERLIBS = -lcalcd
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a $(top_srcdir)/calc/libcalcp.a
@@ -41,7 +41,7 @@ $(LIBSERVER): $(OBJSERVER)
 
 $(SHAREDOBJ): $(OBJSERVER)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $(PROGRAM)

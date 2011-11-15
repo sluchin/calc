@@ -32,7 +32,6 @@
 #include <unistd.h>       /* close */
 #ifdef _USE_SELECT
 #  include <sys/select.h> /* select */
-#  include <sys/time.h>   /* timerclear */
 #else
 #  include <sys/poll.h>   /* poll */
 #endif
@@ -56,12 +55,8 @@
 #define SOCK_ERROR    -1 /**< ソケットエラー */
 
 #ifdef HAVE_READLINE
-#  define FREEHISTORY                           \
-    if (history) {                              \
-        history = remove_history(0);            \
-        free(history); }                        \
-    history = NULL;
-#  define MAX_HISTORY    100 /**< 最大履歴数 */
+static HIST_ENTRY *history = NULL;   /**< 履歴 */
+static const uint MAX_HISTORY = 100; /**< 最大履歴数 */
 #endif /* HAVE_READLINE */
 
 #ifndef _USE_SELECT
@@ -80,9 +75,11 @@ static uint start_time = 0; /**< タイマ開始 */
 static bool read_stdin(int sock);
 /** ソケット読込 */
 static bool read_sock(int sock);
-/* イベントフック */
 #ifdef HAVE_READLINE
+/* イベントフック */
 static int check_state(void);
+/* history クリア */
+static void freehistory(HIST_ENTRY **hist);
 #endif /* HAVE_READLINE */
 
 /**
@@ -97,8 +94,7 @@ client_loop(int sock)
     int ready = 0;          /* select戻り値 */
     bool status = true;     /* ステータス */
 #ifdef _USE_SELECT
-    fd_set fds, tfds;       /* selectマスク */
-    struct timeval timeout; /* タイムアウト値 */
+    fd_set fds, rfds;       /* selectマスク */
 #else
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
@@ -107,65 +103,65 @@ client_loop(int sock)
 
 #ifdef _USE_SELECT
     /* マスクの設定 */
-    FD_ZERO(&tfds);              /* 初期化 */
-    FD_SET(sock, &tfds);         /* ソケットをマスク */
-    FD_SET(STDIN_FILENO, &tfds); /* 標準入力をマスク */
+    FD_ZERO(&rfds);              /* 初期化 */
+    FD_SET(sock, &rfds);         /* ソケットをマスク */
+    FD_SET(STDIN_FILENO, &rfds); /* 標準入力をマスク */
 
-    /* タイムアウト値の初期化 */
-    timerclear(&timeout);
 #endif /* _USE_SELECT */
 
 #ifdef HAVE_READLINE
     rl_event_hook = &check_state;
 #endif /* HAVE_READLINE */
     do {
-        errno = 0;    /* errno初期化 */
 #ifdef _USE_SELECT
-        fds = tfds; /* マスクの代入 */
-        timeout.tv_sec = 1; /* 1秒に設定 */
-        timeout.tv_usec = 0;
-        ready = select(sock + 1, &fds, NULL, NULL, &timeout);
+        fds = rfds; /* マスクの代入 */
+        ready = select(sock + 1, &fds, NULL, NULL, NULL);
 #else
         targets[STDIN_POLL].fd = STDIN_FILENO;
         targets[STDIN_POLL].events = POLLIN;
         targets[SOCK_POLL].fd = sock;
         targets[SOCK_POLL].events = POLLIN;
-        ready = poll(targets, MAX_POLL, 1 * 1000);
+        ready = poll(targets, MAX_POLL, -1);
 #endif /* _USE_SELECT */
-        switch (ready) {
-        case -1:
+        dbglog("ready=%d", ready);
+        if (ready < 0) {
             if (errno == EINTR) { /* 割り込み */
-                outlog("interrupt=%d", errno);
+                outlog("interrupt: select=%d", ready);
                 break;
             }
             /* selectエラー */
             outlog("select=%d", ready);
             break;
-        case 0: /* タイムアウト */
-            break;
-        default:
+        }
 #ifdef _USE_SELECT
-            if (FD_ISSET(STDIN_FILENO, &fds)) { /* 標準入力レディ */
-                status = read_stdin(sock);
-                if (status)
-                    break;
-            }
-            if (FD_ISSET(sock, &fds)) /* ソケットレディ */
-                status = read_sock(sock);
+        if (FD_ISSET(STDIN_FILENO, &fds)) {
+            /* 標準入力レディ */
+            status = read_stdin(sock);
+            if (!status)
+                break;
+        } else if (FD_ISSET(sock, &fds)) {
+            /* ソケットレディ */
+            status = read_sock(sock);
+        } else {
+            outlog("else: ready=%d", ready);
+        }
 #else
-            if (targets[STDIN_POLL].revents & POLLIN) { /* 標準入力レディ */
-                status = read_stdin(sock);
-                if (status)
-                    break;
-            }
-            if (targets[SOCK_POLL].revents & POLLIN) /* ソケットレディ */
-                status = read_sock(sock);
+        if (targets[STDIN_POLL].revents & POLLIN) {
+            /* 標準入力レディ */
+            status = read_stdin(sock);
+            if (!status)
+                break;
+        } else if (targets[SOCK_POLL].revents & POLLIN) {
+            /* ソケットレディ */
+            status = read_sock(sock);
+        } else {
+            outlog("else: ready=%d", ready);
+        }
 #endif /* _USE_SELECT */
-        } /* switch */
     } while (status && !sig_handled);
 
 #ifdef HAVE_READLINE
-    FREEHISTORY;
+    freehistory(&history);
 #endif /* HAVE_READLINE */
 }
 
@@ -229,7 +225,6 @@ read_stdin(int sock)
     struct client_data *sdata = NULL;  /* 送信データ構造体 */
     uchar *expr = NULL;                /* バッファ */
 #ifdef HAVE_READLINE
-    HIST_ENTRY *history = NULL;        /* 履歴 */
     int hist_no = 0;                   /* 履歴数 */
     char *prompt = NULL;               /* プロンプト */
 #endif /* HAVE_READLINE */
@@ -246,7 +241,7 @@ read_stdin(int sock)
     expr = _readline(stdin);
 #endif /* HAVE_READLINE */
 
-#ifdef UNITTEST
+#ifdef _TEST
     if (expr)
         free(expr);
     expr = NULL;
@@ -306,7 +301,7 @@ read_stdin(int sock)
     }
 #ifdef HAVE_READLINE
     if (MAX_HISTORY <= ++hist_no) {
-        FREEHISTORY;
+        freehistory(&history);
     }
     add_history((char *)expr);
 #endif /* HAVE_READLINE */
@@ -342,8 +337,8 @@ read_sock(int sock)
     dbglog("recv_data=%d, hd=%p, length=%u",
            retval, &hd, length);
     if (g_gflag)
-        outdump(&hd, length, "hd[%p] length[%u]", &hd, length);
-    stddump(&hd, length, "hd[%p] length[%u]", &hd, length);
+        outdump(&hd, length, "hd=%p, length=%u", &hd, length);
+    stddump(&hd, length, "hd=%p, length=%u", &hd, length);
 
     length = hd.length; /* データ長を保持 */
 
@@ -392,7 +387,7 @@ read_sock(int sock)
  * イベントフック
  *
  * readline 内から定期的に呼ばれる関数
- * @return 常にST_OK
+ * @return 常にEX_OK
  */
 #ifdef HAVE_READLINE
 static int check_state(void) {
@@ -407,7 +402,23 @@ static int check_state(void) {
         //rl_deprep_terminal();
         //close(STDIN_FILENO);
     }
-    return ST_OK;
+    return EX_OK;
 }
+
+/**
+ * history クリア
+ *
+ * @return なし
+ */
+static void
+freehistory(HIST_ENTRY **hist)
+{
+    if (*hist) {
+        *hist = remove_history(0);
+        free(*hist);
+    }
+    *hist = NULL;
+}
+
 #endif /* HAVE_READLINE */
 

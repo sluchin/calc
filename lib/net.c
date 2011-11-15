@@ -32,6 +32,7 @@
 #include <arpa/inet.h>  /* inet_aton */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
+#include <fcntl.h>      /* fcntl */
 
 #include "log.h"
 #include "util.h"
@@ -116,6 +117,31 @@ set_port(struct sockaddr_in *addr, const char *port)
     }
 
     dbglog("sp=%p, addr->sin_port=%d", sp, ntohs(addr->sin_port));
+
+    return EX_OK;
+}
+
+/**
+ * ブロッキングモードの設定
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @param[in] mode ブロッキングモード
+ * @retval EX_NG エラー
+ */
+int
+set_block(int fd, blockmode mode)
+{
+    int flags = 0; /* fcntl戻り値 */
+
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        outlog("fcntl=%d", flags);
+        return EX_NG;
+    }
+    if (mode == NONBLOCK) /* ノンブロッキング */
+        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    else if (mode == BLOCKING) /* ブロッキング */
+        fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 
     return EX_OK;
 }

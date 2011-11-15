@@ -30,12 +30,23 @@
 
 #include "def.h"
 
+/** ブロッキングモード */
+enum _blockmode {
+    NONBLOCK = 0, /**< ノンブロッキングモード */
+    BLOCKING      /**< ブロッキングモード */
+};
+
+typedef enum _blockmode blockmode;
+
 /** ホスト名設定 */
 int set_hostname(struct sockaddr_in *addr,
                  struct in_addr h_addr, const char *host);
 
 /** ポート番号設定 */
 int set_port(struct sockaddr_in *addr, const char *port);
+
+/** ブロッキングモード設定 */
+int set_block(int fd, blockmode mode);
 
 /** データ送信 */
 int send_data(const int sock, const void *sdata, const size_t length);

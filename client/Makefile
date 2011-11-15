@@ -14,10 +14,10 @@ STRIP = strip
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT #-DHAVE_READLINE
-DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT #-DUNITTEST #-DHAVE_READLINE
+DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT -DUNITTEST #-DHAVE_READLINE
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lreadline -lpthread
-CLIENTLIBS = -lcalcc -lcalcutil
+LIBS = -lcalcutil -lreadline -lpthread
+CLIENTLIBS = -lcalcc
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a
@@ -41,7 +41,7 @@ $(LIBCLIENT): $(OBJCLIENT)
 
 $(SHAREDOBJ): $(OBJCLIENT)
 	@$(RM) $@
-	$(CC) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
