@@ -82,13 +82,13 @@ server_loop(int sock)
     do {
         fds = rfds;
         ready = select(sock + 1, &fds, NULL, NULL, NULL);
-        dbglog("ready=%d", ready);
         if (ready < 0) {
             if (errno == EINTR) /* 割り込み */
                 continue;
             outlog("select=%d", ready);
             break;
         }
+        dbglog("ready=%d", ready);
         if (FD_ISSET(sock, &fds)) {
             /* 接続受付 */
             addrlen = (int)sizeof(addr);

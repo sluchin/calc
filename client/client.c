@@ -123,7 +123,6 @@ client_loop(int sock)
         targets[SOCK_POLL].events = POLLIN;
         ready = poll(targets, MAX_POLL, -1);
 #endif /* _USE_SELECT */
-        dbglog("ready=%d", ready);
         if (ready < 0) {
             if (errno == EINTR) { /* 割り込み */
                 outlog("interrupt: select=%d", ready);
@@ -133,6 +132,7 @@ client_loop(int sock)
             outlog("select=%d", ready);
             break;
         }
+        dbglog("ready=%d", ready);
 #ifdef _USE_SELECT
         if (FD_ISSET(STDIN_FILENO, &fds)) {
             /* 標準入力レディ */
