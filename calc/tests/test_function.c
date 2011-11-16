@@ -107,7 +107,7 @@ static const struct test_data func_data[] = {
     { "n(10)",       3628800,         0, 0, E_NONE,   0.0             },
     { "nPr(5,2)",    20,              0, 0, E_NONE,   0.0             },
     { "nCr(5,2)",    10,              0, 0, E_NONE,   0.0             },
-    { "nofunc(5)", EX_ERROR,          0, 0, E_NOFUNC, 0.0             }
+    { "nofunc(5)",    0.0,            0, 0, E_NOFUNC, 0.0             }
 };
 
 /** get_pow() 関数テスト用データ */
@@ -117,7 +117,7 @@ static const struct test_data pow_data[] = {
     { "0^2",   0,        0,  2, E_NONE, 0 },
     { "2^0",   1,        2,  0, E_NONE, 0 },
     { "-1^3", -1,       -1,  3, E_NONE, 0 },
-    { "0^-1", EX_ERROR,  0, -1, E_NAN,  0 },
+    { "0^-1",  0.0,      0, -1, E_NAN,  0 },
 };
 
 /** get_rad() 関数テスト用データ */
@@ -133,7 +133,7 @@ static const struct test_data deg_data[] = {
 /** get_sqrt() 関数テスト用データ */
 static const struct test_data sqrt_data[] = {
     { "sqrt(2)",  1.41421356237,  2, 0, E_NONE, 0.00000000001 },
-    { "sqrt(-1)", EX_ERROR,      -1, 0, E_NAN,  0             }
+    { "sqrt(-1)", 0.0,           -1, 0, E_NAN,  0             }
 };
 
 /** check_math() 関数テスト用データ */
@@ -167,30 +167,30 @@ static const struct test_data fact_data[] = {
 
 /** get_factorial() 関数テスト用データ */
 static const struct test_data factorial_data[] = {
-    { "n(0)",         1,   0,   0, E_NONE, 0.0 },
-    { "n(1)",         1,   1,   0, E_NONE, 0.0 },
-    { "n(2)",         2,   2,   0, E_NONE, 0.0 },
-    { "n(3)",         6,   3,   0, E_NONE, 0.0 },
-    { "n(9)",    362880,   9,   0, E_NONE, 0.0 },
-    { "n(-3)",       -6,  -3,   0, E_NONE, 0.0 },
-    { "n(-9)",  -362880,  -9,   0, E_NONE, 0.0 },
-    { "n(0.5)", EX_ERROR,  0.5, 0, E_NAN,  0.0 }
+    { "n(0)",         1,    0,   0, E_NONE, 0.0 },
+    { "n(1)",         1,    1,   0, E_NONE, 0.0 },
+    { "n(2)",         2,    2,   0, E_NONE, 0.0 },
+    { "n(3)",         6,    3,   0, E_NONE, 0.0 },
+    { "n(9)",    362880,    9,   0, E_NONE, 0.0 },
+    { "n(-3)",       -6,   -3,   0, E_NONE, 0.0 },
+    { "n(-9)",  -362880,   -9,   0, E_NONE, 0.0 },
+    { "n(0.5)",       0.0,  0.5, 0, E_NAN,  0.0 }
 };
 
 /** get_permutation() 関数テスト用データ */
 static const struct test_data permutation_data[] = {
-    { "nPr(5,2)",  20,        5,  2, E_NONE, 0.0 },
-    { "nPr(-5,2)", EX_ERROR, -5,  2, E_NAN,  0.0 },
-    { "nPr(5,-2)", EX_ERROR,  5, -2, E_NAN,  0.0 },
-    { "nPr(2,5)",  EX_ERROR,  2,  5, E_NAN,  0.0 }
+    { "nPr(5,2)",  20,    5,  2, E_NONE, 0.0 },
+    { "nPr(-5,2)",  0.0, -5,  2, E_NAN,  0.0 },
+    { "nPr(5,-2)",  0.0,  5, -2, E_NAN,  0.0 },
+    { "nPr(2,5)",   0.0,  2,  5, E_NAN,  0.0 }
 };
 
 /** get_combination() 関数テスト用データ */
 static const struct test_data combination_data[] = {
-    { "nCr(5,2)",  10,        5,  2, E_NONE, 0.0 },
-    { "nCr(-5,2)", EX_ERROR, -5,  2, E_NAN,  0.0 },
-    { "nCr(5,-2)", EX_ERROR,  5, -2, E_NAN,  0.0 },
-    { "nCr(2,5)",  EX_ERROR,  2,  5, E_NAN,  0.0 }
+    { "nCr(5,2)",  10,    5,  2, E_NONE, 0.0 },
+    { "nCr(-5,2)",  0.0, -5,  2, E_NAN,  0.0 },
+    { "nCr(5,-2)",  0.0,  5, -2, E_NAN,  0.0 },
+    { "nCr(2,5)",   0.0,  2,  5, E_NAN,  0.0 }
 };
 
 /**
@@ -218,7 +218,7 @@ test_exec_func(void)
     int pos = 0;                    /* 配列位置 */
 
     int i;
-    for (i = 0; i < arraysize(func_data); i++) {
+    for (i = 0; i < NELEMS(func_data); i++) {
         tsd = set_string(func_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, func_data[i].expr);
@@ -261,7 +261,7 @@ test_get_pow(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(pow_data); i++) {
+    for (i = 0; i < NELEMS(pow_data); i++) {
         tsd = set_string(pow_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, pow_data[i].expr);
@@ -347,7 +347,7 @@ test_get_rad(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(rad_data); i++) {
+    for (i = 0; i < NELEMS(rad_data); i++) {
         tsd = set_string(rad_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, rad_data[i].expr);
@@ -375,7 +375,7 @@ test_get_deg(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(deg_data); i++) {
+    for (i = 0; i < NELEMS(deg_data); i++) {
         tsd = set_string(deg_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, deg_data[i].expr);
@@ -403,7 +403,7 @@ test_get_sqrt(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(sqrt_data); i++) {
+    for (i = 0; i < NELEMS(sqrt_data); i++) {
         tsd = set_string(sqrt_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, sqrt_data[i].expr);
@@ -436,7 +436,7 @@ test_check_math(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(math_data); i++) {
+    for (i = 0; i < NELEMS(math_data); i++) {
         tsd = set_string(math_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, math_data[i].expr);
@@ -464,7 +464,7 @@ test_factorial(void)
     dbl result = 0; /* 結果 */
 
     int i;
-    for (i = 0; i < arraysize(fact_data); i++) {
+    for (i = 0; i < NELEMS(fact_data); i++) {
         result = 1;
         function.factorial(&result, fact_data[i].x);
         cut_assert_equal_double(fact_data[i].answer,
@@ -485,7 +485,7 @@ test_get_factorial(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(factorial_data); i++) {
+    for (i = 0; i < NELEMS(factorial_data); i++) {
         tsd = set_string(factorial_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s",
@@ -519,7 +519,7 @@ test_get_permutation(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(permutation_data); i++) {
+    for (i = 0; i < NELEMS(permutation_data); i++) {
         tsd = set_string(permutation_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s",
@@ -555,7 +555,7 @@ test_get_combination(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(combination_data); i++) {
+    for (i = 0; i < NELEMS(combination_data); i++) {
         tsd = set_string(combination_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s",

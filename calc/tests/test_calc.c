@@ -175,16 +175,16 @@ static const struct test_data_dbl expression_data [] = {
 
 /** term() 関数テスト用データ */
 static const struct test_data_dbl term_data [] = {
-    { "5*7", 35,       E_NONE      },
-    { "6/2",  3,       E_NONE      },
-    { "6^2", 36,       E_NONE      },
-    { "6/0", EX_ERROR, E_DIVBYZERO }
+    { "5*7", 35,   E_NONE      },
+    { "6/2",  3,   E_NONE      },
+    { "6^2", 36,   E_NONE      },
+    { "6/0",  0.0, E_DIVBYZERO }
 };
 
 /** factor() 関数テスト用データ */
 static const struct test_data_dbl factor_data [] = {
-    { "(5+4)", 9,        E_NONE   },
-    { "(5+4",  EX_ERROR, E_SYNTAX }
+    { "(5+4)", 9,   E_NONE   },
+    { "(5+4",  0.0, E_SYNTAX }
 };
 
 /** token() 関数テスト用データ */
@@ -193,7 +193,7 @@ static const struct test_data_dbl token_data [] = {
     { "-54321",   -54321,   E_NONE   },
     { "54231",     54231,   E_NONE   },
     { "nCr(5,2)",     10,   E_NONE   },
-    { "テスト",   EX_ERROR, E_SYNTAX }
+    { "テスト",        0.0, E_SYNTAX }
 };
 
 /** number() 関数テスト用データ */
@@ -223,7 +223,7 @@ test_answer_four(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(four_data); i++) {
+    for (i = 0; i < NELEMS(four_data); i++) {
         tsd = exec_calc(four_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, four_data[i].expr);
@@ -248,7 +248,7 @@ test_answer_func(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(func_data); i++) {
+    for (i = 0; i < NELEMS(func_data); i++) {
         tsd = exec_calc(func_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, func_data[i].expr);
@@ -273,7 +273,7 @@ test_answer_four_func(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(four_func_data); i++) {
+    for (i = 0; i < NELEMS(four_func_data); i++) {
         tsd = exec_calc(four_func_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s",
@@ -299,7 +299,7 @@ test_answer_error(void)
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
     int i;
-    for (i = 0; i < arraysize(error_data); i++) {
+    for (i = 0; i < NELEMS(error_data); i++) {
         tsd = exec_calc(error_data[i].expr);
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s", i, tsd, error_data[i].expr);
@@ -395,7 +395,7 @@ test_expression(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(expression_data); i++) {
+    for (i = 0; i < NELEMS(expression_data); i++) {
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s",
@@ -424,7 +424,7 @@ test_term(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(term_data); i++) {
+    for (i = 0; i < NELEMS(term_data); i++) {
         tsd = set_string(term_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, term_data[i].expr);
@@ -457,7 +457,7 @@ test_factor(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(factor_data); i++) {
+    for (i = 0; i < NELEMS(factor_data); i++) {
         tsd = set_string(factor_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, factor_data[i].expr);
@@ -490,7 +490,7 @@ test_token(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(token_data); i++) {
+    for (i = 0; i < NELEMS(token_data); i++) {
         tsd = set_string(token_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, token_data[i].expr);
@@ -523,7 +523,7 @@ test_number(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
-    for (i = 0; i < arraysize(number_data); i++) {
+    for (i = 0; i < NELEMS(number_data); i++) {
         tsd = set_string(number_data[i].expr);
         if (!tsd)
             cut_error("i=%d tsd=%p, expr=%s", i, tsd, number_data[i].expr);

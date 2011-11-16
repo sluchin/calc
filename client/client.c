@@ -31,9 +31,9 @@
 #include <errno.h>        /* errno */
 #include <unistd.h>       /* close */
 #ifdef _USE_SELECT
-#  include <sys/select.h> /* select */
+#  include <sys/select.h> /* pselect */
 #else
-#  include <sys/poll.h>   /* poll */
+#  include <sys/poll.h>   /* ppoll */
 #endif
 #ifdef HAVE_READLINE
 #  include <readline/readline.h>
@@ -91,10 +91,12 @@ static void freehistory(HIST_ENTRY **hist);
 void
 client_loop(int sock)
 {
-    int ready = 0;          /* select戻り値 */
-    bool status = true;     /* ステータス */
+    int ready = 0;                   /* select戻り値 */
+    bool stdst = true;               /* 標準入力ステータス */
+    bool sockst = true;              /* ソケットステータス */
+    struct timespec timeout;         /* タイムアウト値 */
 #ifdef _USE_SELECT
-    fd_set fds, rfds;       /* selectマスク */
+    fd_set fds, rfds;                /* selectマスク */
 #else
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
@@ -103,62 +105,58 @@ client_loop(int sock)
 
 #ifdef _USE_SELECT
     /* マスクの設定 */
-    FD_ZERO(&rfds);              /* 初期化 */
-    FD_SET(sock, &rfds);         /* ソケットをマスク */
-    FD_SET(STDIN_FILENO, &rfds); /* 標準入力をマスク */
-
+    FD_ZERO(&fds);              /* 初期化 */
+    FD_SET(sock, &fds);         /* ソケットをマスク */
+    FD_SET(STDIN_FILENO, &fds); /* 標準入力をマスク */
 #endif /* _USE_SELECT */
 
 #ifdef HAVE_READLINE
     rl_event_hook = &check_state;
 #endif /* HAVE_READLINE */
+
+    /* タイムアウト値初期化 */
+    (void)memset(&timeout, 0, sizeof(struct timespec));
+    timeout.tv_sec = 0;  /* ポーリング */
+    timeout.tv_nsec = 0;
+
     do {
 #ifdef _USE_SELECT
-        fds = rfds; /* マスクの代入 */
-        ready = select(sock + 1, &fds, NULL, NULL, NULL);
+        (void)memcpy(&rfds, &fds, sizeof(fd_set)); /* マスクコピー */
+        ready = pselect(sock + 1, &rfds,
+                        NULL, NULL, &timeout, &g_sigaction.sa_mask);
 #else
         targets[STDIN_POLL].fd = STDIN_FILENO;
         targets[STDIN_POLL].events = POLLIN;
         targets[SOCK_POLL].fd = sock;
         targets[SOCK_POLL].events = POLLIN;
-        ready = poll(targets, MAX_POLL, -1);
+        ready = ppoll(targets, MAX_POLL, &timeout, &g_sigation.sa_mask);
 #endif /* _USE_SELECT */
         if (ready < 0) {
-            if (errno == EINTR) { /* 割り込み */
-                outlog("interrupt: select=%d", ready);
+            if (errno == EINTR) /* 割り込み */
                 break;
-            }
             /* selectエラー */
             outlog("select=%d", ready);
             break;
-        }
-        dbglog("ready=%d", ready);
+        } else if (ready) {
 #ifdef _USE_SELECT
-        if (FD_ISSET(STDIN_FILENO, &fds)) {
-            /* 標準入力レディ */
-            status = read_stdin(sock);
-            if (!status)
-                break;
-        } else if (FD_ISSET(sock, &fds)) {
-            /* ソケットレディ */
-            status = read_sock(sock);
-        } else {
-            outlog("else: ready=%d", ready);
-        }
+            if (FD_ISSET(STDIN_FILENO, &fds))
+                /* 標準入力レディ */
+                stdst = read_stdin(sock);
+            if (FD_ISSET(sock, &fds))
+                /* ソケットレディ */
+                sockst = read_sock(sock);
 #else
-        if (targets[STDIN_POLL].revents & POLLIN) {
-            /* 標準入力レディ */
-            status = read_stdin(sock);
-            if (!status)
-                break;
-        } else if (targets[SOCK_POLL].revents & POLLIN) {
-            /* ソケットレディ */
-            status = read_sock(sock);
-        } else {
-            outlog("else: ready=%d", ready);
-        }
+            if (targets[STDIN_POLL].revents & POLLIN)
+                /* 標準入力レディ */
+                stdst = read_stdin(sock);
+            if (targets[SOCK_POLL].revents & POLLIN)
+                /* ソケットレディ */
+                sockst = read_sock(sock);
 #endif /* _USE_SELECT */
-    } while (status && !sig_handled);
+        } else { /* タイムアウト */
+            continue;
+        }
+    } while (stdst && sockst && !sig_handled);
 
 #ifdef HAVE_READLINE
     freehistory(&history);
@@ -343,10 +341,13 @@ read_sock(int sock)
     length = hd.length; /* データ長を保持 */
 
     /* データ受信 */
-    answer = recv_data_new(sock, length);
+    answer = recv_data_new(sock, &length);
     if (!answer) { /* エラー */
         memfree((void **)&answer, NULL);
-        return true;
+        if (length < 0) /* 受信エラー */
+            return false;
+        else /* メモリ不足 */
+            return true;
     }
     dbglog("answer=%p, length=%u", answer, length);
 

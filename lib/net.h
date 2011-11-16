@@ -55,7 +55,7 @@ int send_data(const int sock, const void *sdata, const size_t length);
 int recv_data(const int sock, void *rdata, const size_t length);
 
 /** データ受信 */
-void *recv_data_new(const int sock, const size_t length);
+void *recv_data_new(const int sock, size_t *length);
 
 /** ソケットクローズ */
 void close_sock(int *sock);

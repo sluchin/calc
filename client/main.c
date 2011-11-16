@@ -38,6 +38,7 @@
 
 /* 外部変数 */
 volatile sig_atomic_t sig_handled = 0; /**< シグナル */
+struct sigaction g_sigaction;          /**< sigaction構造体 */
 
 /* 内部変数 */
 static int sockfd = -1; /**< ソケット */
@@ -94,28 +95,26 @@ int main(int argc, char *argv[])
 static void
 set_sig_handler(void)
 {
-    struct sigaction sa; /* シグナル */
-
     /* シグナルマスクの設定 */
-    (void)memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
-    if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", sa);
-    if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset=%p, SIGINT", sa);
-    if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset=%p, SIGTERM", sa);
-    if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset=%p, SIGQUIT", sa);
+    (void)memset(&g_sigaction, 0, sizeof(g_sigaction));
+    g_sigaction.sa_handler = sig_handler;
+    g_sigaction.sa_flags = 0;
+    if (sigemptyset(&g_sigaction.sa_mask) < 0)
+        outlog("sigemptyset=%p", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGINT) < 0)
+        outlog("sigaddset=%p, SIGINT", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGTERM) < 0)
+        outlog("sigaddset=%p, SIGTERM", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGQUIT) < 0)
+        outlog("sigaddset=%p, SIGQUIT", g_sigaction);
 
     /* シグナル補足 */
-    if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGINT", sa);
-    if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGTERM", sa);
-    if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGQUIT", sa);
+    if (sigaction(SIGINT, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGINT", g_sigaction);
+    if (sigaction(SIGTERM, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGTERM", g_sigaction);
+    if (sigaction(SIGQUIT, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGQUIT", g_sigaction);
 }
 
 /**

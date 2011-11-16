@@ -26,10 +26,8 @@
 #ifndef _DEF_H_
 #define _DEF_H_
 
-/* エラー戻り値 */
-#define EX_ERROR  0
 /* 配列要素数 */
-#define arraysize(a) (sizeof(a) / sizeof(a[0]))
+#define NELEMS(array) (sizeof(array) / sizeof(array[0]))
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

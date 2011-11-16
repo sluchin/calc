@@ -27,10 +27,11 @@
 #define _CLIENT_H_
 
 #include <stdbool.h> /* bool */
-#include <signal.h>  /* sig_atomic_t */
+#include <signal.h>  /* sig_atomic_t sigaction */
 
 /* 外部変数 */
 extern volatile sig_atomic_t sig_handled; /**< シグナル */
+extern struct sigaction g_sigaction;      /**< sigaction構造体 */
 
 /** ソケット接続 */
 int connect_sock(const char *host, const char *port);

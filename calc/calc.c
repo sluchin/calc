@@ -54,6 +54,7 @@
 bool g_tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
+static const dbl EX_ERROR = 0.0; /**< エラー戻り値 */
 static pthread_key_t calc_key; /**< スレッド固有バッファのキー */
 static pthread_once_t calc_once = PTHREAD_ONCE_INIT; /**< キー初期化 */
 

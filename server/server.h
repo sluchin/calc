@@ -16,8 +16,8 @@
 #include <signal.h>  /* sig_atomic_t */
 
 /* 外部変数 */
-extern volatile sig_atomic_t sig_handled;    /**< シグナル */
-extern volatile sig_atomic_t sighup_handled; /**< シグナル */
+extern volatile sig_atomic_t sig_handled; /**< シグナル */
+extern struct sigaction g_sigaction;      /**< sigaction構造体 */
 
 /** ソケット接続 */
 int server_sock(const char *port);

@@ -36,22 +36,21 @@
 #include "server.h"
 
 /* 外部変数 */
-volatile sig_atomic_t sig_handled = 0;    /**< シグナル */
-volatile sig_atomic_t sighup_handled = 0; /**< シグナル */
+volatile sig_atomic_t sig_handled = 0;   /**< シグナル */
+struct sigaction g_sigaction;            /**< sigaction構造体 */
 
 /* 内部変数 */
-static int sockfd = -1; /**< ソケット */
-static int *argc;       /**< 引数の数 */
-static char ***argv;    /**< コマンド引数 */
-static char ***envp;    /**< 環境変数 */
+static volatile sig_atomic_t signum = 0; /**< シグナル種別 */
+static int sockfd = -1;                  /**< ソケット */
+static int *argc;                        /**< 引数の数 */
+static char ***argv;                     /**< コマンド引数 */
+static char ***envp;                     /**< 環境変数 */
 
 /* 内部関数 */
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
-/** シグナルハンドラ(SIGINT SIGQUIT SIGTERM) */
+/** シグナルハンドラ */
 static void sig_handler(int signo);
-/** シグナルハンドラ(SIGHUP) */
-static void sighup_handler(int signo);
 
 /**
  * main関数
@@ -68,9 +67,7 @@ int main(int c, char *v[], char *ep[])
 #endif
     dbglog("start");
 
-    /* アドレスを保持 */
-    argc = &c;
-    argv = &v;
+    /* アドレスを保持 */ argc = &c; argv = &v;
     envp = &ep;
 
     /* シグナルハンドラ */
@@ -102,10 +99,10 @@ int main(int c, char *v[], char *ep[])
     /* ソケットクローズ */
     close_sock(&sockfd);
 
-    if (sighup_handled) { /* 再起動 */
+    if (signum == SIGHUP) { /* 再起動 */
         dbglog("signal hup");
         (void)alarm(0);
-        sighup_handled = 0;
+        sig_handled = 0;
         (void)execve((*argv)[0], (*argv), (*envp));
     }
 
@@ -121,51 +118,34 @@ int main(int c, char *v[], char *ep[])
 static void
 set_sig_handler(void)
 {
-    struct sigaction sa, hup; /* シグナル */
-
     /* シグナルマスクの設定 */
-    (void)memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
-    if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", sa);
-    if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset=%p, SIGINT", sa);
-    if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset=%p, SIGTERM", sa);
-    if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset=%p, SIGQUIT", sa);
+    (void)memset(&g_sigaction, 0, sizeof(g_sigaction));
+    g_sigaction.sa_handler = sig_handler;
+    g_sigaction.sa_flags = SA_NOCLDWAIT; /* Linux 2.6 以降 */ 
+    if (sigemptyset(&g_sigaction.sa_mask) < 0)
+        outlog("sigemptyset=%p", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGINT) < 0)
+        outlog("sigaddset=%p, SIGINT", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGTERM) < 0)
+        outlog("sigaddset=%p, SIGTERM", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGQUIT) < 0)
+        outlog("sigaddset=%p, SIGQUIT", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGHUP) < 0)
+        outlog("sigaddset=%p SIGHUP", g_sigaction);
+    if (sigaddset(&g_sigaction.sa_mask, SIGCHLD) < 0)
+        outlog("sigaddset=%p SIGCHLD", g_sigaction);
 
     /* シグナル補足 */
-    if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGINT", sa);
-    if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGTERM", sa);
-    if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGQUIT", sa);
-
-    /* シグナルマスクの設定 */
-    (void)memset(&hup, 0, sizeof(hup));
-    hup.sa_handler = sighup_handler;
-    hup.sa_flags = 0;
-    if (sigemptyset(&hup.sa_mask) < 0)
-        outlog("sigemptyset=%p", hup);
-    if (sigaddset(&hup.sa_mask, SIGHUP) < 0)
-        outlog("sigaddset=%p SIGHUP", hup);
-
-    /* SIGHUPの補足 */
-    if (sigaction(SIGHUP, &hup, NULL) < 0)
-        outlog("sigaction=%p, SIGHUP", hup);
-
-#if 0
-    /* 子プロセスをゾンビにしない */
-    struct sigaction chld;
-    (void)memset(&chld, 0, sizeof(chld));
-    chld.sa_handler = SIG_IGN;
-    chld.sa_flags = SA_NOCLDWAIT;
-    if (sigaction(SIGCHLD, &chld, NULL) < 0)
-        outlog("sigaction[%p]; SIGCHLD", chld);
-#endif
+    if (sigaction(SIGINT, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGINT", g_sigaction);
+    if (sigaction(SIGTERM, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGTERM", g_sigaction);
+    if (sigaction(SIGQUIT, &g_sigaction, NULL) < 0)
+        outlog("sigaction=%p, SIGQUIT", g_sigaction);
+    if (sigaction(SIGHUP, &g_sigaction, NULL) < 0)
+        outlog("sigaction[%p]; SIGHUP", g_sigaction);
+    if (sigaction(SIGCHLD, &g_sigaction, NULL) < 0)
+        outlog("sigaction[%p]; SIGCHLD", g_sigaction);
 }
 
 /**
@@ -177,17 +157,6 @@ set_sig_handler(void)
 static void sig_handler(int signo)
 {
     sig_handled = 1;
-}
-
-/**
- * シグナルハンドラ(SIGHUP)
- *
- * 再起動する.
- * @param[in] signo シグナル
- * @return なし
- */
-static void sighup_handler(int signo)
-{
-    sighup_handled = 1;
+    signum = (sig_atomic_t)signo;
 }
 

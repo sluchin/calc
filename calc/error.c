@@ -59,7 +59,7 @@ get_errormsg(calcinfo *tsd)
     uchar *msg = NULL; /* エラーメッセージ */
 
     dbglog("start: errorcode=%d", tsd->errorcode);
-    assert(MAXERROR == arraysize(errormsg));
+    assert(MAXERROR == NELEMS(errormsg));
 
     if (tsd->errorcode == E_NONE)
         return NULL;

@@ -34,10 +34,12 @@
 #include "error.h"
 #include "function.h"
 
+/* 内部変数 */
+static const dbl EX_ERROR = 0.0; /**< エラー戻り値 */
 /** pi(4*atan(1)) */
-#define DEF_PI       3.14159265358979323846264338327950288
+static const dbl DEF_PI = 3.14159265358979323846264338327950288;
 /** ネイピア数(オイラー数) */
-#define DEF_E        2.71828182845904523536028747135266249
+static const dbl DEF_E = 2.71828182845904523536028747135266249;
 
 /* 内部関数 */
 /** 関数情報構造体初期化 */
@@ -221,8 +223,8 @@ init_func(void)
 {
     dbglog("start");
 
-    assert(MAXFUNC == arraysize(fstring));
-    assert(MAXFUNC == arraysize(finfo));
+    assert(MAXFUNC == NELEMS(fstring));
+    assert(MAXFUNC == NELEMS(finfo));
 
     memset(finfo, 0, sizeof(finfo));
 

@@ -176,6 +176,7 @@ send_data(const int sock, const void *sdata, const size_t length)
  * @param[in] sock ソケット
  * @param[out] rdata データ
  * @param[in] length データ長
+ * @return 受信したデータ長
  * @retval EX_NG エラー
  */
 int
@@ -205,7 +206,7 @@ recv_data(const int sock, void *rdata, const size_t length)
         }
     }
     dbglog("recv=%d, rlen=%d, left=%d", len, rlen, left);
-    return EX_OK;
+    return rlen;
 }
 
 /**
@@ -214,28 +215,27 @@ recv_data(const int sock, void *rdata, const size_t length)
  * 新たに領域確保し, データを受信する.
  *
  * @param[in] sock ソケット
- * @param[in] length データ長
+ * @param[in,out] length データ長
  * @retval NULL エラー
  */
 void *
-recv_data_new(const int sock, const size_t length)
+recv_data_new(const int sock, size_t *length)
 {
-    int retval = 0;     /* 戻り値 */
     void *rdata = NULL; /* 受信データ */
 
     dbglog("start: rdata=%p", rdata);
 
     /* メモリ確保 */
-    rdata = (uchar *)malloc(length * sizeof(uchar));
+    rdata = (uchar *)malloc(*length * sizeof(uchar));
     if (!rdata) {
         outlog("malloc=%p", rdata);
         return NULL;
     }
-    (void)memset(rdata, 0, length);
+    (void)memset(rdata, 0, *length);
 
     /* データ受信 */
-    retval = recv_data(sock, rdata, length);
-    if (retval < 0) { /* エラー */
+    *length = recv_data(sock, rdata, *length);
+    if (*length < 0) { /* エラー */
         memfree((void **)&rdata, NULL);
         return NULL;
     }
