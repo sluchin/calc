@@ -294,11 +294,9 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                       /* va_list */
 
-    if (!buf) {
-        fprintf(stderr, "%s[%d]: buf=%p(%d)\n",
-                __FILE__, __LINE__, buf, errno);
+    if (!buf)
         return EX_NG;
-    }
+
     p = (unsigned char *)buf;
 
     va_start(ap, format);
@@ -377,11 +375,9 @@ int dump_sys(const int level,
     /* シスログオープン */
     openlog(pname, SYS_OPT, SYS_FACILITY);
 
-    if (!buf) {
-        syslog(level, "%s[%d]: buf=%p, format=%p, len=%u",
-               __FILE__, __LINE__, buf, format, len);
+    if (!buf)
         return EX_NG;
-    }
+
     p = (unsigned char *)buf;
 
     va_start(ap, format);
@@ -451,11 +447,8 @@ int dump_file(const char *pname,
     /* シスログオープン */
     openlog(pname, SYS_OPT, SYS_FACILITY);
 
-    if (!buf) {
-        syslog(SYS_PRIO, "%s[%d]: buf=%p, len=%u(%d)",
-               __FILE__, __LINE__, buf, len, errno);
+    if (!buf)
         return EX_NG;
-    }
 
     fp = fopen(fname, "wb");
     if (!fp) {
