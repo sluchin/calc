@@ -13,7 +13,7 @@
  * @date 2010-06-27 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,17 +46,21 @@
 #include "util.h"
 #include "data.h"
 #include "option.h"
-#include "function.h"
+#include "func.h"
 #include "error.h"
 #include "calc.h"
 
 /* 外部変数 */
-bool g_tflag = false; /**< tオプションフラグ */
+/** tオプションフラグ */
+bool g_tflag = false;
 
 /* 内部変数 */
-static const dbl EX_ERROR = 0.0; /**< エラー戻り値 */
-static pthread_key_t calc_key; /**< スレッド固有バッファのキー */
-static pthread_once_t calc_once = PTHREAD_ONCE_INIT; /**< キー初期化 */
+/** エラー戻り値 */
+static const dbl EX_ERROR = 0.0;
+/** スレッド固有バッファのキー */
+static pthread_key_t calc_key;
+/** キー初期化 */
+static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
 
 /* 内部関数 */
 /** キー確保 */
@@ -124,7 +128,6 @@ init_calc(void *expr, long digit)
 
     return tsd;
 }
-
 
 /**
  * メモリ解放

@@ -6,7 +6,7 @@
  * @date 2010-06-26 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,8 @@
 #include "option.h"
 #include "server.h"
 
-#define SOCK_ERROR  -1 /**< ソケットエラー */
+/* 内部変数 */
+static const int SOCK_ERROR = -1; /**< ソケットエラー */
 
 /* 内部関数 */
 /** サーバプロセス */
@@ -62,11 +63,11 @@ static void *server_proc(void *arg);
 void
 server_loop(int sock)
 {
-    int ready = 0;           /* selec戻り値 */
+    int ready = 0;           /* pselect戻り値 */
     struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
     int addrlen = 0;         /* sockaddr_in構造体のサイズ */
     pthread_t tid;           /* スレッドID */
-    int retval = 0;          /* 戻り値 */
+    int retval = 0;          /* pthread_create戻り値 */
     int acc = -1;            /* accept戻り値 */
     fd_set fds, rfds;        /* selectマスク */
     struct timespec timeout; /* タイムアウト値 */
@@ -79,6 +80,7 @@ server_loop(int sock)
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
+    /* pselectの場合, constなのでループ前で値を入れる */
     timeout.tv_sec = 0;  /* ポーリング */
     timeout.tv_nsec = 0;
 
@@ -98,13 +100,11 @@ server_loop(int sock)
         } else if (ready) {
             if (FD_ISSET(sock, &rfds)) {
                 /* 接続受付 */
+                /* addrlenは入出力なのでここで初期化する */
                 addrlen = (int)sizeof(addr);
                 acc = accept(sock, (struct sockaddr *)&addr,
                              (socklen_t *)&addrlen);
                 if (acc < 0) {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK)
-                        /* 接続先が存在しない */
-                        continue;
                     outlog("accept=%d, addr.sin_addr=%s addr.sin_port=%d",
                            acc, inet_ntoa(addr.sin_addr),
                            ntohs(addr.sin_port));
@@ -122,7 +122,7 @@ server_loop(int sock)
                 }
                 dbglog("pthread_create=%lu", tid);
             }
-        } else { /* タイムアウト */
+        } else { /* ポーリング */
             continue;
         }
     } while (!sig_handled);

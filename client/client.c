@@ -6,7 +6,7 @@
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -153,7 +153,7 @@ client_loop(int sock)
                 /* ソケットレディ */
                 sockst = read_sock(sock);
 #endif /* _USE_SELECT */
-        } else { /* タイムアウト */
+        } else { /* ポーリング */
             continue;
         }
     } while (stdst && sockst && !sig_handled);

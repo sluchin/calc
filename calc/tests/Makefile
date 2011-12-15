@@ -18,12 +18,12 @@ TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
 CALCSOBJ = test_calc.so
-FUNCSOBJ = test_function.so
+FUNCSOBJ = test_func.so
 ERRORSOBJ = test_error.so
 CALCOBJ = test_calc.o
-FUNCOBJ = test_function.o
+FUNCOBJ = test_func.o
 ERROROBJ = test_error.o
-COMMONOBJ = common.o
+COMMONOBJ = test_common.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o

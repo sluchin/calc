@@ -6,7 +6,7 @@
  * @date 2009-06-27 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,7 +71,8 @@ static void sig_handler(int signo);
  * @param[in] argv コマンド引数・オプション引数
  * @return 常にEXIT_SUCCESS
  */
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     dbglog("start");
 

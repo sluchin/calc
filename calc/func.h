@@ -1,5 +1,5 @@
 /**
- * @file  calc/function.h
+ * @file  calc/func.h
  * @brief 関数
  *
  * @author higashi

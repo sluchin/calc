@@ -6,7 +6,7 @@
  * @date 2010-06-26 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 
 #ifndef _SERVER_H_

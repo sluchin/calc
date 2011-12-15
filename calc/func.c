@@ -1,5 +1,5 @@
 /**
- * @file  calc/function.c
+ * @file  calc/func.c
  * @brief 関数
  *
  * @author higashi
@@ -32,10 +32,11 @@
 
 #include "log.h"
 #include "error.h"
-#include "function.h"
+#include "func.h"
 
 /* 内部変数 */
-static const dbl EX_ERROR = 0.0; /**< エラー戻り値 */
+/** エラー戻り値 */
+static const dbl EX_ERROR = 0.0;
 /** pi(4*atan(1)) */
 static const dbl DEF_PI = 3.14159265358979323846264338327950288;
 /** ネイピア数(オイラー数) */
@@ -221,8 +222,6 @@ get_pow(calcinfo *tsd, dbl x, dbl y)
 static void
 init_func(void)
 {
-    dbglog("start");
-
     assert(MAXFUNC == NELEMS(fstring));
     assert(MAXFUNC == NELEMS(finfo));
 

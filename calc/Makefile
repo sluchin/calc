@@ -22,7 +22,7 @@ COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a
 LIBCALC = libcalcp.a
-OBJCALC = error.o function.o calc.o
+OBJCALC = error.o func.o calc.o
 OBJECTS = main.o \
           option.o
 SHAREDOBJ = libcalcp.so

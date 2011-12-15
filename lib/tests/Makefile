@@ -13,27 +13,31 @@ INCLUDES = -I$(srcdir) -I$(pardir) -I$(libcalcdir) -I/usr/include/cutter
 CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
-LIBS = -lcutter -lcalcutil -lcalcp
+LIBS = -lcutter -lcalcutil -lpthread
 TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
-#CALCSOBJ = test_calc.so
+SERVEROBJ= test_server.o #$(pardir)/log.o
+LOGSOBJ = test_log.so
+LOGOBJ = test_log.o
 #FUNCSOBJ = test_function.so
 #ERRORSOBJ = test_error.so
 #CALCOBJ = test_calc.o
 #FUNCOBJ = test_function.o
 #ERROROBJ = test_error.o
 #COMMONOBJ = test_common.o
+#PROGRAM = server
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
+all: $(OBJECTS) $(LOGSOBJ)
 
-#$(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+$(LOGSOBJ): $(LOGOBJ) $(SERVEROBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
 #
 #$(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
 #	@$(RM) $@
@@ -42,6 +46,10 @@ all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 #$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
 #	@$(RM) $@
 #	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
+#$(PROGRAM): $(OBJECTS)
+#	@$(RM) $@
+#	$(LINK) -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<

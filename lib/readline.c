@@ -6,7 +6,7 @@
  * @date 2010-09-10 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ _readline(FILE *fp)
     do {
         (void)memset(buf, 0, sizeof(buf));
         retval = fgets((char *)buf, sizeof(buf), fp);
-        if (!retval || feof(fp) || ferror(fp)) { /* エラー */
+        if (!retval || ferror(fp)) { /* エラー */
             outlog("fgets=%p", retval);
             clearerr(fp);
             break;

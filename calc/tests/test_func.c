@@ -1,5 +1,5 @@
 /**
- * @file  calc/tests/test_function.c
+ * @file  calc/tests/test_func.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -24,7 +24,10 @@
  */
 
 #include <ctype.h>  /* isalpha */
-#include <math.h>   /* abs sqrt sin cos tan etc...*/
+#include <math.h>   /* abs sqrt sin cos tan etc... */
+#include <fcntl.h>  /* open */
+#include <unistd.h> /* dup2 close */
+#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
@@ -32,8 +35,8 @@
 #include "log.h"
 #include "error.h"
 #include "calc.h"
-#include "function.h"
-#include "common.h"
+#include "func.h"
+#include "test_common.h"
 
 /* プロトタイプ */
 /** exec_func() 関数テスト */
@@ -200,8 +203,19 @@ static const struct test_data combination_data[] = {
  */
 void cut_startup(void)
 {
+    int fd = 0; /* ディスクリプタ */
+
     test_init_calc(&calc);
     test_init_function(&function);
+
+    fd = open("/dev/null", O_RDWR, 0);
+    if (fd < 0) {
+        cut_notify("open=%d", fd);
+        return;
+    }
+    (void)dup2(fd, STDERR_FILENO);
+    if (fd > 2)
+        (void)close(fd);
 }
 
 /**
@@ -221,7 +235,8 @@ test_exec_func(void)
     for (i = 0; i < NELEMS(func_data); i++) {
         tsd = set_string(func_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, func_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, func_data[i].expr, errno);
 
         pos = 0;
         (void)memset(func, 0, sizeof(func));
@@ -264,7 +279,8 @@ test_get_pow(void)
     for (i = 0; i < NELEMS(pow_data); i++) {
         tsd = set_string(pow_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, pow_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, pow_data[i].expr, errno);
 
         result = get_pow(tsd, pow_data[i].x, pow_data[i].y);
         cut_assert_equal_double(pow_data[i].answer,
@@ -296,7 +312,7 @@ test_get_pi(void)
 
     tsd = set_string("pi");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "pi");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "pi", errno);
 
     result = function.get_pi(tsd);
     cut_assert_equal_double(pi,
@@ -322,7 +338,7 @@ test_get_e(void)
 
     tsd = set_string("e");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "e");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "e", errno);
 
     result = function.get_e(tsd);
     cut_assert_equal_double(e,
@@ -350,7 +366,8 @@ test_get_rad(void)
     for (i = 0; i < NELEMS(rad_data); i++) {
         tsd = set_string(rad_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, rad_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, rad_data[i].expr, errno);
 
         result = function.get_rad(tsd, rad_data[i].x);
         cut_assert_equal_double(rad_data[i].answer,
@@ -378,7 +395,8 @@ test_get_deg(void)
     for (i = 0; i < NELEMS(deg_data); i++) {
         tsd = set_string(deg_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, deg_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, deg_data[i].expr, errno);
 
         result = function.get_deg(tsd, deg_data[i].x);
         cut_assert_equal_double(deg_data[i].answer,
@@ -406,7 +424,8 @@ test_get_sqrt(void)
     for (i = 0; i < NELEMS(sqrt_data); i++) {
         tsd = set_string(sqrt_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, sqrt_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, sqrt_data[i].expr, errno);
 
         result = function.get_sqrt(tsd, sqrt_data[i].x);
         cut_assert_equal_double(sqrt_data[i].answer,
@@ -439,7 +458,8 @@ test_check_math(void)
     for (i = 0; i < NELEMS(math_data); i++) {
         tsd = set_string(math_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, math_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, math_data[i].expr, errno);
 
         result = function.check_math(tsd, math_data[i].x,
                                      math_data[i].callback);
@@ -488,8 +508,8 @@ test_get_factorial(void)
     for (i = 0; i < NELEMS(factorial_data); i++) {
         tsd = set_string(factorial_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s",
-                      i, tsd, factorial_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, factorial_data[i].expr, errno);
 
         result = function.get_factorial(tsd, factorial_data[i].x);
         cut_assert_equal_double(factorial_data[i].answer,
@@ -522,8 +542,8 @@ test_get_permutation(void)
     for (i = 0; i < NELEMS(permutation_data); i++) {
         tsd = set_string(permutation_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s",
-                      i, tsd, permutation_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, permutation_data[i].expr, errno);
 
         result = function.get_permutation(tsd,
                                           permutation_data[i].x,
@@ -558,8 +578,8 @@ test_get_combination(void)
     for (i = 0; i < NELEMS(combination_data); i++) {
         tsd = set_string(combination_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s",
-                      i, tsd, combination_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, combination_data[i].expr, errno);
 
         result = function.get_combination(tsd,
                                           combination_data[i].x,

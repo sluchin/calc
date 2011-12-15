@@ -6,7 +6,7 @@
  * @date 2009-06-25 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,11 +40,11 @@ volatile sig_atomic_t sig_handled = 0;   /**< シグナル */
 struct sigaction g_sigaction;            /**< sigaction構造体 */
 
 /* 内部変数 */
-static volatile sig_atomic_t signum = 0; /**< シグナル種別 */
-static int sockfd = -1;                  /**< ソケット */
-static int *argc;                        /**< 引数の数 */
-static char ***argv;                     /**< コマンド引数 */
-static char ***envp;                     /**< 環境変数 */
+static volatile sig_atomic_t hupflag = 0; /**< シグナル種別 */
+static int sockfd = -1;                   /**< ソケット */
+static int *argc;                         /**< 引数の数 */
+static char ***argv;                      /**< コマンド引数 */
+static char ***envp;                      /**< 環境変数 */
 
 /* 内部関数 */
 /** シグナルハンドラ設定 */
@@ -99,10 +99,9 @@ int main(int c, char *v[], char *ep[])
     /* ソケットクローズ */
     close_sock(&sockfd);
 
-    if (signum == SIGHUP) { /* 再起動 */
-        dbglog("signal hup");
+    if (hupflag) { /* 再起動 */
+        dbglog("SIGHUP");
         (void)alarm(0);
-        sig_handled = 0;
         (void)execve((*argv)[0], (*argv), (*envp));
     }
 
@@ -121,7 +120,7 @@ set_sig_handler(void)
     /* シグナルマスクの設定 */
     (void)memset(&g_sigaction, 0, sizeof(g_sigaction));
     g_sigaction.sa_handler = sig_handler;
-    g_sigaction.sa_flags = SA_NOCLDWAIT; /* Linux 2.6 以降 */ 
+    g_sigaction.sa_flags = SA_NOCLDWAIT; /* Linux 2.6 以降 */
     if (sigemptyset(&g_sigaction.sa_mask) < 0)
         outlog("sigemptyset=%p", g_sigaction);
     if (sigaddset(&g_sigaction.sa_mask, SIGINT) < 0)
@@ -157,6 +156,7 @@ set_sig_handler(void)
 static void sig_handler(int signo)
 {
     sig_handled = 1;
-    signum = (sig_atomic_t)signo;
+    if (signo == SIGHUP)
+        hupflag = 1;
 }
 

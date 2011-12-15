@@ -6,7 +6,7 @@
  * @date 2010-06-24 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,8 @@
  * @retval EX_NG エラー
  */
 int
-set_hostname(struct sockaddr_in *addr, struct in_addr h_addr, const char *host)
+set_hostname(struct sockaddr_in *addr,
+             struct in_addr h_addr, const char *host)
 {
     struct hostent *hp = NULL; /* ホスト情報構造体 */
     int retval = 0;            /* 戻り値 */
@@ -68,11 +69,13 @@ set_hostname(struct sockaddr_in *addr, struct in_addr h_addr, const char *host)
         }
         dbglog("h_addr=%p, h_addr=%u h_length=%d", &h_addr,
                sizeof(h_addr), hp->h_length);
+        /* ホスト名を設定 */
         (void)memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
                      hp->h_length);
+    } else {
+        /* IPアドレスを設定 */
+        (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
     }
-    /* IPアドレスを設定 */
-    (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
 
     dbglog("h_addr=%p, inet_nta(h_addr)=%s", &h_addr, inet_ntoa(h_addr));
 

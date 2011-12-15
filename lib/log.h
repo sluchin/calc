@@ -6,7 +6,7 @@
  * @date 2010-06-22 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 extern char *progname; /* プログラム名 */
 
 #ifdef _DEBUG
-#  define SYS_OPT  LOG_PID | LOG_CONS
+#  define SYS_OPT  LOG_PID | LOG_PERROR
 #else
 #  define SYS_OPT  LOG_PID
 #endif
@@ -74,17 +74,16 @@ void stderr_log(const char *pname, const char *fname,
                 const char *format, ...);
 
 /** 標準エラー出力にHEXダンプ */
-void dump_log(const void *buf, const size_t len, const char *format, ...);
+int dump_log(const void *buf, const size_t len, const char *format, ...);
 
 /** シスログにHEXダンプ */
-void dump_sys(const int level, const char *pname, const char *fname,
-              const int line, const char *func,
-              const void *buf, const size_t len,
-              const char *format, ...);
+int dump_sys(const int level, const char *pname, const char *fname,
+             const int line, const char *func, const void *buf,
+             const size_t len, const char *format, ...);
 
 /** ファイルにバイナリ出力 */
-void dump_file(const char *pname, const char *fname, const char *buf,
-               const size_t len);
+int dump_file(const char *pname, const char *fname, const char *buf,
+              const size_t len);
 
 /** バックトレース出力 */
 void print_trace(void);

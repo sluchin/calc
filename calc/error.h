@@ -30,7 +30,7 @@
 
 #include "def.h"
 #include "calc.h"
-#include "function.h"
+#include "func.h"
 
 /** エラーメッセージ取得 */
 uchar *get_errormsg(calcinfo *tsd);

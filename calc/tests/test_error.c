@@ -24,6 +24,9 @@
  */
 
 #include <math.h>   /* sqrt log */
+#include <fcntl.h>  /* open */
+#include <unistd.h> /* dup2 close */
+#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
@@ -31,7 +34,7 @@
 #include "log.h"
 #include "calc.h"
 #include "error.h"
-#include "common.h"
+#include "test_common.h"
 
 /* プロトタイプ */
 /* get_errormsg() 関数テスト */
@@ -59,7 +62,18 @@ static testerror error; /**< 関数構造体 */
  */
 void cut_startup(void)
 {
+    int fd = 0; /* ディスクリプタ */
+
     test_init_error(&error);
+
+    fd = open("/dev/null", O_RDWR, 0);
+    if (fd < 0) {
+        cut_notify("open=%d", fd);
+        return;
+    }
+    (void)dup2(fd, STDERR_FILENO);
+    if (fd > 2)
+        (void)close(fd);
 }
 
 /**
@@ -76,7 +90,7 @@ test_get_errormsg(void)
     for (i = 0; i < MAXERROR; i++) {
         tsd = set_string("dammy");
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, "dammy");
+            cut_error("i=%d, tsd=%p, expr=%s(%d)", i, tsd, "dammy", errno);
         tsd->errorcode = (ER)i;
         tsd->errormsg = get_errormsg(tsd);
         cut_assert_equal_string(error.errormsg[i],
@@ -103,7 +117,7 @@ test_set_errorcode(void)
     for (i = 0; i < MAXERROR; i++) {
         tsd = set_string("dammy");
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, "dammy");
+            cut_error("i=%d, tsd=%p, expr=%s(%d)", i, tsd, "dammy", errno);
         set_errorcode(tsd, (ER)i);
         cut_assert_equal_int(i,
                              (int)tsd->errorcode,
@@ -127,12 +141,12 @@ test_clear_error(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     slen = strlen("dammy");
     tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
     if (!tsd->errormsg)
-        cut_error("malloc=%p", tsd->errormsg);
+        cut_error("malloc=%p(%d)", tsd->errormsg, errno);
     (void)memset(tsd->errormsg, 0, slen);
     (void)strncpy((char *)tsd->errormsg, "dammy", slen);
 
@@ -154,7 +168,7 @@ test_is_error(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     /* エラー時, trueを返す */
     set_errorcode(tsd, E_SYNTAX);
@@ -178,7 +192,7 @@ test_check_validate(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     result = sqrt(-1);
     dbglog("result=%g", result);
@@ -191,7 +205,7 @@ test_check_validate(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     result = pow(10, 10000);
     dbglog("result=%g", result);
@@ -216,7 +230,7 @@ test_check_math_feexcept(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     clear_math_feexcept();
     result = log(-1);
@@ -230,7 +244,7 @@ test_check_math_feexcept(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     clear_math_feexcept();
     result = log(0);
@@ -256,7 +270,7 @@ test_clear_math_feexcept(void)
 
     tsd = set_string("dammy");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "dammy");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
     result = log(-1);
     dbglog("result=%g", result);

@@ -23,6 +23,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <fcntl.h>  /* open */
+#include <unistd.h> /* close */
+#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
@@ -30,7 +33,7 @@
 #include "log.h"
 #include "error.h"
 #include "calc.h"
-#include "common.h"
+#include "test_common.h"
 
 /* プロトタイプ */
 /** 四則演算テスト */
@@ -209,7 +212,18 @@ static const struct test_data_dbl number_data [] = {
  */
 void cut_startup(void)
 {
+    int fd = 0; /* ディスクリプタ */
+
     test_init_calc(&calc);
+
+    fd = open("/dev/null", O_RDWR, 0);
+    if (fd < 0) {
+        cut_notify("open=%d", fd);
+        return;
+    }
+    (void)dup2(fd, STDERR_FILENO);
+    if (fd > 2)
+        (void)close(fd);
 }
 
 /**
@@ -226,7 +240,8 @@ test_answer_four(void)
     for (i = 0; i < NELEMS(four_data); i++) {
         tsd = exec_calc(four_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, four_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, four_data[i].expr, errno);
 
         cut_assert_equal_string(four_data[i].answer,
                                 (char *)tsd->result,
@@ -251,7 +266,8 @@ test_answer_func(void)
     for (i = 0; i < NELEMS(func_data); i++) {
         tsd = exec_calc(func_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, func_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, func_data[i].expr, errno);
 
         cut_assert_equal_string(func_data[i].answer,
                                 (char *)tsd->result,
@@ -276,8 +292,8 @@ test_answer_four_func(void)
     for (i = 0; i < NELEMS(four_func_data); i++) {
         tsd = exec_calc(four_func_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s",
-                      i, tsd, four_func_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, four_func_data[i].expr, errno);
 
         cut_assert_equal_string(four_func_data[i].answer,
                                 (char *)tsd->result,
@@ -302,7 +318,8 @@ test_answer_error(void)
     for (i = 0; i < NELEMS(error_data); i++) {
         tsd = exec_calc(error_data[i].expr);
         if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s", i, tsd, error_data[i].expr);
+            cut_error("i=%d, tsd=%p, expr=%s(%d)",
+                      i, tsd, error_data[i].expr, errno);
 
         cut_assert_equal_string(error_data[i].answer,
                                 (char *)tsd->result,
@@ -326,7 +343,7 @@ test_parse_func_args(void)
 
     tsd = set_string("(235)");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "(235)");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "(235)", errno);
 
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_1, &x, &y);
@@ -335,7 +352,7 @@ test_parse_func_args(void)
 
     tsd = set_string("(123,235)");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "(123,235)");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "(123,235)", errno);
 
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_2, &x, &y);
@@ -358,7 +375,7 @@ test_readch(void)
     /* スペース・タブを含んだ文字列を設定 */
     tsd = set_string("te s  t");
     if (!tsd)
-        cut_error("tsd=%p, expr=%s", tsd, "te s  t");
+        cut_error("tsd=%p, expr=%s(%d)", tsd, "te s  t", errno);
 
     dbglog("ch=%p", tsd->ch);
     cut_assert_equal_int('t', tsd->ch,
@@ -398,8 +415,8 @@ test_expression(void)
     for (i = 0; i < NELEMS(expression_data); i++) {
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s",
-                      i, tsd, expression_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, expression_data[i].expr, errno);
 
         result = calc.expression(tsd);
         cut_assert_equal_double(expression_data[i].answer,
@@ -427,7 +444,8 @@ test_term(void)
     for (i = 0; i < NELEMS(term_data); i++) {
         tsd = set_string(term_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, term_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, term_data[i].expr, errno);
 
         result = calc.term(tsd);
         cut_assert_equal_double(term_data[i].answer,
@@ -460,7 +478,8 @@ test_factor(void)
     for (i = 0; i < NELEMS(factor_data); i++) {
         tsd = set_string(factor_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, factor_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, factor_data[i].expr, errno);
 
         result = calc.factor(tsd);
         cut_assert_equal_double(factor_data[i].answer,
@@ -493,7 +512,8 @@ test_token(void)
     for (i = 0; i < NELEMS(token_data); i++) {
         tsd = set_string(token_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, token_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, token_data[i].expr, errno);
 
         result = calc.token(tsd);
         cut_assert_equal_double(token_data[i].answer,
@@ -526,7 +546,8 @@ test_number(void)
     for (i = 0; i < NELEMS(number_data); i++) {
         tsd = set_string(number_data[i].expr);
         if (!tsd)
-            cut_error("i=%d tsd=%p, expr=%s", i, tsd, number_data[i].expr);
+            cut_error("i=%d tsd=%p, expr=%s(%d)",
+                      i, tsd, number_data[i].expr, errno);
 
         result = calc.number(tsd);
         cut_assert_equal_double(number_data[i].answer,
