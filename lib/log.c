@@ -50,6 +50,7 @@ char *progname = NULL; /**< プログラム名 */
  * シスログ出力
  *
  * @param[in] level ログレベル
+ * @param[in] option オプション
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -59,6 +60,7 @@ char *progname = NULL; /**< プログラム名 */
  * @return なし
  */
 void system_log(const int level,
+                const int option,
                 const char *pname,
                 const char *fname,
                 const int line,
@@ -76,7 +78,7 @@ void system_log(const int level,
     char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
     /* シスログオープン */
-    openlog(pname, SYS_OPT, SYS_FACILITY);
+    openlog(pname, option, SYS_FACILITY);
 
     va_start(ap, format);
     retval = vsnprintf(message, sizeof(message), format, ap);
@@ -104,6 +106,7 @@ void system_log(const int level,
  * シスログ出力(デバッグ用)
  *
  * @param[in] level ログレベル
+ * @param[in] option オプション
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -113,6 +116,7 @@ void system_log(const int level,
  * @return なし
  */
 void system_dbg_log(const int level,
+                    const int option,
                     const char *pname,
                     const char *fname,
                     const int line,
@@ -134,7 +138,7 @@ void system_dbg_log(const int level,
     char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
     /* シスログオープン */
-    openlog(pname, SYS_OPT, SYS_FACILITY);
+    openlog(pname, option, SYS_FACILITY);
 
     retval = gettimeofday (&tv, NULL);
     if (retval < 0) {
@@ -343,6 +347,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
  * シスログにHEXダンプ
  *
  * @param[in] level ログレベル
+ * @param[in] option オプション
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
  * @param[in] line 行番号
@@ -354,6 +359,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
  * @retval EX_NG エラー
  */
 int dump_sys(const int level,
+             const int option,
              const char *pname,
              const char *fname,
              const int line,
@@ -373,7 +379,7 @@ int dump_sys(const int level,
     size_t tsize = sizeof(tmp);       /* tmp配列サイズ */
 
     /* シスログオープン */
-    openlog(pname, SYS_OPT, SYS_FACILITY);
+    openlog(pname, option, SYS_FACILITY);
 
     if (!buf)
         return EX_NG;
@@ -445,34 +451,34 @@ int dump_file(const char *pname,
     int retval = 0;  /* 戻り値 */
 
     /* シスログオープン */
-    openlog(pname, SYS_OPT, SYS_FACILITY);
+    openlog(pname, LOG_PID, SYS_FACILITY);
 
     if (!buf)
         return EX_NG;
 
     fp = fopen(fname, "wb");
     if (!fp) {
-        syslog(SYS_PRIO, "%s[%d]: fopen=%p(%d)",
+        syslog(LOG_INFO, "%s[%d]: fopen=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return EX_NG;
     }
 
     wret = fwrite(buf, len, 1, fp);
     if (wret != 1) {
-        syslog(SYS_PRIO, "%s[%d]: fwrite=%p(%d)",
+        syslog(LOG_INFO, "%s[%d]: fwrite=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return EX_NG;
     }
 
     retval = fflush(fp);
     if (retval == EOF) {
-        syslog(SYS_PRIO, "%s[%d]: fflush=%p(%d)",
+        syslog(LOG_INFO, "%s[%d]: fflush=%p(%d)",
                __FILE__, __LINE__, fp, errno);
     }
 
     retval = fclose(fp);
     if (retval == EOF) {
-        syslog(SYS_PRIO, "%s[%d]: fclose=%p(%d)",
+        syslog(LOG_INFO, "%s[%d]: fclose=%p(%d)",
                __FILE__, __LINE__, fp, errno);
         return EX_NG;
     }

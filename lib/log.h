@@ -31,14 +31,9 @@
 
 extern char *progname; /* プログラム名 */
 
-#ifdef _DEBUG
-#  define SYS_OPT  LOG_PID | LOG_PERROR
-#else
-#  define SYS_OPT  LOG_PID
-#endif
-#define SYS_PRIO      LOG_INFO
 #define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       LOG_INFO, progname, __FILE__, __LINE__, __FUNCTION__
+#define LOGARGS       LOG_INFO, LOG_PID, progname, \
+                      __FILE__, __LINE__, __FUNCTION__
 
 /* エラー時ログメッセージ出力 */
 #define outlog(fmt, ...)        system_log(LOGARGS, fmt, ## __VA_ARGS__)
@@ -59,13 +54,13 @@ extern char *progname; /* プログラム名 */
 #endif /* _DEBUG */
 
 /** シスログ出力 */
-void system_log(const int level, const char *pname, const char *fname,
-                const int line, const char *func,
+void system_log(const int level, const int option, const char *pname,
+                const char *fname, const int line, const char *func,
                 const char *format, ...);
 
 /** シスログ出力(デバッグ用) */
-void system_dbg_log(const int level, const char *pname, const char *fname,
-                    const int line, const char *func,
+void system_dbg_log(const int level, const int option, const char *pname,
+                    const char *fname, const int line, const char *func,
                     const char *format, ...);
 
 /** 標準エラー出力にログ出力 */
@@ -77,9 +72,9 @@ void stderr_log(const char *pname, const char *fname,
 int dump_log(const void *buf, const size_t len, const char *format, ...);
 
 /** シスログにHEXダンプ */
-int dump_sys(const int level, const char *pname, const char *fname,
-             const int line, const char *func, const void *buf,
-             const size_t len, const char *format, ...);
+int dump_sys(const int level, const int option, const char *pname,
+             const char *fname, const int line, const char *func,
+             const void *buf, const size_t len, const char *format, ...);
 
 /** ファイルにバイナリ出力 */
 int dump_file(const char *pname, const char *fname, const char *buf,

@@ -134,7 +134,7 @@ test_system_log(void)
         return;
     }
 
-    system_log(LOG_INFO, "programname",
+    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
                "filename", 15, "function", "%s", "test");
 
     retval = read(fd, actual, sizeof(actual));
@@ -175,7 +175,7 @@ test_system_dbg_log(void)
         return;
     }
 
-    system_dbg_log(LOG_INFO, "programname",
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
                    "filename", 15, "function", "%s", "test");
 
     retval = read(fd, actual, sizeof(actual));
@@ -315,7 +315,8 @@ test_dump_sys(void)
         return;
     }
 
-    result_ok = dump_sys(LOG_INFO, "programname", "filename", 15,
+    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
+                         "programname", "filename", 15,
                          "function", dump, sizeof(dump), "%s", "test");
 
     retval = read(fd, actual, sizeof(actual));
@@ -332,7 +333,8 @@ test_dump_sys(void)
     cut_assert_equal_int(EX_OK, result_ok, cut_message("return value"));
 
     /* 異常系 */
-    result_ok = dump_sys(LOG_INFO, "programname", "filename", 15,
+    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
+                         "programname", "filename", 15,
                          "function", NULL, 0, "%s", "test");
 
     cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
