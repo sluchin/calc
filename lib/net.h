@@ -49,16 +49,16 @@ int set_port(struct sockaddr_in *addr, const char *port);
 int set_block(int fd, blockmode mode);
 
 /** データ送信 */
-int send_data(const int sock, const void *sdata, const size_t length);
+int send_data(const int sock, const void *sdata, size_t *length);
 
 /** データ受信 */
-int recv_data(const int sock, void *rdata, const size_t length);
+int recv_data(const int sock, void *rdata, size_t *length);
 
 /** データ受信 */
 void *recv_data_new(const int sock, size_t *length);
 
 /** ソケットクローズ */
-void close_sock(int *sock);
+int close_sock(int *sock);
 
 #endif /* _NET_H_ */
 

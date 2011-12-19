@@ -24,7 +24,7 @@
  */
 
 #include <fcntl.h>  /* open */
-#include <unistd.h> /* close */
+#include <unistd.h> /* close dup2 */
 #include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 

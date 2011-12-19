@@ -43,8 +43,8 @@
  *
  * @return 時刻
  */
-inline
-unsigned long long get_time(void)
+inline unsigned long long
+get_time(void)
 {
     struct timeval tv;
     struct timezone tz;
@@ -58,8 +58,8 @@ unsigned long long get_time(void)
  *
  * @return なし
  */
-inline
-void start_timer(unsigned int *start_time)
+inline void
+start_timer(unsigned int *start_time)
 {
     *start_time = (unsigned int)get_time();
     return;
@@ -71,16 +71,18 @@ void start_timer(unsigned int *start_time)
  * @param[in] start_time タイマー開始の時刻
  * @return 時間
  */
-inline
-unsigned int stop_timer(unsigned int *start_time)
+inline unsigned int
+stop_timer(unsigned int *start_time)
 {
     unsigned int stop_time = (unsigned int)get_time();
     return ((stop_time >= *start_time) ? (stop_time - *start_time) : stop_time);
 }
 
 /** 時間出力 */
-#define print_timer(te) {                                               \
-        (void)fprintf(stderr, "time of %s:%f[msec]\n", #te, te*1.0e-3); \
+#define                                                         \
+    print_timer(te) {                                           \
+    (void)fprintf(stderr,                                       \
+                  "time of %s:%f[msec]\n", #te, te*1.0e-3);     \
     }
 
 #endif /* _TIMER_H_ */

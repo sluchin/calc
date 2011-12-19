@@ -28,6 +28,7 @@
 #include <ctype.h>        /* isdigit */
 #include <sys/socket.h>   /* socket */
 #include <arpa/inet.h>    /* inet_addr */
+#include <netinet/in.h>   /* struct in_addr */
 #include <errno.h>        /* errno */
 #include <unistd.h>       /* close */
 #ifdef _USE_SELECT
@@ -52,8 +53,6 @@
 #include "timer.h"
 #include "client.h"
 
-#define SOCK_ERROR    -1 /**< ソケットエラー */
-
 #ifdef HAVE_READLINE
 static HIST_ENTRY *history = NULL;   /**< 履歴 */
 static const uint MAX_HISTORY = 100; /**< 最大履歴数 */
@@ -68,7 +67,8 @@ enum {
 #endif /* _USE_SELECT */
 
 /* 内部変数 */
-static uint start_time = 0; /**< タイマ開始 */
+static uint start_time = 0;       /**< タイマ開始 */
+static const int SOCK_ERROR = -1; /**< ソケットエラー */
 
 /* 内部関数 */
 /** 標準入力読込 */
@@ -182,6 +182,7 @@ connect_sock(const char *host, const char *port)
 
     /* 初期化 */
     (void)memset(&server, 0, sizeof(struct sockaddr_in));
+    (void)memset(&addr, 0, sizeof(struct in_addr));
     server.sin_family = AF_INET;
 
     if (set_hostname(&server, &addr, host) < 0)
@@ -218,13 +219,13 @@ connect_sock(const char *host, const char *port)
 static bool
 read_stdin(int sock)
 {
-    int retval = 0;                    /* 戻り値 */
-    size_t length = 0;                 /* 長さ */
-    struct client_data *sdata = NULL;  /* 送信データ構造体 */
-    uchar *expr = NULL;                /* バッファ */
+    int retval = 0;                   /* 戻り値 */
+    size_t length = 0;                /* 長さ */
+    struct client_data *sdata = NULL; /* 送信データ構造体 */
+    uchar *expr = NULL;               /* バッファ */
 #ifdef HAVE_READLINE
-    int hist_no = 0;                   /* 履歴数 */
-    char *prompt = NULL;               /* プロンプト */
+    int hist_no = 0;                  /* 履歴数 */
+    char *prompt = NULL;              /* プロンプト */
 #endif /* HAVE_READLINE */
 
     dbglog("start");
@@ -255,7 +256,7 @@ read_stdin(int sock)
     }
     (void)memset(expr, 0x31, test_len);
     *(expr + (test_len - 1)) = '\0';
-#endif /* UNITTEST */
+#endif /* _TEST */
 
     if (!expr) /* メモリ確保できない */
         return true;
@@ -286,7 +287,7 @@ read_stdin(int sock)
         outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
     stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
 
-    retval = send_data(sock, sdata, length);
+    retval = send_data(sock, sdata, &length);
     if (retval < 0) { /* エラー */
         memfree((void **)&expr, (void **)&sdata, NULL);
         return true;
@@ -329,7 +330,7 @@ read_sock(int sock)
     /* ヘッダ受信 */
     length = sizeof(struct header);
     (void)memset(&hd, 0, length);
-    retval = recv_data(sock, &hd, length);
+    retval = recv_data(sock, &hd, &length);
     if (retval < 0) /* エラー */
         return false;
     dbglog("recv_data=%d, hd=%p, length=%u",

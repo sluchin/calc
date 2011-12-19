@@ -221,7 +221,7 @@ server_proc(void *arg)
         /* ヘッダ受信 */
         length = sizeof(struct header);
         (void)memset(&hd, 0, length);
-        retval = recv_data(acc, &hd, length);
+        retval = recv_data(acc, &hd, &length);
         if (retval < 0) /* エラー */
             break;
         dbglog("recv_data=%d, hd=%p, length=%u, hd.length=%d",
@@ -294,7 +294,7 @@ server_proc(void *arg)
             outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
         stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
 
-        retval = send_data(acc, sdata, length);
+        retval = send_data(acc, sdata, &length);
         if (retval < 0) { /* エラー */
             destroy_calc(tsd);
             memfree((void **)&expr, (void **)&sdata, NULL);

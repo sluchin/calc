@@ -28,11 +28,9 @@
 
 #include "stdbool.h" /* bool */
 
-int open_file_seek_end(const char *path);
-int pipe_fd(const int fd);
-int unix_sock(const char *path);
-int close_fd(const int fd);
-int server_loop(const int fd, char *buf, const size_t size);
+//int pipe_fd(const int fd);
+//int close_fd(const int fd);
+//int server_loop(const int fd, char *buf, const size_t size);
 
 #endif /* _TEST_SERVER_H_ */
 

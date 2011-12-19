@@ -43,10 +43,10 @@
 #include "option.h"
 
 /* 外部変数 */
-bool g_gflag = false;              /**< gオプションフラグ */
-bool g_tflag = false;              /**< tオプションフラグ */
-char g_host_name[HOST_SIZE] = {0}; /**< IPアドレスまたはホスト名 */
-char g_port_no[PORT_SIZE] = {0};   /**< ポート番号またはサービス名 */
+bool g_gflag = false;             /**< gオプションフラグ */
+bool g_tflag = false;             /**< tオプションフラグ */
+char g_hostname[HOST_SIZE] = {0}; /**< IPアドレスまたはホスト名 */
+char g_portno[PORT_SIZE] = {0};   /**< ポート番号またはサービス名 */
 
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
@@ -87,12 +87,12 @@ parse_args(int argc, char *argv[])
     dbglog("start");
 
     /* デフォルトのIPアドレスを設定 */
-    (void)memset(g_host_name, 0, sizeof(g_host_name));
-    (void)strncpy(g_host_name, DEFAULT_IPADDR, sizeof(g_host_name));
+    (void)memset(g_hostname, 0, sizeof(g_hostname));
+    (void)strncpy(g_hostname, DEFAULT_IPADDR, sizeof(g_hostname));
 
     /* デフォルトのポート番号を設定 */
-    (void)memset(g_port_no, 0, sizeof(g_port_no));
-    (void)strncpy(g_port_no, DEFAULT_PORTNO, sizeof(g_port_no));
+    (void)memset(g_portno, 0, sizeof(g_portno));
+    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno));
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
@@ -102,9 +102,9 @@ parse_args(int argc, char *argv[])
                 outlog("opt=%c, optarg=%s", opt, optarg);
                 exit(EXIT_FAILURE);
             }
-            if (strlen(optarg) < sizeof(g_host_name)) {
-                (void)memset(g_host_name, 0, sizeof(g_host_name));
-                (void)strncpy(g_host_name, optarg, sizeof(g_host_name));
+            if (strlen(optarg) < sizeof(g_hostname)) {
+                (void)memset(g_hostname, 0, sizeof(g_hostname));
+                (void)strncpy(g_hostname, optarg, sizeof(g_hostname));
             } else {
                 print_help(basename(argv[0]));
                 exit(EXIT_FAILURE);
@@ -115,9 +115,9 @@ parse_args(int argc, char *argv[])
                 outlog("opt=%c, optarg=%s", opt, optarg);
                 exit(EXIT_FAILURE);
             }
-            if (strlen(optarg) < sizeof(g_port_no)) {
-                (void)memset(g_port_no, 0, sizeof(g_port_no));
-                (void)strncpy(g_port_no, optarg, sizeof(g_port_no));
+            if (strlen(optarg) < sizeof(g_portno)) {
+                (void)memset(g_portno, 0, sizeof(g_portno));
+                (void)strncpy(g_portno, optarg, sizeof(g_portno));
             } else {
                 print_help(basename(argv[0]));
                 exit(EXIT_FAILURE);

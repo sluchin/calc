@@ -29,7 +29,7 @@
 #include <ctype.h>      /* isdigit */
 #include <sys/types.h>  /* send recv */
 #include <sys/socket.h> /* send recv */
-#include <arpa/inet.h>  /* inet_aton */
+#include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
 #include <fcntl.h>      /* fcntl */
@@ -41,9 +41,9 @@
 /**
  * ホスト名設定
  *
- * @param[in,out] addr sockaddr_in構造体
- * @param[in,out] h_addr in_addr構造体
- * @param[in] host ホスト名
+ * @param[out] addr sockaddr_in構造体
+ * @param[out] h_addr in_addr構造体
+ * @param[in] host ホスト名またはIPアドレス
  * @retval EX_NG エラー
  */
 int
@@ -72,12 +72,12 @@ set_hostname(struct sockaddr_in *addr,
         /* ホスト名を設定 */
         (void)memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
                      hp->h_length);
-    } else {
-        /* IPアドレスを設定 */
-        (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
     }
 
-    dbglog("h_addr=%p, inet_nta(h_addr)=%s", &h_addr, inet_ntoa(h_addr));
+    /* IPアドレスを設定 */
+    (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
+
+    dbglog("h_addr=%p, inet_ntoa(h_addr)=%s", &h_addr, inet_ntoa(h_addr));
 
     return EX_OK;
 }
@@ -86,7 +86,7 @@ set_hostname(struct sockaddr_in *addr,
  * ポート番号設定
  *
  * @param[in,out] addr sockaddr_in構造体
- * @param[in] port ポート番号
+ * @param[in] port ポート番号またはサービス名
  * @retval EX_NG エラー
  */
 int
@@ -108,8 +108,8 @@ set_port(struct sockaddr_in *addr, const char *port)
             outlog("portno=%d", portno);
             return EX_NG;
         }
-        dbglog("portno=%d", htons(portno));
-        addr->sin_port = htons(portno);
+        dbglog("portno=%u", htons((uint16_t)portno));
+        addr->sin_port = (u_short)htons((uint16_t)portno);
     } else {
         sp = getservbyname(port, "tcp");
         if (!sp) {
@@ -118,9 +118,7 @@ set_port(struct sockaddr_in *addr, const char *port)
         }
         addr->sin_port = sp->s_port;
     }
-
-    dbglog("sp=%p, addr->sin_port=%d", sp, ntohs(addr->sin_port));
-
+    dbglog("sp=%p, addr->sin_port=%u", sp, ntohs((uint16_t)addr->sin_port));
     return EX_OK;
 }
 
@@ -134,18 +132,36 @@ set_port(struct sockaddr_in *addr, const char *port)
 int
 set_block(int fd, blockmode mode)
 {
-    int flags = 0; /* fcntl戻り値 */
+    int flags = 0;  /* fcntl戻り値(F_GETFL) */
+    int retval = 0; /* fcntl戻り値(F_SETFL) */
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        outlog("fcntl=%d", flags);
+        outlog("fcntl=0x%x", flags);
         return EX_NG;
     }
-    if (mode == NONBLOCK) /* ノンブロッキング */
-        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    else if (mode == BLOCKING) /* ブロッキング */
-        fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+    dbglog("fcntl=0x%x", flags);
 
+    if (mode == NONBLOCK) { /* ノンブロッキング */
+        retval = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        if (retval < 0)
+            outlog("fcntl=%d", retval);
+    } else if (mode == BLOCKING) { /* ブロッキング */
+        retval = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+        if (retval < 0)
+            outlog("fcntl=%d", retval);
+    } else { /* no mode */
+        outlog("mode=%d", mode);
+        return EX_NG;
+    }
+
+#ifdef _DEBUG
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        outlog("fcntl=0x%x", flags);
+#endif /* _DEBUG */
+
+    dbglog("fcntl=0x%x", flags);
     return EX_OK;
 }
 
@@ -154,23 +170,39 @@ set_block(int fd, blockmode mode)
  *
  * @param[in] sock ソケット
  * @param[in] sdata データ
- * @param[in] length データ長
+ * @param[in,out] length データ長
  * @retval EX_NG エラー
  */
 int
-send_data(const int sock, const void *sdata, const size_t length)
+send_data(const int sock, const void *sdata, size_t *length)
 {
-    ssize_t len = 0;   /* sendの戻り値 */
+    ssize_t len = 0;         /* send戻り値 */
+    size_t left = 0;         /* 残りのバイト数 */
+    const uchar *ptr = NULL; /* ポインタ */
 
-    outlog("start: sdata=%p, length=%u", sdata, length);
+    outlog("start: sdata=%p, length=%u", sdata, *length);
 
-    len = send(sock, sdata, length, 0);
-    if (len < 0) {
-        outlog("send=%d", len);
-        return EX_NG;
+    ptr = (uchar *)sdata;
+    left = *length;
+    while (left > 0) {
+        len = send(sock, sdata, *length, 0);
+        if (len <= 0) {
+            if (errno == EINTR ||
+                errno == EAGAIN || errno == EWOULDBLOCK)
+                len = 0;
+            else
+                goto error_handler;
+        }
+        left -= len;
+        ptr += len;
     }
-    dbglog("send=%d", len);
+    dbglog("send=%d, ptr=%p, left=%d", len, ptr, left);
     return EX_OK;
+
+error_handler:
+    outlog("send=%d, ptr=%p, left=%d", len, ptr, left);
+    *length -= left;
+    return EX_NG;
 }
 
 /**
@@ -178,38 +210,46 @@ send_data(const int sock, const void *sdata, const size_t length)
  *
  * @param[in] sock ソケット
  * @param[out] rdata データ
- * @param[in] length データ長
+ * @param[in,out] length データ長
  * @return 受信したデータ長
  * @retval EX_NG エラー
  */
 int
-recv_data(const int sock, void *rdata, const size_t length)
+recv_data(const int sock, void *rdata, size_t *length)
 {
-    ssize_t len = 0;   /* recvの戻り値 */
-    int rlen = 0;      /* 受信した長さ */
-    int left = length; /* 残りの長さ */
+    ssize_t len = 0;   /* recv戻り値 */
+    size_t left = 0;   /* 残りのバイト数 */
+    uchar *ptr = NULL; /* ポインタ */
 
     outlog("start: rdata=%p", rdata);
 
+    ptr = (uchar *)rdata;
+    left = *length;
     while (left > 0) {
-        len = recv(sock, rdata + rlen, left, 0);
-        dbglog("recv=%d, rlen=%d, left=%d", len, rlen, left);
+        len = recv(sock, ptr, left, 0);
+        dbglog("recv=%d, ptr=%p, left=%d", len, ptr, left);
         if (len < 0) { /* エラー */
-            if (errno != EINTR && errno != EAGAIN) {
-                outlog("recv=%d, rlen=%d, left=%d", len, rlen, left);
-                return EX_NG;
-            }
+            if (errno == EINTR &&
+                errno == EAGAIN && errno == EWOULDBLOCK)
+                len = 0;
+            else
+                goto error_handler;
         } else if (len == 0) { /* ソケットが切断された */
-            outlog("%s recv=%d, rlen=%d, left=%d",
-                   "The socket is not connected.", len, rlen, left);
-            return EX_NG;
+            outlog("The socket is not connected.");
+            goto error_handler;
         } else { /* 正常時 */
-            rlen += len;
             left -= len;
+            ptr += len;
         }
     }
-    dbglog("recv=%d, rlen=%d, left=%d", len, rlen, left);
-    return rlen;
+    dbglog("recv=%d, ptr=%p, left=%d", len, ptr, left);
+    *length -= left;
+    return EX_OK;
+
+error_handler:
+    outlog("recv=%d, ptr=%p, left=%d", len, ptr, left);
+    *length -= left;
+    return EX_NG;
 }
 
 /**
@@ -220,29 +260,33 @@ recv_data(const int sock, void *rdata, const size_t length)
  * @param[in] sock ソケット
  * @param[in,out] length データ長
  * @retval NULL エラー
+ * @return 受信されたデータポインタ
  */
 void *
 recv_data_new(const int sock, size_t *length)
 {
-    void *rdata = NULL; /* 受信データ */
+    int retval = 0;       /* 戻り値 */
+    size_t len = *length; /* バイト数 */
+    void *rdata = NULL;   /* 受信データ */
 
     dbglog("start: rdata=%p", rdata);
 
     /* メモリ確保 */
-    rdata = (uchar *)malloc(*length * sizeof(uchar));
+    rdata = malloc(len * sizeof(uchar));
     if (!rdata) {
         outlog("malloc=%p", rdata);
         return NULL;
     }
-    (void)memset(rdata, 0, *length);
+    (void)memset(rdata, 0, len);
 
     /* データ受信 */
-    *length = recv_data(sock, rdata, *length);
-    if (*length < 0) { /* エラー */
+    retval = recv_data(sock, rdata, &len);
+    if (retval < 0) { /* エラー */
         memfree((void **)&rdata, NULL);
         return NULL;
     }
 
+    *length = len; /* 受信されたバイト数を設定 */
     return rdata;
 }
 
@@ -250,18 +294,21 @@ recv_data_new(const int sock, size_t *length)
  * ソケットクローズ
  *
  * @param[in] sock ソケット
- * @return なし
+ * @retval EX_NG エラー
  */
-void
+int
 close_sock(int *sock) {
 
     int retval = 0; /* 戻り値 */
 
     if (*sock != -1) {
         retval = close(*sock);
-        if (retval < 0)
+        if (retval < 0) {
             outlog("close=%d, sock=%d", retval, *sock);
+            return EX_NG;
+        }
     }
     *sock = -1;
+    return EX_OK;
 }
 

@@ -20,7 +20,8 @@ LINK = $(CC) $(LDFLAGS)
 SERVEROBJ= test_server.o #$(pardir)/log.o
 LOGSOBJ = test_log.so
 LOGOBJ = test_log.o
-#FUNCSOBJ = test_function.so
+NETSOBJ = test_net.so
+NETOBJ = test_net.o
 #ERRORSOBJ = test_error.so
 #CALCOBJ = test_calc.o
 #FUNCOBJ = test_function.o
@@ -32,9 +33,13 @@ CUTTER = /usr/bin/cutter -v v
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LOGSOBJ)
+all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ)
 
 $(LOGSOBJ): $(LOGOBJ) $(SERVEROBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
+$(NETSOBJ): $(NETOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 

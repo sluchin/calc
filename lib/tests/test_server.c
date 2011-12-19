@@ -70,6 +70,7 @@ static void set_sig_handler(void);
  * @retval EX_ERROR エラー
  * @return ファイルディスクリプタ
  */
+#if 0
 int
 pipe_fd(const int fd)
 {
@@ -96,6 +97,7 @@ pipe_fd(const int fd)
 
     return pfd[PIPE_R];
 }
+#endif
 
 /**
  * ファイル記述子クローズ
@@ -103,6 +105,7 @@ pipe_fd(const int fd)
  * @param[in] fd ファイル記述子
  * @retval EX_NG エラー
  */
+#if 0
 int
 close_fd(const int fd)
 {
@@ -117,6 +120,7 @@ close_fd(const int fd)
     }
     return EX_OK;
 }
+#endif
 
 /**
  * サーバループ

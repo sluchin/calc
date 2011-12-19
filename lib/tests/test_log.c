@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2011-11-19 higashi 新規作成
- * @version \$Id$
+ * @version \$Id
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
@@ -26,15 +26,21 @@
 #include <stdio.h>  /* snprintf tmpnam */
 #include <unistd.h> /* STDERR_FILENO */
 #include <errno.h>  /* errno */
+#include <signal.h> /* signal */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
 #include "log.h"
 #include "net.h"
-#include "test_server.h"
 
-#define LOG_PATH     "/var/log/syslog"
 #define MAX_BUF_SIZE 2048
+
+/** パイプ */
+enum {
+    PIPE_R = 0, /**< リード */
+    PIPE_W,     /**< ライト */
+    MAX_PIPE    /**< パイプ数 */
+};
 
 /* プロトタイプ */
 /** system_log() 関数テスト */
@@ -53,13 +59,20 @@ void test_dump_file(void);
 void test_print_trace(void);
 
 /* 内部変数 */
-static char dump[0xFF + 1]; /**< ダンプデータ */
+static char dump[0xFF + 1];     /**< ダンプデータ */
+static const int EX_ERROR = -1; /**< エラー戻り値 */
 
 /* 内部関数 */
 /** 標準エラー出力用文字列設定 */
 static void set_print_hex(char *data);
 /** シスログ出力用文字列設定 */
 static void set_print_hex_sys(char *data, const char *prefix);
+/** リダイレクト */
+static int pipe_fd(const int fd);
+/** ファイルディスクリプタクローズ */
+static int close_fd(int *fd);
+/** シグナル設定 */
+static void set_sig_handler(void);
 
 /** ダンプ表示文字列 */
 const char *print_hex[] = {
@@ -88,11 +101,14 @@ const char *print_hex[] = {
  */
 void cut_startup(void)
 {
-    int i;
-    char data = 0x00;
+    set_sig_handler();
+
+    char hex = 0x00; /* 16進数 */
     (void)memset(dump, 0, sizeof(dump));
+
+    uint i;
     for (i = 0; i < sizeof(dump); i++) {
-        dump[i] = data++;
+        dump[i] = hex++;
     }
 }
 
@@ -121,18 +137,17 @@ test_system_log(void)
     system_log(LOG_INFO, "programname",
                "filename", 15, "function", "%s", "test");
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
-
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -163,9 +178,9 @@ test_system_dbg_log(void)
     system_dbg_log(LOG_INFO, "programname",
                    "filename", 15, "function", "%s", "test");
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
 
@@ -174,7 +189,7 @@ test_system_dbg_log(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -204,9 +219,9 @@ test_stderr_log(void)
 
     stderr_log("programname", "filename", 15, "function", "%s", "test");
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
 
@@ -215,7 +230,7 @@ test_stderr_log(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -244,9 +259,9 @@ test_dump_log(void)
     result_ok = dump_log(dump, sizeof(dump), "%s[%d]: %s(%s)",
                          "filename", 15, "function", "test");
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
 
@@ -270,7 +285,7 @@ test_dump_log(void)
     cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -303,9 +318,9 @@ test_dump_sys(void)
     result_ok = dump_sys(LOG_INFO, "programname", "filename", 15,
                          "function", dump, sizeof(dump), "%s", "test");
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
 
@@ -317,13 +332,13 @@ test_dump_sys(void)
     cut_assert_equal_int(EX_OK, result_ok, cut_message("return value"));
 
     /* 異常系 */
-    result_ok = dump_log(NULL, 0, "%s[%d]: %s(%s)",
-                         "filename", 15, "function", "test");
+    result_ok = dump_sys(LOG_INFO, "programname", "filename", 15,
+                         "function", NULL, 0, "%s", "test");
 
     cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -392,7 +407,8 @@ error_handler:
 /**
  * print_trace() 関数テスト
  *
- * @return なし */
+ * @return なし
+ */
 void
 test_print_trace(void)
 {
@@ -412,9 +428,9 @@ test_print_trace(void)
 
     print_trace();
 
-    retval = server_loop(fd, actual, sizeof(actual));
+    retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("server_loop=%d(%d)", fd, errno);
+        cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
 
@@ -423,7 +439,7 @@ test_print_trace(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(fd);
+    retval = close_fd(&fd);
     if (retval < 0)
         cut_notify("close_fd=%d(%d)", retval, errno);
 }
@@ -448,6 +464,7 @@ set_print_hex(char *buf)
         strncpy(buf + total, "\n", strlen("\n"));
         total += strlen("\n");
     }
+    strncpy(buf + total, "\n", strlen("\n"));
 }
 
 /**
@@ -475,5 +492,83 @@ set_print_hex_sys(char *buf, const char *prefix)
         total += strlen("\\n");
     }
     *(buf + total - strlen("\\n")) = '\0'; /* 改行削除 */
+}
+
+/**
+ * リダイレクト
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @retval EX_ERROR エラー
+ * @return ファイルディスクリプタ
+ */
+static int
+pipe_fd(const int fd)
+{
+    int pfd[MAX_PIPE]; /* pipe */
+    int retval = 0;    /* 戻り値 */
+
+    retval = pipe(pfd);
+    if (retval < 0) {
+        outlog("pipe=%d", retval);
+        return EX_ERROR;
+    }
+
+    retval = dup2(pfd[PIPE_W], fd);
+    if (retval < 0) {
+        outlog("dup2=%d", retval);
+        return EX_ERROR;
+    }
+
+    retval = close(pfd[PIPE_W]);
+    if (retval < 0) {
+        outlog("close=%d, fd=%d", retval, fd);
+        return EX_ERROR;
+    }
+    return pfd[PIPE_R];
+}
+
+/**
+ * ファイルディスクリプタクローズ
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @retval EX_NG エラー
+ */
+static int
+close_fd(int *fd)
+{
+    int retval = 0; /* 戻り値 */
+
+    dbglog("start: fd=%d", *fd);
+
+    retval = close(*fd);
+    if (retval < 0) {
+        outlog("close=%d, fd=%d", retval, *fd);
+        return EX_NG;
+    }
+    *fd = -1;
+    return EX_OK;
+}
+
+/**
+ * シグナル設定
+ *
+ * @return なし
+ */
+static void
+set_sig_handler(void)
+{
+    /* シグナル無視 */
+    if (signal(SIGINT, SIG_IGN) < 0)
+        outlog("SIGINT");
+    if (signal(SIGTERM, SIG_IGN) < 0)
+        outlog("SIGTERM");
+    if (signal(SIGQUIT, SIG_IGN) < 0)
+        outlog("SIGQUIT");
+    if (signal(SIGHUP, SIG_IGN) < 0)
+        outlog("SIGHUP");
+    if (signal(SIGCHLD, SIG_IGN) < 0)
+        outlog("SIGCHLD");
+    if (signal(SIGALRM, SIG_IGN) < 0)
+        outlog("SIGALRM");
 }
 

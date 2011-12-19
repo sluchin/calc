@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     parse_args(argc, argv);
 
     /* ソケット接続 */
-    sockfd = connect_sock(g_host_name, g_port_no);
+    sockfd = connect_sock(g_hostname, g_portno);
     if (sockfd < 0) {
         (void)fprintf(stderr, "connect error\n");
         return EXIT_FAILURE;
