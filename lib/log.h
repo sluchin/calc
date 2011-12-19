@@ -32,8 +32,8 @@
 extern char *progname; /* プログラム名 */
 
 #define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       LOG_INFO, LOG_PID, progname, \
-                      __FILE__, __LINE__, __FUNCTION__
+#define LOGARGS       LOG_INFO, LOG_PID, progname,      \
+        __FILE__, __LINE__, __FUNCTION__
 
 /* エラー時ログメッセージ出力 */
 #define outlog(fmt, ...)        system_log(LOGARGS, fmt, ## __VA_ARGS__)

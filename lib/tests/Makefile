@@ -22,18 +22,14 @@ LOGSOBJ = test_log.so
 LOGOBJ = test_log.o
 NETSOBJ = test_net.so
 NETOBJ = test_net.o
-#ERRORSOBJ = test_error.so
-#CALCOBJ = test_calc.o
-#FUNCOBJ = test_function.o
-#ERROROBJ = test_error.o
-#COMMONOBJ = test_common.o
-#PROGRAM = server
+DATASOBJ = test_data.so
+DATAOBJ = test_data.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ)
+all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ)
 
 $(LOGSOBJ): $(LOGOBJ) $(SERVEROBJ)
 	@$(RM) $@
@@ -43,18 +39,9 @@ $(NETSOBJ): $(NETOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-#
-#$(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-#
-#$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-
-#$(PROGRAM): $(OBJECTS)
-#	@$(RM) $@
-#	$(LINK) -o $@ $(LIBS) $^
+$(DATASOBJ): $(DATAOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<

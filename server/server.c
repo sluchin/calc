@@ -201,6 +201,7 @@ static void *
 server_proc(void *arg)
 {
     size_t length = 0;                /* 長さ */
+    ssize_t slen = 0;                 /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
     int retval = 0;                   /* 戻り値 */
     ushort cs = 0;                    /* チェックサム */
@@ -224,11 +225,11 @@ server_proc(void *arg)
         retval = recv_data(acc, &hd, &length);
         if (retval < 0) /* エラー */
             break;
-        dbglog("recv_data=%d, hd=%p, length=%u, hd.length=%d",
+        dbglog("recv_data=%d, hd=%p, length=%zu, hd.length=%zu",
                retval, &hd, length, hd.length);
         if (g_gflag)
-            outdump(&hd, length, "hd=%p, length=%u", &hd, length);
-        stddump(&hd, length, "hd=%p, length=%u", &hd, length);
+            outdump(&hd, length, "hd=%p, length=%zu", &hd, length);
+        stddump(&hd, length, "hd=%p, length=%zu", &hd, length);
 
         length = hd.length; /* データ長を保持 */
 
@@ -241,11 +242,11 @@ server_proc(void *arg)
                 continue;
         }
 
-        dbglog("expr=%p, length=%u", expr, length);
+        dbglog("expr=%p, length=%zu", expr, length);
 
         if (g_gflag)
-            outdump(expr, length, "expr%p, length=%u", expr, length);
-        stddump(expr, length, "expr=%p, length=%u", expr, length);
+            outdump(expr, length, "expr%p, length=%zu", expr, length);
+        stddump(expr, length, "expr=%p, length=%zu", expr, length);
 
         /* チェックサム */
         cs = in_cksum((ushort *)expr, length);
@@ -279,28 +280,28 @@ server_proc(void *arg)
 
         length = strlen((char *)tsd->result) + 1; /* 文字列長保持 */
         dbgdump(tsd->result, length,
-                "result=%p, length=%u", tsd->result, length);
+                "result=%p, length=%zu", tsd->result, length);
 
         /* データ送信 */
-        sdata = set_server_data(sdata, tsd->result, length);
+        slen = set_server_data(&sdata, tsd->result, length);
         if (!sdata) {
             destroy_calc(tsd);
             memfree((void **)&expr, NULL);
             break;
         }
-        length += sizeof(struct header);
+        dbglog("slen=%zd", slen);
 
         if (g_gflag)
-            outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
-        stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
+            outdump(sdata, length, "sdata=%p, length=%zd", sdata, slen);
+        stddump(sdata, length, "sdata=%p, length=%zd", sdata, slen);
 
-        retval = send_data(acc, sdata, &length);
+        retval = send_data(acc, sdata, (size_t *)&slen);
         if (retval < 0) { /* エラー */
             destroy_calc(tsd);
             memfree((void **)&expr, (void **)&sdata, NULL);
             break;
         }
-        dbglog("send_data%d, sdata=%p, length=%u", retval, sdata, length);
+        dbglog("send_data%d, sdata=%p, length=%zu", retval, sdata, length);
 
         destroy_calc(tsd);
         memfree((void **)&expr, (void **)&sdata, NULL);

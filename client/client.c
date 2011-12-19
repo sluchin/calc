@@ -221,6 +221,7 @@ read_stdin(int sock)
 {
     int retval = 0;                   /* 戻り値 */
     size_t length = 0;                /* 長さ */
+    ssize_t slen = 0;                 /* 送信するバイト数 */
     struct client_data *sdata = NULL; /* 送信データ構造体 */
     uchar *expr = NULL;               /* バッファ */
 #ifdef HAVE_READLINE
@@ -268,26 +269,25 @@ read_stdin(int sock)
     }
 
     length = strlen((char *)expr) + 1;
-    dbgdump(expr, length, "expr=%u", length);
+    dbgdump(expr, length, "expr=%zu", length);
 
     if (g_tflag)
         start_timer(&start_time);
 
     /* データ設定 */
-    sdata = set_client_data(sdata, expr, length);
+    slen = set_client_data(&sdata, expr, length);
     if (!sdata) { /* メモリ確保できない */
         memfree((void **)&expr, (void **)&sdata, NULL);
         return true;
     }
+    dbglog("slen=%zd", slen);
 
     /* データ送信 */
-    length += sizeof(struct header);
-
     if (g_gflag)
-        outdump(sdata, length, "sdata=%p, length=%u", sdata, length);
-    stddump(sdata, length, "sdata=%p, length=%u", sdata, length);
+        outdump(sdata, slen, "sdata=%p, length=%zd", sdata, slen);
+    stddump(sdata, slen, "sdata=%p, length=%zd", sdata, slen);
 
-    retval = send_data(sock, sdata, &length);
+    retval = send_data(sock, sdata, (size_t *)&slen);
     if (retval < 0) { /* エラー */
         memfree((void **)&expr, (void **)&sdata, NULL);
         return true;
@@ -333,11 +333,11 @@ read_sock(int sock)
     retval = recv_data(sock, &hd, &length);
     if (retval < 0) /* エラー */
         return false;
-    dbglog("recv_data=%d, hd=%p, length=%u",
+    dbglog("recv_data=%d, hd=%p, length=%zu",
            retval, &hd, length);
     if (g_gflag)
-        outdump(&hd, length, "hd=%p, length=%u", &hd, length);
-    stddump(&hd, length, "hd=%p, length=%u", &hd, length);
+        outdump(&hd, length, "hd=%p, length=%zu", &hd, length);
+    stddump(&hd, length, "hd=%p, length=%zu", &hd, length);
 
     length = hd.length; /* データ長を保持 */
 
@@ -350,11 +350,11 @@ read_sock(int sock)
         else /* メモリ不足 */
             return true;
     }
-    dbglog("answer=%p, length=%u", answer, length);
+    dbglog("answer=%p, length=%zu", answer, length);
 
     if (g_gflag)
-        outdump(answer, length, "answer=%p, length=%u", answer, length);
-    stddump(answer, length, "answer=%p, length=%u", answer, length);
+        outdump(answer, length, "answer=%p, length=%zu", answer, length);
+    stddump(answer, length, "answer=%p, length=%zu", answer, length);
 
     cs = in_cksum((ushort *)answer, length);
     if (cs != hd.checksum) { /* チェックサムエラー */

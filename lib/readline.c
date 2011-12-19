@@ -60,7 +60,7 @@ _readline(FILE *fp)
 
         tmp = (uchar *)realloc(line, (total + length + 1) * sizeof(uchar));
         if (!tmp) {
-            outlog("realloc=%p, total+length+1=%u", line, total + length + 1);
+            outlog("realloc=%p, total+length+1=%zu", line, total + length + 1);
             break;
         }
         line = tmp;
@@ -68,9 +68,9 @@ _readline(FILE *fp)
         (void)memcpy(line + total, buf, length + 1);
 
         total += length;
-        dbglog("length=%u, total=%u", length, total);
+        dbglog("length=%zu, total=%zu", length, total);
         dbglog("line=%p: %s", line, line);
-        dbgdump(line, total + 1, "line=%u", total + 1);
+        dbgdump(line, total + 1, "line=%zu", total + 1);
 
     } while ((*(line + total - 1) != '\n') && (*(line + total) != '\0'));
 

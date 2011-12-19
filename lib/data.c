@@ -29,75 +29,76 @@
 #include "log.h"
 #include "data.h"
 
+/* アライメント */
+#define ALIGN2(x)  (((x)+1) & ~1) /**< アライメント 2byte */
+#define ALIGN4(x)  (((x)+3) & ~3) /**< アライメント 4byte */
+#define ALIGN8(x)  (((x)+7) & ~7) /**< アライメント 8byte */
+
 /**
  * クライアントデータ構造体設定
  *
- * @param[in,out] dt 送受信データ構造体
+ * @param[out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ
  * @param[in] len 長さ
- * @return クライアントデータ構造体
+ * @return 構造体バイト数
  */
-struct client_data *
-set_client_data(struct client_data *dt,
-                uchar *buf, const size_t len)
+ssize_t
+set_client_data(struct client_data **dt, uchar *buf, const size_t len)
 {
-    size_t length = 0;
-    size_t padding = 0;
+    size_t length = 0;  /* 構造体バイト数 */
+
+    dbglog("start");
 
     length = sizeof(struct header) + len;
-    padding = length % 4;
-    padding = padding ? 4 - padding : padding;
-    dbglog("length=%u, padding=%d", length, padding);
-    length += padding;
+    length = ALIGN8(length);
+    dbglog("length=%zu", length);
 
-    dt = (struct client_data *)malloc(length);
-    if (!dt) {
-        outlog("malloc=%p", dt);
-        return NULL;
+    (*dt) = (struct client_data *)malloc(length);
+    if (!(*dt)) {
+        outlog("malloc=%p", (*dt));
+        return EX_NG;
     }
-    (void)memset(dt, 0, length);
-    dbglog("dt=%p", dt);
+    (void)memset((*dt), 0, length);
+    dbglog("dt=%p", (*dt));
 
-    dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
-    dt->hd.length = len;
-    (void)memcpy(dt->expression, buf, len);
+    (*dt)->hd.checksum = in_cksum((ushort *)buf, (uint)len);
+    (*dt)->hd.length = len; /* データ長を設定 */
+    (void)memcpy((*dt)->expression, buf, len);
 
-    return dt;
+    return (ssize_t)length;
 }
 
 /**
  * サーバデータ構造体設定
  *
- * @param[in,out] dt 送受信データ構造体
+ * @param[out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ
  * @param[in] len 長さ
- * @return サーバデータ構造体
+ * @return 構造体バイト数
  */
-struct server_data *
-set_server_data(struct server_data *dt,
-                uchar *buf, const size_t len)
+ssize_t
+set_server_data(struct server_data **dt, uchar *buf, const size_t len)
 {
-    size_t length = 0;
-    size_t padding = 0;
+    size_t length = 0;  /* 構造体バイト数 */
+
+    dbglog("start");
 
     length = sizeof(struct header) + len;
-    padding = length % 4;
-    padding = padding ? 4 - padding : padding;
-    dbglog("length=%u, padding=%d", length, padding);
-    length += padding;
+    length = ALIGN8(length);
+    dbglog("length=%zu", length);
 
-    dt = (struct server_data *)malloc(length);
-    if (!dt) {
-        outlog("malloc=%p", dt);
-        return NULL;
+    (*dt) = (struct server_data *)malloc(length);
+    if (!(*dt)) {
+        outlog("malloc=%p", (*dt));
+        return EX_NG;
     }
-    (void)memset(dt, 0, length);
-    dbglog("dt=%p", dt);
+    (void)memset((*dt), 0, length);
+    dbglog("dt=%p", (*dt));
 
-    dt->hd.checksum = in_cksum((ushort *)buf, (uint)len);
-    dt->hd.length = len;
-    (void)memcpy(dt->answer, buf, len);
+    (*dt)->hd.checksum = in_cksum((ushort *)buf, (uint)len);
+    (*dt)->hd.length = len; /* データ長を設定 */
+    (void)memcpy((*dt)->answer, buf, len);
 
-    return dt;
+    return (ssize_t)length;
 }
 

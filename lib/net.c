@@ -67,7 +67,7 @@ set_hostname(struct sockaddr_in *addr,
             outlog("gethostbyname=%p, host=%s", hp, host);
             return EX_NG;
         }
-        dbglog("h_addr=%p, h_addr=%u h_length=%d", &h_addr,
+        dbglog("h_addr=%p, h_addr=%zu h_length=%d", &h_addr,
                sizeof(h_addr), hp->h_length);
         /* ホスト名を設定 */
         (void)memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
@@ -180,12 +180,13 @@ send_data(const int sock, const void *sdata, size_t *length)
     size_t left = 0;         /* 残りのバイト数 */
     const uchar *ptr = NULL; /* ポインタ */
 
-    outlog("start: sdata=%p, length=%u", sdata, *length);
+    outlog("start: sdata=%p, length=%zu", sdata, *length);
 
     ptr = (uchar *)sdata;
     left = *length;
     while (left > 0) {
         len = send(sock, sdata, *length, 0);
+        dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0) {
             if (errno == EINTR ||
                 errno == EAGAIN || errno == EWOULDBLOCK)
@@ -196,11 +197,11 @@ send_data(const int sock, const void *sdata, size_t *length)
         left -= len;
         ptr += len;
     }
-    dbglog("send=%d, ptr=%p, left=%d", len, ptr, left);
+    dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
     return EX_OK;
 
 error_handler:
-    outlog("send=%d, ptr=%p, left=%d", len, ptr, left);
+    outlog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
     return EX_NG;
 }
@@ -227,7 +228,7 @@ recv_data(const int sock, void *rdata, size_t *length)
     left = *length;
     while (left > 0) {
         len = recv(sock, ptr, left, 0);
-        dbglog("recv=%d, ptr=%p, left=%d", len, ptr, left);
+        dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0) { /* エラー */
             if (errno == EINTR &&
                 errno == EAGAIN && errno == EWOULDBLOCK)
@@ -242,12 +243,12 @@ recv_data(const int sock, void *rdata, size_t *length)
             ptr += len;
         }
     }
-    dbglog("recv=%d, ptr=%p, left=%d", len, ptr, left);
+    dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
     return EX_OK;
 
 error_handler:
-    outlog("recv=%d, ptr=%p, left=%d", len, ptr, left);
+    outlog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
     return EX_NG;
 }

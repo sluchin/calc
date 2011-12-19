@@ -32,7 +32,7 @@
 struct header {
     size_t length;   /**< データ長 */
     ushort checksum; /**< チェックサム */
-    ushort pack;     /**< パッキング */
+    char padding[2]; /**< パディング */
 };
 
 /** クライアントデータ構造体 */
@@ -48,12 +48,12 @@ struct server_data {
 };
 
 /** クライアントデータ構造体設定 */
-struct client_data *set_client_data(struct client_data *dt,
-                                    uchar *buf, const size_t len);
+ssize_t set_client_data(struct client_data **dt,
+                        uchar *buf, const size_t len);
 
 /** サーバデータ構造体設定 */
-struct server_data *set_server_data(struct server_data *dt,
-                                    uchar *buf, const size_t len);
+ssize_t set_server_data(struct server_data **dt,
+                        uchar *buf, const size_t len);
 
 #endif /* _DATA_H_ */
 
