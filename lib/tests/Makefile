@@ -17,29 +17,35 @@ LIBS = -lcutter -lcalcutil -lpthread
 TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
-SERVEROBJ= test_server.o #$(pardir)/log.o
 LOGSOBJ = test_log.so
 LOGOBJ = test_log.o
 NETSOBJ = test_net.so
 NETOBJ = test_net.o
 DATASOBJ = test_data.so
 DATAOBJ = test_data.o
+READSOBJ = test_readline.so
+READOBJ = test_readline.o
+COMMONOBJ = test_common.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ)
+all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) $(READSOBJ)
 
-$(LOGSOBJ): $(LOGOBJ) $(SERVEROBJ)
+$(LOGSOBJ): $(LOGOBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-$(NETSOBJ): $(NETOBJ)
+$(NETSOBJ): $(NETOBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(DATASOBJ): $(DATAOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
+$(READSOBJ): $(READOBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 

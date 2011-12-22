@@ -1,9 +1,9 @@
 /**
- * @file lib/tests/test_server.h
- * @brief ログ監視
+ * @file  lib/tests/test_common.h
+ * @brief 単体テスト
  *
  * @author higashi
- * @date 2011-11-19 higashi 新規作成
+ * @date 2011-12-20 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
@@ -23,14 +23,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TEST_SERVER_H_
-#define _TEST_SERVER_H_
+#ifndef _TEST_COMMON_H_
+#define _TEST_COMMON_H_
 
-#include "stdbool.h" /* bool */
+/** 受信 */
+ssize_t readn(int fd, void *vptr, size_t n);
+/** 送信 */
+ssize_t writen(int fd, const void *vptr, size_t n);
+/** ファイルディスクリプタクローズ */
+void close_fd(int *fd, ...);
 
-//int pipe_fd(const int fd);
-//int close_fd(const int fd);
-//int server_loop(const int fd, char *buf, const size_t size);
-
-#endif /* _TEST_SERVER_H_ */
+#endif /* _TEST_COMMON_H_ */
 

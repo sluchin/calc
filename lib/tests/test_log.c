@@ -32,6 +32,7 @@
 #include "def.h"
 #include "log.h"
 #include "net.h"
+#include "test_common.h"
 
 #define MAX_BUF_SIZE 2048
 
@@ -69,8 +70,6 @@ static void set_print_hex(char *data);
 static void set_print_hex_sys(char *data, const char *prefix);
 /** リダイレクト */
 static int pipe_fd(const int fd);
-/** ファイルディスクリプタクローズ */
-static int close_fd(int *fd);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -147,9 +146,7 @@ test_system_log(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -189,9 +186,7 @@ test_system_dbg_log(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -230,9 +225,7 @@ test_stderr_log(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -285,9 +278,7 @@ test_dump_log(void)
     cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -340,9 +331,7 @@ test_dump_sys(void)
     cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -441,9 +430,7 @@ test_print_trace(void)
                                  expected, actual));
 
 error_handler:
-    retval = close_fd(&fd);
-    if (retval < 0)
-        cut_notify("close_fd=%d(%d)", retval, errno);
+    close_fd(&fd, NULL);
 }
 
 /**
@@ -527,28 +514,6 @@ pipe_fd(const int fd)
         return EX_ERROR;
     }
     return pfd[PIPE_R];
-}
-
-/**
- * ファイルディスクリプタクローズ
- *
- * @param[in] fd ファイルディスクリプタ
- * @retval EX_NG エラー
- */
-static int
-close_fd(int *fd)
-{
-    int retval = 0; /* 戻り値 */
-
-    dbglog("start: fd=%d", *fd);
-
-    retval = close(*fd);
-    if (retval < 0) {
-        outlog("close=%d, fd=%d", retval, *fd);
-        return EX_NG;
-    }
-    *fd = -1;
-    return EX_OK;
 }
 
 /**

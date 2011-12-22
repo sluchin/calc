@@ -23,9 +23,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdlib.h>  /* realloc free */
-#include <string.h>  /* memcpy memset */
-#include <errno.h>   /* errno */
+#include <stdlib.h> /* realloc free */
+#include <string.h> /* memcpy memset */
+#include <errno.h>  /* errno */
 
 #include "log.h"
 #include "readline.h"
@@ -43,40 +43,50 @@ _readline(FILE *fp)
     char *retval = NULL; /* fgets戻り値 */
     size_t length = 0;   /* 文字列長 */
     size_t total = 0;    /* 文字列長全て */
-    uchar *line = NULL;  /* 文字列 */
-    uchar *tmp = NULL;   /* 一時アドレス */
-    uchar buf[MAXLINE];  /* バッファ */
+    uchar *alloc = NULL; /* reallocバッファ */
+    uchar *tmp = NULL;   /* 一時ポインタ */
+    uchar buf[FGETSBUF]; /* fgetsバッファ */
+
+    /* fgetsのファイルポインタにNULLを渡した場合, crashするかもしれない */
+    if (!fp) {
+        outlog("fp=%p", fp);
+        return NULL;
+    }
 
     do {
         (void)memset(buf, 0, sizeof(buf));
         retval = fgets((char *)buf, sizeof(buf), fp);
-        if (!retval || ferror(fp)) { /* エラー */
+        if (ferror(fp)) { /* エラー */
             outlog("fgets=%p", retval);
             clearerr(fp);
-            break;
+            return NULL;
         }
+        dbglog("fgets=%p, feof=%d", retval, feof(fp));
+        if (!retval || feof(fp))
+            break;
+
         length = strlen((char *)buf);
         dbgdump(buf, length, "buf=%u", length);
 
-        tmp = (uchar *)realloc(line, (total + length + 1) * sizeof(uchar));
+        tmp = (uchar *)realloc(alloc, (total + length + 1) * sizeof(uchar));
         if (!tmp) {
-            outlog("realloc=%p, total+length+1=%zu", line, total + length + 1);
-            break;
+            outlog("realloc=%p, total+length+1=%zu", alloc, total + length + 1);
+            return NULL;
         }
-        line = tmp;
+        alloc = tmp;
 
-        (void)memcpy(line + total, buf, length + 1);
+        (void)memcpy(alloc + total, buf, length + 1);
 
         total += length;
         dbglog("length=%zu, total=%zu", length, total);
-        dbglog("line=%p: %s", line, line);
-        dbgdump(line, total + 1, "line=%zu", total + 1);
+        dbglog("%p alloc=%s", alloc, alloc);
+        dbgdump(alloc, total + 1, "alloc=%zu", total + 1);
 
-    } while ((*(line + total - 1) != '\n') && (*(line + total) != '\0'));
+    } while (*(alloc + total - 1) != '\n');
 
-    if (line && *(line + total - 1) == '\n')
-        *(line + total - 1) = '\0'; /* 改行削除 */
+    if (alloc && *(alloc + total - 1) == '\n')
+        *(alloc + total - 1) = '\0'; /* 改行削除 */
 
-    return line;
+    return alloc;
 }
 

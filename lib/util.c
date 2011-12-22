@@ -46,9 +46,7 @@ memfree(void** ptr, ...)
     va_list ap;        /* va_list */
     void **mem = NULL; /* ポインタ */
 
-    if (!*ptr)
-        return;
-    else
+    if (*ptr)
         free(*ptr);
     *ptr = NULL;
 

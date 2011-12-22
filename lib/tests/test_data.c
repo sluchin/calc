@@ -23,16 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-//#include <stdio.h>     /* tmpnam */
-//#include <unistd.h>    /* dup2 fork STDERR_FILENO */
-//#include <sys/wait.h>  /* waitpid */
-//#include <fcntl.h>     /* open fcntl */
-//#include <arpa/inet.h> /* inet_ntoa */
-//#include <sys/stat.h>  /* chmod */
-//#include <errno.h>     /* errno */
-//#include <pthread.h>   /* pthread */
-#include <stddef.h>    /* offsetof */
-#include <cutter.h>    /* cutter library */
+#include <stddef.h> /* offsetof */
+#include <cutter.h> /* cutter library */
 
 #include "def.h"
 #include "log.h"

@@ -302,12 +302,13 @@ close_sock(int *sock) {
 
     int retval = 0; /* 戻り値 */
 
-    if (*sock != -1) {
-        retval = close(*sock);
-        if (retval < 0) {
-            outlog("close=%d, sock=%d", retval, *sock);
-            return EX_NG;
-        }
+    if (*sock < 0)
+        return EX_OK;
+
+    retval = close(*sock);
+    if (retval < 0) {
+        outlog("close=%d, sock=%d", retval, *sock);
+        return EX_NG;
     }
     *sock = -1;
     return EX_OK;

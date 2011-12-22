@@ -36,6 +36,7 @@
 #include "def.h"
 #include "log.h"
 #include "net.h"
+#include "test_common.h"
 
 #define MAX_BUF_SIZE 2048
 
@@ -56,19 +57,15 @@ void test_recv_data_new(void);
 void test_close_sock(void);
 
 /* 内部変数 */
-static const int EX_ERROR = -1;    /**< エラー戻り値 */
-static char sockfile[L_tmpnam];    /**< ソケットファイル */
-static struct sockaddr_un addr;    /**< sockaddr_un構造体 */
-static socklen_t addrlen = 0;      /**< addr構造体の長さ */
-static char command[] = "do send"; /**< コマンド */
+static const int EX_ERROR = -1;       /**< エラー戻り値 */
+static char sockfile[L_tmpnam] = {0}; /**< ソケットファイル */
+static struct sockaddr_un addr;       /**< sockaddr_un構造体 */
+static socklen_t addrlen = 0;         /**< addr構造体の長さ */
+static char command[] = "do send";    /**< コマンド */
 /** 送信バッファ */
 const char sendbuf[] = "testsdfgdkslkjwelkjlkjkdjkjglkj";
 
 /* 内部関数 */
-/** 受信 */
-static ssize_t readn(int fd, void *vptr, size_t n);
-/** 送信 */
-static ssize_t writen(int fd, const void *vptr, size_t n);
 /** サーバプロセス */
 static void server_proc(int sockfd, char *readbuf, size_t length);
 /** サーバソケット生成 */
@@ -101,9 +98,14 @@ cut_startup(void)
     if (fd < 0) {
         cut_notify("open=%d", fd);
     } else {
-        (void)dup2(fd, STDERR_FILENO);
-        if (fd > 2)
-            (void)close(fd);
+        retval = dup2(fd, STDERR_FILENO);
+        if (retval < 0)
+            cut_notify("dup2=%d", retval);
+        if (fd > 2) {
+            retval = close(fd);
+            if (retval < 0)
+                cut_notify("close=%d", retval);
+        }
     }
 
     /* ソケットファイル文字列設定 */
@@ -133,7 +135,7 @@ test_set_hostname(void)
     /* テストデータ */
     const char *host[] = { "localhost", "127.0.0.1" }; /* ホスト文字列 */
     const char *ipaddr = "127.0.0.1";                  /* アドレス */
-    const char nohost[] = "nohost";                    /* エラー用データ */
+    const char nohost[] = "nohostxhlkjiherlgfsd";      /* エラー用データ */
 
     /* 正常系 */
     uint i;
@@ -477,78 +479,11 @@ test_close_sock(void)
         /* 異常系 */
         retval = close_sock(&csock); /* -1のときはなにもしない */
         cut_assert_equal_int(EX_OK, retval);
-        csock = -2;
-        retval = close_sock(&csock);
-        cut_assert_equal_int(EX_NG, retval);
     }
 
     retval = unlink(sockfile);
     if (retval < 0)
         outlog("unlink=%d(%d)", retval, errno);
-}
-
-/**
- * 受信
- *
- * @param[in] fd ソケット
- * @param[in] vptr 受信バッファ
- * @param[in] n バッファ長さ
- * @return 受信されたバイト数
- */
-static ssize_t
-readn(int fd, void *vptr, size_t n)
-{
-    size_t nleft = 0;  /* 受信する残りのバイト数 */
-    ssize_t nread = 0; /* 受信されたバイト数 */
-    char *ptr = NULL;  /* ポインタ */
-
-    ptr = (char *)vptr;
-    nleft = n;
-    while (nleft > 0) {
-        nread = read(fd, ptr, nleft);
-        if (nread < 0) {
-            if (errno == EINTR)
-                nread = 0;
-            else
-                return EX_ERROR;
-        } else if (nread == 0) {
-            break;
-        }
-        nleft -= nread;
-        ptr += nread;
-    }
-    return n - nleft;
-}
-
-/**
- * 送信
- *
- * @param[in] fd ソケット
- * @param[in] vptr 送信バッファ
- * @param[in] n バッファ長さ
- * @return 送信されたバイト数
- */
-static ssize_t
-writen(int fd, const void *vptr, size_t n)
-{
-    size_t nleft = 0;       /* 送信する残りのバイト数 */
-    ssize_t nwritten = 0;   /* 送信されたバイト数 */
-    const char *ptr = NULL; /* ポインタ */
-
-    ptr = (char *)vptr;
-    nleft = n;
-    while (nleft > 0) {
-        nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) {
-            if (errno == EINTR)
-                nwritten = 0;
-            else
-                return EX_ERROR;
-        }
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    return n;
 }
 
 /**
