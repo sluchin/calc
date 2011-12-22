@@ -43,7 +43,7 @@
 
 #include "timer.h"
 #include "log.h"
-#include "util.h"
+#include "memfree.h"
 #include "data.h"
 #include "option.h"
 #include "func.h"

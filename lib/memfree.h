@@ -1,5 +1,5 @@
 /**
- * @file  lib/util.h
+ * @file  lib/memfree.h
  * @brief ユーティリティ
  *
  * @author higashi
@@ -23,19 +23,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _UTIL_H_
-#define _UTIL_H_
-
-#include <netdb.h>   /* struct sockaddr_in */
-
-#include "def.h"
+#ifndef _MEMFREE_H_
+#define _MEMFREE_H_
 
 /** メモリ解放 */
-//void memfree(const int num, ...);
 void memfree(void **ptr, ...);
 
-/** チェックサム */
-ushort in_cksum(ushort *addr, const size_t len);
-
-#endif /* _UTIL_H_ */
+#endif /* _MEMFREE_H_ */
 

@@ -35,7 +35,7 @@
 #include <fcntl.h>      /* fcntl */
 
 #include "log.h"
-#include "util.h"
+#include "memfree.h"
 #include "net.h"
 
 /**

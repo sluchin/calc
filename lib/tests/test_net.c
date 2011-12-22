@@ -552,6 +552,8 @@ unix_sock_server(void)
 {
     int retval = 0;  /* 戻り値 */
     int sockfd = -1; /* ソケット */
+    /* ファイルの許可 */
+    const mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 
     dbglog("start");
 
@@ -575,7 +577,7 @@ unix_sock_server(void)
         return EX_ERROR;
     }
 
-    retval = chmod(sockfile, 0666);
+    retval = chmod(sockfile, mode);
     if (retval < 0) {
         cut_error("chmod=%d, sockfd=%d(%d)", retval, sockfd, errno);
         return EX_ERROR;

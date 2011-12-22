@@ -31,8 +31,7 @@
 /** ヘッダー構造体 */
 struct header {
     size_t length;   /**< データ長 */
-    ushort checksum; /**< チェックサム */
-    char padding[2]; /**< パディング */
+    char padding[4]; /**< パディング */
 };
 
 /** クライアントデータ構造体 */

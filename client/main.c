@@ -32,7 +32,7 @@
 
 #include "log.h"
 #include "net.h"
-#include "util.h"
+#include "memfree.h"
 #include "option.h"
 #include "client.h"
 

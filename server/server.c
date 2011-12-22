@@ -42,7 +42,7 @@
 #include "log.h"
 #include "data.h"
 #include "net.h"
-#include "util.h"
+#include "memfree.h"
 #include "calc.h"
 #include "option.h"
 #include "server.h"
@@ -204,7 +204,6 @@ server_proc(void *arg)
     ssize_t slen = 0;                 /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
     int retval = 0;                   /* 戻り値 */
-    ushort cs = 0;                    /* チェックサム */
     int acc = -1;                     /* アクセプト */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     uchar *expr = NULL;               /* 受信データ */
@@ -247,14 +246,6 @@ server_proc(void *arg)
         if (g_gflag)
             outdump(expr, length, "expr%p, length=%zu", expr, length);
         stddump(expr, length, "expr=%p, length=%zu", expr, length);
-
-        /* チェックサム */
-        cs = in_cksum((ushort *)expr, length);
-        if (cs != hd.checksum) { /* チェックサムエラー */
-            outlog("checksum error: 0x%x!=0x%x", cs, hd.checksum);
-            memfree((void **)&expr, NULL);
-            break;
-        }
 
         if (!strcmp((char *)expr, "exit") ||
             !strcmp((char *)expr, "quit")) {

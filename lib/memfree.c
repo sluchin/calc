@@ -1,5 +1,5 @@
 /**
- * @file  lib/util.c
+ * @file  lib/memfree.c
  * @brief ユーティリティ
  *
  * @author higashi
@@ -9,9 +9,7 @@
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License as published by * the Free Software Foundation; either version 2 of the License, or * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,7 +25,7 @@
 #include <stdarg.h> /* va_list va_arg */
 
 #include "log.h"
-#include "util.h"
+#include "memfree.h"
 
 /**
  * メモリ解放
@@ -46,6 +44,7 @@ memfree(void** ptr, ...)
     va_list ap;        /* va_list */
     void **mem = NULL; /* ポインタ */
 
+    dbglog("ptr=%p", *ptr);
     if (*ptr)
         free(*ptr);
     *ptr = NULL;
@@ -60,37 +59,5 @@ memfree(void** ptr, ...)
     }
 
     va_end(ap);
-}
-
-/**
- * チェックサム
- *
- * チェックサムの計算をする.
- *
- * @param[in] addr
- * @param[in] len 長さ
- * @return チェックサム値
- */
-ushort
-in_cksum(ushort *addr, const size_t len)
-{
-    int nleft = (int)len;
-    int sum = 0;
-    ushort *w = addr;
-    ushort answer = 0;
-
-    while (nleft > 1) {
-        sum += *w++;
-        nleft -= 2;
-    }
-    if (nleft == 1) {
-        *(uchar *)(&answer) = *(uchar *)w;
-        sum += answer;
-    }
-    sum = (sum >> 16) + (sum & 0xffff);
-    sum += (sum >> 16);
-    answer = ~sum;
-
-    return answer;
 }
 

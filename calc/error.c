@@ -32,7 +32,7 @@
 #include <assert.h> /* assert */
 
 #include "log.h"
-#include "util.h"
+#include "memfree.h"
 #include "error.h"
 
 /** エラーメッセージ文字列構造体 */

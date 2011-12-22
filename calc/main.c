@@ -37,7 +37,7 @@
 #endif /* HAVE_READLINE */
 
 #include "def.h"
-#include "util.h"
+#include "memfree.h"
 #include "data.h"
 #include "option.h"
 #include "log.h"

@@ -1,6 +1,5 @@
 /**
- * @file  lib/data.c
- * @brief 送受信データ構造体
+ * @file  lib/data.c * @brief 送受信データ構造体
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
@@ -23,9 +22,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <unistd.h> /* ssize_t */
 #include <string.h> /* memset memcpy */
 
-#include "util.h"
+#include "memfree.h"
 #include "log.h"
 #include "data.h"
 
@@ -61,7 +61,6 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     (*dt)->hd.length = len; /* データ長を設定 */
     (void)memcpy((*dt)->expression, buf, len);
 
@@ -95,7 +94,6 @@ set_server_data(struct server_data **dt, uchar *buf, const size_t len)
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.checksum = in_cksum((ushort *)buf, (uint)len);
     (*dt)->hd.length = len; /* データ長を設定 */
     (void)memcpy((*dt)->answer, buf, len);
 

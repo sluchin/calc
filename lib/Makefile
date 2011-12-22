@@ -21,7 +21,7 @@ LINK = $(CC) $(CFLAGS)
 LIBRARY = libcalcutil.a
 SHAREDOBJ = libcalcutil.so
 OBJECTS = data.o \
-          util.o \
+          memfree.o \
           net.o \
           readline.o \
           log.o
@@ -46,7 +46,7 @@ $(SHAREDOBJ): $(OBJECTS)
 	$(COMPILE) -c $<
 
 $(OBJECTS): data.h \
-            util.h \
+            memfree.h \
             log.h \
             net.h \
             readline.h \

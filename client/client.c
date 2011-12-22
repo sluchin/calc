@@ -48,7 +48,7 @@
 #include "log.h"
 #include "data.h"
 #include "net.h"
-#include "util.h"
+#include "memfree.h"
 #include "option.h"
 #include "timer.h"
 #include "client.h"
@@ -321,7 +321,6 @@ read_sock(int sock)
 {
     int retval = 0;       /* 戻り値 */
     size_t length = 0;    /* 送信または受信する長さ */
-    ushort cs = 0;        /* チェックサム値 */
     struct header hd;     /* ヘッダ */
     uchar *answer = NULL; /* 受信データ */
 
@@ -355,14 +354,6 @@ read_sock(int sock)
     if (g_gflag)
         outdump(answer, length, "answer=%p, length=%zu", answer, length);
     stddump(answer, length, "answer=%p, length=%zu", answer, length);
-
-    cs = in_cksum((ushort *)answer, length);
-    if (cs != hd.checksum) { /* チェックサムエラー */
-        outlog("checksum error: 0x%x!=0x%x",
-               cs, hd.checksum);
-        memfree((void **)&answer, NULL);
-        return true;
-    }
 
     if (g_tflag)
         print_timer(stop_timer(&start_time));
