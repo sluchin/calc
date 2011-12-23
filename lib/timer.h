@@ -38,20 +38,21 @@
 #include <stdio.h>    /* fprintf stderr */
 #include <sys/time.h> /* timeval */
 
-/**
- * 時刻取得
- *
- * @return 時刻
- */
-inline unsigned long long
-get_time(void)
-{
-    struct timeval tv;
-    struct timezone tz;
+#include "log.h"
 
-    gettimeofday(&tv, &tz);
-    return (((unsigned long long)tv.tv_sec) * 1000000 + tv.tv_usec);
-}
+/** 時間出力 */
+#define                                                         \
+    print_timer(te) {                                           \
+    (void)fprintf(stderr,                                       \
+                  "time of %s: %f[msec]\n", #te, te*1.0e-3);    \
+    }
+
+/** タイマースタート */
+inline void start_timer(unsigned int *start_time);
+/** タイマーストップ */
+inline unsigned int stop_timer(unsigned int *start_time);
+/** 時刻取得 */
+inline unsigned long long get_time(void);
 
 /**
  * タイマースタート
@@ -75,15 +76,26 @@ inline unsigned int
 stop_timer(unsigned int *start_time)
 {
     unsigned int stop_time = (unsigned int)get_time();
-    return ((stop_time >= *start_time) ? (stop_time - *start_time) : stop_time);
+    return (stop_time >= *start_time) ? (stop_time - *start_time) : stop_time;
 }
 
-/** 時間出力 */
-#define                                                         \
-    print_timer(te) {                                           \
-    (void)fprintf(stderr,                                       \
-                  "time of %s:%f[msec]\n", #te, te*1.0e-3);     \
-    }
+/**
+ * 時刻取得
+ *
+ * @return 時刻
+ */
+inline unsigned long long
+get_time(void)
+{
+    struct timeval tv;
+
+    timerclear(&tv);
+
+    if (gettimeofday(&tv, NULL) < 0)
+        outlog("gettimeofday");
+
+    return ((unsigned long long)tv.tv_sec) * 1000000 + tv.tv_usec;
+}
 
 #endif /* _TIMER_H_ */
 

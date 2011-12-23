@@ -97,6 +97,39 @@ writen(int fd, const void *vptr, size_t n)
 }
 
 /**
+ * リダイレクト
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @retval EX_ERROR エラー
+ * @return ファイルディスクリプタ
+ */
+int
+pipe_fd(const int fd)
+{
+    int pfd[MAX_PIPE]; /* pipe */
+    int retval = 0;    /* 戻り値 */
+
+    retval = pipe(pfd);
+    if (retval < 0) {
+        outlog("pipe=%d", retval);
+        return EX_ERROR;
+    }
+
+    retval = dup2(pfd[PIPE_W], fd);
+    if (retval < 0) {
+        outlog("dup2=%d", retval);
+        return EX_ERROR;
+    }
+
+    retval = close(pfd[PIPE_W]);
+    if (retval < 0) {
+        outlog("close=%d, fd=%d", retval, fd);
+        return EX_ERROR;
+    }
+    return pfd[PIPE_R];
+}
+
+/**
  * ファイルディスクリプタクローズ
  *
  * @param[in,out] fd ファイルディスクリプタ

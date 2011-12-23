@@ -39,12 +39,23 @@
 #include "def.h"
 #include "log.h"
 
-/* 内部変数 */
 #define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE  256 /**< 最大メッセージサイズ */
 
+#define SYS(l, log) \
+    syslog(l, "%s[%d]: %s: %s(%d)", \
+    __FILE__, __LINE__, __func__, log, errno);
+
+#define LOG(log) \
+    (void)fprintf(stderr, "%s[%d]: %s: %s(%d)", \
+    __FILE__, __LINE__, __func__, log, errno);
+
 /* 外部変数 */
 char *progname = NULL; /**< プログラム名 */
+
+/* 内部関数 */
+/** 月省略名 */
+static char *strmon(int mon);
 
 /**
  * シスログ出力
@@ -84,15 +95,13 @@ void system_log(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
-               __FILE__, __LINE__, retval, errno);
+        SYS(level, "vsnprintf");
         return;
     }
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
 
     syslog(level, "ppid=%d%s: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "", fname, line, func, message, errsv);
@@ -125,11 +134,9 @@ void system_dbg_log(const int level,
 {
     int errsv = errno;                /* errno退避 */
     int retval = 0;                   /* 戻り値 */
-    struct tm ts;                     /* tm構造体 */
-    struct tm *tsp;                   /* localtime_r戻り値 */
+    struct tm t;                      /* tm構造体 */
     struct timeval tv;                /* timeval構造体 */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
-    char d_buf[sizeof("00")] = {0};   /* 秒格納用バッファ */
     va_list ap;                       /* va_list */
     pthread_t tid = 0;                /* スレッドID */
     /* スレッドID用バッファ
@@ -137,27 +144,19 @@ void system_dbg_log(const int level,
      * 32bit ULONG_MAX: 4294967295UL */
     char t_buf[sizeof(", tid=18446744073709551615")] = {0};
 
+    timerclear(&tv);
+    (void)memset(&t, 0, sizeof(struct tm));
+
     /* シスログオープン */
     openlog(pname, option, SYS_FACILITY);
 
-    retval = gettimeofday (&tv, NULL);
-    if (retval < 0) {
-        syslog(level, "%s[%d]: gettimeofday=%d(%d)",
-               __FILE__, __LINE__, retval, errno);
+    if (gettimeofday(&tv, NULL) < 0) {
+        SYS(level, "gettimeofday");
         return;
     }
 
-    tsp = localtime_r(&tv.tv_sec, &ts);
-    if (!tsp) {
-        syslog(level, "%s[%d]: localtime=%p(%d)",
-               __FILE__, __LINE__, tsp, errno);
-        return;
-    }
-
-    retval = strftime(d_buf, sizeof(d_buf), "%S", &ts);
-    if (!retval) {
-        syslog(level, "%s[%d] strftime=%d(%d)",
-               __FILE__, __LINE__, retval, errno);
+    if (localtime_r(&tv.tv_sec, &t) == NULL) {
+        SYS(level, "localtime_r");
         return;
     }
 
@@ -165,19 +164,17 @@ void system_dbg_log(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
-               __FILE__, __LINE__, retval, errno);
+        SYS(level, "vsnprintf");
         return;
     }
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
 
-    syslog(level, "ppid=%d%s: %s.%ld: %s[%d]: %s(%s): %m(%d)",
+    syslog(level, "ppid=%d%s: %02d.%06ld: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "",
-           d_buf, tv.tv_usec, fname, line, func, message, errsv);
+           t.tm_sec, tv.tv_usec, fname, line, func, message, errsv);
 
     /* シスログクローズ */
     closelog();
@@ -201,77 +198,53 @@ void stderr_log(const char *pname,
                 const char *func,
                 const char *format, ...)
 {
-    FILE *fp = stderr;   /* 標準エラー出力 */
-    int errsv = errno;   /* errno退避 */
-    int retval = 0;      /* 戻り値 */
-    char *ascret = NULL; /* asctime戻り値 */
-    struct tm ts;        /* tm構造体 */
-    struct tm *tsp;      /* localtime_rの戻り値 */
-    struct timeval tv;   /* timeval構造体 */
-    va_list ap;          /* va_list */
-    char d_buf[sizeof("xxx xxx 00 00:00:00 1900\n")] = {0}; /* 時刻 */
-    char h_buf[MAX_HOST_SIZE] = {0};                        /* ホスト */
-    pthread_t tid = 0;                                      /* スレッドID */
+    int errsv = errno;               /* errno退避 */
+    FILE *fp = stderr;               /* 標準エラー出力 */
+    int retval = 0;                  /* 戻り値 */
+    struct tm t;                     /* tm構造体 */
+    struct timeval tv;               /* timeval構造体 */
+    va_list ap;                      /* va_list */
+    char h_buf[MAX_HOST_SIZE] = {0}; /* ホスト */
+    pthread_t tid = 0;               /* スレッドID */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
     char t_buf[sizeof(", tid=18446744073709551615")] = {0};
-    char dammy[sizeof("xxx")];     /* 曜日 */
-    char mon[sizeof("xxx")];       /* 月 */
-    char day[sizeof("xxx")];       /* 日 */
-    char hour[sizeof("00:00:00")]; /* 時間 */
 
-    retval = gettimeofday(&tv, NULL);
-    if (retval < 0) {
-        (void)fprintf(stderr, "%s[%d]: gettimeofday=%d(%d)\n",
-                      __FILE__, __LINE__, retval, errno);
+    timerclear(&tv);
+    (void)memset(&t, 0, sizeof(struct tm));
+
+    if (gettimeofday(&tv, NULL) < 0) {
+        LOG("gettimeofday");
         return;
     }
 
-    tsp = localtime_r((time_t *)&tv.tv_sec, &ts);
-    if (!tsp) {
-        (void)fprintf(stderr, "%s[%d]: localtime=%p(%d)\n",
-                      __FILE__, __LINE__, tsp, errno);
+    if (localtime_r((time_t *)&tv.tv_sec, &t) == NULL) {
+        LOG("localtime_r");
         return;
     }
 
-    ascret = asctime_r(&ts, d_buf);
-    if (!ascret) {
-        (void)fprintf(stderr, "%s[%d]: ascret=%p(%d)\n",
-                      __FILE__, __LINE__, ascret, errno);
-        return;
-    }
-
-    retval = sscanf(d_buf, "%s %s %s %s", dammy, mon, day, hour);
-    if (retval != 4) {
-        (void)fprintf(stderr, "%s[%d]: sscanf=%d(%d)\n",
-                      __FILE__, __LINE__, retval, errno);
-        return;
-    }
-
-    retval = gethostname(h_buf, sizeof(h_buf));
-    if (retval < 0) {
-        (void)fprintf(stderr, "%s[%d]: gethostname=%d(%d)\n",
-                      __FILE__, __LINE__, retval, errno);
+    if (gethostname(h_buf, sizeof(h_buf)) < 0) {
+        LOG("gethostname");
         return;
     }
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu",
-                       (unsigned long int)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
 
-    (void)fprintf(fp, "%s %s%s %s.%ld %s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  mon, (strlen(day) == 1) ? " " : "", day, hour,
-                  tv.tv_usec, h_buf, pname ? : "", getpid(),
+    (void)fprintf(fp,
+                  "%s %02d %02d:%02d:%02d.%06ld " \
+                  "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
+                  strmon(t.tm_mon), t.tm_mday, t.tm_hour, t.tm_min,
+                  t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);
     va_end(ap);
     if (retval < 0) {
-        (void)fprintf(stderr, "%s[%d]: vfprintf=%d(%d)\n",
-                      __FILE__, __LINE__, retval, errno);
+        LOG("vfprintf");
         return;
     }
 
@@ -307,8 +280,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        fprintf(stderr, "%s[%d]: vsnprintf=%d(%d)\n",
-                __FILE__, __LINE__, retval, errno);
+        LOG("vsnprintf");
         return EX_NG;
     }
 
@@ -390,8 +362,7 @@ int dump_sys(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        syslog(level, "%s[%d]: vsnprintf=%d(%d)",
-               __FILE__, __LINE__, retval, errno);
+        SYS(level, "vsnprintf");
         return EX_NG;
     }
 
@@ -458,28 +429,24 @@ int dump_file(const char *pname,
 
     fp = fopen(fname, "wb");
     if (!fp) {
-        syslog(LOG_INFO, "%s[%d]: fopen=%p(%d)",
-               __FILE__, __LINE__, fp, errno);
+        SYS(LOG_INFO, "fopen");
         return EX_NG;
     }
 
     wret = fwrite(buf, len, 1, fp);
     if (wret != 1) {
-        syslog(LOG_INFO, "%s[%d]: fwrite=%p(%d)",
-               __FILE__, __LINE__, fp, errno);
+        SYS(LOG_INFO, "fwrite");
         return EX_NG;
     }
 
     retval = fflush(fp);
     if (retval == EOF) {
-        syslog(LOG_INFO, "%s[%d]: fflush=%p(%d)",
-               __FILE__, __LINE__, fp, errno);
+        SYS(LOG_INFO, "fflush");
     }
 
     retval = fclose(fp);
     if (retval == EOF) {
-        syslog(LOG_INFO, "%s[%d]: fclose=%p(%d)",
-               __FILE__, __LINE__, fp, errno);
+        SYS(LOG_INFO, "fclose");
         return EX_NG;
     }
 
@@ -515,5 +482,32 @@ print_trace(void)
     if (strings)
         free(strings);
     strings = NULL;
+}
+
+/**
+ * 月省略名
+ *
+ * @param[in] mon 月
+ * @return 月省略名
+ */
+static char *
+strmon(int mon)
+{
+    switch(mon) {
+    case  0: return "Jan";
+    case  1: return "Feb";
+    case  2: return "Mar";
+    case  3: return "Apr";
+    case  4: return "May";
+    case  5: return "Jun";
+    case  6: return "Jul";
+    case  7: return "Aug";
+    case  8: return "Sep";
+    case  9: return "Oct";
+    case 10: return "Nov";
+    case 11: return "Dec";
+    default: return NULL;
+    }
+    return NULL;
 }
 

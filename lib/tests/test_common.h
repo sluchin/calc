@@ -26,10 +26,19 @@
 #ifndef _TEST_COMMON_H_
 #define _TEST_COMMON_H_
 
+/** パイプ */
+enum {
+    PIPE_R = 0, /**< リード */
+    PIPE_W,     /**< ライト */
+    MAX_PIPE    /**< パイプ数 */
+};
+
 /** 受信 */
 ssize_t readn(int fd, void *vptr, size_t n);
 /** 送信 */
 ssize_t writen(int fd, const void *vptr, size_t n);
+/** リダイレクト */
+int pipe_fd(const int fd);
 /** ファイルディスクリプタクローズ */
 void close_fd(int *fd, ...);
 

@@ -34,14 +34,7 @@
 #include "net.h"
 #include "test_common.h"
 
-#define MAX_BUF_SIZE 2048
-
-/** パイプ */
-enum {
-    PIPE_R = 0, /**< リード */
-    PIPE_W,     /**< ライト */
-    MAX_PIPE    /**< パイプ数 */
-};
+#define BUF_SIZE 2048
 
 /* プロトタイプ */
 /** system_log() 関数テスト */
@@ -68,8 +61,6 @@ static const int EX_ERROR = -1; /**< エラー戻り値 */
 static void set_print_hex(char *data);
 /** シスログ出力用文字列設定 */
 static void set_print_hex_sys(char *data, const char *prefix);
-/** リダイレクト */
-static int pipe_fd(const int fd);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -119,10 +110,10 @@ void cut_startup(void)
 void
 test_system_log(void)
 {
-    int fd = -1;                     /* ファイル記述子 */
-    int retval = 0;                  /* 戻り値 */
-    char actual[MAX_BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =          /* 期待する文字列 */
+    int fd = -1;                 /* ファイル記述子 */
+    int retval = 0;              /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
         "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: " \
         "filename\\[15\\]: function\\(test\\): (.*)\\([0-9]+\\)";
 
@@ -157,10 +148,10 @@ error_handler:
 void
 test_system_dbg_log(void)
 {
-    int fd = -1;                     /* ファイル記述子 */
-    int retval = 0;                  /* 戻り値 */
-    char actual[MAX_BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =          /* 期待する文字列 */
+    int fd = -1;                 /* ファイル記述子 */
+    int retval = 0;              /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
         "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: " \
         "[0-9].\\.[0-9]+: filename\\[15\\]: " \
         "function\\(test\\): (.*)\\([0-9]+\\)";
@@ -197,10 +188,10 @@ error_handler:
 void
 test_stderr_log(void)
 {
-    int fd = -1;                     /* ファイル記述子 */
-    int retval = 0;                  /* 戻り値 */
-    char actual[MAX_BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =          /* 期待する文字列 */
+    int fd = -1;                 /* ファイル記述子 */
+    int retval = 0;              /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
         "[A-Z][a-z]. [ 0-9][0-9] [0-9].:[0-9].:[0-9].\\.[0-9]+ " \
         "[A-Za-z]+ programname\\[[0-9]+\\]: filename\\[15\\]: " \
         "ppid=[0-9]+, tid=[0-9]+: function\\(test\\): (.*)\\([0-9]+\\)";
@@ -219,6 +210,7 @@ test_stderr_log(void)
         cut_fail("read=%d(%d)", fd, errno);
         goto error_handler;
     }
+    dbglog("actual=%s", actual);
 
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
@@ -236,12 +228,12 @@ error_handler:
 void
 test_dump_log(void)
 {
-    int fd = -1;                       /* ファイル記述子 */
-    int retval = 0;                    /* 戻り値 */
-    int result_ok = 0;                 /* テスト関数戻り値 */
-    char expected[MAX_BUF_SIZE] = {0}; /* 期待する文字列 */
-    char actual[MAX_BUF_SIZE] = {0};   /* 実際の文字列 */
-    char tmp[MAX_BUF_SIZE] = {0};      /* 一時バッファ */
+    int fd = -1;                   /* ファイル記述子 */
+    int retval = 0;                /* 戻り値 */
+    int result_ok = 0;             /* テスト関数戻り値 */
+    char expected[BUF_SIZE] = {0}; /* 期待する文字列 */
+    char actual[BUF_SIZE] = {0};   /* 実際の文字列 */
+    char tmp[BUF_SIZE] = {0};      /* 一時バッファ */
 
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
@@ -290,12 +282,12 @@ void
 test_dump_sys(void)
 {
 
-    int fd = -1;                       /* ファイル記述子 */
-    int retval = 0;                    /* 戻り値 */
-    int result_ok = 0;                 /* テスト関数戻り値 */
-    char expected[MAX_BUF_SIZE] = {0}; /* 期待する文字列 */
-    char actual[MAX_BUF_SIZE] = {0};   /* 実際の文字列 */
-    const char prefix[] =              /* プレフィックス */
+    int fd = -1;                   /* ファイル記述子 */
+    int retval = 0;                /* 戻り値 */
+    int result_ok = 0;             /* テスト関数戻り値 */
+    char expected[BUF_SIZE] = {0}; /* 期待する文字列 */
+    char actual[BUF_SIZE] = {0};   /* 実際の文字列 */
+    const char prefix[] =          /* プレフィックス */
         "programname\\[[0-9]+\\]: filename\\[15\\]: " \
         "function\\(test\\): ";
 
@@ -403,10 +395,10 @@ error_handler:
 void
 test_print_trace(void)
 {
-    int fd = -1;                     /* ファイル記述子 */
-    int retval = 0;                  /* 戻り値 */
-    char actual[MAX_BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =          /* 期待する文字列 */
+    int fd = -1;                 /* ファイル記述子 */
+    int retval = 0;              /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
         "Obtained [0-9]+ stack frames.\\n" \
         "0x[0-9a-f]+, *";
 
@@ -481,39 +473,6 @@ set_print_hex_sys(char *buf, const char *prefix)
         total += strlen("\\n");
     }
     *(buf + total - strlen("\\n")) = '\0'; /* 改行削除 */
-}
-
-/**
- * リダイレクト
- *
- * @param[in] fd ファイルディスクリプタ
- * @retval EX_ERROR エラー
- * @return ファイルディスクリプタ
- */
-static int
-pipe_fd(const int fd)
-{
-    int pfd[MAX_PIPE]; /* pipe */
-    int retval = 0;    /* 戻り値 */
-
-    retval = pipe(pfd);
-    if (retval < 0) {
-        outlog("pipe=%d", retval);
-        return EX_ERROR;
-    }
-
-    retval = dup2(pfd[PIPE_W], fd);
-    if (retval < 0) {
-        outlog("dup2=%d", retval);
-        return EX_ERROR;
-    }
-
-    retval = close(pfd[PIPE_W]);
-    if (retval < 0) {
-        outlog("close=%d, fd=%d", retval, fd);
-        return EX_ERROR;
-    }
-    return pfd[PIPE_R];
 }
 
 /**

@@ -27,13 +27,16 @@ READSOBJ = test_readline.so
 READOBJ = test_readline.o
 MFREESOBJ = test_memfree.so
 MFREEOBJ = test_memfree.o
+TIMERSOBJ = test_timer.so
+TIMEROBJ = test_timer.o
 COMMONOBJ = test_common.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) $(READSOBJ) $(MFREESOBJ)
+all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) \
+     $(READSOBJ) $(MFREESOBJ) $(TIMERSOBJ)
 
 $(LOGSOBJ): $(LOGOBJ) $(COMMONOBJ)
 	@$(RM) $@
@@ -52,6 +55,10 @@ $(READSOBJ): $(READOBJ) $(COMMONOBJ)
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 $(MFREESOBJ): $(MFREEOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
+$(TIMERSOBJ): $(TIMEROBJ) $(COMMONOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
