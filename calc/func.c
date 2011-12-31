@@ -553,7 +553,7 @@ get_combination(calcinfo *tsd, dbl n, dbl r)
 
 #ifdef UNITTEST
 void
-test_init_function(testfunction *func)
+test_init_func(testfunc *func)
 {
     func->get_pi = get_pi;
     func->get_e = get_e;

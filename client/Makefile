@@ -13,8 +13,8 @@ AR = ar rcs
 STRIP = strip
 INSTALL = install -c
 INCLUDES = -I$(top_srcdir)/lib
-CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT #-DHAVE_READLINE
-DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT -DUNITTEST #-DHAVE_READLINE
+CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT
+DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT -DUNITTEST
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
 LIBS = -lcalcutil -lreadline -lpthread
 CLIENTLIBS = -lcalcc
@@ -56,7 +56,7 @@ static: $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h client.h Makefile
+$(OBJECTS) $(OBJCLIENT): option.h client.h Makefile
 
 .PHONY: debug
 debug:

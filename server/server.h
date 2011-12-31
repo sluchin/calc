@@ -16,14 +16,24 @@
 #include <signal.h>  /* sig_atomic_t */
 
 /* 外部変数 */
-extern volatile sig_atomic_t sig_handled; /**< シグナル */
-extern struct sigaction g_sigaction;      /**< sigaction構造体 */
+extern volatile sig_atomic_t g_sig_handled; /**< シグナル */
+extern bool g_gflag;                        /**< gオプションフラグ */
+extern long g_digit;                        /**< 桁数 */
 
 /** ソケット接続 */
 int server_sock(const char *port);
 
 /** 接続受付 */
 void server_loop(int sock);
+
+#ifdef UNITTEST
+struct _testserver {
+    void *(*server_proc)(void *arg);
+};
+typedef struct _testserver testserver;
+
+void test_init_server(testserver *server);
+#endif /* UNITTEST */
 
 #endif /* _SERVER_H_ */
 

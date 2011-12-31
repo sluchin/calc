@@ -56,7 +56,7 @@ static: $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h calc.h Makefile
+$(OBJECTS) $(OBJCALC): option.h calc.h func.h error.h Makefile
 
 .PHONY: debug
 debug:
@@ -88,8 +88,8 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
-	$(MAKE) -C $(testdir) clean
+	@$(RM) $(PROGRAM) $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
+	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

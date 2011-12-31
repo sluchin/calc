@@ -24,6 +24,7 @@ OBJECTS = data.o \
           memfree.o \
           net.o \
           readline.o \
+          fileio.o \
           log.o
 CUTTER = /usr/bin/cutter -v v
 #PYTHON = python
@@ -50,7 +51,7 @@ $(OBJECTS): data.h \
             log.h \
             net.h \
             readline.h \
-            version.h \
+            fileio.h \
             Makefile
 
 .PHONY: debug
@@ -80,8 +81,8 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJECTS) $(LIBRARY) $(SHAREDOBJ)
-	$(MAKE) -C $(testdir) clean
+	@$(RM) $(OBJECTS) $(LIBRARY) $(SHAREDOBJ)
+	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

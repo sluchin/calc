@@ -55,7 +55,7 @@ static: $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ)
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): option.h server.h Makefile
+$(OBJECTS) $(OBJSERVER): option.h server.h Makefile
 
 .PHONY: debug
 debug:
@@ -87,8 +87,8 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ)
-	$(MAKE) -C $(testdir) clean
+	@$(RM) $(PROGRAM) $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ)
+	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

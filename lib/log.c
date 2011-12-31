@@ -42,13 +42,13 @@
 #define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE  256 /**< 最大メッセージサイズ */
 
-#define SYS(l, log) \
-    syslog(l, "%s[%d]: %s: %s(%d)", \
-    __FILE__, __LINE__, __func__, log, errno);
+#define SYS(l, log)                                     \
+    syslog(l, "%s[%d]: %s: %s(%d)",                     \
+           __FILE__, __LINE__, __func__, log, errno);
 
-#define LOG(log) \
-    (void)fprintf(stderr, "%s[%d]: %s: %s(%d)", \
-    __FILE__, __LINE__, __func__, log, errno);
+#define LOG(log)                                                \
+    (void)fprintf(stderr, "%s[%d]: %s: %s(%d)",                 \
+                  __FILE__, __LINE__, __func__, log, errno);
 
 /* 外部変数 */
 char *progname = NULL; /**< プログラム名 */
@@ -236,7 +236,7 @@ void stderr_log(const char *pname,
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  strmon(t.tm_mon), t.tm_mday, t.tm_hour, t.tm_min,
+                  strmon(t.tm_mon) ? : "", t.tm_mday, t.tm_hour, t.tm_min,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
 

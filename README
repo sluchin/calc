@@ -1,35 +1,33 @@
-make
-or
-make debug
+開発環境
+ Linux 3.0.0-14-generic-pae
+ GNU gdb 7.3
+
+コンパイル
+ cd calc
+ make clean
+ make または make debug
 
 クライアントサーバ
  サーバでデーモン起動
-  cd server
-  ./calcd
+ cd server
+ ./calcd
  クライアントでプログラム起動
-  cd client
-  ./calcc
+ cd client
+ ./calcc
 
 スタンドアロン
-cd calc
-./calcp
+ cd calc
+ ./calcp
 
 テスト
- cutter ライブラリをインストールし, 以下のコマンドを実行する.
-  make test
+ cutter ライブラリをインストールし, make test コマンドを実行する.
 
 ドキュメント生成
- doxygen, graphviz, mscgen をインストールし, 以下のコマンドを実行する.
-  make doc
-
+ doxygen, graphviz, mscgen をインストールし, make doc コマンドを実行する.
 
 コーディングのコンセプト
- 1. 戻り値を返す関数は必ず戻り値チェックしてログを出力するか, プログラムを終了させるかする.
+ 1. 戻り値を返す関数は必ず戻り値チェックしてログを出力する.
  2. 戻り値を返す標準関数であえて戻り値をチェックしない場合は, void でキャストする.
- 3. 見映えを揃えるために決まった場所に必ずコメントを入れそのうえで, できるだけ意味のあるコメントにする.
+ 3. 見映えを揃えるために決まった場所に必ずコメントを入れる.
  4. エラーハンドラでは, goto文を積極的に使用する.
-
-
-
-
 

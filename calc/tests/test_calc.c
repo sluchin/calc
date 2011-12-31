@@ -29,7 +29,6 @@
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
-#include "util.h"
 #include "log.h"
 #include "error.h"
 #include "calc.h"
@@ -210,20 +209,11 @@ static const struct test_data_dbl number_data [] = {
  *
  * @return なし
  */
-void cut_startup(void)
+void
+cut_startup(void)
 {
-    int fd = 0; /* ディスクリプタ */
-
+    (void)memset(&calc, 0, sizeof(calc));
     test_init_calc(&calc);
-
-    fd = open("/dev/null", O_RDWR, 0);
-    if (fd < 0) {
-        cut_notify("open=%d", fd);
-        return;
-    }
-    (void)dup2(fd, STDERR_FILENO);
-    if (fd > 2)
-        (void)close(fd);
 }
 
 /**

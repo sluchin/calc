@@ -30,7 +30,7 @@
 
 #include "def.h"
 
-#define FGETSBUF 256 /**< バッファサイズ */
+#define FGETSBUF 1024 /**< バッファサイズ */
 
 /** 一行読込 */
 uchar *_readline(FILE *fp);

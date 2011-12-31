@@ -23,13 +23,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <unistd.h> /* pipe fork */
-#include <cutter.h> /* cutter library */
+#include <unistd.h>   /* pipe fork */
+#include <sys/wait.h> /* wait */
+#include <errno.h>    /* errno */
+#include <signal.h>   /* signal sigaction */
+#include <cutter.h>   /* cutter library */
 
 #include "def.h"
 #include "log.h"
+#include "memfree.h"
+#include "fileio.h"
 #include "readline.h"
-#include "test_common.h"
 
 /* 端末の入力可能なバイト数(4096)より大きいサイズに設定 */
 #define BUF_SIZE 4100 /**< バッファサイズ */
@@ -38,127 +42,176 @@
 /** readline() 関数テスト */
 void test_readline(void);
 
+/* 内部変数 */
+static int pfd[] = { -1, -1 };   /* パイプ1 */
+static char test_data[BUF_SIZE]; /* テストデータ */
+static uchar *result = NULL;     /* 結果文字列 */
+
 /* 内部関数 */
-/** データ送受信 */
-static char *write_data(char *data, size_t length);
+/** 正常処理 */
+static uchar *normal_process(char *data, size_t length);
+/** シグナル設定 */
+static void set_sig_handler(void);
 
 /**
- * set_client_data() 関数テスト
+ * 初期化処理
+ *
+ * @return なし
+ */
+void
+cut_startup(void)
+{
+    set_sig_handler();
+}
+
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+void
+cut_setup(void)
+{
+    (void)memset(test_data, 0x31, sizeof(test_data));
+    test_data[sizeof(test_data) - 1] = '\0';
+    test_data[sizeof(test_data) - 2] = '\n';
+}
+
+/**
+ * 終了処理
+ *
+ * @return なし
+ */
+void
+cut_teardown(void)
+{
+    close_fd(&pfd[PIPE_R], &pfd[PIPE_W], NULL);
+    memfree((void **)&result, NULL);
+}
+
+/**
+ * readline() 関数テスト
  *
  * @return なし
  */
 void
 test_readline(void)
 {
-    char test_data[BUF_SIZE] = {0}; /* テストデータ */
-    char nolf_data[] = "test";      /* 改行なし文字列 */
-    char *result = NULL;            /* 結果文字列 */
+    char nolf_data[] = "test"; /* 改行なし文字列 */
 
     /* 正常系 */
-    (void)memset(test_data, 0x31, sizeof(test_data) - 2);
-    test_data[sizeof(test_data) - 1] = '\n';
+    result = normal_process(test_data, sizeof(test_data));
 
-    result = write_data(test_data, sizeof(test_data));
-
+    /* 改行削除 */
     if (test_data[strlen(test_data) - 1] == '\n')
         test_data[strlen(test_data) - 1] = '\0';
-    cut_assert_equal_string(test_data, result);
+
+    cut_assert_equal_string(test_data, (char *)result);
+
+    memfree((void **)&result, NULL);
 
     /* 異常系 */
     /* 改行ない場合 */
-    /* fgetsの引数に渡すバッファサイズより小さい場合, NULLを返す */
-    result = write_data(nolf_data, sizeof(nolf_data));
+    result = normal_process(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
-    cut_assert_equal_string("", result);
+    cut_assert_null((char *)result);
 
     /* ファイルポインタがNULLの場合 */
-    result = (char *)_readline((FILE *)NULL);
-    cut_assert_null(result);
+    result = _readline((FILE *)NULL);
+    cut_assert_null((char *)result);
 }
 
 /**
- * データ送受信
+ * 正常処理
  *
  * @param[in] data テストデータ
  * @param[in] length バイト数
  * @return 結果文字列
  */
-static char *
-write_data(char *data, size_t length)
+static uchar *
+normal_process(char *data, size_t length)
 {
-    FILE *fp = NULL;                    /* ファイルポインタ */
-    uchar *result = NULL;               /* 結果文字列 */
-    int pfd1[MAX_PIPE], pfd2[MAX_PIPE]; /* パイプ */
-    int retval = 0;                     /* 戻り値 */
-    pid_t pid = 0;                      /* プロセスID */
-    ssize_t len = 0;                    /* readn, writen 戻り値 */
-    static char readbuf[BUF_SIZE];      /* 受信バッファ */
+    FILE *fp = NULL; /* ファイルポインタ */
+    int retval = 0;  /* 戻り値 */
+    pid_t cpid = 0;  /* プロセスID */
+    pid_t w = 0;     /* wait戻り値 */
+    int status = 0;  /* ステイタス */
+    ssize_t len = 0; /* writen 戻り値 */
 
-    (void)memset(readbuf, 0, sizeof(readbuf));
-
-    retval = pipe(pfd1);
+    retval = pipe(pfd);
     if (retval < 0) {
         cut_error("pipe=%d", retval);
         return NULL;
     }
 
-    retval = pipe(pfd2);
-    if (retval < 0) {
-        cut_error("pipe=%d", retval);
+    fp = fdopen(pfd[PIPE_R], "r");
+    if (!fp) {
+        cut_error("fdopen=%p", fp);
         return NULL;
     }
 
-    pid = fork();
-    if (pid < 0) {
-        cut_error("fork=%d", pid);
+    cpid = fork();
+    if (cpid < 0) {
+        cut_error("fork(%d)", errno);
         return NULL;
     }
 
-    if (pid == 0) { /* 子プロセス */
-        close_fd(&pfd1[PIPE_W], NULL);
-        fp = fdopen(pfd1[PIPE_R], "r");
-        if (!fp) {
-            cut_error("fdopen=%p", fp);
-            close_fd(&pfd1[PIPE_R], &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
+    if (cpid == 0) { /* 子プロセス */
+        dbglog("child");
+
+        close_fd(&pfd[PIPE_R], NULL);
+
+        /* 送信 */
+        len = writen(pfd[PIPE_W], data, length);
+        if (len < 0) {
+            outlog("writen");
+            close_fd(&pfd[PIPE_W], NULL);
             exit(EXIT_FAILURE);
         }
+        close_fd(&pfd[PIPE_W], NULL);
+        exit(EXIT_SUCCESS);
+
+    } else { /* 親プロセス */
+        dbglog("parent: cpid=%d", (int)cpid);
+
+        close_fd(&pfd[PIPE_W], NULL);
+
+        /* テスト関数の実行 */
         /* 受信待ち */
         result = _readline(fp);
-        if (!result) {
-            close_fd(&pfd1[PIPE_R], &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
-            exit(EXIT_FAILURE);
-        }
-        dbglog("length=%zu, result=%s", strlen((char *)result), result);
-        close_fd(&pfd1[PIPE_R], &pfd2[PIPE_R], NULL);
-        /* 送信 */
-        len = writen(pfd2[PIPE_W], result, strlen((char *)result) + 1);
-        if (len < 0) {
-            cut_error("len=%zd", len);
-            close_fd(&pfd2[PIPE_W], NULL);
-            if (result) free(result);
-            exit(EXIT_FAILURE);
-        }
-        dbglog("write: len=%zd", len);
-        close_fd(&pfd2[PIPE_W], NULL);
-        if (result) free(result);
-        exit(EXIT_SUCCESS);
-    } else { /* 親プロセス */
-        close_fd(&pfd1[PIPE_R], NULL);
-        /* 送信 */
-        len = writen(pfd1[PIPE_W], data, length);
-        if (len < 0) {
-            cut_error("len=%zd", len);
-            close_fd(&pfd1[PIPE_W], &pfd2[PIPE_W], &pfd2[PIPE_R], NULL);
+        dbglog("result=%s", result);
+
+        close_fd(&pfd[PIPE_R], NULL);
+        w = wait(&status);
+        if (w < 0)
+            cut_notify("wait");
+        dbglog("w=%d", (int)w);
+        if (WEXITSTATUS(status)) {
+            cut_notify("child error");
             return NULL;
         }
-        close_fd(&pfd1[PIPE_W], &pfd2[PIPE_W], NULL);
-        /* 受信 */
-        len = readn(pfd2[PIPE_R], readbuf, sizeof(readbuf));
-        if (len < 0)
-            cut_error("len=%zd", len);
-        dbglog("read: len=%zd", len);
-        close_fd(&pfd2[PIPE_R], NULL);
     }
-    return readbuf;
+    return result;
+}
+
+/**
+ * シグナル設定
+ *
+ * @return なし
+ */
+static void
+set_sig_handler(void)
+{
+    /* シグナル無視 */
+    if (signal(SIGINT, SIG_IGN) < 0)
+        cut_notify("SIGINT");
+    if (signal(SIGTERM, SIG_IGN) < 0)
+        cut_notify("SIGTERM");
+    if (signal(SIGQUIT, SIG_IGN) < 0)
+        cut_notify("SIGQUIT");
+    if (signal(SIGHUP, SIG_IGN) < 0)
+        cut_notify("SIGHUP");
+    if (signal(SIGALRM, SIG_IGN) < 0)
+        cut_notify("SIGALRM");
 }
 

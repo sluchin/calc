@@ -41,16 +41,18 @@
  * @param[in] buf 送受信バッファ
  * @param[in] len 長さ
  * @return 構造体バイト数
+ * @retval EX_NG メモリ確保できない
  */
 ssize_t
 set_client_data(struct client_data **dt, uchar *buf, const size_t len)
 {
-    size_t length = 0;  /* 構造体バイト数 */
+    size_t length = 0; /* 構造体バイト数 */
+    size_t datalen =0; /* データ長 */
 
     dbglog("start");
 
-    length = sizeof(struct header) + len;
-    length = ALIGN8(length);
+    datalen = ALIGN8(len);
+    length = sizeof(struct header) + datalen;
     dbglog("length=%zu", length);
 
     (*dt) = (struct client_data *)malloc(length);
@@ -61,8 +63,10 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.length = len; /* データ長を設定 */
+    (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
     (void)memcpy((*dt)->expression, buf, len);
+
+    dbgdump(*dt, length, "dt=%zu", length);
 
     return (ssize_t)length;
 }
@@ -78,12 +82,13 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
 ssize_t
 set_server_data(struct server_data **dt, uchar *buf, const size_t len)
 {
-    size_t length = 0;  /* 構造体バイト数 */
+    size_t length = 0; /* 構造体バイト数 */
+    size_t datalen =0; /* データ長 */
 
     dbglog("start");
 
-    length = sizeof(struct header) + len;
-    length = ALIGN8(length);
+    datalen = ALIGN8(len);
+    length = sizeof(struct header) + datalen;
     dbglog("length=%zu", length);
 
     (*dt) = (struct server_data *)malloc(length);
@@ -94,8 +99,10 @@ set_server_data(struct server_data **dt, uchar *buf, const size_t len)
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.length = len; /* データ長を設定 */
+    (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
     (void)memcpy((*dt)->answer, buf, len);
+
+    dbgdump(*dt, length, "dt=%zu", length);
 
     return (ssize_t)length;
 }

@@ -18,10 +18,10 @@ TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
 CALCSOBJ = test_calc.so
-FUNCSOBJ = test_func.so
-ERRORSOBJ = test_error.so
 CALCOBJ = test_calc.o
+FUNCSOBJ = test_func.so
 FUNCOBJ = test_func.o
+ERRORSOBJ = test_error.so
 ERROROBJ = test_error.o
 COMMONOBJ = test_common.o
 CUTTER = /usr/bin/cutter -v v
@@ -29,7 +29,7 @@ CUTTER = /usr/bin/cutter -v v
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
+all: $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 
 $(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
 	@$(RM) $@
@@ -46,7 +46,7 @@ $(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): Makefile
+$(CALCOBJ) $(FUNCOBJ) $(ERROROBJ): test_common.h Makefile
 
 .PHONY: debug
 debug:
@@ -62,7 +62,7 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) *.so *.o
+	@$(RM) *.so *.o
 
 .PHONY: help
 help:

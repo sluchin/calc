@@ -40,14 +40,15 @@
 uchar *
 _readline(FILE *fp)
 {
-    char *retval = NULL; /* fgets戻り値 */
+    char *fgetsp = NULL; /* fgets戻り値 */
     size_t length = 0;   /* 文字列長 */
     size_t total = 0;    /* 文字列長全て */
     uchar *alloc = NULL; /* reallocバッファ */
     uchar *tmp = NULL;   /* 一時ポインタ */
     uchar buf[FGETSBUF]; /* fgetsバッファ */
 
-    /* fgetsのファイルポインタにNULLを渡した場合, crashするかもしれない */
+    /* fgetsのファイルポインタにNULLを渡した場合,
+     * crashするかもしれない */
     if (!fp) {
         outlog("fp=%p", fp);
         return NULL;
@@ -55,14 +56,14 @@ _readline(FILE *fp)
 
     do {
         (void)memset(buf, 0, sizeof(buf));
-        retval = fgets((char *)buf, sizeof(buf), fp);
+        fgetsp = fgets((char *)buf, sizeof(buf), fp);
         if (ferror(fp)) { /* エラー */
-            outlog("fgets=%p", retval);
+            outlog("fgets=%p", fgetsp);
             clearerr(fp);
             return NULL;
         }
-        dbglog("fgets=%p, feof=%d", retval, feof(fp));
-        if (!retval || feof(fp))
+        dbglog("fgets=%p, feof=%d", fgetsp, feof(fp));
+        if (!fgetsp || feof(fp))
             break;
 
         length = strlen((char *)buf);

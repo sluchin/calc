@@ -43,8 +43,6 @@
 #include "option.h"
 
 /* 外部変数 */
-bool g_gflag = false;             /**< gオプションフラグ */
-bool g_tflag = false;             /**< tオプションフラグ */
 char g_hostname[HOST_SIZE] = {0}; /**< IPアドレスまたはホスト名 */
 char g_portno[PORT_SIZE] = {0};   /**< ポート番号またはサービス名 */
 
@@ -187,9 +185,9 @@ print_version(const char *prog_name)
 }
 
 /**
- * getoptエラー表示
+ * getopt エラー表示
  *
- * getoptが異常な動作をした場合、エラーを表示する.
+ * getopt が異常な動作をした場合, エラーを表示する.
  * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
  * @return なし

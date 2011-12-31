@@ -26,12 +26,13 @@
 #ifndef _DATA_H_
 #define _DATA_H_
 
+#include <stdint.h> /* uint64_t */
+
 #include "def.h"
 
 /** ヘッダー構造体 */
 struct header {
-    size_t length;   /**< データ長 */
-    char padding[4]; /**< パディング */
+    uint64_t length; /**< データ長 */
 };
 
 /** クライアントデータ構造体 */

@@ -31,7 +31,6 @@
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
-#include "util.h"
 #include "log.h"
 #include "error.h"
 #include "calc.h"
@@ -65,8 +64,8 @@ void test_get_permutation(void);
 void test_get_combination(void);
 
 /* 内部変数 */
-static testcalc calc;         /**< calc関数構造体 */
-static testfunction function; /**< function関数構造体 */
+static testcalc calc; /**< calc関数構造体 */
+static testfunc func; /**< func関数構造体 */
 
 /* 内部関数 */
 
@@ -203,19 +202,10 @@ static const struct test_data combination_data[] = {
  */
 void cut_startup(void)
 {
-    int fd = 0; /* ディスクリプタ */
-
+    (void)memset(&calc, 0, sizeof(calc));
+    (void)memset(&func, 0, sizeof(func));
     test_init_calc(&calc);
-    test_init_function(&function);
-
-    fd = open("/dev/null", O_RDWR, 0);
-    if (fd < 0) {
-        cut_notify("open=%d", fd);
-        return;
-    }
-    (void)dup2(fd, STDERR_FILENO);
-    if (fd > 2)
-        (void)close(fd);
+    test_init_func(&func);
 }
 
 /**
@@ -314,7 +304,7 @@ test_get_pi(void)
     if (!tsd)
         cut_error("tsd=%p, expr=%s(%d)", tsd, "pi", errno);
 
-    result = function.get_pi(tsd);
+    result = func.get_pi(tsd);
     cut_assert_equal_double(pi,
                             0.00000000001,
                             result,
@@ -340,7 +330,7 @@ test_get_e(void)
     if (!tsd)
         cut_error("tsd=%p, expr=%s(%d)", tsd, "e", errno);
 
-    result = function.get_e(tsd);
+    result = func.get_e(tsd);
     cut_assert_equal_double(e,
                             0.00000000001,
                             result,
@@ -369,7 +359,7 @@ test_get_rad(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, rad_data[i].expr, errno);
 
-        result = function.get_rad(tsd, rad_data[i].x);
+        result = func.get_rad(tsd, rad_data[i].x);
         cut_assert_equal_double(rad_data[i].answer,
                                 rad_data[i].error,
                                 result,
@@ -398,7 +388,7 @@ test_get_deg(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, deg_data[i].expr, errno);
 
-        result = function.get_deg(tsd, deg_data[i].x);
+        result = func.get_deg(tsd, deg_data[i].x);
         cut_assert_equal_double(deg_data[i].answer,
                                 deg_data[i].error,
                                 result,
@@ -427,7 +417,7 @@ test_get_sqrt(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, sqrt_data[i].expr, errno);
 
-        result = function.get_sqrt(tsd, sqrt_data[i].x);
+        result = func.get_sqrt(tsd, sqrt_data[i].x);
         cut_assert_equal_double(sqrt_data[i].answer,
                                 sqrt_data[i].error,
                                 result,
@@ -461,8 +451,8 @@ test_check_math(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, math_data[i].expr, errno);
 
-        result = function.check_math(tsd, math_data[i].x,
-                                     math_data[i].callback);
+        result = func.check_math(tsd, math_data[i].x,
+                                 math_data[i].callback);
         cut_assert_equal_double(math_data[i].answer,
                                 math_data[i].error,
                                 result,
@@ -486,7 +476,7 @@ test_factorial(void)
     int i;
     for (i = 0; i < NELEMS(fact_data); i++) {
         result = 1;
-        function.factorial(&result, fact_data[i].x);
+        func.factorial(&result, fact_data[i].x);
         cut_assert_equal_double(fact_data[i].answer,
                                 fact_data[i].error,
                                 result);
@@ -511,7 +501,7 @@ test_get_factorial(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, factorial_data[i].expr, errno);
 
-        result = function.get_factorial(tsd, factorial_data[i].x);
+        result = func.get_factorial(tsd, factorial_data[i].x);
         cut_assert_equal_double(factorial_data[i].answer,
                                 factorial_data[i].error,
                                 result,
@@ -545,9 +535,9 @@ test_get_permutation(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, permutation_data[i].expr, errno);
 
-        result = function.get_permutation(tsd,
-                                          permutation_data[i].x,
-                                          permutation_data[i].y);
+        result = func.get_permutation(tsd,
+                                      permutation_data[i].x,
+                                      permutation_data[i].y);
         cut_assert_equal_double(permutation_data[i].answer,
                                 permutation_data[i].error,
                                 result,
@@ -581,9 +571,9 @@ test_get_combination(void)
             cut_error("i=%d, tsd=%p, expr=%s(%d)",
                       i, tsd, combination_data[i].expr, errno);
 
-        result = function.get_combination(tsd,
-                                          combination_data[i].x,
-                                          combination_data[i].y);
+        result = func.get_combination(tsd,
+                                      combination_data[i].x,
+                                      combination_data[i].y);
         cut_assert_equal_double(combination_data[i].answer,
                                 combination_data[i].error,
                                 result,

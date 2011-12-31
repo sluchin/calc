@@ -134,11 +134,12 @@ main_loop(void)
             memfree((void **)&expr, NULL);
             continue;
         }
+        dbgdump(expr, strlen((char *)expr) + 1,
+                "stdin: expr=%u", strlen((char *)expr) + 1);
+
         if (!strcmp((char *)expr, "quit") ||
             !strcmp((char *)expr, "exit"))
             break;
-        dbgdump(expr, strlen((char *)expr) + 1,
-                "expr=%u", strlen((char *)expr) + 1);
 
         tsd = init_calc(expr, g_digit);
         if (!tsd) { /* エラー */
@@ -146,15 +147,16 @@ main_loop(void)
             memfree((void **)&expr, NULL);
             continue;
         }
+
         result = answer(tsd);
         dbglog("expr=%p, result=%p", expr, result);
         if (result) {
+            retval = setvbuf(stdout, NULL, _IONBF, 0);
+            if (retval) /* 非0 */
+                outlog("setvbuf=%d", retval);
             retval = fprintf(stdout, "%s\n", (char *)result);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
-            retval = fflush(stdout);
-            if (retval == EOF)
-                outlog("fflush=%d", retval);
         }
 #ifdef HAVE_READLINE
         if (MAX_HISTORY <= ++hist_no) {
@@ -219,25 +221,21 @@ set_sig_handler(void)
     struct sigaction sa; /* シグナル */
 
     /* シグナルマスクの設定 */
-    (void)memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
+    (void)memset(&sa, 0, sizeof(struct sigaction));
     if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", sa);
-    if (sigaddset(&sa.sa_mask, SIGINT) < 0)
-        outlog("sigaddset=%p, SIGINT", sa);
-    if (sigaddset(&sa.sa_mask, SIGTERM) < 0)
-        outlog("sigaddset=%p, SIGTERM", sa);
-    if (sigaddset(&sa.sa_mask, SIGQUIT) < 0)
-        outlog("sigaddset=%p, SIGQUIT", sa);
+        outlog("sigemptyset=%p", &sa);
+    if (sigfillset(&sa.sa_mask) < 0)
+        outlog("sigfillset=%p", &sa);
 
     /* シグナル補足 */
+    sa.sa_handler = sig_handler;
+    sa.sa_flags = 0;
     if (sigaction(SIGINT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGINT", sa);
+        outlog("sigaction=%p, SIGINT", &sa);
     if (sigaction(SIGTERM, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGTERM", sa);
+        outlog("sigaction=%p, SIGTERM", &sa);
     if (sigaction(SIGQUIT, &sa, NULL) < 0)
-        outlog("sigaction=%p, SIGQUIT", sa);
+        outlog("sigaction=%p, SIGQUIT", &sa);
 }
 
 /**

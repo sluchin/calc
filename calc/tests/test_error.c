@@ -30,7 +30,6 @@
 #include <cutter.h> /* cutter library */
 
 #include "def.h"
-#include "util.h"
 #include "log.h"
 #include "calc.h"
 #include "error.h"
@@ -62,18 +61,8 @@ static testerror error; /**< 関数構造体 */
  */
 void cut_startup(void)
 {
-    int fd = 0; /* ディスクリプタ */
-
+    (void)memset(&error, 0, sizeof(error));
     test_init_error(&error);
-
-    fd = open("/dev/null", O_RDWR, 0);
-    if (fd < 0) {
-        cut_notify("open=%d", fd);
-        return;
-    }
-    (void)dup2(fd, STDERR_FILENO);
-    if (fd > 2)
-        (void)close(fd);
 }
 
 /**

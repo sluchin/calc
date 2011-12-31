@@ -23,9 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdlib.h>    /* malloc */
-#include <arpa/inet.h> /* htons */
-#include <cutter.h>    /* cutter library */
+#include <stdlib.h> /* malloc */
+#include <cutter.h> /* cutter library */
 
 #include "def.h"
 #include "log.h"
@@ -35,8 +34,6 @@
 /** memfree() 関数テスト */
 void test_memfree(void);
 
-/* 内部関数 */
-
 /**
  * set_memfree() 関数テスト
  *
@@ -45,33 +42,37 @@ void test_memfree(void);
 void
 test_memfree(void)
 {
-    char *mem1 = NULL; /* ポインタ値 1 */
-    char *mem2 = NULL; /* ポインタ値 2 */
-    char *mem3 = NULL; /* ポインタ値 3 */
+    char *mem[] = { NULL, NULL, NULL }; /* ポインタ値 */
+    enum { MEM1, MEM2, MEM3, MAX };     /* 配列要素 */
 
-    mem1 = malloc(5);
-    if (!mem1)
-        cut_error("malloc=%p", mem1);
-    mem2 = malloc(5);
-    if (!mem2)
-        cut_error("malloc=%p", mem2);
-    mem3 = malloc(5);
-    if (!mem3)
-        cut_error("malloc=%p", mem3);
-    memfree((void **)&mem1, (void **)&mem2, (void **)&mem3, NULL);
-    cut_assert_null(mem1);
-    cut_assert_null(mem2);
-    cut_assert_null(mem3);
+    int i;
+    for (i = 0; i < MAX; i++) {
+        mem[i] = (char *)malloc(5);
+        if (!mem[i]) {
+            cut_error("malloc=%p", mem[i]);
+            return;
+        }
+    }
+    memfree((void **)&mem[MEM1],
+            (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
+    cut_assert_null(mem[MEM1]);
+    cut_assert_null(mem[MEM2]);
+    cut_assert_null(mem[MEM3]);
 
-    /* mem2がNULLの場合 */
-    mem1 = malloc(5);
-    if (!mem1)
-        cut_error("malloc=%p", mem1);
-    mem3 = malloc(5);
-    if (!mem3)
-        cut_error("malloc=%p", mem3);
-    memfree((void **)&mem1, (void **)&mem2, (void **)&mem3, NULL);
-    cut_assert_null(mem1);
-    cut_assert_null(mem3);
+    /* 第二引数がNULLの場合 */
+    mem[MEM1] = (char *)malloc(5);
+    if (!mem[MEM1]) {
+        cut_error("malloc=%p", mem[MEM1]);
+        return;
+    }
+    mem[MEM3] = (char *)malloc(5);
+    if (!mem[MEM3]) {
+        cut_error("malloc=%p", mem[MEM3]);
+        return;
+    }
+    memfree((void **)&mem[MEM1],
+            (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
+    cut_assert_null(mem[MEM1]);
+    cut_assert_null(mem[MEM3]);
 }
 

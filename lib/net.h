@@ -1,6 +1,6 @@
 /**
  * @file  lib/net.h
- * @brief ネットワーク設定
+ * @brief ネットワーク
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成

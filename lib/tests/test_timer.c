@@ -29,8 +29,8 @@
 
 #include "def.h"
 #include "log.h"
+#include "fileio.h"
 #include "timer.h"
-#include "test_common.h"
 
 #define BUF_SIZE 256
 
@@ -56,7 +56,7 @@ test_print_timer(void)
     int fd = -1;                 /* ファイルディスクリプタ */
     int retval = 0;              /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =      /* 期待する文字列 */ 
+    const char expected[] =      /* 期待する文字列 */
         "time of time: [0-9]+\\.[0-9]+\\[msec\\]";
 
     start_timer(&t);
@@ -109,7 +109,9 @@ test_stop_timer(void)
     uint t = 0, time = 0; /* タイマ用変数 */
 
     start_timer(&t);
+    dbglog("t=%u", t);
     time = stop_timer(&t);
+    dbglog("time=%u", time);
     cut_assert_operator(time, >, 0);
 }
 

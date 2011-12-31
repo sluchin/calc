@@ -1,6 +1,6 @@
 /**
- * @file  lib/tests/test_common.h
- * @brief 単体テスト
+ * @file  lib/fileio.h
+ * @brief ファイルIO
  *
  * @author higashi
  * @date 2011-12-20 higashi 新規作成
@@ -23,24 +23,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TEST_COMMON_H_
-#define _TEST_COMMON_H_
+#ifndef _FILEIO_H_
+#define _FILEIO_H_
 
 /** パイプ */
 enum {
     PIPE_R = 0, /**< リード */
-    PIPE_W,     /**< ライト */
-    MAX_PIPE    /**< パイプ数 */
+    PIPE_W = 1  /**< ライト */
 };
 
 /** 受信 */
 ssize_t readn(int fd, void *vptr, size_t n);
 /** 送信 */
 ssize_t writen(int fd, const void *vptr, size_t n);
-/** リダイレクト */
+/** パイプ */
 int pipe_fd(const int fd);
-/** ファイルディスクリプタクローズ */
-void close_fd(int *fd, ...);
+/** ファイルディスクリプタ複製 */
+int pipe_fd2(int *pipefd, int *oldfd, const int newfd);
+/** リダイレクト */
+int redirect(int fd, char *path);
+/** クローズ */
+int close_fd(int *fd, ...);
 
-#endif /* _TEST_COMMON_H_ */
+#endif /* _FILEIO_H_ */
 

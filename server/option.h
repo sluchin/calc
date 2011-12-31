@@ -34,9 +34,7 @@
 #define PORT_SIZE      48          /**< ポート名サイズ */
 
 /* 外部変数 */
-extern bool g_gflag;              /**< gオプションフラグ */
-extern char g_port_no[PORT_SIZE]; /**< ポート番号またはサービス名 */
-extern long g_digit;              /**< 桁数 */
+extern char g_portno[PORT_SIZE]; /**< ポート番号またはサービス名 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

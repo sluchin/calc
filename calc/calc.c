@@ -172,8 +172,10 @@ answer(calcinfo *tsd)
     if (tsd->ch != '\0') /* エラー */
         set_errorcode(tsd, E_SYNTAX);
 
-    if (g_tflag)
-        print_timer(stop_timer(&start));
+    if (g_tflag) {
+        uint calc_time = stop_timer(&start);
+        print_timer(calc_time);
+    }
 
     if (is_error(tsd)) { /* エラー */
         tsd->errormsg = get_errormsg(tsd);

@@ -1,6 +1,6 @@
 /**
  * @file  lib/net.c
- * @brief ネットワーク設定
+ * @brief ネットワーク
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
@@ -28,7 +28,7 @@
 #include <unistd.h>     /* close */
 #include <ctype.h>      /* isdigit */
 #include <sys/types.h>  /* send recv */
-#include <sys/socket.h> /* send recv */
+#include <sys/socket.h> /* send recv shutdown */
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
@@ -93,7 +93,7 @@ int
 set_port(struct sockaddr_in *addr, const char *port)
 {
     struct servent *sp = NULL; /* サービス情報構造体 */
-    long portno = 0;           /* ポート番号 */
+    uint16_t portno = 0;       /* ポート番号 */
     const int base = 10;       /* 基数 */
 
     dbglog("start: addr=%p, port=%s", addr, port);
@@ -102,14 +102,14 @@ set_port(struct sockaddr_in *addr, const char *port)
         return EX_NG;
 
     if (isdigit(port[0])) { /* 先頭が数字 */
-        portno = strtol(port, NULL, base);
-        dbglog("portno=%d", portno);
+        portno = (uint16_t)strtol(port, NULL, base);
+        dbglog("portno=%d, 0x%x", portno, portno);
         if (portno <= 0 || 65535 <= portno) {
             outlog("portno=%d", portno);
             return EX_NG;
         }
-        dbglog("portno=%u", htons((uint16_t)portno));
-        addr->sin_port = (u_short)htons((uint16_t)portno);
+        dbglog("portno=0x%x", htons(portno));
+        addr->sin_port = (u_short)htons(portno);
     } else {
         sp = getservbyname(port, "tcp");
         if (!sp) {
@@ -118,7 +118,7 @@ set_port(struct sockaddr_in *addr, const char *port)
         }
         addr->sin_port = sp->s_port;
     }
-    dbglog("sp=%p, addr->sin_port=%u", sp, ntohs((uint16_t)addr->sin_port));
+    dbglog("sp=%p, addr->sin_port=0x%x", sp, ntohs((uint16_t)addr->sin_port));
     return EX_OK;
 }
 
@@ -180,7 +180,7 @@ send_data(const int sock, const void *sdata, size_t *length)
     size_t left = 0;         /* 残りのバイト数 */
     const uchar *ptr = NULL; /* ポインタ */
 
-    outlog("start: sdata=%p, length=%zu", sdata, *length);
+    dbglog("start: sdata=%p, length=%zu", sdata, *length);
 
     ptr = (uchar *)sdata;
     left = *length;
@@ -197,12 +197,15 @@ send_data(const int sock, const void *sdata, size_t *length)
         left -= len;
         ptr += len;
     }
-    dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
+    *length -= left;
+    dbglog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
+           len, sock, ptr, left, *length);
     return EX_OK;
 
 error_handler:
-    outlog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
+    outlog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
+           len, sock, ptr, left, *length);
     return EX_NG;
 }
 
@@ -212,7 +215,6 @@ error_handler:
  * @param[in] sock ソケット
  * @param[out] rdata データ
  * @param[in,out] length データ長
- * @return 受信したデータ長
  * @retval EX_NG エラー
  */
 int
@@ -222,7 +224,7 @@ recv_data(const int sock, void *rdata, size_t *length)
     size_t left = 0;   /* 残りのバイト数 */
     uchar *ptr = NULL; /* ポインタ */
 
-    outlog("start: rdata=%p", rdata);
+    dbglog("start: rdata=%p, length=%zu", rdata, *length);
 
     ptr = (uchar *)rdata;
     left = *length;
@@ -235,7 +237,7 @@ recv_data(const int sock, void *rdata, size_t *length)
                 len = 0;
             else
                 goto error_handler;
-        } else if (len == 0) { /* ソケットが切断された */
+        } else if (len == 0) { /* 接続先がシャットダウンした */
             outlog("The socket is not connected.");
             goto error_handler;
         } else { /* 正常時 */
@@ -243,13 +245,15 @@ recv_data(const int sock, void *rdata, size_t *length)
             ptr += len;
         }
     }
-    dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
+    dbglog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
+           len, sock, ptr, left, *length);
     return EX_OK;
 
 error_handler:
-    outlog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
     *length -= left;
+    outlog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
+           len, sock, ptr, left, *length);
     return EX_NG;
 }
 
@@ -273,7 +277,7 @@ recv_data_new(const int sock, size_t *length)
     dbglog("start: rdata=%p", rdata);
 
     /* メモリ確保 */
-    rdata = malloc(len * sizeof(uchar));
+    rdata = malloc(len);
     if (!rdata) {
         outlog("malloc=%p", rdata);
         return NULL;
@@ -294,20 +298,23 @@ recv_data_new(const int sock, size_t *length)
 /**
  * ソケットクローズ
  *
+ * シャットダウン後, クローズする.
  * @param[in] sock ソケット
  * @retval EX_NG エラー
  */
 int
 close_sock(int *sock) {
 
-    int retval = 0; /* 戻り値 */
+    int retval = 0;           /* 戻り値 */
+    const int sockfd = *sock; /* ソケット */
 
-    if (*sock < 0)
+    dbglog("start: %d", sockfd);
+    if (sockfd < 0)
         return EX_OK;
 
-    retval = close(*sock);
+    retval = close(sockfd);
     if (retval < 0) {
-        outlog("close=%d, sock=%d", retval, *sock);
+        outlog("close=%d, sockfd=%d", retval, sockfd);
         return EX_NG;
     }
     *sock = -1;

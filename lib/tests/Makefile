@@ -14,7 +14,6 @@ CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcutil -lpthread
-TESTLIBS = -ltest_calc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
 LOGSOBJ = test_log.so
@@ -29,20 +28,21 @@ MFREESOBJ = test_memfree.so
 MFREEOBJ = test_memfree.o
 TIMERSOBJ = test_timer.so
 TIMEROBJ = test_timer.o
-COMMONOBJ = test_common.o
+FIOSOBJ = test_fileio.so
+FIOOBJ = test_fileio.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) \
-     $(READSOBJ) $(MFREESOBJ) $(TIMERSOBJ)
+all: $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) \
+     $(READSOBJ) $(MFREESOBJ) $(TIMERSOBJ) $(FIOSOBJ)
 
-$(LOGSOBJ): $(LOGOBJ) $(COMMONOBJ)
+$(LOGSOBJ): $(LOGOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-$(NETSOBJ): $(NETOBJ) $(COMMONOBJ)
+$(NETSOBJ): $(NETOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
@@ -50,7 +50,7 @@ $(DATASOBJ): $(DATAOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-$(READSOBJ): $(READOBJ) $(COMMONOBJ)
+$(READSOBJ): $(READOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
@@ -58,14 +58,19 @@ $(MFREESOBJ): $(MFREEOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
-$(TIMERSOBJ): $(TIMEROBJ) $(COMMONOBJ)
+$(TIMERSOBJ): $(TIMEROBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+
+$(FIOSOBJ): $(FIOOBJ)
 	@$(RM) $@
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): Makefile
+$(LOGOBJ) $(NETOBJ) $(DATAOBJ) \
+$(READOBJ) $(MFREEOBJ) $(TIMEROBJ): Makefile
 
 .PHONY: debug
 debug:
@@ -81,7 +86,7 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) *.so *.o
+	@$(RM) *.so *.o
 
 .PHONY: help
 help:

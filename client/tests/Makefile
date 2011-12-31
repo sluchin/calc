@@ -13,40 +13,26 @@ INCLUDES = -I$(srcdir) -I$(pardir) -I$(libcalcdir) -I/usr/include/cutter
 CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
-LIBS = -lcutter -lcalcutil -lcalcp
-TESTLIBS = -ltest_calc
+LIBS = -lcutter -lcalcc
 COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
 LINK = $(CC) $(LDFLAGS)
-#CALCSOBJ = test_calc.so
-#FUNCSOBJ = test_function.so
-#ERRORSOBJ = test_error.so
-#CALCOBJ = test_calc.o
-#FUNCOBJ = test_function.o
-#ERROROBJ = test_error.o
-#COMMONOBJ = test_common.o
+CLIENTSOBJ = test_client.so
+CLIENTOBJ = test_client.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
+all: $(CLIENTSOBJ)
 
-#$(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-#
-#$(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
-#
-#$(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
-#	@$(RM) $@
-#	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+$(CLIENTSOBJ): $(CLIENTOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
 
 .c.o:
 	$(COMPILE) -c $<
 
-$(OBJECTS): Makefile
+$(CLIENTOBJ): Makefile
 
 .PHONY: debug
 debug:
@@ -62,7 +48,7 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) *.so *.o
+	@$(RM) *.so *.o
 
 .PHONY: help
 help:

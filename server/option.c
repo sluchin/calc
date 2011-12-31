@@ -38,23 +38,21 @@
 #include "log.h"
 #include "version.h"
 #include "calc.h"
+#include "server.h"
 #include "option.h"
 
 /* 外部変数 */
-bool g_gflag = false;            /**< gオプションフラグ */
-char g_port_no[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
-long g_digit = DEFAULT_DIGIT;    /**< 桁数 */
-
+char g_portno[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
 
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
-    { "port", required_argument, NULL, 'p' },
-    { "digit",     required_argument, NULL, 'd' },
-    { "debug", no_argument, NULL, 'g' },
-    { "help", no_argument, NULL, 'h' },
-    { "version", no_argument, NULL, 'V' },
-    { NULL, 0, NULL, 0 }
+    { "port",    required_argument, NULL, 'p' },
+    { "digit",   required_argument, NULL, 'd' },
+    { "debug",   no_argument,       NULL, 'g' },
+    { "help",    no_argument,       NULL, 'h' },
+    { "version", no_argument,       NULL, 'V' },
+    { NULL,      0,                 NULL, 0 }
 };
 
 /** オプション情報文字列(ショート) */
@@ -85,8 +83,8 @@ parse_args(int argc, char *argv[])
     dbglog("start");
 
     /* デフォルトのポート番号を設定 */
-    (void)memset(g_port_no, 0, sizeof(g_port_no));
-    (void)strncpy(g_port_no, DEFAULT_PORTNO, sizeof(g_port_no));
+    (void)memset(g_portno, 0, sizeof(g_portno));
+    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno));
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
@@ -96,9 +94,9 @@ parse_args(int argc, char *argv[])
                 outlog("opt=%c, optarg=%s", opt, optarg);
                 exit(EXIT_FAILURE);
             }
-            if (strlen(optarg) < sizeof(g_port_no)) {
-                (void)memset(g_port_no, 0, sizeof(g_port_no));
-                (void)strncpy(g_port_no, optarg, sizeof(g_port_no));
+            if (strlen(optarg) < sizeof(g_portno)) {
+                (void)memset(g_portno, 0, sizeof(g_portno));
+                (void)strncpy(g_portno, optarg, sizeof(g_portno));
             } else {
                 print_help(basename(argv[0]));
                 exit(EXIT_FAILURE);
@@ -170,9 +168,9 @@ print_version(const char *prog_name)
 }
 
 /**
- * getoptエラー表示
+ * getopt エラー表示
  *
- * getoptが異常な動作をした場合、エラーを表示する.
+ * getopt が異常な動作をした場合, エラーを表示する.
  * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
  * @return なし

@@ -34,8 +34,6 @@
 #define PORT_SIZE      48          /**< ポート名サイズ */
 
 /* 外部変数 */
-extern bool g_gflag;               /**< gオプションフラグ */
-extern bool g_tflag;               /**< tオプションフラグ */
 extern char g_hostname[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
 extern char g_portno[PORT_SIZE];   /**< ポート番号またはサービス名 */
 
