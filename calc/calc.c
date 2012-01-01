@@ -262,7 +262,6 @@ parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
         return;
     }
     readch(tsd);
-
 }
 
 /**

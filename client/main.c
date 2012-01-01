@@ -40,6 +40,8 @@
 static int sockfd = -1; /**< ソケット */
 
 /* 内部関数 */
+/** atexit登録関数 */
+static void exit_close_sock(void);
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
 /* シグナルハンドラ */
@@ -54,33 +56,54 @@ static void sig_handler(int signo);
  */
 int main(int argc, char *argv[])
 {
+    st_client status = 0; /* ステータス */
+
     dbglog("start");
 
     progname = basename(argv[0]);
 
-    /* シグナルハンドラ */
+    /* シグナルハンドラ設定 */
     set_sig_handler();
+
+    /* バッファリングしない */
+    if (setvbuf(stdin, NULL, _IONBF, 0))
+        outlog("setvbuf: stdin");
+
+    if (setvbuf(stdout, NULL, _IONBF, 0))
+        outlog("setvbuf: stdout");
 
     /* オプション引数 */
     parse_args(argc, argv);
 
+    /* 関数登録 */
+    if (atexit(exit_close_sock)) {
+        outlog("atexit");
+        exit(EX_FAILURE);
+    }
+
     /* ソケット接続 */
     sockfd = connect_sock(g_hostname, g_portno);
     if (sockfd < 0) {
-        (void)fprintf(stderr, "connect error\n");
-        return EXIT_FAILURE;
+        (void)fprintf(stderr, "Connect error\n");
+        exit(EX_CONNECT_ERR);
     }
 
-    dbglog("sockfd=%d", sockfd);
-
     /* ソケット送受信 */
-    client_loop(sockfd);
+    status = client_loop(sockfd);
 
-    /* ソケットクローズ */
+    exit(status);
+    return EX_SUCCESS;
+}
+
+/**
+ * atexit登録関数
+ *
+ * @return なし
+ */
+static void
+exit_close_sock(void)
+{
     close_sock(&sockfd);
-
-    exit(EXIT_SUCCESS);
-    return EXIT_SUCCESS;
 }
 
 /**

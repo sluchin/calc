@@ -287,8 +287,8 @@ recv_data_new(const int sock, size_t *length)
     /* データ受信 */
     retval = recv_data(sock, rdata, &len);
     if (retval < 0) { /* エラー */
-        memfree((void **)&rdata, NULL);
-        return NULL;
+        *length = 0;
+        return rdata;
     }
 
     *length = len; /* 受信されたバイト数を設定 */

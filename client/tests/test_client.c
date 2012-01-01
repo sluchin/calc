@@ -59,6 +59,7 @@ static int csock = -1;                     /**< クライアントソケット *
 static int acc = -1;                       /**< アクセプト */
 static int pfd1[] = { -1, -1 };            /**< パイプ1 */
 static int pfd2[] = { -1, -1 };            /**< パイプ2 */
+static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
 /* プロトタイプ */
 /** connect_sock() 関数テスト */
@@ -99,14 +100,15 @@ cut_startup(void)
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdout, NULL, _IONBF, 0))
-        cut_notify("setvbuf: stdout(%d)", errno);
     if (setvbuf(stdin, NULL, _IONBF, 0))
         cut_notify("setvbuf: stdin(%d)", errno);
+    if (setvbuf(stdout, NULL, _IONBF, 0))
+        cut_notify("setvbuf: stdout(%d)", errno);
 
     (void)memset(&client, 0, sizeof(client));
     test_init_client(&client);
 
+    (void)memset(port, 0, sizeof(port));
     retval = snprintf(port, sizeof(port), "%u", (uint)portno);
     if (retval < 0)
         cut_notify("snprintf=%d(%d)", retval, errno);
@@ -192,6 +194,7 @@ test_client_loop(void)
     int oldfd = 0;      /* 退避用 */
     size_t sendlen = 0; /* 送信バイト数 */
     int retval = 0;     /* 戻り値 */
+    st_client st = 0;   /* ステータス */
 
     dbglog("start");
 
@@ -233,8 +236,7 @@ test_client_loop(void)
             outlog("connect_sock");
             close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W],
                      &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
-            exit(EXIT_FAILURE);
-            return;
+            exit(CHILD_FAILED);
         }
 
         /* 標準入力 */
@@ -243,7 +245,7 @@ test_client_loop(void)
             outlog("pipe_fd2");
             close_fd(&pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
             close_sock(&csock);
-            exit(EXIT_FAILURE);
+            exit(CHILD_FAILED);
         }
 
         /* 標準出力 */
@@ -251,14 +253,14 @@ test_client_loop(void)
         if (retval < 0) {
             outlog("pipe_fd2");
             close_sock(&csock);
-            exit(EXIT_FAILURE);
+            exit(CHILD_FAILED);
         }
 
         g_sig_handled = 1;
-        client_loop(csock);
+        st = client_loop(csock);
 
         close_sock(&csock);
-        exit(EXIT_SUCCESS);
+        exit(st);
 
     } else { /* 親プロセス */
         dbglog("parent: cpid=%d", (int)cpid);
@@ -332,7 +334,7 @@ test_client_loop(void)
         if (w < 0)
             cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) == CHILD_FAILED)
             cut_error("status=%d(%d)", WEXITSTATUS(status), errno);
     }
 }
@@ -345,27 +347,22 @@ test_client_loop(void)
 void
 test_send_sock(void)
 {
-    int sendst = 0;          /* 関数ステータス */
+    int retval = 0;          /* 戻り値 */
     uchar estr[] = "exit\n"; /* exit文字列 */
     uchar qstr[] = "quit\n"; /* quit文字列 */
 
     dbglog("start");
 
-    sendst = exec_send_sock(sendbuf, sizeof(sendbuf));
-    cut_assert_equal_int(ST_RECV, sendst);
+    retval = exec_send_sock(sendbuf, sizeof(sendbuf));
+    cut_assert_equal_int(EX_SUCCESS, retval);
     cut_teardown();
 
-    (void)memset(sendbuf, 0, sizeof(sendbuf));
-    sendst = exec_send_sock(sendbuf, sizeof(sendbuf));
-    cut_assert_equal_int(ST_NORECV, sendst);
+    retval = exec_send_sock(estr, sizeof(estr));
+    cut_assert_equal_int(EX_QUIT, retval);
     cut_teardown();
 
-    sendst = exec_send_sock(estr, sizeof(estr));
-    cut_assert_equal_int(ST_BREAK, sendst);
-    cut_teardown();
-
-    sendst = exec_send_sock(qstr, sizeof(qstr));
-    cut_assert_equal_int(ST_BREAK, sendst);
+    retval = exec_send_sock(qstr, sizeof(qstr));
+    cut_assert_equal_int(EX_QUIT, retval);
     cut_teardown();
 }
 
@@ -383,7 +380,7 @@ test_read_sock(void)
     ssize_t rlen = 0;    /* read戻り値 */
     int oldfd = 0;       /* 退避用 */
     int retval = 0;      /* 戻り値 */
-    bool result = false; /* ループフラグ */
+    st_client st = 0;    /* ステータス */
 
     dbglog("start");
 
@@ -412,23 +409,21 @@ test_read_sock(void)
         if (csock < 0) {
             outlog("connect_sock");
             close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], NULL);
-            exit(EXIT_FAILURE);
+            exit(CHILD_FAILED);
         }
 
         /* 標準出力 */
         if (pipe_fd2(&pfd1[PIPE_R], &pfd1[PIPE_W], STDOUT_FILENO) < 0) {
             outlog("pipe_fd2");
             close_sock(&csock);
-            exit(EXIT_FAILURE);
+            exit(CHILD_FAILED);
         }
 
         /* テスト関数 */
-        result = client.read_sock(csock);
-        if (!result)
-            exit(EXIT_FAILURE);
+        st = client.read_sock(csock);
 
         close_sock(&csock);
-        exit(EXIT_SUCCESS);
+        exit(st);
 
     } else { /* 親プロセス */
         dbglog("parent: cpid=%d", (int)cpid);
@@ -485,8 +480,8 @@ exec_send_sock(uchar *sbuf, size_t length)
     ssize_t wlen = 0;     /* write戻り値 */
     int oldfd = 0;        /* 退避用 */
     int retval = 0;       /* 戻り値 */
-    int sendst = 0;       /* 関数ステータス */
     uchar rbuf[length];   /* 受信バッファ */
+    st_client st = 0;     /* ステータス */
 
     dbglog("start");
 
@@ -499,13 +494,6 @@ exec_send_sock(uchar *sbuf, size_t length)
     ssock = inet_sock_server();
     if (ssock < 0) {
         cut_error("inet_sock_server");
-        return EX_NG;
-    }
-
-    csock = connect_sock(hostname, port);
-    if (csock < 0) {
-        cut_error("pipe_fd2(%d)", errno);
-        close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], NULL);
         return EX_NG;
     }
 
@@ -523,66 +511,68 @@ exec_send_sock(uchar *sbuf, size_t length)
     if (cpid == 0) { /* 子プロセス */
         dbglog("child");
 
+        csock = connect_sock(hostname, port);
+        if (csock < 0) {
+            cut_error("pipe_fd2(%d)", errno);
+            close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], NULL);
+            exit(CHILD_FAILED);
+        }
+
         /* 標準入力 */
-        retval = pipe_fd2(&pfd1[PIPE_R], &pfd1[PIPE_W], STDIN_FILENO);
+        retval = pipe_fd2(&pfd1[PIPE_W], &pfd1[PIPE_R], STDIN_FILENO);
         if (retval < 0) {
             outlog("pipe_fd2");
-            exit(EXIT_FAILURE);
+            close_sock(&csock);
+            exit(CHILD_FAILED);
         }
 
-        /* 標準入力に送信 */
-        wlen = writen(STDIN_FILENO, (char *)sbuf, length);
-        if (wlen < 0) {
-            outlog("write=%d(%d)", wlen, errno);
-            exit(EXIT_FAILURE);
-        }
-        dbglog("write=%zd", wlen);
+        /* テスト関数 */
+        st = client.send_sock(csock);
 
-        if (!strcmp((char *)sbuf, "quit\n") ||
-            !strcmp((char *)sbuf, "exit\n") ||
-            *sbuf == '\0')
-            exit(EXIT_SUCCESS);
-
-        /* 受信待ち */
-        acc = accept_server(ssock);
-        if (acc < 0) {
-            outlog("accept(%d)", errno);
-            exit(EXIT_FAILURE);
-        }
-
-        /* 受信 */
-        retval = recv_server(acc, rbuf);
-        if (retval < 0) {
-            outlog("recv_server: acc=%d(%d)", acc, errno);
-            exit(EXIT_FAILURE);
-        }
-
-        /* 改行削除 */
-        if (sbuf[strlen((char *)sbuf) - 1] == '\n')
-            sbuf[strlen((char *)sbuf) - 1] = '\0';
-
-        retval = memcmp(sbuf, rbuf, strlen((char *)sbuf));
-        if (retval) { /* 非0 */
-            outlog("memcmp(%d)", errno);
-            exit(EXIT_FAILURE);
-        }
-        exit(EXIT_SUCCESS);
+        close_sock(&csock);
+        exit(st);
 
     } else { /* 親プロセス */
         dbglog("parent: cpid=%d", (int)cpid);
 
         /* 標準入力 */
-        retval = pipe_fd2(&pfd1[PIPE_W], &pfd1[PIPE_R], STDIN_FILENO);
+        retval = pipe_fd2(&pfd1[PIPE_R], &pfd1[PIPE_W], STDIN_FILENO);
         if (retval < 0) {
             cut_error("pipe_fd2(%d)", errno);
-            close_sock(&csock);
             return EX_NG;
         }
 
-        /* テスト関数 */
-        sendst = client.send_sock(csock);
+        /* 標準入力に送信 */
+        wlen = writen(STDIN_FILENO, (char *)sbuf, length);
+        if (wlen < 0) {
+            cut_error("write=%d(%d)", wlen, errno);
+            return EX_NG;
+        }
+        dbglog("write=%zd", wlen);
 
-        close_sock(&csock);
+        if (strcmp((char *)sbuf, "quit\n") &&
+            strcmp((char *)sbuf, "exit\n")) {
+
+            /* 受信待ち */
+            acc = accept_server(ssock);
+            if (acc < 0) {
+                cut_error("accept(%d)", errno);
+                return EX_NG;
+            }
+
+            /* 受信 */
+            retval = recv_server(acc, rbuf);
+            if (retval < 0) {
+                cut_error("recv_server: acc=%d(%d)", acc, errno);
+                return EX_NG;
+            }
+
+            /* 改行削除 */
+            if (sbuf[strlen((char *)sbuf) - 1] == '\n')
+                sbuf[strlen((char *)sbuf) - 1] = '\0';
+
+            cut_assert_equal_string((char *)sbuf, (char *)rbuf);
+        }
 
         /* 標準出力を元に戻す */
         if (dup2(oldfd, STDOUT_FILENO) < 0)
@@ -592,10 +582,10 @@ exec_send_sock(uchar *sbuf, size_t length)
         if (w < 0)
             cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
-            cut_error("status=%d(%d)", WEXITSTATUS(status), errno);
+        if (WEXITSTATUS(status) == CHILD_FAILED)
+            cut_error("child failed");
     }
-    return sendst;
+    return WEXITSTATUS(status);
 }
 
 /**

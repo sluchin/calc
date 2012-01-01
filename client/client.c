@@ -62,15 +62,19 @@ bool g_gflag = false;                    /**< gオプションフラグ */
 bool g_tflag = false;                    /**< tオプションフラグ */
 
 /* 内部変数 */
-static uint start_time = 0;       /**< タイマ開始 */
-static const int SOCK_ERROR = -1; /**< ソケットエラー */
+static uint start_time = 0;              /**< タイマ開始 */
+static const int SOCK_ERROR = -1;        /**< ソケットエラー */
+static struct client_data *sdata = NULL; /**< 送信データ構造体 */
+static uchar *expr = NULL;               /**< 入力バッファ */
+static uchar *answer = NULL;             /**< 受信データ */
 
 /* 内部関数 */
-/** 標準入力読込 */
 /** ソケット送信 */
-static sendstat send_sock(int sock);
+static st_client send_sock(int sock);
 /** ソケット受信 */
-static bool read_sock(int sock);
+static st_client read_sock(int sock);
+/** atexit登録関数 */
+static void exit_memfree(void);
 
 /**
  * ソケット接続
@@ -124,13 +128,13 @@ connect_sock(const char *host, const char *port)
  * @param[in] sock ソケット
  * @return なし
  */
-void
+st_client
 client_loop(int sock)
 {
     int ready = 0;           /* select戻り値 */
     struct timespec timeout; /* タイムアウト値 */
     sigset_t sigmask;        /* シグナルマスク */
-    sendstat st = ST_RECV;   /* ステータス */
+    st_client status = 0;    /* ステータス */
 #ifdef _USE_SELECT
     fd_set fds, rfds;        /* selectマスク */
 #else
@@ -138,6 +142,11 @@ client_loop(int sock)
 #endif /* _USE_SELECT */
 
     dbglog("start: sock=%d", sock);
+
+    if (atexit(exit_memfree)) {
+        outlog("atexit");
+        return EX_FAILURE;
+    }
 
 #ifdef _USE_SELECT
     /* マスクの設定 */
@@ -176,41 +185,43 @@ client_loop(int sock)
                 break;
             /* selectエラー */
             outlog("select=%d", ready);
-            break;
+            return EX_FAILURE;
         } else if (ready) {
 #ifdef _USE_SELECT
             if (FD_ISSET(STDIN_FILENO, &fds)) {
                 /* 標準入力レディ */
-                st = send_sock(sock);
-                if (st == ST_NORECV)
+                status = send_sock(sock);
+                if (status == EX_EMPTY)
                     continue;
-                else if (st == ST_BREAK)
-                    break;
+                if (status)
+                    return status;
             }
-            if (FD_ISSET(sock, &fds)) {
+            if (FD_ISSET(sock, &fds))
                 /* ソケットレディ */
-                if (!read_sock(sock))
-                    break;
-            }
+                status = read_sock(sock);
+                if (status)
+                    return status;
 #else
             if (targets[STDIN_POLL].revents & POLLIN) {
                 /* 標準入力レディ */
-                st = send_sock(sock);
-                if (st == ST_NORECV)
+                status = send_sock(sock);
+                if (status == EX_EMPTY)
                     continue;
-                else if (st == ST_BREAK)
-                    break;
+                if (status)
+                    return status;
             }
-            if (targets[SOCK_POLL].revents & POLLIN) {
+            if (targets[SOCK_POLL].revents & POLLIN)
                 /* ソケットレディ */
-                if (!read_sock(sock))
-                    break;
-            }
+                status = read_sock(sock);
+                if (status)
+                    return status;
 #endif /* _USE_SELECT */
         } else { /* タイムアウト */
             continue;
         }
     } while (!g_sig_handled);
+
+    return EX_SIGNAL;
 }
 
 /**
@@ -218,33 +229,27 @@ client_loop(int sock)
  *
  * @param[in] sock ソケット
  * @param[in] buf バッファ
- * @retval ST_BREAK ループ抜ける
- * @retval ST_NORECV 受信しない(コンティニュー)
- * @retval ST_RECV 受信する(次の処理)
+ * @return ステータス
  */
-static sendstat
+static st_client 
 send_sock(int sock)
 {
-    int retval = 0;                   /* 戻り値 */
-    size_t length = 0;                /* 長さ */
-    ssize_t slen = 0;                 /* 送信するバイト数 */
-    struct client_data *sdata = NULL; /* 送信データ構造体 */
-    uchar *expr = NULL;               /* 入力バッファ */
+    int retval = 0;    /* 戻り値 */
+    size_t length = 0; /* 長さ */
+    ssize_t slen = 0;  /* 送信するバイト数 */
 
     expr = _readline(stdin);
     if (!expr)
-        return ST_BREAK;
+        return EX_ALLOC_ERR;
 
     if (*expr == '\0') { /* 文字列長ゼロ */
         memfree((void **)&expr, NULL);
-        return ST_NORECV;
+        return EX_EMPTY;
     }
 
     if (!strcmp((char *)expr, "quit") ||
-        !strcmp((char *)expr, "exit")) {
-        memfree((void **)&expr, NULL);
-        return ST_BREAK;
-    }
+        !strcmp((char *)expr, "exit"))
+        return EX_QUIT;
 
     length = strlen((char *)expr) + 1;
     dbgdump(expr, length, "stdin: expr=%zu", length);
@@ -254,10 +259,8 @@ send_sock(int sock)
 
     /* データ設定 */
     slen = set_client_data(&sdata, expr, length);
-    if (slen < 0) { /* メモリ確保できない */
-        memfree((void **)&expr, NULL);
-        return ST_BREAK;
-    }
+    if (slen < 0) /* メモリ確保できない */
+        return EX_ALLOC_ERR;
     dbglog("slen=%zd", slen);
 
     if (g_gflag)
@@ -266,29 +269,26 @@ send_sock(int sock)
 
     /* データ送信 */
     retval = send_data(sock, sdata, (size_t *)&slen);
-    if (retval < 0) { /* エラー */
-        memfree((void **)&expr, (void **)&sdata, NULL);
-        return ST_BREAK;
-    }
+    if (retval < 0) /* エラー */
+        return EX_SEND_ERR;
+
     memfree((void **)&expr, (void **)&sdata, NULL);
 
-    return ST_RECV;
+    return EX_SUCCESS;
 }
 
 /**
  * ソケット受信
  *
  * @param[in] sock ソケット
- * @retval false ループを抜ける
- * @retval true ループを継続する
+ * @return ステータス
  */
-static bool
+static st_client 
 read_sock(int sock)
 {
     int retval = 0;       /* 戻り値 */
     size_t length = 0;    /* 送信または受信する長さ */
     struct header hd;     /* ヘッダ */
-    uchar *answer = NULL; /* 受信データ */
 
     dbglog("start");
 
@@ -297,7 +297,7 @@ read_sock(int sock)
     (void)memset(&hd, 0, length);
     retval = recv_data(sock, &hd, &length);
     if (retval < 0) /* エラー */
-        return false;
+        return EX_RECV_ERR;
     dbglog("recv_data: hd=%p, length=%zu", &hd, length);
 
     if (g_gflag)
@@ -309,11 +309,9 @@ read_sock(int sock)
     /* データ受信 */
     answer = recv_data_new(sock, &length);
     if (!answer) /* メモリ確保できない */
-        return false;
-    if (length <= 0) { /* 受信エラー */
-        memfree((void **)&answer, NULL);
-        return false;
-    }
+        return EX_ALLOC_ERR;
+    if (length == 0) /* 受信エラー */
+        return EX_RECV_ERR;
     dbglog("answer=%p, length=%zu", answer, length);
 
     if (g_gflag)
@@ -325,27 +323,25 @@ read_sock(int sock)
         print_timer(client_time);
     }
 
-#if 0
-    retval = setvbuf(stdout, NULL, _IONBF, 0);
-    if (retval) /* 非0 */
-        outlog("setvbuf=%d", retval);
-
     retval = fprintf(stdout, "%s\n", answer);
     if (retval < 0)
         outlog("fprintf=%d", retval);
-#else
-    retval = writen(STDOUT_FILENO, answer, length);
-    if (retval < 0)
-        outlog("writen: answer=%p, length=%d", answer, length);
 
-    /* 改行 */
-    retval = writen(STDOUT_FILENO, "\n", 1);
-    if (retval < 0)
-        outlog("writen: lf");
-#endif
     memfree((void **)&answer, NULL);
+    return EX_SUCCESS;
+}
 
-    return true;
+/**
+ * atexit登録関数
+ *
+ * @return なし
+ */
+static void
+exit_memfree(void)
+{
+    memfree((void **)&expr,
+            (void **)&sdata,
+            (void **)&answer, NULL);
 }
 
 #ifdef UNITTEST
