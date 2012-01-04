@@ -42,42 +42,42 @@
  * ホスト名設定
  *
  * @param[out] addr sockaddr_in構造体
- * @param[out] h_addr in_addr構造体
  * @param[in] host ホスト名またはIPアドレス
  * @retval EX_NG エラー
  */
 int
-set_hostname(struct sockaddr_in *addr,
-             struct in_addr h_addr, const char *host)
+set_hostname(struct sockaddr_in *addr, const char *host)
 {
     struct hostent *hp = NULL; /* ホスト情報構造体 */
+    struct in_addr s_addr;     /* IPアドレス情報構造体 */
     int retval = 0;            /* 戻り値 */
 
-    dbglog("start: addr=%p, h_addr=%p, host=%s",
-           addr, &h_addr, host);
+    dbglog("start: host=%s", host);
 
     if (!host)
         return EX_NG;
 
-    retval = inet_aton(host, &h_addr);
+    (void)memset(&s_addr, 0, sizeof(struct in_addr));
+
+    retval = inet_aton(host, &s_addr);
     if (!retval) { /* IPアドレスではない */
-        dbglog("inet_aton=%d, host=%s", retval, host);
+        dbglog("inet_aton: host=%s", host);
         hp = gethostbyname(host);
         if (!hp) { /* ホスト名でもない */
-            outlog("gethostbyname=%p, host=%s", hp, host);
+            outlog("gethostbyname: host=%s", host);
             return EX_NG;
         }
-        dbglog("h_addr=%p, h_addr=%zu h_length=%d", &h_addr,
-               sizeof(h_addr), hp->h_length);
+        dbglog("s_addr=%p, s_addr=%zu h_length=%d", &s_addr,
+               sizeof(s_addr), hp->h_length);
         /* ホスト名を設定 */
-        (void)memcpy(&h_addr, (struct in_addr *)*hp->h_addr_list,
+        (void)memcpy(&s_addr, (struct in_addr *)*hp->h_addr_list,
                      hp->h_length);
     }
 
     /* IPアドレスを設定 */
-    (void)memcpy(&addr->sin_addr, &h_addr, sizeof(addr->sin_addr));
+    (void)memcpy(&addr->sin_addr, &s_addr, sizeof(struct in_addr));
 
-    dbglog("h_addr=%p, inet_ntoa(h_addr)=%s", &h_addr, inet_ntoa(h_addr));
+    dbglog("%s", inet_ntoa(addr->sin_addr));
 
     return EX_OK;
 }
@@ -85,7 +85,7 @@ set_hostname(struct sockaddr_in *addr,
 /**
  * ポート番号設定
  *
- * @param[in,out] addr sockaddr_in構造体
+ * @param[out] addr sockaddr_in構造体
  * @param[in] port ポート番号またはサービス名
  * @retval EX_NG エラー
  */
@@ -113,12 +113,12 @@ set_port(struct sockaddr_in *addr, const char *port)
     } else {
         sp = getservbyname(port, "tcp");
         if (!sp) {
-            outlog("getservbyname=%p, port=%s", sp, port);
+            outlog("getservbyname: port=%s", port);
             return EX_NG;
         }
         addr->sin_port = sp->s_port;
     }
-    dbglog("sp=%p, addr->sin_port=0x%x", sp, ntohs((uint16_t)addr->sin_port));
+    dbglog("sp=%p, port=%d", sp, ntohs((uint16_t)addr->sin_port));
     return EX_OK;
 }
 
@@ -188,8 +188,8 @@ send_data(const int sock, const void *sdata, size_t *length)
         len = send(sock, sdata, *length, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0) {
-            if (errno == EINTR ||
-                errno == EAGAIN || errno == EWOULDBLOCK)
+            if ((errno == EINTR) ||
+                (errno == EAGAIN) || (errno == EWOULDBLOCK))
                 len = 0;
             else
                 goto error_handler;
@@ -232,8 +232,8 @@ recv_data(const int sock, void *rdata, size_t *length)
         len = recv(sock, ptr, left, 0);
         dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0) { /* エラー */
-            if (errno == EINTR &&
-                errno == EAGAIN && errno == EWOULDBLOCK)
+            if ((errno == EINTR) ||
+                (errno == EAGAIN) || (errno == EWOULDBLOCK))
                 len = 0;
             else
                 goto error_handler;

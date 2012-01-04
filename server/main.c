@@ -33,6 +33,7 @@
 #include "net.h"
 #include "memfree.h"
 #include "option.h"
+#include "calc.h"
 #include "server.h"
 
 /* 内部変数 */
@@ -63,7 +64,9 @@ int main(int c, char *v[], char *ep[])
 #endif
     dbglog("start");
 
-    /* アドレスを保持 */ argc = &c; argv = &v;
+    /* アドレスを保持 */
+    argc = &c;
+    argv = &v;
     envp = &ep;
 
     /* シグナルハンドラ */

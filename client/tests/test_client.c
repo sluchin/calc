@@ -48,9 +48,8 @@
 
 /* 内部変数 */
 static testclient client;                  /**< 関数構造体 */
-static const uint16_t portno = 12345;      /**< ポート番号 */
+static char port[] = "12345";              /**< ポート番号 */
 static const char *hostname = "localhost"; /**< ホスト名 */
-static char port[sizeof("65535")];         /**< ポート番号 */
 static struct sockaddr_in addr;            /**< ソケットアドレス情報構造体 */
 static uchar readbuf[BUF_SIZE];            /**< 受信バッファ */
 static uchar sendbuf[BUF_SIZE];            /**< 送信データ */
@@ -79,9 +78,9 @@ static int exec_send_sock(uchar *sbuf, size_t length);
 /** アクセプト */
 static int accept_server(int sockfd);
 /** 受信 */
-static int recv_server(int acc, uchar *readbuf);
+static int recv_server(int sockfd, uchar *rbuf);
 /** 送信 */
-static int send_server(int acc, uchar *sendbuf, size_t length);
+static int send_server(int sockfd, uchar *sbuf, size_t length);
 /** ソケット生成 */
 static int inet_sock_server(void);
 /** シグナル設定 */
@@ -95,8 +94,6 @@ static void set_sig_handler(void);
 void
 cut_startup(void)
 {
-    int retval = 0; /* 戻り値 */
-
     set_sig_handler();
 
     /* バッファリングしない */
@@ -107,11 +104,6 @@ cut_startup(void)
 
     (void)memset(&client, 0, sizeof(client));
     test_init_client(&client);
-
-    (void)memset(port, 0, sizeof(port));
-    retval = snprintf(port, sizeof(port), "%u", (uint)portno);
-    if (retval < 0)
-        cut_notify("snprintf=%d(%d)", retval, errno);
 
     /* リダイレクト */
     redirect(STDERR_FILENO, "/dev/null");
@@ -175,7 +167,7 @@ test_connect_sock(void)
     csock = connect_sock(hostname, port);
     dbglog("connect_sock=%d", csock);
 
-    cut_assert_not_equal_int(-1, csock);
+    cut_assert_not_equal_int(EX_NG, csock);
 }
 
 /**
@@ -634,7 +626,7 @@ accept_server(int sockfd)
         } else if (ready) {
             if (FD_ISSET(sockfd, &rfds)) {
                 /* アクセプト */
-                addrlen = (socklen_t)sizeof(addr);
+                addrlen = (socklen_t)sizeof(struct sockaddr_in);
                 accfd = accept(sockfd, (struct sockaddr *)&addr, &addrlen);
                 if (accfd < 0) {
                     cut_notify("accept=%d(%d)", accfd, errno);
@@ -653,12 +645,12 @@ accept_server(int sockfd)
 /**
  * 受信
  *
- * @param[in] acc アクセプト
- * @param[in] readbuf 受信バッファ
+ * @param[in] sockfd ソケット
+ * @param[in] rbuf 受信バッファ
  * @retval EX_NG エラー
  */
 static int
-recv_server(int acc, uchar *readbuf)
+recv_server(int sockfd, uchar *rbuf)
 {
     size_t length = 0; /* バイト数 */
     struct header hd;  /* ヘッダ構造体 */
@@ -670,7 +662,7 @@ recv_server(int acc, uchar *readbuf)
     length = sizeof(struct header);
     (void)memset(&hd, 0, length);
 
-    retval = recv_data(acc, &hd, &length);
+    retval = recv_data(sockfd, &hd, &length);
     if (retval < 0) {
         cut_notify("recv_data: length=%zu(%d)", length, errno);
         return EX_NG;
@@ -678,7 +670,7 @@ recv_server(int acc, uchar *readbuf)
     length = hd.length;
 
     /* 受信 */
-    retval = recv_data(acc, readbuf, &length);
+    retval = recv_data(sockfd, rbuf, &length);
     if (retval < 0) {
         cut_notify("recv_data: length=%zu(%d)", length, errno);
         return EX_NG;
@@ -689,13 +681,13 @@ recv_server(int acc, uchar *readbuf)
 /**
  * 送信
  *
- * @param[in] acc アクセプト
- * @param[in] readbuf 受信バッファ
+ * @param[in] sockfd ソケット
+ * @param[in] sbuf 送信バッファ
  * @param[in] length バイト数
  * @retval EX_NG エラー
  */
 static int
-send_server(int acc, uchar *sendbuf, size_t length)
+send_server(int sockfd, uchar *sbuf, size_t length)
 {
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     ssize_t slen = 0;                 /* 送信データバイト数 */
@@ -704,14 +696,14 @@ send_server(int acc, uchar *sendbuf, size_t length)
     dbglog("start");
 
     /* データ設定 */
-    slen = set_server_data(&sdata, sendbuf, length);
+    slen = set_server_data(&sdata, sbuf, length);
     if (slen < 0) {
         cut_notify("set_server_data=%zd(%d)", slen, errno);
         return EX_NG;
     }
 
     /* 送信 */
-    retval = send_data(acc, sdata, (size_t *)&slen);
+    retval = send_data(sockfd, sdata, (size_t *)&slen);
     if (retval < 0) {
         cut_notify("send_data: slen=%zd(%d)", slen, errno);
         memfree((void **)&sdata, NULL);
@@ -739,7 +731,8 @@ inet_sock_server(void)
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /* ポート番号を設定 */
-    addr.sin_port = (u_short)htons(portno);
+    if (set_port(&addr, port) < 0)
+        return EX_NG;
 
     /* ソケット生成 */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);

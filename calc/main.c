@@ -81,6 +81,12 @@ main(int argc, char *argv[])
     /* シグナルハンドラ */
     set_sig_handler();
 
+    /* バッファリングしない */
+    if (setvbuf(stdin, NULL, _IONBF, 0))
+        outlog("setvbuf: stdin");
+    if (setvbuf(stdout, NULL, _IONBF, 0))
+        outlog("setvbuf: stdout");
+
     /* オプション引数 */
     parse_args(argc, argv);
 
@@ -141,19 +147,16 @@ main_loop(void)
             !strcmp((char *)expr, "exit"))
             break;
 
-        tsd = init_calc(expr, g_digit);
+        tsd = init_calc(expr, g_digit, false);
         if (!tsd) { /* エラー */
             outlog("tsd=%p", tsd);
             memfree((void **)&expr, NULL);
-            continue;
+            break;
         }
 
         result = answer(tsd);
         dbglog("expr=%p, result=%p", expr, result);
         if (result) {
-            retval = setvbuf(stdout, NULL, _IONBF, 0);
-            if (retval) /* 非0 */
-                outlog("setvbuf=%d", retval);
             retval = fprintf(stdout, "%s\n", (char *)result);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
@@ -165,11 +168,13 @@ main_loop(void)
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
-        memfree((void **)&expr, NULL);
         destroy_calc(tsd);
+        memfree((void **)&expr, NULL);
         result = NULL;
 
     } while (!sig_handled);
+
+    memfree((void **)&tsd, NULL);
 }
 
 /**

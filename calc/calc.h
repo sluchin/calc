@@ -75,10 +75,13 @@ struct _calcinfo {
 typedef struct _calcinfo calcinfo;
 
 /** 初期化 */
-calcinfo *init_calc(void *buf, long digit);
+calcinfo *init_calc(void *buf, long digit, bool thread);
 
 /** メモリ解放 */
-void destroy_calc(calcinfo *tsd);
+void destroy_calc(void *tsd);
+
+/** キー解放 */
+void destroy_thread_key(void);
 
 /** 入力 */
 uchar *answer(calcinfo *tsd);
@@ -114,7 +117,6 @@ void test_init_calc(testcalc *calc);
  * -# スレッド生成(server_proc)\n
  * -# ヘッダ受信\n
  * -# データ受信\n
- * -# データのチェックサムをチェック\n
  * -# サーバ処理\n
  * -# データ送信\n
  *
@@ -127,7 +129,6 @@ void test_init_calc(testcalc *calc);
  * -# データ送信\n
  * -# ヘッダ受信\n
  * -# データ受信\n
- * -# データのチェックサムをチェック\n
  * -# 標準出力に文字列出力\n
  */
 /**

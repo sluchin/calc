@@ -30,7 +30,6 @@
 #include <ctype.h>      /* isdigit */
 #include <sys/socket.h> /* socket setsockopt */
 #include <sys/types.h>  /* setsockopt */
-#include <arpa/inet.h>  /* inet_addr */
 #include <errno.h>      /* errno */
 #include <unistd.h>     /* close access */
 #include <pthread.h>    /* pthread */
@@ -40,10 +39,8 @@
 
 #include "def.h"
 #include "log.h"
-#include "data.h"
 #include "net.h"
 #include "memfree.h"
-#include "calc.h"
 #include "option.h"
 #include "server.h"
 
@@ -58,6 +55,8 @@ static const int SOCK_ERROR = -1; /**< ソケットエラー */
 /* 内部関数 */
 /** サーバプロセス */
 static void *server_proc(void *arg);
+static void thread_cleanup(void *arg);
+static void thread_memfree(void *arg);
 
 /**
  * ソケット接続
@@ -132,14 +131,12 @@ void
 server_loop(int sock)
 {
     int ready = 0;           /* pselect戻り値 */
-    struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
-    socklen_t addrlen = 0;   /* sockaddr_in構造体のサイズ */
-    pthread_t tid;           /* スレッドID */
+    pthread_t tid = 0;       /* スレッドID */
     int retval = 0;          /* pthread_create戻り値 */
-    int acc = -1;            /* accept戻り値 */
     fd_set fds, rfds;        /* selectマスク */
     struct timespec timeout; /* タイムアウト値 */
     sigset_t sigmask;        /* シグナルマスク */
+    thread_data *dt = NULL;  /* ソケット情報構造体 */
 
     dbglog("start: sock=%d", sock);
 
@@ -153,6 +150,8 @@ server_loop(int sock)
     if (sigfillset(&sigmask) < 0) /* シグナル全て */
         outlog("sigfillset=%p", &sigmask);
     if (sigdelset(&sigmask, SIGINT) < 0) /* SIGINT除く*/
+        outlog("sigdelset=%p", &sigmask);
+    if (sigdelset(&sigmask, SIGHUP) < 0) /* SIGHUP除く*/
         outlog("sigdelset=%p", &sigmask);
 
     /* タイムアウト値初期化 */
@@ -176,31 +175,48 @@ server_loop(int sock)
             break;
         } else if (ready) {
             if (FD_ISSET(sock, &rfds)) {
+
+                dt = (thread_data *)malloc(sizeof(thread_data));
+                if (!dt) {
+                    outlog("malloc");
+                    continue;
+                }
+                (void)memset(dt, 0, sizeof(thread_data));
+
                 /* 接続受付 */
                 /* addrlenは入出力なのでここで初期化する */
-                addrlen = (socklen_t)sizeof(addr);
-                acc = accept(sock, (struct sockaddr *)&addr, &addrlen);
-                if (acc < 0) {
-                    outlog("accept: addr.sin_addr=%s addr.sin_port=%d",
-                           inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+                dt->len = (socklen_t)sizeof(dt->addr);
+                dt->sock = accept(sock,
+                                  (struct sockaddr *)&dt->addr,
+                                  &dt->len);
+                if (dt->sock < 0) {
+                    outlog("accept: sin_addr=%s sin_port=%d",
+                           inet_ntoa(dt->addr.sin_addr),
+                           ntohs(dt->addr.sin_port));
+                    memfree((void **)&dt, NULL);
                     continue;
                 }
-                dbglog("accept=%d, addr.sin_addr=%s addr.sin_port=%d", acc,
-                       inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+
                 /* スレッド生成 */
-                retval = pthread_create(&tid, NULL,
-                                        server_proc, (void *)acc);
+                retval = pthread_create(&tid, NULL, server_proc, dt);
                 if (retval) { /* エラー(非0) */
                     outlog("pthread_create=%lu", tid);
-                    close_sock(&acc); /* アクセプトクローズ */
+                    close_sock(&dt->sock); /* アクセプトクローズ */
+                    memfree((void **)&dt, NULL);
                     continue;
                 }
-                dbglog("pthread_create=%lu", tid);
+                dbglog("pthread_create=%lu, accept=%d", tid, dt->sock);
+
+                retval = pthread_detach(tid);
+                if (retval) /* エラー(非0) */
+                    outlog("pthread_detach: tid=%lu", tid);
             }
         } else { /* タイムアウト */
             continue;
         }
     } while (!g_sig_handled);
+
+    memfree((void **)&dt, NULL);
 }
 
 /**
@@ -212,110 +228,125 @@ server_loop(int sock)
 static void *
 server_proc(void *arg)
 {
+    thread_data *dt = arg;            /* ソケット情報構造体 */
+    int retval = 0;                   /* 戻り値 */
     size_t length = 0;                /* 長さ */
     ssize_t slen = 0;                 /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
-    int retval = 0;                   /* 戻り値 */
-    int acc = -1;                     /* アクセプト */
-    struct server_data *sdata = NULL; /* 送信データ構造体 */
     uchar *expr = NULL;               /* 受信データ */
     calcinfo *tsd = NULL;             /* calc情報構造体 */
+    struct server_data *sdata = NULL; /* 送信データ構造体 */
 
-    dbglog("start");
+    dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
+           dt->sock, inet_ntoa(dt->addr.sin_addr),
+           ntohs(dt->addr.sin_port), dt->len);
 
-    /* スレッドデタッチ */
-    pthread_detach(pthread_self());
-
-    /* 引数の取得 */
-    acc = (int)arg;
-
+    pthread_cleanup_push(thread_cleanup, dt);
     do {
         /* ヘッダ受信 */
-        length = sizeof(struct header);
         (void)memset(&hd, 0, length);
-        retval = recv_data(acc, &hd, &length);
-        if (retval < 0) { /* エラーまたは接続先がシャットダウンされた */
-            outlog("recv_data: hd=%p, length=%zu, hd.length=%zu",
-                   &hd, length, hd.length);
-            break;
-        }
+        length = sizeof(struct header);
+        retval = recv_data(dt->sock, &hd, &length);
+        if (retval < 0) /* エラーまたは接続先がシャットダウンされた */
+            pthread_exit((void *)EXIT_FAILURE);
+
         dbglog("recv_data: hd=%p, length=%zu, hd.length=%zu",
                &hd, length, hd.length);
+
         if (g_gflag)
             outdump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
         stddump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
 
-        length = hd.length; /* データ長を保持 */
-
         /* データ受信 */
-        expr = recv_data_new(acc, &length);
-        if (!expr) { /* メモリ確保できない */
-            outlog("expr=%p, length=%zu", expr, length);
-            break;
-        }
+        length = hd.length; /* データ長を保持 */
+        expr = recv_data_new(dt->sock, &length);
+        if (!expr) /* メモリ不足 */
+            pthread_exit((void *)EXIT_FAILURE);
 
-        if (length <= 0) {
-            outlog("expr=%p, length=%zu", expr, length);
-            break;
-        }
+        pthread_cleanup_push(thread_memfree, expr);
+
+        if (!length) /* 受信エラー */
+            pthread_exit((void *)EXIT_FAILURE);
 
         dbglog("expr=%p, length=%zu", expr, length);
 
         if (g_gflag)
-            outdump(expr, length, "recv: expr=%p, length=%zu", expr, length);
-        stddump(expr, length, "recv: expr=%p, length=%zu", expr, length);
+            outdump(expr, length,
+                    "recv: expr=%p, length=%zu", expr, length);
+        stddump(expr, length,
+                "recv: expr=%p, length=%zu", expr, length);
 
         /* サーバ処理 */
-        tsd = init_calc(expr, g_digit);
-        if (!tsd) { /* エラー */
-            outlog("tsd=%p", tsd);
-            memfree((void **)&expr, NULL);
-            break;
-        }
+        tsd = init_calc(expr, g_digit, true);
+        if (!tsd) /* エラー */
+            pthread_exit((void *)EXIT_FAILURE);
 
-        tsd->result = answer(tsd);
-        if (!tsd->result) { /* エラー */
-            outlog("result=%p", tsd->result);
-            memfree((void **)&expr, NULL);
-            break;
-        }
-        dbglog("result=%s", tsd->result);
+        if (!answer(tsd))
+            pthread_exit((void *)EXIT_FAILURE);
+
+        pthread_cleanup_push(destroy_calc, tsd);
 
         length = strlen((char *)tsd->result) + 1; /* 文字列長保持 */
+
         dbgdump(tsd->result, length,
                 "result=%p, length=%zu", tsd->result, length);
 
         /* データ送信 */
         slen = set_server_data(&sdata, tsd->result, length);
-        if (slen < 0) {
-            outlog("set_server_data: slen=%zd", slen);
-            destroy_calc(tsd);
-            memfree((void **)&expr, NULL);
-            break;
-        }
+        if (slen < 0) /* メモリ確保できない */
+            pthread_exit((void *)EXIT_FAILURE);
+
+        pthread_cleanup_push(thread_memfree, sdata);
         dbglog("slen=%zd", slen);
 
         if (g_gflag)
-            outdump(sdata, slen, "send: sdata=%p, length=%zd", sdata, slen);
-        stddump(sdata, slen, "send: sdata=%p, length=%zd", sdata, slen);
+            outdump(sdata, slen,
+                    "send: sdata=%p, length=%zd", sdata, slen);
+        stddump(sdata, slen,
+                "send: sdata=%p, length=%zd", sdata, slen);
 
-        retval = send_data(acc, sdata, (size_t *)&slen);
-        if (retval < 0) { /* エラー */
-            outlog("send_data: sdata=%p, length=%zu", sdata, slen);
-            destroy_calc(tsd);
-            memfree((void **)&expr, (void **)&sdata, NULL);
-            break;
-        }
+        retval = send_data(dt->sock, sdata, (size_t *)&slen);
+        if (retval < 0) /* エラー */
+            pthread_exit((void *)EXIT_FAILURE);
+
         dbglog("send_data: sdata=%p, length=%zu", sdata, slen);
 
-        destroy_calc(tsd);
-        memfree((void **)&expr, (void **)&sdata, NULL);
+        pthread_cleanup_pop(1);
+        pthread_cleanup_pop(1);
+        pthread_cleanup_pop(1);
 
     } while (!g_sig_handled);
 
-    close_sock(&acc);
+    pthread_cleanup_pop(1);
+    pthread_exit((void *)EXIT_SUCCESS);
+    return (void *)EXIT_SUCCESS;
+}
 
-    return NULL;
+/**
+ * スレッドクリーンアップハンドラ
+ *
+ * @param[in] arg ポインタ
+ * @return なし
+ */
+static void
+thread_cleanup(void *arg)
+{
+    thread_data *dt = arg; /* ソケット情報構造体 */
+
+    close_sock(&dt->sock);
+    memfree((void **)&dt, NULL);
+}
+
+/**
+ * スレッドメモリ解放ハンドラ
+ *
+ * @param[in] arg ポインタ
+ * @return なし
+ */
+static void
+thread_memfree(void *arg)
+{
+    memfree(&arg, NULL);
 }
 
 #ifdef UNITTEST

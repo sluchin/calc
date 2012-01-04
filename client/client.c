@@ -63,7 +63,6 @@ bool g_tflag = false;                    /**< tオプションフラグ */
 
 /* 内部変数 */
 static uint start_time = 0;              /**< タイマ開始 */
-static const int SOCK_ERROR = -1;        /**< ソケットエラー */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
 static uchar *expr = NULL;               /**< 入力バッファ */
 static uchar *answer = NULL;             /**< 受信データ */
@@ -87,7 +86,6 @@ int
 connect_sock(const char *host, const char *port)
 {
     struct sockaddr_in server; /* ソケットアドレス情報構造体 */
-    struct in_addr addr;       /* IPアドレス情報構造体 */
     int sock = -1;             /* ソケット */
     int retval = 0;            /* 戻り値 */
 
@@ -95,19 +93,18 @@ connect_sock(const char *host, const char *port)
 
     /* 初期化 */
     (void)memset(&server, 0, sizeof(struct sockaddr_in));
-    (void)memset(&addr, 0, sizeof(struct in_addr));
     server.sin_family = AF_INET;
 
-    if (set_hostname(&server, &addr, host) < 0)
-        return SOCK_ERROR;
+    if (set_hostname(&server, host) < 0)
+        return EX_NG;
     if (set_port(&server, port) < 0)
-        return SOCK_ERROR;
+        return EX_NG;
 
     /* ソケット生成 */
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         outlog("sock=%d", sock);
-        return SOCK_ERROR;
+        return EX_NG;
     }
 
     /* コネクト */
@@ -117,7 +114,7 @@ connect_sock(const char *host, const char *port)
         outlog("connect=%d, sock=%d", retval, sock);
         /* ソケットクローズ */
         close_sock(&sock);
-        return SOCK_ERROR;
+        return EX_NG;
     }
     return sock;
 }
@@ -199,8 +196,8 @@ client_loop(int sock)
             if (FD_ISSET(sock, &fds))
                 /* ソケットレディ */
                 status = read_sock(sock);
-                if (status)
-                    return status;
+            if (status)
+                return status;
 #else
             if (targets[STDIN_POLL].revents & POLLIN) {
                 /* 標準入力レディ */
@@ -213,8 +210,8 @@ client_loop(int sock)
             if (targets[SOCK_POLL].revents & POLLIN)
                 /* ソケットレディ */
                 status = read_sock(sock);
-                if (status)
-                    return status;
+            if (status)
+                return status;
 #endif /* _USE_SELECT */
         } else { /* タイムアウト */
             continue;
@@ -231,7 +228,7 @@ client_loop(int sock)
  * @param[in] buf バッファ
  * @return ステータス
  */
-static st_client 
+static st_client
 send_sock(int sock)
 {
     int retval = 0;    /* 戻り値 */
@@ -283,7 +280,7 @@ send_sock(int sock)
  * @param[in] sock ソケット
  * @return ステータス
  */
-static st_client 
+static st_client
 read_sock(int sock)
 {
     int retval = 0;       /* 戻り値 */
@@ -310,7 +307,7 @@ read_sock(int sock)
     answer = recv_data_new(sock, &length);
     if (!answer) /* メモリ確保できない */
         return EX_ALLOC_ERR;
-    if (length == 0) /* 受信エラー */
+    if (!length) /* 受信エラー */
         return EX_RECV_ERR;
     dbglog("answer=%p, length=%zu", answer, length);
 

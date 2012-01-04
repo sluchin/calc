@@ -163,7 +163,6 @@ void
 test_set_hostname(void)
 {
     struct sockaddr_in server; /* ソケットアドレス情報構造体 */
-    struct in_addr addr;       /* IPアドレス情報構造体 */
     int retval = 0;            /* 戻り値 */
 
     /* テストデータ */
@@ -175,22 +174,21 @@ test_set_hostname(void)
     uint i;
     for (i = 0; i < NELEMS(host); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
-        (void)memset(&addr, 0, sizeof(struct in_addr));
 
-        retval = set_hostname(&server, &addr, host[i]);
+        retval = set_hostname(&server, host[i]);
 
-        cut_assert_equal_string(ipaddr, inet_ntoa(addr),
+        cut_assert_equal_string(ipaddr, inet_ntoa(server.sin_addr),
                                 cut_message("expected=%s, actual=%s",
-                                            ipaddr, inet_ntoa(addr)));
+                                            ipaddr,
+                                            inet_ntoa(server.sin_addr)));
         cut_assert_equal_int(EX_OK, retval,
                              cut_message("return value"));
     }
 
     /* 異常系 */
     (void)memset(&server, 0, sizeof(struct sockaddr_in));
-    (void)memset(&addr, 0, sizeof(struct in_addr));
 
-    retval = set_hostname(&server, &addr, nohost);
+    retval = set_hostname(&server, nohost);
 
     cut_assert_equal_int(EX_NG, retval,
                          cut_message("return value"));

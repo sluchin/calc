@@ -66,7 +66,7 @@ static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
 /** キー確保 */
 static void alloc_key(void);
 /** バッファ固有のキー確保 */
-static void destroy_thread(void *ptr);
+static void destroy_tsd(void *tsd);
 /** 式 */
 static dbl expression(calcinfo *tsd);
 /** 項 */
@@ -87,29 +87,44 @@ static void readch(calcinfo *tsd);
  *
  * @param[in] expr 式
  * @param[in] digit 桁数
+ * @param[in] thread スレッドフラグ
  * @return calcinfo構造体
  */
 calcinfo *
-init_calc(void *expr, long digit)
+init_calc(void *expr, long digit, bool thread)
 {
     int retval = 0;       /* 戻り値 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    /* 1 回限りのキー初期化 */
-    pthread_once(&calc_once, alloc_key);
-    /* スレッド固有のバッファ取得 */
-    tsd = pthread_getspecific(calc_key);
-    if (!tsd) { /* 取得できない場合 */
-        /* スレッド固有のバッファ確保 */
-        tsd = malloc(sizeof(calcinfo));
-        if (!tsd) {
-            outlog("tsd=%p", tsd);
-            return NULL;
+    if (thread) {
+        /* 1 回限りのキー初期化 */
+        pthread_once(&calc_once, alloc_key);
+        /* スレッド固有のバッファ取得 */
+        tsd = pthread_getspecific(calc_key);
+        if (!tsd) { /* 取得できない場合 */
+            /* スレッド固有のバッファ確保 */
+            tsd = malloc(sizeof(calcinfo));
+            if (!tsd) {
+                outlog("tsd=%p", tsd);
+                return NULL;
+            }
+            dbglog("tsd=%p", tsd);
+            retval = pthread_setspecific(calc_key, tsd);
+            if (retval) {
+                outlog("pthread_setspecific");
+                return NULL;
+            }
         }
-        dbglog("tsd=%p", tsd);
-        pthread_setspecific(calc_key, tsd);
+    } else {
+        if (!tsd) {
+            tsd = malloc(sizeof(calcinfo));
+            if (!tsd) {
+                outlog("tsd=%p", tsd);
+                return NULL;
+            }
+            dbglog("tsd=%p", tsd);
+        }
     }
-
     (void)memset(tsd, 0, sizeof(calcinfo));
 
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
@@ -136,10 +151,11 @@ init_calc(void *expr, long digit)
  * @return なし
  */
 void
-destroy_calc(calcinfo *tsd)
+destroy_calc(void *tsd)
 {
-    dbglog("start: result=%p", tsd->result);
-    memfree((void **)&tsd->result, NULL);
+    calcinfo *ptr = tsd;
+    dbglog("start: result=%p", ptr->result);
+    memfree((void **)&ptr->result, NULL);
 }
 
 /**
@@ -273,7 +289,7 @@ static void
 alloc_key(void)
 {
     dbglog("start");
-    pthread_key_create(&calc_key, destroy_thread);
+    pthread_key_create(&calc_key, destroy_tsd);
 }
 
 /**
@@ -283,10 +299,10 @@ alloc_key(void)
  * @return なし
  */
 static void
-destroy_thread(void *ptr)
+destroy_tsd(void *tsd)
 {
-    dbglog("start: ptr=%p", ptr);
-    memfree((void **)&ptr, NULL);
+    dbglog("start: ptr=%p", tsd);
+    memfree((void **)&tsd, NULL);
 }
 
 /**

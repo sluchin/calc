@@ -31,6 +31,7 @@
 #include "def.h"
 #include "log.h"
 #include "error.h"
+#include "memfree.h"
 #include "calc.h"
 #include "test_common.h"
 
@@ -239,6 +240,7 @@ test_answer_four(void)
                                             four_data[i].expr,
                                             four_data[i].answer));
         destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
@@ -338,7 +340,7 @@ test_parse_func_args(void)
     dbglog("ch=%p", tsd->ch);
     parse_func_args(tsd, ARG_1, &x, &y);
     cut_assert_equal_double(235, 0.0, x);
-    destroy_calc(tsd);
+    memfree((void **)&tsd, NULL);
 
     tsd = set_string("(123,235)");
     if (!tsd)
@@ -348,7 +350,7 @@ test_parse_func_args(void)
     parse_func_args(tsd, ARG_2, &x, &y);
     cut_assert_equal_double(123, 0.0, x);
     cut_assert_equal_double(235, 0.0, y);
-    destroy_calc(tsd);
+    memfree((void **)&tsd, NULL);
 }
 
 /**
@@ -388,6 +390,8 @@ test_readch(void)
                          cut_message("ptr=%p", tsd->ptr));
     /* アドレスが変わらないことを確認 */
     cut_assert_equal_memory(ptr, sizeof(ptr), tsd->ptr, sizeof(tsd->ptr));
+
+    memfree((void **)&tsd, NULL);
 }
 
 /**
@@ -415,7 +419,7 @@ test_expression(void)
                                 cut_message("%s=%.12g",
                                             expression_data[i].expr,
                                             expression_data[i].answer));
-        destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
@@ -449,7 +453,7 @@ test_term(void)
                              cut_message("%s error",
                                          term_data[i].expr));
         clear_error(tsd);
-        destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
@@ -483,7 +487,7 @@ test_factor(void)
                              cut_message("%s error",
                                          factor_data[i].expr));
         clear_error(tsd);
-        destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
@@ -517,7 +521,7 @@ test_token(void)
                              cut_message("%s error",
                                          token_data[i].expr));
         clear_error(tsd);
-        destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
@@ -546,7 +550,7 @@ test_number(void)
                                 cut_message("%s=%.12g",
                                             number_data[i].expr,
                                             number_data[i].answer));
-        destroy_calc(tsd);
+        memfree((void **)&tsd, NULL);
     }
 }
 
