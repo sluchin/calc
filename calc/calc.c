@@ -30,16 +30,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>    /* FILE */
-#include <stdlib.h>   /* realloc */
-#include <string.h>   /* strndup memcpy memset */
-#include <ctype.h>    /* isdigit isalpha */
-#include <math.h>     /* powl */
-#include <pthread.h>  /* pthread_once */
+#include <stdio.h>   /* FILE */
+#include <stdlib.h>  /* realloc */
+#include <string.h>  /* strndup memcpy memset */
+#include <ctype.h>   /* isdigit isalpha */
+#include <math.h>    /* powl */
+#include <pthread.h> /* pthread_once */
+#include <signal.h>  /* sigaction */
 #ifdef _DEBUG
+#  include <unistd.h> /* write */
 #  include <limits.h> /* INT_MAX */
 #  include <float.h>  /* DBL_MAX */
-#endif
+#endif /* _DEBUG */
 
 #include "timer.h"
 #include "log.h"
@@ -61,6 +63,11 @@ static const dbl EX_ERROR = 0.0;
 static pthread_key_t calc_key;
 /** キー初期化 */
 static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
+#ifdef _DEBUG
+/** SIGFPE シグナル */
+static volatile sig_atomic_t sigfpe_handled = 0;
+static volatile sig_atomic_t sigfpe_code = 0;
+#endif /* _DEBUG */
 
 /* 内部関数 */
 /** キー確保 */
@@ -81,6 +88,14 @@ static dbl number(calcinfo *tsd);
 static int get_strlen(const dbl val, const char *fmt);
 /** バッファ読込 */
 static void readch(calcinfo *tsd);
+#ifdef _DEBUG
+/** SIGFPEハンドラ設定 */
+static void set_sigfpe_handler(void);
+/** SIGFPEハンドラ */
+static void sigfpe_handler(int signum, siginfo_t *info, void *ptr);
+/** SIGFPE文字列変換 */
+static char *str_sigfpe_code(int code);
+#endif /* _DEBUG */
 
 /**
  * 初期化
@@ -105,7 +120,7 @@ init_calc(void *expr, long digit, bool thread)
             /* スレッド固有のバッファ確保 */
             tsd = malloc(sizeof(calcinfo));
             if (!tsd) {
-                outlog("tsd=%p", tsd);
+                outlog("malloc: tsd=%zu", sizeof(calcinfo));
                 return NULL;
             }
             dbglog("tsd=%p", tsd);
@@ -119,7 +134,7 @@ init_calc(void *expr, long digit, bool thread)
         if (!tsd) {
             tsd = malloc(sizeof(calcinfo));
             if (!tsd) {
-                outlog("tsd=%p", tsd);
+                outlog("malloc: tsd=%zu", sizeof(calcinfo));
                 return NULL;
             }
             dbglog("tsd=%p", tsd);
@@ -128,32 +143,35 @@ init_calc(void *expr, long digit, bool thread)
     (void)memset(tsd, 0, sizeof(calcinfo));
 
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
-    dbglog("expr=%p, ptr=%p", expr, tsd->ptr);
+    dbglog("ptr=%p", tsd->ptr);
 
     /* フォーマット設定 */
     retval = snprintf(tsd->fmt, sizeof(tsd->fmt),
                       "%s%ld%s", "%.", digit, "g");
     if (retval < 0) {
-        outlog("snprintf=%d", retval);
+        outlog("snprintf");
         return NULL;
     }
     dbglog("fmt=%s", tsd->fmt);
 
     readch(tsd);
 
+#ifdef _DEBUG
+    set_sigfpe_handler();
+#endif /* _DEBUG */
     return tsd;
 }
 
 /**
  * メモリ解放
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] tsd calcinfo構造体ポインタ
  * @return なし
  */
 void
 destroy_calc(void *tsd)
 {
-    calcinfo *ptr = tsd;
+    calcinfo *ptr = (calcinfo *)tsd;
     dbglog("start: result=%p", ptr->result);
     memfree((void **)&ptr->result, NULL);
 }
@@ -202,24 +220,24 @@ answer(calcinfo *tsd)
         clear_error(tsd);
         dbglog("errormsg=%p", tsd->errormsg);
         if (!tsd->result) {
-            outlog("strndup=%p", tsd->result);
+            outlog("strndup");
             return NULL;
         }
         dbglog("result=%p, length=%u", tsd->result, length);
     } else {
         /* 文字数取得 */
         retval = get_strlen(val, tsd->fmt);
-        dbglog("retval=%d, INT_MAX=%d", retval, INT_MAX);
         if (retval <= 0) { /* エラー */
-            outlog("retval=%d", retval);
+            outlog("get_strlen=%d", retval);
             return NULL;
         }
+        dbglog("get_strlen=%d, INT_MAX=%d", retval, INT_MAX);
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
         tsd->result = (uchar *)malloc(length * sizeof(uchar));
         if (!tsd->result) {
-            outlog("calloc=%p", tsd->result);
+            outlog("calloc: length=%d", length);
             return NULL;
         }
         (void)memset(tsd->result, 0, length * sizeof(uchar));
@@ -234,6 +252,11 @@ answer(calcinfo *tsd)
         dbglog(tsd->fmt, val);
         dbglog("result=%s, length=%u", tsd->result, length);
     }
+#ifdef _DEBUG
+    dbglog("sigfpe_handled=%d", (int)sigfpe_handled);
+    if (sigfpe_handled)
+        dbglog("SIGFPE: %s", str_sigfpe_code(sigfpe_code) ? : "");
+#endif /* _DEBUG */
     return tsd->result;
 }
 
@@ -301,7 +324,7 @@ alloc_key(void)
 static void
 destroy_tsd(void *tsd)
 {
-    dbglog("start: ptr=%p", tsd);
+    dbglog("start: tsd=%p", tsd);
     memfree((void **)&tsd, NULL);
 }
 
@@ -536,7 +559,7 @@ get_strlen(const dbl val, const char *fmt)
 
     fp = fopen("/dev/null", "w");
     if (!fp) { /* fopen エラー */
-        outlog("fopen=%p", fp);
+        outlog("fopen");
     } else {
         result = fprintf(fp, fmt, val);
         if (result < 0)
@@ -544,12 +567,88 @@ get_strlen(const dbl val, const char *fmt)
 
         retval = fclose(fp);
         if (retval == EOF) /* fclose エラー */
-            outlog("fclose=%d", retval);
+            outlog("fclose");
     }
 
     dbglog("result=%d", result);
     return result;
 }
+
+/* SIGFPEが発生するかどうかテスト */
+#ifdef _DEBUG
+/**
+ * SIGFPEハンドラ設定
+ *
+ * @return なし
+ */
+static void
+set_sigfpe_handler(void)
+{
+    struct sigaction sa; /* sigaction構造体 */
+    sigset_t sigmask;    /* シグナルマスク */
+
+    (void)memset(&sa, 0, sizeof(struct sigaction));
+
+    /* シグナルマスクの設定 */
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+
+    if (sigaction(SIGFPE, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGFPE", &sa);
+    sa.sa_sigaction = sigfpe_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGFPE, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGFPE", &sa);
+}
+
+/**
+ * SIGFPEハンドラ
+ *
+ * param[in] signum シグナル
+ * param[in] info siginfo_t構造体
+ * param[in] ptr ポインタ
+ * @return なし
+ */
+static void
+sigfpe_handler(int signum, siginfo_t *info, void *ptr)
+{
+    sigfpe_handled = 1;
+    sigfpe_code = info->si_code;
+}
+
+/**
+ * SIGFPE文字列変換
+ *
+ * @param[in] code コード
+ * @return 文字列
+ */
+static char *
+str_sigfpe_code(int code)
+{
+    switch(code) {
+    case FPE_INTDIV:
+        return "integer divide by zero";
+    case FPE_INTOVF:
+        return "integer overflow";
+    case FPE_FLTDIV:
+        return "floating-point divide by zero";
+    case FPE_FLTOVF:
+        return "floating-point overflow";
+    case FPE_FLTUND:
+        return "floating-point underflow";
+    case FPE_FLTRES:
+        return "floating-point inexact result";
+    case FPE_FLTINV:
+        return "floating-point invalid operation";
+    case FPE_FLTSUB:
+        return "subscript out of range";
+    default:
+        return NULL;
+    }
+}
+#endif /* _DEBUG */
 
 #ifdef UNITTEST
 void

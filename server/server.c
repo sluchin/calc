@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2010-06-26 higashi 新規作成
- * @version \$Id
+ * @version \$Id$
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
@@ -146,13 +146,14 @@ server_loop(int sock)
 
     /* シグナルマスクの設定 */
     if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=%p", &sigmask);
+        outlog("sigemptyset=0x%x", sigmask);
     if (sigfillset(&sigmask) < 0) /* シグナル全て */
-        outlog("sigfillset=%p", &sigmask);
+        outlog("sigfillset=0x%x", sigmask);
     if (sigdelset(&sigmask, SIGINT) < 0) /* SIGINT除く*/
-        outlog("sigdelset=%p", &sigmask);
+        outlog("sigdelset=0x%x", sigmask);
     if (sigdelset(&sigmask, SIGHUP) < 0) /* SIGHUP除く*/
-        outlog("sigdelset=%p", &sigmask);
+        outlog("sigdelset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
@@ -198,6 +199,7 @@ server_loop(int sock)
                 }
 
                 /* スレッド生成 */
+                dt->sigmask = sigmask;
                 retval = pthread_create(&tid, NULL, server_proc, dt);
                 if (retval) { /* エラー(非0) */
                     outlog("pthread_create=%lu", tid);
@@ -215,8 +217,6 @@ server_loop(int sock)
             continue;
         }
     } while (!g_sig_handled);
-
-    memfree((void **)&dt, NULL);
 }
 
 /**
@@ -241,7 +241,24 @@ server_proc(void *arg)
            dt->sock, inet_ntoa(dt->addr.sin_addr),
            ntohs(dt->addr.sin_port), dt->len);
 
-    pthread_cleanup_push(thread_cleanup, dt);
+    if (!dt)
+        pthread_exit((void *)EXIT_FAILURE);
+
+    /* シグナル設定 */
+    dbglog("sigmask=0x%x", dt->sigmask);
+    if (pthread_sigmask(SIG_BLOCK, &dt->sigmask, NULL))
+        outlog("pthread_sigmask=0x%x", dt->sigmask);
+#ifdef _DEBUG
+    /* シグナル設定確認 */
+    sigset_t sigmask;
+    if (sigemptyset(&sigmask) < 0) /* 初期化 */
+        outlog("sigemptyset=0x%x", sigmask);
+    if (pthread_sigmask(SIG_SETMASK, NULL, &sigmask))
+        outlog("pthread_sigmask");
+    dbglog("sigmask=0x%x", sigmask);
+#endif /* _DEBUG */
+
+    pthread_cleanup_push(thread_cleanup, &dt);
     do {
         /* ヘッダ受信 */
         (void)memset(&hd, 0, length);
@@ -263,7 +280,7 @@ server_proc(void *arg)
         if (!expr) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);
 
-        pthread_cleanup_push(thread_memfree, expr);
+        pthread_cleanup_push(thread_memfree, &expr);
 
         if (!length) /* 受信エラー */
             pthread_exit((void *)EXIT_FAILURE);
@@ -296,7 +313,7 @@ server_proc(void *arg)
         if (slen < 0) /* メモリ確保できない */
             pthread_exit((void *)EXIT_FAILURE);
 
-        pthread_cleanup_push(thread_memfree, sdata);
+        pthread_cleanup_push(thread_memfree, &sdata);
         dbglog("slen=%zd", slen);
 
         if (g_gflag)
@@ -327,14 +344,15 @@ server_proc(void *arg)
  *
  * @param[in] arg ポインタ
  * @return なし
+ * @attention 引数にthread_data **型を渡さなければ不正アクセスになる.
  */
 static void
 thread_cleanup(void *arg)
 {
-    thread_data *dt = arg; /* ソケット情報構造体 */
-
-    close_sock(&dt->sock);
-    memfree((void **)&dt, NULL);
+    thread_data **dt = (thread_data **)arg; /* スレッドデータ構造体 */
+    dbglog("start: *dt=%p, dt=%p, sock=%d", *dt, dt, (*dt)->sock);
+    close_sock(&(*dt)->sock);
+    memfree((void **)dt, NULL);
 }
 
 /**
@@ -342,11 +360,14 @@ thread_cleanup(void *arg)
  *
  * @param[in] arg ポインタ
  * @return なし
+ * @attention 引数にvoid **型を渡さなければ不正アクセスになる.
  */
 static void
 thread_memfree(void *arg)
 {
-    memfree(&arg, NULL);
+    void **ptr = (void **)arg;
+    dbglog("start: *ptr=%p, ptr=%p", *ptr, ptr);
+    memfree(ptr, NULL);
 }
 
 #ifdef UNITTEST

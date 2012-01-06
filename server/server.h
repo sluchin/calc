@@ -30,6 +30,7 @@ struct _thread_data {
     int sock;                /**< ソケット */
     struct sockaddr_in addr; /**< sockaddr_in構造体 */
     socklen_t len;           /**< 長さ */
+    sigset_t sigmask;        /**< シグナルマスク */
 };
 typedef struct _thread_data thread_data;
 

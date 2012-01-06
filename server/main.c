@@ -39,9 +39,6 @@
 /* 内部変数 */
 static volatile sig_atomic_t hupflag = 0; /**< シグナル種別 */
 static int sockfd = -1;                   /**< ソケット */
-static int *argc;                         /**< 引数の数 */
-static char ***argv;                      /**< コマンド引数 */
-static char ***envp;                      /**< 環境変数 */
 
 /* 内部関数 */
 /** シグナルハンドラ設定 */
@@ -52,31 +49,26 @@ static void sig_handler(int signo);
 /**
  * main関数
  *
- * @param[in] c 引数の数
- * @param[in] v コマンド引数・オプション引数
- * @param[in] ep 環境変数
- * @return 常にEXIT_SUCCESS
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @param[in] envp 環境変数
+ * @retval EXIT_SUCCESS 正常
  */
-int main(int c, char *v[], char *ep[])
+int main(int argc, char *argv[], char *envp[])
 {
 #ifndef _DEBUG
     int retval = 0; /* 戻り値 */
 #endif
     dbglog("start");
 
-    /* アドレスを保持 */
-    argc = &c;
-    argv = &v;
-    envp = &ep;
-
     /* シグナルハンドラ */
     set_sig_handler();
 
     /* プログラム名を保持 */
-    progname = basename(v[0]);
+    progname = basename(argv[0]);
 
     /* オプション引数 */
-    parse_args(c, v);
+    parse_args(argc, argv);
 
     /* ソケット接続 */
     sockfd = server_sock(g_portno);
@@ -101,7 +93,7 @@ int main(int c, char *v[], char *ep[])
     if (hupflag) { /* 再起動 */
         dbglog("SIGHUP");
         (void)alarm(0);
-        (void)execve((*argv)[0], (*argv), (*envp));
+        (void)execve(argv[0], argv, envp);
     }
 
     exit(EXIT_SUCCESS);
@@ -117,31 +109,96 @@ static void
 set_sig_handler(void)
 {
     struct sigaction sa; /* sigaction構造体 */
+    sigset_t sigmask;    /* シグナルマスク */
+
+    (void)memset(&sa, 0, sizeof(struct sigaction));
 
     /* シグナルマスクの設定 */
-    (void)memset(&sa, 0, sizeof(struct sigaction));
-    if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", &sa);
-    if (sigfillset(&sa.sa_mask) < 0)
-        outlog("sigfillset=%p", &sa);
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
 
     /* シグナル補足 */
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) < 0)
+    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGINT", &sa);
-    if (sigaction(SIGTERM, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGINT", &sa);
+
+    if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGTERM", &sa);
-    if (sigaction(SIGQUIT, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGTERM, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGTERM", &sa);
+
+    if (sigaction(SIGQUIT, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGQUIT", &sa);
-    if (sigaction(SIGHUP, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGHUP", &sa);
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGQUIT, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGQUIT", &sa);
+
+    if (sigaction(SIGHUP, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGHUP", &sa);
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGHUP, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGHUP", &sa);
 
     /* 子プロセスをゾンビ化しない */
+    if (sigaction(SIGCHLD, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGCHLD", &sa);
     sa.sa_handler = SIG_IGN;
-    sa.sa_flags = SA_NOCLDWAIT; /* Linux 2.6 以降 */
-    if (sigaction(SIGCHLD, &sa, NULL) < 0)
-        outlog("sigaction[%p]; SIGCHLD", &sa);
+    sa.sa_flags |= SA_NOCLDWAIT; /* Linux 2.6 以降 */
+    if (sigaction(SIGCHLD, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGCHLD", &sa);
+
+    /* シグナル無視 */
+    if (sigaction(SIGALRM, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGALRM", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGALRM, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGALRM", &sa);
+
+    if (sigaction(SIGPIPE, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGPIPE", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGPIPE, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGPIPE", &sa);
+
+    if (sigaction(SIGUSR1, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGUSR1", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGUSR1, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGUSR1", &sa);
+
+    if (sigaction(SIGUSR2, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGUSR2", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGUSR2, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGUSR2", &sa);
+
+    if (sigaction(SIGTTIN, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGTTIN", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGTTIN, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGTTIN", &sa);
+
+    if (sigaction(SIGTTOU, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGTTOU", &sa);
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags |= SA_NODEFER;
+    if (sigaction(SIGTTOU, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGTTOU", &sa);
 }
 
 /**

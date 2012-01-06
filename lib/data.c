@@ -25,7 +25,6 @@
 #include <unistd.h> /* ssize_t */
 #include <string.h> /* memset memcpy */
 
-#include "memfree.h"
 #include "log.h"
 #include "data.h"
 
@@ -51,13 +50,16 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
 
     dbglog("start");
 
+    if (!buf)
+        return EX_NG;
+
     datalen = ALIGN8(len);
     length = sizeof(struct header) + datalen;
     dbglog("length=%zu", length);
 
     (*dt) = (struct client_data *)malloc(length);
     if (!(*dt)) {
-        outlog("malloc=%p", (*dt));
+        outlog("malloc: length=%zu", length);
         return EX_NG;
     }
     (void)memset((*dt), 0, length);
@@ -66,7 +68,7 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
     (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
     (void)memcpy((*dt)->expression, buf, len);
 
-    dbgdump(*dt, length, "dt=%zu", length);
+    dbgdump(*dt, length, "dt=%p, length=%zu", (*dt), length);
 
     return (ssize_t)length;
 }
@@ -87,13 +89,16 @@ set_server_data(struct server_data **dt, uchar *buf, const size_t len)
 
     dbglog("start");
 
+    if (!buf)
+        return EX_NG;
+
     datalen = ALIGN8(len);
     length = sizeof(struct header) + datalen;
     dbglog("length=%zu", length);
 
     (*dt) = (struct server_data *)malloc(length);
     if (!(*dt)) {
-        outlog("malloc=%p", (*dt));
+        outlog("malloc: length=%zu", length);
         return EX_NG;
     }
     (void)memset((*dt), 0, length);
@@ -102,7 +107,7 @@ set_server_data(struct server_data **dt, uchar *buf, const size_t len)
     (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
     (void)memcpy((*dt)->answer, buf, len);
 
-    dbgdump(*dt, length, "dt=%zu", length);
+    dbgdump(*dt, length, "dt=%p, length=%zu", (*dt), length);
 
     return (ssize_t)length;
 }

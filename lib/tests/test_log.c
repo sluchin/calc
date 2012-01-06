@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2011-11-19 higashi 新規作成
- * @version \$Id
+ * @version \$Id$
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
@@ -49,6 +49,8 @@ void test_dump_log(void);
 void test_dump_sys(void);
 /** dump_file() 関数テスト */
 void test_dump_file(void);
+/** systrace() 関数テスト */
+void test_systrace(void);
 /** print_trace() 関数テスト */
 void test_print_trace(void);
 
@@ -369,6 +371,41 @@ test_dump_file(void)
 }
 
 /**
+ * systrace() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_systrace(void)
+{
+    int rlen = 0;                /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
+    "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
+    "Obtained [0-9]+ stack frames.\\n*";
+
+    /* 正常系 */
+    fd = pipe_fd(STDERR_FILENO);
+    if (fd < 0) {
+        cut_error("pipe_fd(%d)", errno);
+        return;
+    }
+
+    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+             "filename", 15, "function");
+
+    rlen = read(fd, actual, sizeof(actual));
+    if (rlen < 0) {
+        cut_fail("read: fd=%d(%d)", fd, errno);
+        return;
+    }
+
+    cut_assert_match(expected, actual,
+                     cut_message("expected=%s actual=%s",
+                                 expected, actual));
+}
+
+/**
  * print_trace() 関数テスト
  *
  * @return なし
@@ -379,8 +416,7 @@ test_print_trace(void)
     int rlen = 0;                /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-        "Obtained [0-9]+ stack frames.\\n" \
-        "0x[0-9a-f]+, *";
+        "Obtained [0-9]+ stack frames.\\n*";
 
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);

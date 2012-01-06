@@ -41,14 +41,15 @@
 
 #define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE  256 /**< 最大メッセージサイズ */
+#define STACK_SIZE    100 /**< スタックサイズ */
 
-#define SYS(l, log)                                     \
-    syslog(l, "%s[%d]: %s: %s(%d)",                     \
-           __FILE__, __LINE__, __func__, log, errno);
+#define SYSMSG(lv, fmt, ...)                                    \
+    syslog(lv, "%s[%d]: %s: " fmt "(%d)",                       \
+           __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
 
-#define LOG(log)                                                \
-    (void)fprintf(stderr, "%s[%d]: %s: %s(%d)",                 \
-                  __FILE__, __LINE__, __func__, log, errno);
+#define LOGMSG(fmt, ...)                                                \
+    (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)",                    \
+                  __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
 
 /* 外部変数 */
 char *progname = NULL; /**< プログラム名 */
@@ -95,7 +96,7 @@ void system_log(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        SYS(level, "vsnprintf");
+        SYSMSG(level, "vsnprintf");
         return;
     }
 
@@ -151,12 +152,12 @@ void system_dbg_log(const int level,
     openlog(pname, option, SYS_FACILITY);
 
     if (gettimeofday(&tv, NULL) < 0) {
-        SYS(level, "gettimeofday");
+        SYSMSG(level, "gettimeofday");
         return;
     }
 
     if (localtime_r(&tv.tv_sec, &t) == NULL) {
-        SYS(level, "localtime_r");
+        SYSMSG(level, "localtime_r");
         return;
     }
 
@@ -164,7 +165,7 @@ void system_dbg_log(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        SYS(level, "vsnprintf");
+        SYSMSG(level, "vsnprintf");
         return;
     }
 
@@ -215,17 +216,17 @@ void stderr_log(const char *pname,
     (void)memset(&t, 0, sizeof(struct tm));
 
     if (gettimeofday(&tv, NULL) < 0) {
-        LOG("gettimeofday");
+        LOGMSG("gettimeofday");
         return;
     }
 
     if (localtime_r((time_t *)&tv.tv_sec, &t) == NULL) {
-        LOG("localtime_r");
+        LOGMSG("localtime_r");
         return;
     }
 
     if (gethostname(h_buf, sizeof(h_buf)) < 0) {
-        LOG("gethostname");
+        LOGMSG("gethostname");
         return;
     }
 
@@ -244,7 +245,7 @@ void stderr_log(const char *pname,
     retval = vfprintf(fp, format, ap);
     va_end(ap);
     if (retval < 0) {
-        LOG("vfprintf");
+        LOGMSG("vfprintf");
         return;
     }
 
@@ -280,7 +281,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        LOG("vsnprintf");
+        LOGMSG("vsnprintf");
         return EX_NG;
     }
 
@@ -362,7 +363,7 @@ int dump_sys(const int level,
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
     if (retval < 0) {
-        SYS(level, "vsnprintf");
+        SYSMSG(level, "vsnprintf");
         return EX_NG;
     }
 
@@ -371,6 +372,7 @@ int dump_sys(const int level,
         /* 初期化 */
         (void)memset(hexdump, 0, hsize);
         (void)snprintf(hexdump, hsize, "%08X : ", pt);
+        /* ダンプの表示 */
         for (j = 0; j < 16; j++) {
             if ((i + j) >= len ) {
                 (void)snprintf(tmp, tsize,
@@ -385,6 +387,7 @@ int dump_sys(const int level,
                               (hsize - strlen(hexdump) - 1));
             }
         }
+        /* アスキー文字の表示 */
         for (j = 0; (i < len) && (j < 16); i++, j++) {
             (void)snprintf(tmp, tsize, "%c",
                            (*(p + i) < ' ' || '~' < *(p + i) ?
@@ -429,24 +432,24 @@ int dump_file(const char *pname,
 
     fp = fopen(fname, "wb");
     if (!fp) {
-        SYS(LOG_INFO, "fopen");
+        SYSMSG(LOG_INFO, "fopen");
         return EX_NG;
     }
 
     wret = fwrite(buf, len, 1, fp);
     if (wret != 1) {
-        SYS(LOG_INFO, "fwrite");
+        SYSMSG(LOG_INFO, "fwrite");
         return EX_NG;
     }
 
     retval = fflush(fp);
     if (retval == EOF) {
-        SYS(LOG_INFO, "fflush");
+        SYSMSG(LOG_INFO, "fflush");
     }
 
     retval = fclose(fp);
     if (retval == EOF) {
-        SYS(LOG_INFO, "fclose");
+        SYSMSG(LOG_INFO, "fclose");
         return EX_NG;
     }
 
@@ -457,27 +460,76 @@ int dump_file(const char *pname,
 }
 
 /**
+ * バックトレースシスログ出力
+ *
+ * @param[in] level ログレベル
+ * @param[in] option オプション
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @return なし
+ */
+void
+systrace(const int level,
+         const int option,
+         const char *pname,
+         const char *fname,
+         const int line,
+         const char *func)
+{
+    int errsv = errno;              /* エラー番号退避 */
+    void *buffer[STACK_SIZE] = {0}; /* 配列 */
+    size_t size = 0;                /* サイズ */
+    char **strings = NULL;          /* 文字列 */
+
+    /* シスログオープン */
+    openlog(pname, option, SYS_FACILITY);
+
+    size = backtrace(buffer, STACK_SIZE);
+    strings = backtrace_symbols(buffer, size);
+    if (!strings) {
+        SYSMSG(level, "backtrace_symbols: size=%d", size);
+        return;
+    }
+
+    syslog(level, "%s[%d]: %s: Obtained %zd stack frames: %m(%d)",
+           fname, line, func, size, errsv);
+
+    size_t i;
+    for (i = 0; i < size; i++) {
+        syslog(level, "%s[%d]: %s: %s: %m(%d)",
+               fname, line, func, strings[i], errsv);
+    }
+
+    /* シスログクローズ */
+    closelog();
+
+    if (strings)
+        free(strings);
+    strings = NULL;
+}
+
+/**
  * バックトレース出力
  *
  * @return なし
- * @attention backtrace() 関数の size を大きくした場合,
- * クラッシュするかもしれない.
  */
 void
 print_trace(void)
 {
-    void *array[10] = {0}; /* 配列 */
-    size_t size = 0;       /* サイズ */
-    char **strings = NULL; /* 文字列 */
+    void *buffer[STACK_SIZE] = {0}; /* 配列 */
+    size_t size = 0;                /* サイズ */
+    char **strings = NULL;          /* 文字列 */
 
-    size = backtrace(array, 10);
-    strings = backtrace_symbols(array, size);
+    size = backtrace(buffer, STACK_SIZE);
+    strings = backtrace_symbols(buffer, size);
 
     (void)fprintf(stderr, "Obtained %zd stack frames.\n", size);
 
     size_t i;
     for (i = 0; i < size; i++)
-        (void)fprintf(stderr, "%p, %s\n", array[i], strings[i]);
+        (void)fprintf(stderr, "%s\n", strings[i]);
 
     if (strings)
         free(strings);

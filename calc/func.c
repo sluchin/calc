@@ -140,12 +140,12 @@ exec_func(calcinfo *tsd, const char *func)
 {
     dbl result = 0;      /* 戻り値 */
     dbl x = 0, y = 0;    /* 値 */
-    int i;               /* 変数 */
     bool exec;           /* 関数実行フラグ */
     enum functype ftype; /* 関数種別 */
 
     dbglog("start: func=%s", func);
 
+    int i;
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
         if (!strcmp(fstring[i].funcname, func)) {
             ftype = fstring[i].type;

@@ -32,7 +32,6 @@
 
 #include "log.h"
 #include "net.h"
-#include "memfree.h"
 #include "option.h"
 #include "client.h"
 
@@ -52,7 +51,7 @@ static void sig_handler(int signo);
  *
  * @param[in] argc 引数の数
  * @param[in] argv コマンド引数・オプション引数
- * @retval EXIT_FAILURE ソケット接続失敗
+ * @return ステータス
  */
 int main(int argc, char *argv[])
 {
@@ -66,10 +65,10 @@ int main(int argc, char *argv[])
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdin, NULL, _IONBF, 0))
+    if (setvbuf(stdin, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdin");
 
-    if (setvbuf(stdout, NULL, _IONBF, 0))
+    if (setvbuf(stdout, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdout");
 
     /* オプション引数 */
@@ -115,22 +114,37 @@ static void
 set_sig_handler(void)
 {
     struct sigaction sa; /* sigaction構造体 */
+    sigset_t sigmask;    /* シグナルマスク */
+
+    (void)memset(&sa, 0, sizeof(struct sigaction));
 
     /* シグナルマスクの設定 */
-    (void)memset(&sa, 0, sizeof(struct sigaction));
-    if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", &sa);
-    if (sigfillset(&sa.sa_mask) < 0)
-        outlog("sigfillset=%p", &sa);
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
 
     /* シグナル補足 */
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) < 0)
+    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGINT", &sa);
-    if (sigaction(SIGTERM, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGINT", &sa);
+
+    if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGTERM", &sa);
-    if (sigaction(SIGQUIT, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGTERM, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGTERM", &sa);
+
+    if (sigaction(SIGQUIT, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGQUIT", &sa);
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGQUIT, &sa, (struct sigaction *)NULL) < 0)
         outlog("sigaction=%p, SIGQUIT", &sa);
 }
 

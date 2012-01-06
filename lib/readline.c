@@ -49,10 +49,8 @@ _readline(FILE *fp)
 
     /* fgetsのファイルポインタにNULLを渡した場合,
      * crashするかもしれない */
-    if (!fp) {
-        outlog("fp=%p", fp);
+    if (!fp)
         return NULL;
-    }
 
     do {
         (void)memset(buf, 0, sizeof(buf));
@@ -67,11 +65,11 @@ _readline(FILE *fp)
             break;
 
         length = strlen((char *)buf);
-        dbgdump(buf, length, "buf=%u", length);
+        dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
         tmp = (uchar *)realloc(alloc, (total + length + 1) * sizeof(uchar));
         if (!tmp) {
-            outlog("realloc=%p, total+length+1=%zu", alloc, total + length + 1);
+            outlog("realloc: total+length+1=%zu", total + length + 1);
             return NULL;
         }
         alloc = tmp;
@@ -79,9 +77,8 @@ _readline(FILE *fp)
         (void)memcpy(alloc + total, buf, length + 1);
 
         total += length;
-        dbglog("length=%zu, total=%zu", length, total);
-        dbglog("%p alloc=%s", alloc, alloc);
-        dbgdump(alloc, total + 1, "alloc=%zu", total + 1);
+        dbglog("alloc=%p, length=%zu, total=%zu",
+               alloc + total, length, total);
 
     } while (*(alloc + total - 1) != '\n');
 

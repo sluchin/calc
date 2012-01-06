@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2011-12-24 higashi 新規作成
- * @version \Id
+ * @version \$Id$
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
@@ -604,9 +604,9 @@ accept_server(int sockfd)
 
     /* シグナルマスクの設定 */
     if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=%p", &sigmask);
+        outlog("sigemptyset=0x%x", sigmask);
     if (sigfillset(&sigmask) < 0)  /* シグナル全て */
-        outlog("sigfillset=%p", &sigmask);
+        outlog("sigfillset=0x%x", sigmask);
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));

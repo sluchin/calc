@@ -46,11 +46,13 @@ extern char *progname; /* プログラム名 */
 #  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
 #  define dbgdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
 #  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ## __VA_ARGS__)
+#  define dbgtrace()              systrace(LOGARGS)
 #else
 #  define dbglog(fmt, ...)        do { } while (0)
 #  define stdlog(fmt, ...)        do { } while (0)
 #  define dbgdump(a, b, fmt, ...) do { } while (0)
 #  define stddump(a, b, fmt, ...) do { } while (0)
+#  define dbgtrace()              do { } while (0)
 #endif /* _DEBUG */
 
 /** シスログ出力 */
@@ -79,6 +81,10 @@ int dump_sys(const int level, const int option, const char *pname,
 /** ファイルにバイナリ出力 */
 int dump_file(const char *pname, const char *fname, const char *buf,
               const size_t len);
+
+/** バックトレースシスログ出力 */
+void systrace(const int level, const int option, const char *pname,
+              const char *fname, const int line, const char *func);
 
 /** バックトレース出力 */
 void print_trace(void);

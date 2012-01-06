@@ -65,10 +65,10 @@ get_errormsg(calcinfo *tsd)
         return NULL;
 
     slen = strlen(errormsg[tsd->errorcode]) + 1;
-    dbglog("slen=%u", slen);
+    dbglog("slen=%zu", slen);
     msg = (uchar *)malloc(slen * sizeof(uchar));
     if (!msg) {
-        outlog("malloc=%p", msg);
+        outlog("malloc: slen=%zu", slen);
         return NULL;
     }
     (void)memset(msg, 0, slen);
@@ -89,11 +89,10 @@ get_errormsg(calcinfo *tsd)
 void
 set_errorcode(calcinfo *tsd, ER error)
 {
-    dbglog("start");
+    dbglog("start: %d", (int)error);
 
     if (tsd->errorcode == E_NONE)
         tsd->errorcode = error;
-    dbglog("errorcode=%d", tsd->errorcode);
 }
 
 /**
@@ -120,7 +119,7 @@ clear_error(calcinfo *tsd)
 bool
 is_error(calcinfo *tsd)
 {
-    dbglog("start: errorcode=%d", tsd->errorcode);
+    dbglog("start: errorcode=%d", (int)tsd->errorcode);
 
     if (tsd->errorcode)
         return true;

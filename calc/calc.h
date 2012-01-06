@@ -71,7 +71,6 @@ struct _calcinfo {
     ER errorcode;              /**< エラーコード */
     uchar *errormsg;           /**< エラーメッセージ */
 };
-
 typedef struct _calcinfo calcinfo;
 
 /** 初期化 */

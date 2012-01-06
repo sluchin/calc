@@ -29,6 +29,7 @@
 /* 配列要素数 */
 #define NELEMS(array) (sizeof(array) / sizeof(array[0]))
 
+/* 型定義 */
 typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned short ushort;

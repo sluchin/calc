@@ -82,9 +82,9 @@ main(int argc, char *argv[])
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdin, NULL, _IONBF, 0))
+    if (setvbuf(stdin, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdin");
-    if (setvbuf(stdout, NULL, _IONBF, 0))
+    if (setvbuf(stdout, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdout");
 
     /* オプション引数 */
@@ -112,7 +112,6 @@ main_loop(void)
     int retval = 0;       /* 戻り値 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
     uchar *expr = NULL;   /* 式 */
-    uchar *result = NULL; /* 結果 */
 #ifdef HAVE_READLINE
     int hist_no = 0;      /* 履歴数 */
     char *prompt = NULL;  /* プロンプト */
@@ -122,10 +121,11 @@ main_loop(void)
 
     dbglog("start");
 
+    retval = fflush(NULL);
+    if (retval == EOF)
+        outlog("fflush");
+
     do {
-        retval = fflush(NULL);
-        if (retval == EOF)
-            outlog("fflush=%d", retval);
 
 #ifdef HAVE_READLINE
         expr = (uchar *)readline(prompt);
@@ -141,7 +141,8 @@ main_loop(void)
             continue;
         }
         dbgdump(expr, strlen((char *)expr) + 1,
-                "stdin: expr=%u", strlen((char *)expr) + 1);
+                "stdin: expr=%p, strlen=%zu",
+                expr, strlen((char *)expr) + 1);
 
         if (!strcmp((char *)expr, "quit") ||
             !strcmp((char *)expr, "exit"))
@@ -149,15 +150,14 @@ main_loop(void)
 
         tsd = init_calc(expr, g_digit, false);
         if (!tsd) { /* エラー */
-            outlog("tsd=%p", tsd);
+            outlog("init_calc: g_digit=%ld", g_digit);
             memfree((void **)&expr, NULL);
             break;
         }
 
-        result = answer(tsd);
-        dbglog("expr=%p, result=%p", expr, result);
-        if (result) {
-            retval = fprintf(stdout, "%s\n", (char *)result);
+        if (answer(tsd)) {
+            dbglog("expr=%p, result=%p", expr, tsd->result);
+            retval = fprintf(stdout, "%s\n", (char *)tsd->result);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
         }
@@ -170,10 +170,10 @@ main_loop(void)
 
         destroy_calc(tsd);
         memfree((void **)&expr, NULL);
-        result = NULL;
 
     } while (!sig_handled);
 
+    /* スレッドではないので解放しなければならない */
     memfree((void **)&tsd, NULL);
 }
 
@@ -223,23 +223,37 @@ freehistory(HIST_ENTRY **hist)
 static void
 set_sig_handler(void)
 {
-    struct sigaction sa; /* シグナル */
+    struct sigaction sa; /* sigaction構造体 */
+    sigset_t sigmask;    /* シグナルマスク */
 
     /* シグナルマスクの設定 */
     (void)memset(&sa, 0, sizeof(struct sigaction));
-    if (sigemptyset(&sa.sa_mask) < 0)
-        outlog("sigemptyset=%p", &sa);
-    if (sigfillset(&sa.sa_mask) < 0)
-        outlog("sigfillset=%p", &sa);
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
 
     /* シグナル補足 */
-    sa.sa_handler = sig_handler;
-    sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) < 0)
+    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGINT", &sa);
-    if (sigaction(SIGTERM, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGINT", &sa);
+
+    if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
         outlog("sigaction=%p, SIGTERM", &sa);
-    if (sigaction(SIGQUIT, &sa, NULL) < 0)
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGTERM, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGTERM", &sa);
+
+    if (sigaction(SIGQUIT, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGQUIT", &sa);
+    sa.sa_handler = sig_handler;
+    sa.sa_mask = sigmask;
+    if (sigaction(SIGQUIT, &sa, (struct sigaction *)NULL) < 0)
         outlog("sigaction=%p, SIGQUIT", &sa);
 }
 

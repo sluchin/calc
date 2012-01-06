@@ -154,11 +154,12 @@ client_loop(int sock)
 
     /* シグナルマスクの設定 */
     if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=%p", &sigmask);
+        outlog("sigemptyset=0x%x", sigmask);
     if (sigfillset(&sigmask) < 0) /* シグナル全て */
-        outlog("sigfillset=%p", &sigmask);
+        outlog("sigfillset=0x%x", sigmask);
     if (sigdelset(&sigmask, SIGINT) < 0) /* SIGINT除く*/
-        outlog("sigdelset=%p", &sigmask);
+        outlog("sigdelset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
@@ -193,11 +194,12 @@ client_loop(int sock)
                 if (status)
                     return status;
             }
-            if (FD_ISSET(sock, &fds))
+            if (FD_ISSET(sock, &fds)) {
                 /* ソケットレディ */
                 status = read_sock(sock);
-            if (status)
-                return status;
+                if (status)
+                    return status;
+            }
 #else
             if (targets[STDIN_POLL].revents & POLLIN) {
                 /* 標準入力レディ */
@@ -207,11 +209,12 @@ client_loop(int sock)
                 if (status)
                     return status;
             }
-            if (targets[SOCK_POLL].revents & POLLIN)
+            if (targets[SOCK_POLL].revents & POLLIN) {
                 /* ソケットレディ */
                 status = read_sock(sock);
-            if (status)
-                return status;
+                if (status)
+                    return status;
+            }
 #endif /* _USE_SELECT */
         } else { /* タイムアウト */
             continue;

@@ -32,10 +32,10 @@
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
+#include <inttypes.h>   /* uint16_t, PRIu16 */
 #include <fcntl.h>      /* fcntl */
 
 #include "log.h"
-#include "memfree.h"
 #include "net.h"
 
 /**
@@ -67,8 +67,8 @@ set_hostname(struct sockaddr_in *addr, const char *host)
             outlog("gethostbyname: host=%s", host);
             return EX_NG;
         }
-        dbglog("s_addr=%p, s_addr=%zu h_length=%d", &s_addr,
-               sizeof(s_addr), hp->h_length);
+        dbglog("%p s_addr=%zu h_length=%d",
+               &s_addr, sizeof(s_addr), hp->h_length);
         /* ホスト名を設定 */
         (void)memcpy(&s_addr, (struct in_addr *)*hp->h_addr_list,
                      hp->h_length);
@@ -103,12 +103,12 @@ set_port(struct sockaddr_in *addr, const char *port)
 
     if (isdigit(port[0])) { /* 先頭が数字 */
         portno = (uint16_t)strtol(port, NULL, base);
-        dbglog("portno=%d, 0x%x", portno, portno);
+        dbglog("portno=%"PRIu16", 0x%"PRIx16"", portno, portno);
         if (portno <= 0 || 65535 <= portno) {
             outlog("portno=%d", portno);
             return EX_NG;
         }
-        dbglog("portno=0x%x", htons(portno));
+        dbglog("portno=0x%"PRIx16"", htons(portno));
         addr->sin_port = (u_short)htons(portno);
     } else {
         sp = getservbyname(port, "tcp");
@@ -118,7 +118,7 @@ set_port(struct sockaddr_in *addr, const char *port)
         }
         addr->sin_port = sp->s_port;
     }
-    dbglog("sp=%p, port=%d", sp, ntohs((uint16_t)addr->sin_port));
+    dbglog("port=%"PRIu16"", ntohs((uint16_t)addr->sin_port));
     return EX_OK;
 }
 
@@ -158,10 +158,10 @@ set_block(int fd, blockmode mode)
 #ifdef _DEBUG
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
-        outlog("fcntl=0x%x", flags);
+        dbglog("fcntl=0x%x", flags);
+    dbglog("fcntl=0x%x", flags);
 #endif /* _DEBUG */
 
-    dbglog("fcntl=0x%x", flags);
     return EX_OK;
 }
 
@@ -264,22 +264,22 @@ error_handler:
  *
  * @param[in] sock ソケット
  * @param[in,out] length データ長
- * @retval NULL エラー
  * @return 受信されたデータポインタ
+ * @retval NULL エラー
  */
 void *
 recv_data_new(const int sock, size_t *length)
 {
-    int retval = 0;       /* 戻り値 */
     size_t len = *length; /* バイト数 */
+    int retval = 0;       /* 戻り値 */
     void *rdata = NULL;   /* 受信データ */
 
-    dbglog("start: rdata=%p", rdata);
+    dbglog("start: length=%zu", *length);
 
     /* メモリ確保 */
     rdata = malloc(len);
     if (!rdata) {
-        outlog("malloc=%p", rdata);
+        outlog("malloc: len= %zu", len);
         return NULL;
     }
     (void)memset(rdata, 0, len);
@@ -309,12 +309,13 @@ close_sock(int *sock) {
     const int sockfd = *sock; /* ソケット */
 
     dbglog("start: %d", sockfd);
+
     if (sockfd < 0)
         return EX_OK;
 
     retval = close(sockfd);
     if (retval < 0) {
-        outlog("close=%d, sockfd=%d", retval, sockfd);
+        outlog("close: sockfd=%d", sockfd);
         return EX_NG;
     }
     *sock = -1;

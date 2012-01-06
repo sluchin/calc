@@ -32,7 +32,8 @@
  *
  * freeした後, NULLを代入する.
  * 最後の引数はNULLにする.
- * memfree((void **)pointer, NULL);
+ * 例: memfree((void **)pointer, NULL);
+ * void **にキャストしなければ警告が出る.
  *
  * @param[in,out] ptr freeするポインタ
  * @param[in,out] ... 可変引数
@@ -41,10 +42,12 @@
 void
 memfree(void** ptr, ...)
 {
-    va_list ap;        /* va_list */
     void **mem = NULL; /* ポインタ */
+    va_list ap;        /* va_list */
 
-    dbglog("ptr=%p", *ptr);
+    dbglog("start: ptr=%p", *ptr);
+    dbgtrace();
+
     if (*ptr)
         free(*ptr);
     *ptr = NULL;

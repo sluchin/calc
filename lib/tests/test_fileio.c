@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2011-12-26 higashi 新規作成
- * @version \Id
+ * @version \$Id$
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */

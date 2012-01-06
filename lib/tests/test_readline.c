@@ -4,7 +4,7 @@
  *
  * @author higashi
  * @date 2011-12-20 higashi 新規作成
- * @version \Id
+ * @version \$Id$
  *
  * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
@@ -36,7 +36,7 @@
 #include "readline.h"
 
 /* 端末の入力可能なバイト数(4096)より大きいサイズに設定 */
-#define BUF_SIZE 4100 /**< バッファサイズ */
+#define BUF_SIZE 1100 /**< バッファサイズ */
 
 /* プロトタイプ */
 /** readline() 関数テスト */
