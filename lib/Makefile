@@ -1,5 +1,5 @@
 # Makefile
-# $Id$ 
+# $Id$
 srcdir = .
 top_srcdir = ..
 prefix = /usr/local
@@ -25,6 +25,7 @@ OBJECTS = data.o \
           net.o \
           readline.o \
           fileio.o \
+          term.o \
           log.o
 CUTTER = /usr/bin/cutter -v v
 #PYTHON = python
@@ -41,7 +42,7 @@ $(LIBRARY): $(OBJECTS)
 
 $(SHAREDOBJ): $(OBJECTS)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(DFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<
@@ -52,6 +53,7 @@ $(OBJECTS): data.h \
             net.h \
             readline.h \
             fileio.h \
+            term.h \
             Makefile
 
 .PHONY: debug

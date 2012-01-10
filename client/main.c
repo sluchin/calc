@@ -55,7 +55,7 @@ static void sig_handler(int signo);
  */
 int main(int argc, char *argv[])
 {
-    st_client status = 0; /* ステータス */
+    st_client status = EX_SUCCESS; /* ステータス */
 
     dbglog("start");
 

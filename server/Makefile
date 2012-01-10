@@ -16,7 +16,8 @@ INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/calc
 CFLAGS = -g -Wall -O2 -DNDEBUG
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib -L$(top_srcdir)/calc
-LIBS = -lcalcutil -lcalcp -lm -lpthread
+LIBS = -lm -lpthread
+UTILLIBS = -lcalcp -lcalcutil
 SERVERLIBS = -lcalcd
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
@@ -41,16 +42,17 @@ $(LIBSERVER): $(OBJSERVER)
 
 $(SHAREDOBJ): $(OBJSERVER)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $@ $(LIBS) $(SERVERLIBS) $^
+	$(LINK) -o $@ $^ $(SERVERLIBS) $(UTILLIBS) $(LIBS)
+	@#$(LINK) -o $@ $^ $(LIBSERVER) $(UTILLIBS) $(LIBS)
 
 .PHONY: static
-static: $(OBJECTS) $(OBJSERVER) $(LIBSERVER) $(SHAREDOBJ)
+static: $(OBJECTS) $(LIBSERVER)
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBSERVER) $(LIBRARY)
+	$(LINK) -o $(PROGRAM) $^ $(LIBRARY) $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

@@ -213,7 +213,7 @@ static const struct test_data_dbl number_data [] = {
 void
 cut_startup(void)
 {
-    (void)memset(&calc, 0, sizeof(calc));
+    (void)memset(&calc, 0, sizeof(testcalc));
     test_init_calc(&calc);
 }
 

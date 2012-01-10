@@ -1,6 +1,6 @@
 /**
  * @file  lib/memfree.c
- * @brief ユーティリティ
+ * @brief メモリ解放
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成

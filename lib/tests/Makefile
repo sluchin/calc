@@ -30,41 +30,47 @@ TIMERSOBJ = test_timer.so
 TIMEROBJ = test_timer.o
 FIOSOBJ = test_fileio.so
 FIOOBJ = test_fileio.o
+TERMSOBJ = test_term.so
+TERMOBJ = test_term.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
 all: $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) \
-     $(READSOBJ) $(MFREESOBJ) $(TIMERSOBJ) $(FIOSOBJ)
+     $(READSOBJ) $(MFREESOBJ) $(TIMERSOBJ) $(FIOSOBJ) $(TERMSOBJ)
 
 $(LOGSOBJ): $(LOGOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(NETSOBJ): $(NETOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(DATASOBJ): $(DATAOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(READSOBJ): $(READOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(MFREESOBJ): $(MFREEOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(TIMERSOBJ): $(TIMEROBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(FIOSOBJ): $(FIOOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+
+$(TERMSOBJ): $(TERMOBJ)
+	@$(RM) $@
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

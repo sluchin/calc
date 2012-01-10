@@ -55,6 +55,7 @@ void test_systrace(void);
 void test_print_trace(void);
 
 /* 内部変数 */
+static testlog log;
 static char dump[0xFF + 1];           /**< ダンプデータ */
 static int fd = -1;                   /**< ファイルディスクリプタ */
 static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
@@ -103,6 +104,9 @@ void cut_startup(void)
     for (i = 0; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
+
+    (void)memset(&log, 0, sizeof(testlog));
+    test_init_log(&log);
 }
 
 void
@@ -381,8 +385,8 @@ test_systrace(void)
     int rlen = 0;                /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-    "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
-    "Obtained [0-9]+ stack frames.\\n*";
+        "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
+        "Obtained [0-9]+ stack frames.\\n*";
 
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
@@ -436,6 +440,68 @@ test_print_trace(void)
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
+}
+
+/**
+ * print_termattr() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_sys_print_termattr(void)
+{
+    int rlen = 0;                /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
+        "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
+        "tcgetattr\\(.*\\)";
+
+    /* 正常系 */
+    fd = pipe_fd(STDERR_FILENO);
+    if (fd < 0) {
+        cut_error("pipe_fd(%d)", errno);
+        return;
+    }
+
+    sys_print_termattr(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                       "filename", 15, "function", STDIN_FILENO);
+
+    rlen = read(fd, actual, sizeof(actual));
+    if (rlen < 0) {
+        cut_fail("read: fd=%d(%d)", fd, errno);
+        return;
+    }
+
+    cut_assert_match(expected, actual,
+                     cut_message("expected=%s actual=%s",
+                                 expected, actual));
+}
+
+/**
+ * strmon() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_strmon(void)
+{
+    char *result = NULL;
+
+    /* 正常系 */
+    result = log.strmon(0);
+    cut_assert_equal_string(result, "Jan");
+
+    if (result)
+        free(result);
+    result = NULL;
+
+    /* 異常系 */
+    result = log.strmon(12);
+    cut_assert_null(result);
+
+    if (result)
+        free(result);
+    result = NULL;
 }
 
 /**

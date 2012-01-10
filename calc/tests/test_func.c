@@ -202,8 +202,8 @@ static const struct test_data combination_data[] = {
  */
 void cut_startup(void)
 {
-    (void)memset(&calc, 0, sizeof(calc));
-    (void)memset(&func, 0, sizeof(func));
+    (void)memset(&calc, 0, sizeof(testcalc));
+    (void)memset(&func, 0, sizeof(testfunc));
     test_init_calc(&calc);
     test_init_func(&func);
 }

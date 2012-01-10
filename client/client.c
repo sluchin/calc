@@ -128,10 +128,10 @@ connect_sock(const char *host, const char *port)
 st_client
 client_loop(int sock)
 {
-    int ready = 0;           /* select戻り値 */
-    struct timespec timeout; /* タイムアウト値 */
-    sigset_t sigmask;        /* シグナルマスク */
-    st_client status = 0;    /* ステータス */
+    int ready = 0;                 /* select戻り値 */
+    struct timespec timeout;       /* タイムアウト値 */
+    sigset_t sigmask;              /* シグナルマスク */
+    st_client status = EX_SUCCESS; /* ステータス */
 #ifdef _USE_SELECT
     fd_set fds, rfds;        /* selectマスク */
 #else
@@ -307,7 +307,7 @@ read_sock(int sock)
     length = hd.length; /* データ長を保持 */
 
     /* データ受信 */
-    answer = recv_data_new(sock, &length);
+    answer = (uchar *)recv_data_new(sock, &length);
     if (!answer) /* メモリ確保できない */
         return EX_ALLOC_ERR;
     if (!length) /* 受信エラー */

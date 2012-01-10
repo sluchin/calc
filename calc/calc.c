@@ -115,10 +115,10 @@ init_calc(void *expr, long digit, bool thread)
         /* 1 回限りのキー初期化 */
         pthread_once(&calc_once, alloc_key);
         /* スレッド固有のバッファ取得 */
-        tsd = pthread_getspecific(calc_key);
+        tsd = (calcinfo *)pthread_getspecific(calc_key);
         if (!tsd) { /* 取得できない場合 */
             /* スレッド固有のバッファ確保 */
-            tsd = malloc(sizeof(calcinfo));
+            tsd = (calcinfo *)malloc(sizeof(calcinfo));
             if (!tsd) {
                 outlog("malloc: tsd=%zu", sizeof(calcinfo));
                 return NULL;
@@ -132,7 +132,7 @@ init_calc(void *expr, long digit, bool thread)
         }
     } else {
         if (!tsd) {
-            tsd = malloc(sizeof(calcinfo));
+            tsd = (calcinfo *)malloc(sizeof(calcinfo));
             if (!tsd) {
                 outlog("malloc: tsd=%zu", sizeof(calcinfo));
                 return NULL;

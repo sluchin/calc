@@ -41,6 +41,7 @@
 #include "data.h"
 #include "option.h"
 #include "log.h"
+#include "term.h"
 #include "calc.h"
 
 /* 内部変数 */
@@ -113,7 +114,7 @@ main_loop(void)
     calcinfo *tsd = NULL; /* calcinfo構造体 */
     uchar *expr = NULL;   /* 式 */
 #ifdef HAVE_READLINE
-    int hist_no = 0;      /* 履歴数 */
+    uint hist_no = 0;     /* 履歴数 */
     char *prompt = NULL;  /* プロンプト */
 
     rl_event_hook = &check_state;
@@ -127,6 +128,7 @@ main_loop(void)
 
     do {
 
+        dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
         expr = (uchar *)readline(prompt);
 #else

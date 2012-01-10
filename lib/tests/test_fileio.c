@@ -273,6 +273,7 @@ test_pipe_fd2(void)
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステータス */
     char readbuf[sizeof(sendbuf)]; /* 受信バッファ */
+    int oldfd = 0;                 /* 退避用 */
 
     (void)memset(readbuf, 0, sizeof(readbuf));
 
@@ -292,6 +293,9 @@ test_pipe_fd2(void)
     if (cpid == 0) {
         dbglog("child");
 
+        oldfd = dup(STDIN_FILENO);
+        if (oldfd < 0)
+            cut_notify("dup(%d)", errno);
         retval = pipe_fd2(&pfd[PIPE_R], &pfd[PIPE_W], STDIN_FILENO);
         if (retval < 0) {
             outlog("dup_fd");
@@ -303,11 +307,18 @@ test_pipe_fd2(void)
             exit(EXIT_FAILURE);
         }
         dbglog("writen=%d, %s", wlen, sendbuf);
+
+        if (dup2(oldfd, STDIN_FILENO) < 0)
+            cut_notify("dup2(%d)", errno);
+
         exit(EXIT_SUCCESS);
 
     } else {
         dbglog("parent: cpid=%d", (int)cpid);
 
+        oldfd = dup(STDIN_FILENO);
+        if (oldfd < 0)
+            cut_notify("dup(%d)", errno);
         retval = pipe_fd2(&pfd[PIPE_W], &pfd[PIPE_R], STDIN_FILENO);
         if (retval < 0) {
             cut_error("dup_fd(%d)", errno);
@@ -336,6 +347,9 @@ test_pipe_fd2(void)
     /* 異常系 */
     retval = pipe_fd2(&pfd[PIPE_W], &pfd[PIPE_R], STDIN_FILENO);
     cut_assert_equal_int(EX_NG, retval, cut_message("return value"));
+
+    if (dup2(oldfd, STDIN_FILENO) < 0)
+        cut_notify("dup2(%d)", errno);
 }
 
 /**
@@ -351,6 +365,8 @@ test_redirect(void)
 
     /* 正常系 */
     oldfd = dup(STDERR_FILENO);
+    if (oldfd < 0)
+        cut_notify("dup(%d)", errno);
     retval = redirect(STDERR_FILENO, "/dev/null");
     cut_assert_equal_int(EX_OK, retval, cut_message("redirect"));
 
@@ -400,7 +416,7 @@ test_close_fd(void)
     /* 正常系 */
     int i;
     for (i = 0; i < MAX; i++) {
-        fd[i] = open("/dev/null", O_RDONLY|O_APPEND);
+        fd[i] = open("/dev/null", O_WRONLY|O_APPEND);
         if (fd[i] < 0) {
             cut_error("open=%d(%d)", fd[i], errno);
             return;
@@ -413,12 +429,12 @@ test_close_fd(void)
     cut_assert_equal_int(EX_OK, retval, cut_message("retrun value"));
 
     /* 第二引数が-1の場合 */
-    fd[FD1] = open("/dev/null", O_RDONLY|O_APPEND);
+    fd[FD1] = open("/dev/null", O_WRONLY|O_APPEND);
     if (fd[FD1] < 0) {
         cut_error("open=%d(%d)", fd[FD1], errno);
         return;
     }
-    fd[FD3] = open("/dev/null", O_RDONLY|O_APPEND);
+    fd[FD3] = open("/dev/null", O_WRONLY|O_APPEND);
     if (fd[FD3] < 0) {
         cut_error("open=%d(%d)", fd[FD3], errno);
         return;

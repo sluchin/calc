@@ -16,10 +16,11 @@ INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG -DHAVE_READLINE
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG -DHAVE_READLINE
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lcalcutil -lm -lpthread -lreadline
+LIBS = -lm -lpthread -lreadline
+UTILLIBS = -lcalcutil
 CALCLIBS = -lcalcp
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
-LINK = $(CC) $(LDFLAGS)
+LINK = $(CC) $(INCLUDES) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a
 LIBCALC = libcalcp.a
 OBJCALC = error.o func.o calc.o
@@ -42,16 +43,17 @@ $(LIBCALC): $(OBJCALC)
 
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
-	$(LINK) -o $@ $(LIBS) $(CALCLIBS) $^
+	$(LINK) -o $@ $^ $(CALCLIBS) $(UTILLIBS) $(LIBS)
+	@#$(LINK) -o $@ $^ $(LIBCALC) $(UTILLIBS) $(LIBS)
 
 .PHONY: static
-static: $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
+static: $(OBJECTS) $(LIBCALC)
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBCALC) $(LIBRARY)
+	$(LINK) -o $(PROGRAM) $^ $(LIBRARY) $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

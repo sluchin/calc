@@ -1,12 +1,12 @@
 /**
- * @file  lib/memfree.h
- * @brief メモリ解放
+ * @file  lib/term.h
+ * @brief ターミナル属性の取得・設定
  *
  * @author higashi
- * @date 2010-06-24 higashi 新規作成
+ * @date 2011-01-06 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2011 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MEMFREE_H_
-#define _MEMFREE_H_
+#ifndef _TERM_H_
+#define _TERM_H_
 
-/** メモリ解放 */
-void memfree(void **ptr, ...);
+#include <termios.h> /* tcgetattr */
 
-#endif /* _MEMFREE_H_ */
+enum mode_type {
+    control = 0,
+    input,
+    output,
+    local
+};
+
+/** ターミナル属性文字列取得 */
+char *get_termattr(const int fd, struct termios *mode);
+
+#ifdef UNITTEST
+struct _testterm {
+    tcflag_t *(*mode_type_flag)(const enum mode_type type,
+                                struct termios *mode);
+};
+typedef struct _testterm testterm;
+
+void test_init_term(testterm *term);
+
+#endif /* UNITTEST */
+
+#endif /* _TERM_H_ */
 

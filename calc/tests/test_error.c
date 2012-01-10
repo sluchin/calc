@@ -61,7 +61,7 @@ static testerror error; /**< 関数構造体 */
  */
 void cut_startup(void)
 {
-    (void)memset(&error, 0, sizeof(error));
+    (void)memset(&error, 0, sizeof(testerror));
     test_init_error(&error);
 }
 

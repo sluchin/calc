@@ -49,14 +49,17 @@ volatile sig_atomic_t g_sig_handled = 0; /**< シグナル */
 bool g_gflag = false;                    /**< gオプションフラグ */
 long g_digit = DEFAULT_DIGIT;            /**< 桁数 */
 
-/* 内部変数 */
-static const int SOCK_ERROR = -1; /**< ソケットエラー */
-
 /* 内部関数 */
 /** サーバプロセス */
 static void *server_proc(void *arg);
+/** スレッドクリーンアップハンドラ */
 static void thread_cleanup(void *arg);
+/** スレッドメモリ解放ハンドラ */
 static void thread_memfree(void *arg);
+/** シグナルマスク取得 */
+static sigset_t get_sigmask(void);
+/** スレッドシグナルマスク設定 */
+static void set_thread_sigmask(sigset_t sigmask);
 
 /**
  * ソケット接続
@@ -81,13 +84,13 @@ server_sock(const char *port)
 
     /* ポート番号またはサービス名を設定 */
     if (set_port(&addr, port) < 0)
-        return SOCK_ERROR;
+        return EX_NG;
 
     /* ソケット生成 */
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         outlog("sock=%d", sock);
-        return SOCK_ERROR;
+        return EX_NG;
     }
 
     /* ソケットオプション */
@@ -118,7 +121,7 @@ server_sock(const char *port)
 
 error_handler:
     close_sock(&sock);
-    return SOCK_ERROR;
+    return EX_NG;
 }
 
 /**
@@ -144,16 +147,8 @@ server_loop(int sock)
     FD_ZERO(&fds);      /* 初期化 */
     FD_SET(sock, &fds); /* ソケットをマスク */
 
-    /* シグナルマスクの設定 */
-    if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=0x%x", sigmask);
-    if (sigfillset(&sigmask) < 0) /* シグナル全て */
-        outlog("sigfillset=0x%x", sigmask);
-    if (sigdelset(&sigmask, SIGINT) < 0) /* SIGINT除く*/
-        outlog("sigdelset=0x%x", sigmask);
-    if (sigdelset(&sigmask, SIGHUP) < 0) /* SIGHUP除く*/
-        outlog("sigdelset=0x%x", sigmask);
-    dbglog("sigmask=0x%x", sigmask);
+    /* シグナルマスク取得 */
+    sigmask = get_sigmask();
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
@@ -228,14 +223,14 @@ server_loop(int sock)
 static void *
 server_proc(void *arg)
 {
-    thread_data *dt = arg;            /* ソケット情報構造体 */
-    int retval = 0;                   /* 戻り値 */
-    size_t length = 0;                /* 長さ */
-    ssize_t slen = 0;                 /* 送信するバイト数 */
-    struct header hd;                 /* ヘッダ構造体 */
-    uchar *expr = NULL;               /* 受信データ */
-    calcinfo *tsd = NULL;             /* calc情報構造体 */
-    struct server_data *sdata = NULL; /* 送信データ構造体 */
+    thread_data *dt = (thread_data *)arg; /* ソケット情報構造体 */
+    int retval = 0;                       /* 戻り値 */
+    size_t length = 0;                    /* 長さ */
+    ssize_t slen = 0;                     /* 送信するバイト数 */
+    struct header hd;                     /* ヘッダ構造体 */
+    uchar *expr = NULL;                   /* 受信データ */
+    calcinfo *tsd = NULL;                 /* calc情報構造体 */
+    struct server_data *sdata = NULL;     /* 送信データ構造体 */
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
            dt->sock, inet_ntoa(dt->addr.sin_addr),
@@ -244,19 +239,8 @@ server_proc(void *arg)
     if (!dt)
         pthread_exit((void *)EXIT_FAILURE);
 
-    /* シグナル設定 */
-    dbglog("sigmask=0x%x", dt->sigmask);
-    if (pthread_sigmask(SIG_BLOCK, &dt->sigmask, NULL))
-        outlog("pthread_sigmask=0x%x", dt->sigmask);
-#ifdef _DEBUG
-    /* シグナル設定確認 */
-    sigset_t sigmask;
-    if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=0x%x", sigmask);
-    if (pthread_sigmask(SIG_SETMASK, NULL, &sigmask))
-        outlog("pthread_sigmask");
-    dbglog("sigmask=0x%x", sigmask);
-#endif /* _DEBUG */
+    /* シグナルマスクを設定 */
+    set_thread_sigmask(dt->sigmask);
 
     pthread_cleanup_push(thread_cleanup, &dt);
     do {
@@ -276,7 +260,7 @@ server_proc(void *arg)
 
         /* データ受信 */
         length = hd.length; /* データ長を保持 */
-        expr = recv_data_new(dt->sock, &length);
+        expr = (uchar *)recv_data_new(dt->sock, &length);
         if (!expr) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);
 
@@ -368,6 +352,59 @@ thread_memfree(void *arg)
     void **ptr = (void **)arg;
     dbglog("start: *ptr=%p, ptr=%p", *ptr, ptr);
     memfree(ptr, NULL);
+}
+
+/**
+ * シグナルマスク取得
+ *
+ * @return シグナルマスク
+ */
+static sigset_t
+get_sigmask(void)
+{
+    sigset_t sigmask;
+
+    /* 初期化 */
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    /* シグナル全て */
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+    /* SIGINT除く */
+    if (sigdelset(&sigmask, SIGINT) < 0)
+        outlog("sigdelset=0x%x", sigmask);
+    /* SIGHUP除く */
+    if (sigdelset(&sigmask, SIGHUP) < 0)
+        outlog("sigdelset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
+
+    return sigmask;
+}
+
+/**
+ * スレッドシグナルマスク設定
+ *
+ * @param[in] sigmask シグナルマスク
+ * @return なし
+ */
+static void
+set_thread_sigmask(sigset_t sigmask)
+{
+    dbglog("sigmask=0x%x", sigmask);
+
+    /* シグナル設定 */
+    if (pthread_sigmask(SIG_BLOCK, &sigmask, NULL))
+        outlog("pthread_sigmask=0x%x", sigmask);
+
+#ifdef _DEBUG
+    /* シグナル設定確認 */
+    sigset_t newmask;
+    if (sigemptyset(&newmask) < 0) /* 初期化 */
+        dbglog("sigemptyset=0x%x", newmask);
+    if (pthread_sigmask(SIG_SETMASK, NULL, &newmask))
+        dbglog("pthread_sigmask");
+    dbglog("sigmask=0x%x", newmask);
+#endif /* _DEBUG */
 }
 
 #ifdef UNITTEST

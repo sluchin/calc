@@ -105,7 +105,7 @@ cut_startup(void)
     if (setvbuf(stdout, NULL, _IONBF, 0))
         cut_notify("setvbuf: stdout(%d)", errno);
 
-    (void)memset(&server, 0, sizeof(server));
+    (void)memset(&server, 0, sizeof(testserver));
     test_init_server(&server);
 
     /* リダイレクト */

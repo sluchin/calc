@@ -16,7 +16,8 @@ INCLUDES = -I$(top_srcdir)/lib
 CFLAGS = -g -Wall -O2 -DNDEBUG -D_USE_SELECT
 DFLAGS = -g -Wall -O2 -D_DEBUG -D_USE_SELECT -DUNITTEST
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
-LIBS = -lcalcutil -lreadline -lpthread
+LIBS = -lpthread
+UTILLIBS = -lcalcutil
 CLIENTLIBS = -lcalcc
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
@@ -41,17 +42,17 @@ $(LIBCLIENT): $(OBJCLIENT)
 
 $(SHAREDOBJ): $(OBJCLIENT)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@
-	$(LINK) -o $@ $(LIBS) $(CLIENTLIBS) $^
-	@#$(LINK) -o $@ $(LIBS) $(LIBSCLIENT) $^
+	$(LINK) -o $@ $^ $(CLIENTLIBS) $(UTILLIBS) $(LIBS)
+	@#$(LINK) -o $@ $^ $(LIBCLIENT) $(UTILLIBS) $(LIBS)
 
 .PHONY: static
-static: $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
+static: $(OBJECTS) $(LIBCLIENT)
 	@$(RM) $(PROGRAM)
-	$(LINK) -o $(PROGRAM) $(LIBS) $(OBJECTS) $(LIBCLIENT) $(LIBRARY)
+	$(LINK) -o $(PROGRAM) $^ $(LIBRARY) $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

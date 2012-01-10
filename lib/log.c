@@ -37,6 +37,7 @@
 #include <execinfo.h>  /* backtrace */
 
 #include "def.h"
+#include "term.h"
 #include "log.h"
 
 #define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
@@ -71,13 +72,14 @@ static char *strmon(int mon);
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_log(const int level,
-                const int option,
-                const char *pname,
-                const char *fname,
-                const int line,
-                const char *func,
-                const char *format, ...)
+void
+system_log(const int level,
+           const int option,
+           const char *pname,
+           const char *fname,
+           const int line,
+           const char *func,
+           const char *format, ...)
 {
     int errsv = errno;                /* errno退避 */
     int retval = 0;                   /* 戻り値 */
@@ -125,13 +127,14 @@ void system_log(const int level,
  * @param[in] ... 可変引数
  * @return なし
  */
-void system_dbg_log(const int level,
-                    const int option,
-                    const char *pname,
-                    const char *fname,
-                    const int line,
-                    const char *func,
-                    const char *format, ...)
+void
+system_dbg_log(const int level,
+               const int option,
+               const char *pname,
+               const char *fname,
+               const int line,
+               const char *func,
+               const char *format, ...)
 {
     int errsv = errno;                /* errno退避 */
     int retval = 0;                   /* 戻り値 */
@@ -193,11 +196,12 @@ void system_dbg_log(const int level,
  * @param[in] ... 可変引数
  * @return なし
  */
-void stderr_log(const char *pname,
-                const char *fname,
-                const int line,
-                const char *func,
-                const char *format, ...)
+void
+stderr_log(const char *pname,
+           const char *fname,
+           const int line,
+           const char *func,
+           const char *format, ...)
 {
     int errsv = errno;               /* errno退避 */
     FILE *fp = stderr;               /* 標準エラー出力 */
@@ -207,6 +211,7 @@ void stderr_log(const char *pname,
     va_list ap;                      /* va_list */
     char h_buf[MAX_HOST_SIZE] = {0}; /* ホスト */
     pthread_t tid = 0;               /* スレッドID */
+    char *mon = NULL;                /* 月名 */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -234,10 +239,11 @@ void stderr_log(const char *pname,
     if (tid)
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
 
+    mon = strmon(t.tm_mon);
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  strmon(t.tm_mon) ? : "", t.tm_mday, t.tm_hour, t.tm_min,
+                  mon ? : "", t.tm_mday, t.tm_hour, t.tm_min,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
 
@@ -250,6 +256,10 @@ void stderr_log(const char *pname,
     }
 
     (void)fprintf(fp, "): %m(%d)\n", errsv);
+
+    if (mon)
+        free(mon);
+    mon = NULL;
 
     errno = 0; /* errno初期化 */
 }
@@ -331,15 +341,16 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
  * @param[in] ... 可変引数
  * @retval EX_NG エラー
  */
-int dump_sys(const int level,
-             const int option,
-             const char *pname,
-             const char *fname,
-             const int line,
-             const char *func,
-             const void *buf,
-             const size_t len,
-             const char *format, ...)
+int
+dump_sys(const int level,
+         const int option,
+         const char *pname,
+         const char *fname,
+         const int line,
+         const char *func,
+         const void *buf,
+         const size_t len,
+         const char *format, ...)
 {
     int retval = 0;                   /* 戻り値 */
     int pt = 0;                       /* アドレス用変数 */
@@ -415,10 +426,11 @@ int dump_sys(const int level,
  * @param[in] len バッファサイズ
  * @retval EX_NG エラー
  */
-int dump_file(const char *pname,
-              const char *fname,
-              const char *buf,
-              const size_t len)
+int
+dump_file(const char *pname,
+          const char *fname,
+          const char *buf,
+          const size_t len)
 {
     FILE *fp = NULL; /* ファイルディスクリプタ */
     size_t wret = 0; /* fwrite戻り値 */
@@ -537,29 +549,87 @@ print_trace(void)
 }
 
 /**
+ * ターミナル属性シスログ出力
+ *
+ * @param[in] level ログレベル
+ * @param[in] option オプション
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] fd ファイルディスクリプタ
+ * @return なし
+ */
+void
+sys_print_termattr(const int level, const int option,
+                   const char *pname, const char *fname,
+                   const int line, const char *func, int fd)
+{
+    struct termios mode;
+    char *result = NULL;
+
+    (void)memset(&mode, 0, sizeof(struct termios));
+
+    result = get_termattr(STDIN_FILENO, &mode);
+    if (!result)
+        return;
+
+    openlog(pname, option, SYS_FACILITY);
+    syslog(level, "%s[%d]: %s: %s", fname, line, func, result);
+
+    closelog();
+
+    if (result)
+        free(result);
+    result = NULL;
+}
+
+/**
  * 月省略名
  *
  * @param[in] mon 月
  * @return 月省略名
+ * @attention 戻り値ポインタは解放しなければならない
  */
 static char *
 strmon(int mon)
 {
     switch(mon) {
-    case  0: return "Jan";
-    case  1: return "Feb";
-    case  2: return "Mar";
-    case  3: return "Apr";
-    case  4: return "May";
-    case  5: return "Jun";
-    case  6: return "Jul";
-    case  7: return "Aug";
-    case  8: return "Sep";
-    case  9: return "Oct";
-    case 10: return "Nov";
-    case 11: return "Dec";
-    default: return NULL;
+    case  0:
+        return strdup("Jan");
+    case  1:
+        return strdup("Feb");
+    case  2:
+        return strdup("Mar");
+    case  3:
+        return strdup("Apr");
+    case  4:
+        return strdup("May");
+    case  5:
+        return strdup("Jun");
+    case  6:
+        return strdup("Jul");
+    case  7:
+        return strdup("Aug");
+    case  8:
+        return strdup("Sep");
+    case  9:
+        return strdup("Oct");
+    case 10:
+        return strdup("Nov");
+    case 11:
+        return strdup("Dec");
+    default:
+        return NULL;
     }
     return NULL;
 }
+
+#ifdef UNITTEST
+void
+test_init_log(testlog *log)
+{
+    log->strmon = strmon;
+}
+#endif
 

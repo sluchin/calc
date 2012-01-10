@@ -1,5 +1,6 @@
 /**
- * @file  lib/data.c * @brief 送受信データ構造体
+ * @file  lib/data.c
+ * @brief 送受信データ構造体
  *
  * @author higashi
  * @date 2010-06-24 higashi 新規作成
@@ -24,6 +25,7 @@
 
 #include <unistd.h> /* ssize_t */
 #include <string.h> /* memset memcpy */
+#include <stdlib.h> /* malloc */
 
 #include "log.h"
 #include "data.h"
