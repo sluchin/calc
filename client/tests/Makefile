@@ -27,7 +27,7 @@ all: $(CLIENTSOBJ)
 
 $(CLIENTSOBJ): $(CLIENTOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

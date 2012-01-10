@@ -89,8 +89,8 @@ strip:
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
-	$(MAKE) -C $(testdir) clean
+	@$(RM) $(PROGRAM) $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
+	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:

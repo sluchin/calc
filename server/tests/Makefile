@@ -28,7 +28,7 @@ all: $(SERVERSOBJ)
 
 $(SERVERSOBJ): $(SERVEROBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

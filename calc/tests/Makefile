@@ -33,15 +33,15 @@ all: $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 
 $(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $(LIBS) $^
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<
