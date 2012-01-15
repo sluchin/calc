@@ -32,8 +32,11 @@
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */
-#include <inttypes.h>   /* uint16_t, PRIu16 */
 #include <fcntl.h>      /* fcntl */
+#ifdef __cplusplus
+# define __STDC_FORMAT_MACROS 1
+#endif
+#include <inttypes.h>   /* uint16_t, PRIu16 */
 
 #include "log.h"
 #include "net.h"
