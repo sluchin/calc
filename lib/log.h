@@ -29,17 +29,14 @@
 #include <stddef.h> /* size_t */
 #include <syslog.h> /* syslog */
 
-extern char *progname; /* プログラム名 */
-
 #define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       LOG_INFO, LOG_PID, progname,      \
+#define LOGARGS       LOG_INFO, LOG_PID, get_progname(),      \
         __FILE__, __LINE__, __FUNCTION__
 
 /* エラー時ログメッセージ出力 */
 #define outlog(fmt, ...)        system_log(LOGARGS, fmt, ## __VA_ARGS__)
 #define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
 #define outdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
-
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
 #  define dbglog(fmt, ...)        system_dbg_log(LOGARGS, fmt, ## __VA_ARGS__)
@@ -56,6 +53,12 @@ extern char *progname; /* プログラム名 */
 #  define dbgtrace()              do { } while (0)
 #  define dbgterm(fd)             do { } while (0)
 #endif /* _DEBUG */
+
+/** プログラム名設定 */
+void set_progname(char *name);
+
+/** プログラム名取得 */
+char *get_progname(void);
 
 /** シスログ出力 */
 void system_log(const int level, const int option, const char *pname,
@@ -98,6 +101,7 @@ void sys_print_termattr(const int level, const int option,
 #ifdef UNITTEST
 struct _testlog {
    char *(*strmon)(int mon);
+   void (*destroy_progname)(void);
 };
 typedef struct _testlog testlog;
 

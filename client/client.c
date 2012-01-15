@@ -315,8 +315,10 @@ read_sock(int sock)
     dbglog("answer=%p, length=%zu", answer, length);
 
     if (g_gflag)
-        outdump(answer, length, "recv: answer=%p, length=%zu", answer, length);
-    stddump(answer, length, "recv: answer=%p, length=%zu", answer, length);
+        outdump(answer, length,
+                "recv: answer=%p, length=%zu", answer, length);
+    stddump(answer, length,
+            "recv: answer=%p, length=%zu", answer, length);
 
     if (g_tflag) {
         uint client_time = stop_timer(&start_time);

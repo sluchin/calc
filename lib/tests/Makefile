@@ -14,7 +14,7 @@ CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcutil -lpthread
-COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LOGSOBJ = test_log.so
 LOGOBJ = test_log.o
@@ -42,35 +42,35 @@ all: $(LOGSOBJ) $(NETSOBJ) $(DATASOBJ) \
 
 $(LOGSOBJ): $(LOGOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(NETSOBJ): $(NETOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(DATASOBJ): $(DATAOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(READSOBJ): $(READOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(MFREESOBJ): $(MFREEOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(TIMERSOBJ): $(TIMEROBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(FIOSOBJ): $(FIOOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(TERMSOBJ): $(TERMOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

@@ -14,7 +14,7 @@ CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcc
-COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 CLIENTSOBJ = test_client.so
 CLIENTOBJ = test_client.o
@@ -27,7 +27,7 @@ all: $(CLIENTSOBJ)
 
 $(CLIENTSOBJ): $(CLIENTOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

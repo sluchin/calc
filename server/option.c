@@ -3,10 +3,10 @@
  * @brief オプション引数の処理
  *
  * オプション
- *  -p, --port     ポート番号指定\n
- *  -h, --debug    ヘルプの表示\n
- *  -V, --help     バージョンの表示\n
- *  -g, --version  デバッグ用\n
+ *  -p, --port    ポート番号指定\n
+ *  -g, --debug   デバッグモード\n
+ *  -h, --help    ヘルプ表示\n
+ *  -V, --version バージョン情報表示\n
  *
  * @author higashi
  * @date 2010-06-25 higashi 新規作成
@@ -29,11 +29,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* fputs fprintf */
-#include <string.h>  /* memset */
-#include <stdlib.h>  /* EXIT_SUCCESS */
-#include <getopt.h>  /* getopt_long */
-#include <libgen.h>  /* basename */
+#include <stdio.h>  /* fputs fprintf */
+#include <string.h> /* memset */
+#include <stdlib.h> /* EXIT_SUCCESS */
+#include <getopt.h> /* getopt_long */
 
 #include "log.h"
 #include "version.h"
@@ -59,10 +58,10 @@ static struct option longopts[] = {
 static const char *shortopts = "p:d:hVg";
 
 /* 内部関数 */
-/** ヘルプの表示 */
-static void print_help(const char *prog_name);
+/** ヘルプ表示 */
+static void print_help(const char *progname);
 /** バージョン情報表示 */
-static void print_version(const char *prog_name);
+static void print_version(const char *progname);
 /** getoptエラー表示 */
 static void parse_error(const int c, const char *msg);
 
@@ -77,7 +76,7 @@ static void parse_error(const int c, const char *msg);
 void
 parse_args(int argc, char *argv[])
 {
-    int opt = 0;         /* getopt_longの戻り値格納 */
+    int opt = 0;         /* オプション */
     const int base = 10; /* 基数 */
 
     dbglog("start");
@@ -90,15 +89,11 @@ parse_args(int argc, char *argv[])
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'p':
-            if (!optarg) {
-                outlog("opt=%c, optarg=%s", opt, optarg);
-                exit(EXIT_FAILURE);
-            }
             if (strlen(optarg) < sizeof(g_portno)) {
                 (void)memset(g_portno, 0, sizeof(g_portno));
                 (void)strncpy(g_portno, optarg, sizeof(g_portno));
             } else {
-                print_help(basename(argv[0]));
+                print_help(get_progname());
                 exit(EXIT_FAILURE);
             }
             break;
@@ -109,14 +104,14 @@ parse_args(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 'g':
+        case 'g': /* デバッグモード */
             g_gflag = true;
             break;
-        case 'h':
-            print_help(basename(argv[0]));
+        case 'h': /* ヘルプ表示 */
+            print_help(get_progname());
             exit(EXIT_SUCCESS);
-        case 'V':
-            print_version(basename(argv[0]));
+        case 'V': /* バージョン情報表示 */
+            print_version(get_progname());
             exit(EXIT_SUCCESS);
         case '?':
         case ':':
@@ -139,32 +134,34 @@ parse_args(int argc, char *argv[])
  * ヘルプ表示
  *
  * ヘルプを表示する.
- * @param[in] prog_name プログラム名
+ * @param[in] progname プログラム名
  * @return なし
  */
 static void
-print_help(const char *prog_name)
+print_help(const char *progname)
 {
-    FILE *fp = stderr;
-    (void)fprintf(fp, "Usage: %s [OPTION]...\n", progname);
-    (void)fputs("  -p, --port             port\n", fp);
-    (void)fputs("  -g, --debug            execute test mode\n", fp);
-    (void)fputs("  -h, --help             display this help and exit\n", fp);
-    (void)fputs("  -V, --version          output version information and exit\n", fp);
+    (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
+    (void)fprintf(stderr, "  -p, --port              %s",
+                  "port\n");
+    (void)fprintf(stderr, "  -g, --debug             %s",
+                  "execute test mode\n");
+    (void)fprintf(stderr, "  -h, --help              %s",
+                  "display this help and exit\n");
+    (void)fprintf(stderr, "  -V, --version           %s",
+                  "output version information and exit\n");
 }
 
 /**
  * バージョン情報表示
  *
  * バージョン情報を表示する.
- * @param[in] prog_name プログラム名
+ * @param[in] progname プログラム名
  * @return なし
  */
 static void
-print_version(const char *prog_name)
+print_version(const char *progname)
 {
-    FILE *fp = stderr;
-    (void)fprintf(fp, "%s %s\n", prog_name, VERSION);
+    (void)fprintf(stderr, "%s %s\n", progname, VERSION);
 }
 
 /**
@@ -178,9 +175,8 @@ print_version(const char *prog_name)
 static void
 parse_error(const int c, const char *msg)
 {
-    FILE *fp = stderr;
     if (msg)
-        (void)fprintf(fp, "getopt[%d]: %s\n", c, msg);
-    (void)fprintf(fp, "Try `getopt --help' for more information\n");
+        (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
+    (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }
 

@@ -179,7 +179,6 @@ check_math_feexcept(calcinfo *tsd)
     }
 #ifdef _DEBUG
     int retval = 0;
-
     if ((retval = fetestexcept(FE_INVALID)) != 0)
         dbglog("fetestexcept(FE_INVALID)=%d)", retval);
     if ((retval = fetestexcept(FE_DIVBYZERO)) != 0)

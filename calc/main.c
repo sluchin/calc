@@ -3,7 +3,7 @@
  * @brief main関数
  *
  * @author higashi
- * @date 2009-06-27 higashi 新規作成
+ * @date 2010-06-27 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
@@ -27,7 +27,6 @@
 #include <stdbool.h> /* true */
 #include <string.h>  /* memset */
 #include <unistd.h>  /* close */
-#include <libgen.h>  /* basename */
 #include <signal.h>  /* sigaction */
 #ifdef HAVE_READLINE
 #  include <readline/readline.h>
@@ -77,7 +76,7 @@ main(int argc, char *argv[])
 {
     dbglog("start");
 
-    progname = basename(argv[0]);
+    set_progname(argv[0]);
 
     /* シグナルハンドラ */
     set_sig_handler();
@@ -127,7 +126,6 @@ main_loop(void)
         outlog("fflush");
 
     do {
-
         dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
         expr = (uchar *)readline(prompt);
@@ -164,9 +162,8 @@ main_loop(void)
                 outlog("fprintf=%d", retval);
         }
 #ifdef HAVE_READLINE
-        if (MAX_HISTORY <= ++hist_no) {
+        if (MAX_HISTORY <= ++hist_no)
             freehistory(&history);
-        }
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
@@ -179,13 +176,13 @@ main_loop(void)
     memfree((void **)&tsd, NULL);
 }
 
+#ifdef HAVE_READLINE
 /**
  * イベントフック
  *
  * readline 内から定期的に呼ばれる関数
  * @return 常にEX_OK
  */
-#ifdef HAVE_READLINE
 static int check_state(void) {
     if (sig_handled) {
         /* 入力中のテキストを破棄 */
@@ -193,10 +190,6 @@ static int check_state(void) {
 
         /* readlineをreturnさせる */
         rl_done = 1;
-
-        //rl_event_hook = 0;
-        //rl_deprep_terminal();
-        //close(STDIN_FILENO);
     }
     return EX_OK;
 }

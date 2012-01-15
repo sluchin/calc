@@ -72,7 +72,7 @@ server_sock(const char *port)
 {
     struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
     int retval = 0;          /* 戻り値 */
-    int optval = 1;          /* 二値オプション有効 */
+    int optval = 0;          /* オプション */
     int sock = -1;           /* ソケット */
 
     dbglog("start");
@@ -94,6 +94,7 @@ server_sock(const char *port)
     }
 
     /* ソケットオプション */
+    optval = 1; /* 二値オプション有効 */
     retval = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval,
                         (socklen_t)sizeof(int));
     if (retval < 0) {
@@ -174,7 +175,7 @@ server_loop(int sock)
 
                 dt = (thread_data *)malloc(sizeof(thread_data));
                 if (!dt) {
-                    outlog("malloc");
+                    outlog("malloc: size=%zu", sizeof(thread_data));
                     continue;
                 }
                 (void)memset(dt, 0, sizeof(thread_data));

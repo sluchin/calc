@@ -42,7 +42,7 @@ $(LIBCLIENT): $(OBJCLIENT)
 
 $(SHAREDOBJ): $(OBJCLIENT)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@

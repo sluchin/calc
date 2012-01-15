@@ -151,7 +151,7 @@ exec_func(calcinfo *tsd, const char *func)
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);
             switch (finfo[ftype].type) {
-                dbglog("type=%d", finfo[ftype].type);
+                dbglog("type=%d", (int)finfo[ftype].type);
             case FUNC0:
                 result = finfo[ftype].func.func0(tsd);
                 break;
@@ -168,6 +168,7 @@ exec_func(calcinfo *tsd, const char *func)
                 result = check_math(tsd, x, finfo[ftype].func.math);
                 break;
             default:
+                outlog("no functype");
                 break;
             }
             exec = true;
@@ -176,7 +177,7 @@ exec_func(calcinfo *tsd, const char *func)
     if (!exec) /* エラー */
         set_errorcode(tsd, E_NOFUNC);
 
-    dbglog("x=%.12g, y=%.12g", x, y);
+    dbglog("x=%.15g, y=%.15g", x, y);
     dbglog(tsd->fmt, result);
     return result;
 }
@@ -225,7 +226,7 @@ init_func(void)
     assert(MAXFUNC == NELEMS(fstring));
     assert(MAXFUNC == NELEMS(finfo));
 
-    memset(finfo, 0, sizeof(finfo));
+    (void)memset(finfo, 0, sizeof(finfo));
 
     /* pi */
     finfo[FN_PI].type = FUNC0;

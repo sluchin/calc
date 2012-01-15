@@ -3,7 +3,7 @@
  * @brief main関数
  *
  * @author higashi
- * @date 2009-06-23 higashi 新規作成
+ * @date 2010-06-23 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
@@ -27,7 +27,6 @@
 #include <stdlib.h> /* exit EXIT_SUCCESS */
 #include <string.h> /* memset strlen */
 #include <unistd.h> /* close write */
-#include <libgen.h> /* basename */
 #include <signal.h> /* sigaction */
 
 #include "log.h"
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
 
     dbglog("start");
 
-    progname = basename(argv[0]);
+    set_progname(argv[0]);
 
     /* シグナルハンドラ設定 */
     set_sig_handler();
@@ -67,7 +66,6 @@ int main(int argc, char *argv[])
     /* バッファリングしない */
     if (setvbuf(stdin, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdin");
-
     if (setvbuf(stdout, (char *)NULL, _IONBF, 0))
         outlog("setvbuf: stdout");
 
@@ -91,7 +89,7 @@ int main(int argc, char *argv[])
     status = client_loop(sockfd);
 
     exit(status);
-    return EX_SUCCESS;
+    return status;
 }
 
 /**

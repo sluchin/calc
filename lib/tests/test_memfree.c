@@ -49,7 +49,7 @@ test_memfree(void)
     for (i = 0; i < MAX; i++) {
         mem[i] = (char *)malloc(5);
         if (!mem[i]) {
-            cut_error("malloc=%p", mem[i]);
+            cut_error("malloc");
             return;
         }
     }
@@ -62,12 +62,12 @@ test_memfree(void)
     /* 第二引数がNULLの場合 */
     mem[MEM1] = (char *)malloc(5);
     if (!mem[MEM1]) {
-        cut_error("malloc=%p", mem[MEM1]);
+        cut_error("malloc");
         return;
     }
     mem[MEM3] = (char *)malloc(5);
     if (!mem[MEM3]) {
-        cut_error("malloc=%p", mem[MEM3]);
+        cut_error("malloc");
         return;
     }
     memfree((void **)&mem[MEM1],

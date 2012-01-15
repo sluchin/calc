@@ -20,7 +20,7 @@ LIBS = -lm -lpthread -lreadline
 UTILLIBS = -lcalcutil
 CALCLIBS = -lcalcp
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
-LINK = $(CC) $(INCLUDES) $(LDFLAGS)
+LINK = $(CC) $(LDFLAGS)
 LIBRARY = $(top_srcdir)/lib/libcalcutil.a
 LIBCALC = libcalcp.a
 OBJCALC = error.o func.o calc.o
@@ -43,7 +43,7 @@ $(LIBCALC): $(OBJCALC)
 
 $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $@

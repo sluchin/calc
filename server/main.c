@@ -3,7 +3,7 @@
  * @brief main関数
  *
  * @author higashi
- * @date 2009-06-25 higashi 新規作成
+ * @date 2010-06-25 higashi 新規作成
  * @version \$Id$
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
@@ -26,7 +26,6 @@
 #include <stdlib.h> /* exit EXIT_SUCCESS */
 #include <string.h> /* memset */
 #include <unistd.h> /* close */
-#include <libgen.h> /* basename */
 #include <signal.h> /* sigaction */
 
 #include "log.h"
@@ -65,7 +64,7 @@ int main(int argc, char *argv[], char *envp[])
     set_sig_handler();
 
     /* プログラム名を保持 */
-    progname = basename(argv[0]);
+    set_progname(argv[0]);
 
     /* オプション引数 */
     parse_args(argc, argv);

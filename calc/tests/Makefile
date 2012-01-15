@@ -15,7 +15,7 @@ DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcutil -lcalcp
 TESTLIBS = -ltest_calc
-COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 CALCSOBJ = test_calc.so
 CALCOBJ = test_calc.o
@@ -33,15 +33,15 @@ all: $(CALCSOBJ) $(FUNCSOBJ) $(ERRORSOBJ)
 
 $(CALCSOBJ): $(CALCOBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(FUNCSOBJ): $(FUNCOBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 $(ERRORSOBJ): $(ERROROBJ) $(COMMONOBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

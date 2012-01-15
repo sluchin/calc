@@ -24,8 +24,8 @@
  */
 
 #include <stdio.h>     /* fprintf vsprintf */
-#include <string.h>    /* memset */
-#include <stdlib.h>    /* exit */
+#include <string.h>    /* memset strrchr */
+#include <stdlib.h>    /* exit atexit */
 #include <stdarg.h>    /* va_list va_start va_end */
 #include <errno.h>     /* errno */
 #include <time.h>      /* struct tm */
@@ -52,12 +52,48 @@
     (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)",                    \
                   __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
 
-/* 外部変数 */
-char *progname = NULL; /**< プログラム名 */
+/* 内部変数 */
+static char *progname = NULL; /**< プログラム名 */
 
 /* 内部関数 */
 /** 月省略名 */
 static char *strmon(int mon);
+/** プログラム名解放 */
+static void destroy_progname(void);
+
+/**
+ * プログラム名設定
+ *
+ * @param[in] name プログラム名
+ * @return なし
+ */
+void
+set_progname(char *name)
+{
+    char *ptr = NULL; /* strrchr戻り値 */
+
+    ptr = strrchr(name, '/');
+    if (ptr)
+        progname = strdup(ptr + 1);
+    else
+        progname = strdup(name);
+
+    if (atexit(destroy_progname)) {
+        outlog("atexit");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * プログラム名取得
+ *
+ * @return プログラム名
+ */
+char *
+get_progname(void)
+{
+    return progname;
+}
 
 /**
  * シスログ出力
@@ -625,11 +661,25 @@ strmon(int mon)
     return NULL;
 }
 
+/**
+ * プログラム名解放
+ *
+ * @return なし
+ */
+static void
+destroy_progname(void)
+{
+    if (progname)
+        free(progname);
+    progname = NULL;
+}
+
 #ifdef UNITTEST
 void
 test_init_log(testlog *log)
 {
     log->strmon = strmon;
+    log->destroy_progname = destroy_progname;
 }
 #endif
 

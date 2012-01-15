@@ -23,13 +23,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _SERVER_OPTION_H_
-#define _SERVER_OPTION_H_
+#ifndef _OPTION_H_
+#define _OPTION_H_
 
 #include <stdbool.h> /* bool */
 
-#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
-#define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
+#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトIPアドレス */
+#define DEFAULT_PORTNO "12345"     /**< デフォルトポート番号 */
 #define HOST_SIZE      48          /**< ホスト名サイズ */
 #define PORT_SIZE      48          /**< ポート名サイズ */
 
@@ -39,5 +39,5 @@ extern char g_portno[PORT_SIZE]; /**< ポート番号またはサービス名 */
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
-#endif /* _SERVER_OPTION_H_ */
+#endif /* _OPTION_H_ */
 

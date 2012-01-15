@@ -177,7 +177,8 @@ test_thread(void)
         for (i = 0; i < MAX_THREADS; i++) {
             dt = (struct send_data *)malloc(sizeof(struct send_data));
             if (!dt) {
-                cut_error("malloc: i=%d(%d)", i, errno);
+                cut_error("malloc: size=%zu, i=%d(%d)",
+                          sizeof(struct send_data), i, errno);
                 break;
             }
             (void)memset(dt, 0, sizeof(struct send_data));
@@ -333,7 +334,7 @@ test_server_proc(void)
 
         dt = (thread_data *)malloc(sizeof(thread_data));
         if (!dt) {
-            outlog("malloc");
+            outlog("malloc: size=%zu", sizeof(thread_data));
             exit(EXIT_FAILURE);
         }
         (void)memset(dt, 0, sizeof(thread_data));

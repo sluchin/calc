@@ -42,7 +42,7 @@ $(LIBSERVER): $(OBJSERVER)
 
 $(SHAREDOBJ): $(OBJSERVER)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
 $(PROGRAM): $(OBJECTS)
 	@$(RM) $(PROGRAM)

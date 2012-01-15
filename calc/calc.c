@@ -63,11 +63,6 @@ static const dbl EX_ERROR = 0.0;
 static pthread_key_t calc_key;
 /** キー初期化 */
 static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
-#ifdef _DEBUG
-/** SIGFPE シグナル */
-static volatile sig_atomic_t sigfpe_handled = 0;
-static volatile sig_atomic_t sigfpe_code = 0;
-#endif /* _DEBUG */
 
 /* 内部関数 */
 /** キー確保 */
@@ -88,14 +83,6 @@ static dbl number(calcinfo *tsd);
 static int get_strlen(const dbl val, const char *fmt);
 /** バッファ読込 */
 static void readch(calcinfo *tsd);
-#ifdef _DEBUG
-/** SIGFPEハンドラ設定 */
-static void set_sigfpe_handler(void);
-/** SIGFPEハンドラ */
-static void sigfpe_handler(int signum, siginfo_t *info, void *ptr);
-/** SIGFPE文字列変換 */
-static char *str_sigfpe_code(int code);
-#endif /* _DEBUG */
 
 /**
  * 初期化
@@ -120,13 +107,13 @@ init_calc(void *expr, long digit, bool thread)
             /* スレッド固有のバッファ確保 */
             tsd = (calcinfo *)malloc(sizeof(calcinfo));
             if (!tsd) {
-                outlog("malloc: tsd=%zu", sizeof(calcinfo));
+                outlog("malloc: size=%zu", sizeof(calcinfo));
                 return NULL;
             }
             dbglog("tsd=%p", tsd);
             retval = pthread_setspecific(calc_key, tsd);
             if (retval) {
-                outlog("pthread_setspecific");
+                outlog("pthread_setspecific: tsd=%p", tsd);
                 return NULL;
             }
         }
@@ -134,7 +121,7 @@ init_calc(void *expr, long digit, bool thread)
         if (!tsd) {
             tsd = (calcinfo *)malloc(sizeof(calcinfo));
             if (!tsd) {
-                outlog("malloc: tsd=%zu", sizeof(calcinfo));
+                outlog("malloc: size=%zu", sizeof(calcinfo));
                 return NULL;
             }
             dbglog("tsd=%p", tsd);
@@ -156,9 +143,6 @@ init_calc(void *expr, long digit, bool thread)
 
     readch(tsd);
 
-#ifdef _DEBUG
-    set_sigfpe_handler();
-#endif /* _DEBUG */
     return tsd;
 }
 
@@ -191,9 +175,7 @@ answer(calcinfo *tsd)
     int retval = 0;    /* 戻り値 */
     uint start = 0;    /* タイマ開始 */
 
-    dbglog("start: %p", answer);
-//    dbglog("sizeof(dbl)=%u, DBL_MAX=%f", sizeof(dbl), DBL_MAX);
-//    dbglog("sizeof(ldbl)=%u, LDBL_MAX=%Lf", sizeof(ldbl), LDBL_MAX);
+    dbglog("start");
 
     if (g_tflag)
         start_timer(&start);
@@ -223,7 +205,7 @@ answer(calcinfo *tsd)
             outlog("strndup");
             return NULL;
         }
-        dbglog("result=%p, length=%u", tsd->result, length);
+        dbglog("result=%p, length=%zu", tsd->result, length);
     } else {
         /* 文字数取得 */
         retval = get_strlen(val, tsd->fmt);
@@ -237,7 +219,7 @@ answer(calcinfo *tsd)
         /* メモリ確保 */
         tsd->result = (uchar *)malloc(length * sizeof(uchar));
         if (!tsd->result) {
-            outlog("calloc: length=%d", length);
+            outlog("malloc: length=%zu", length);
             return NULL;
         }
         (void)memset(tsd->result, 0, length * sizeof(uchar));
@@ -245,18 +227,12 @@ answer(calcinfo *tsd)
         /* 値を文字列に変換 */
         retval = snprintf((char *)tsd->result, length, tsd->fmt, val);
         if (retval < 0) {
-            outlog("snprintf=%d, result=%p, length=%u",
-                   retval, tsd->result, length);
+            outlog("snprintf: result=%p, length=%zu", tsd->result, length);
             return NULL;
         }
         dbglog(tsd->fmt, val);
-        dbglog("result=%s, length=%u", tsd->result, length);
+        dbglog("result=%s, length=%zu", tsd->result, length);
     }
-#ifdef _DEBUG
-    dbglog("sigfpe_handled=%d", (int)sigfpe_handled);
-    if (sigfpe_handled)
-        dbglog("SIGFPE: %s", str_sigfpe_code(sigfpe_code) ? : "");
-#endif /* _DEBUG */
     return tsd->result;
 }
 
@@ -395,7 +371,7 @@ expression(calcinfo *tsd)
 static dbl
 term(calcinfo *tsd)
 {
-    dbl x = 0, y = 0;     /* 値 */
+    dbl x = 0, y = 0; /* 値 */
 
     dbglog("start");
 
@@ -573,82 +549,6 @@ get_strlen(const dbl val, const char *fmt)
     dbglog("result=%d", result);
     return result;
 }
-
-/* SIGFPEが発生するかどうかテスト */
-#ifdef _DEBUG
-/**
- * SIGFPEハンドラ設定
- *
- * @return なし
- */
-static void
-set_sigfpe_handler(void)
-{
-    struct sigaction sa; /* sigaction構造体 */
-    sigset_t sigmask;    /* シグナルマスク */
-
-    (void)memset(&sa, 0, sizeof(struct sigaction));
-
-    /* シグナルマスクの設定 */
-    if (sigemptyset(&sigmask) < 0)
-        outlog("sigemptyset=0x%x", sigmask);
-    if (sigfillset(&sigmask) < 0)
-        outlog("sigfillset=0x%x", sigmask);
-
-    if (sigaction(SIGFPE, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGFPE", &sa);
-    sa.sa_sigaction = sigfpe_handler;
-    sa.sa_mask = sigmask;
-    if (sigaction(SIGFPE, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGFPE", &sa);
-}
-
-/**
- * SIGFPEハンドラ
- *
- * param[in] signum シグナル
- * param[in] info siginfo_t構造体
- * param[in] ptr ポインタ
- * @return なし
- */
-static void
-sigfpe_handler(int signum, siginfo_t *info, void *ptr)
-{
-    sigfpe_handled = 1;
-    sigfpe_code = info->si_code;
-}
-
-/**
- * SIGFPE文字列変換
- *
- * @param[in] code コード
- * @return 文字列
- */
-static char *
-str_sigfpe_code(int code)
-{
-    switch(code) {
-    case FPE_INTDIV:
-        return "integer divide by zero";
-    case FPE_INTOVF:
-        return "integer overflow";
-    case FPE_FLTDIV:
-        return "floating-point divide by zero";
-    case FPE_FLTOVF:
-        return "floating-point overflow";
-    case FPE_FLTUND:
-        return "floating-point underflow";
-    case FPE_FLTRES:
-        return "floating-point inexact result";
-    case FPE_FLTINV:
-        return "floating-point invalid operation";
-    case FPE_FLTSUB:
-        return "subscript out of range";
-    default:
-        return NULL;
-    }
-}
-#endif /* _DEBUG */
 
 #ifdef UNITTEST
 void

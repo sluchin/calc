@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CALC_OPTION_H_
-#define _CALC_OPTION_H_
+#ifndef _OPTION_H_
+#define _OPTION_H_
 
 /* 外部変数 */
 extern long g_digit; /**< 桁数 */
@@ -32,5 +32,5 @@ extern long g_digit; /**< 桁数 */
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
-#endif /* _CALC_OPTION_H_ */
+#endif /* _OPTION_H_ */
 

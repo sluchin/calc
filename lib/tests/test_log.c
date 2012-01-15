@@ -37,6 +37,10 @@
 #define BUF_SIZE 2048
 
 /* プロトタイプ */
+/** set_progname() 関数テスト */
+void test_set_progname(void);
+/** get_progname() 関数テスト */
+void test_get_progname(void);
 /** system_log() 関数テスト */
 void test_system_log(void);
 /** system_dbg_log() 関数テスト */
@@ -53,6 +57,12 @@ void test_dump_file(void);
 void test_systrace(void);
 /** print_trace() 関数テスト */
 void test_print_trace(void);
+/** sys_print_termattr() 関数テスト */
+void test_sys_print_termattr(void);
+/** strmon() 関数テスト */
+void test_strmon(void);
+/** destroy_progname() 関数テスト */
+void test_destroy_progname(void);
 
 /* 内部変数 */
 static testlog log;
@@ -125,6 +135,36 @@ cut_teardown(void)
         }
         (void)memset(testfile, 0, sizeof(testfile));
     }
+}
+
+/**
+ * set_progname() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_set_progname(void)
+{
+    char *ptr = NULL;
+    char *prog = "/tmp/testprog";
+    set_progname(prog);
+    ptr = get_progname();
+    cut_assert_equal_string("testprog", ptr);
+}
+
+/**
+ * get_progname() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_get_progname(void)
+{
+    char *ptr = NULL;
+    char *prog = "testprog";
+    set_progname(prog);
+    ptr = get_progname();
+    cut_assert_equal_string("testprog", ptr);
 }
 
 /**
@@ -502,6 +542,25 @@ test_strmon(void)
     if (result)
         free(result);
     result = NULL;
+}
+
+/**
+ * destroy_progname() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_destroy_progname(void)
+{
+    char *ptr = NULL;
+    char *prog = "testprog";
+
+    set_progname(prog);
+    ptr = get_progname();
+    cut_assert_not_null(ptr);
+    log.destroy_progname();
+    ptr = get_progname();
+    cut_assert_null(ptr);
 }
 
 /**

@@ -15,7 +15,7 @@ CFLAGS = -g -Wall -O2 -DUNITTEST
 DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
 LIBS = -lcutter -lcalcd
-COMPILE = $(CC) $(CFLAGS) $(INCLUDES)
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 SERVERSOBJ = test_server.so
 SERVEROBJ = test_server.o
@@ -28,7 +28,7 @@ all: $(SERVERSOBJ)
 
 $(SERVERSOBJ): $(SERVEROBJ)
 	@$(RM) $@
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

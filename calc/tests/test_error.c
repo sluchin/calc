@@ -135,7 +135,7 @@ test_clear_error(void)
     slen = strlen("dammy");
     tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
     if (!tsd->errormsg)
-        cut_error("malloc=%p(%d)", tsd->errormsg, errno);
+        cut_error("malloc: size=%zu(%d)", slen, errno);
     (void)memset(tsd->errormsg, 0, slen);
     (void)strncpy((char *)tsd->errormsg, "dammy", slen);
 

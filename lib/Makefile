@@ -17,7 +17,7 @@ DFLAGS = -g -Wall -O2 -DUNITTEST -D_DEBUG
 LDFLAGS =
 LIBS = -lpthread
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
-LINK = $(CC) $(CFLAGS)
+LINK = $(CC) $(LDFLAGS)
 LIBRARY = libcalcutil.a
 SHAREDOBJ = libcalcutil.so
 OBJECTS = data.o \
@@ -42,7 +42,7 @@ $(LIBRARY): $(OBJECTS)
 
 $(SHAREDOBJ): $(OBJECTS)
 	@$(RM) $@
-	$(CC) $(DFLAGS) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<

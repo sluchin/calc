@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CLIENT_OPTION_H_
-#define _CLIENT_OPTION_H_
+#ifndef _OPTION_H_
+#define _OPTION_H_
 
 #include <stdbool.h> /* bool */
 
@@ -40,5 +40,5 @@ extern char g_portno[PORT_SIZE];   /**< ポート番号またはサービス名 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
-#endif /* _CLIENT_OPTION_H_ */
+#endif /* _OPTION_H_ */
 

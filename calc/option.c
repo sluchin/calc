@@ -3,9 +3,10 @@
  * @brief オプション引数の処理
  *
  * オプション
- *  -p 小数点以下有効桁数の設定\n
- *  -h ヘルプの表示\n
- *  -V バージョンの表示\n
+ *  -d, --digit   有効桁数の設定\n
+ *  -t, --time    処理時間計測\n
+ *  -h, --help    ヘルプの表示\n
+ *  -V, --version バージョンの表示\n
  *
  * @author higashi
  * @date 2010-06-27 higashi 新規作成
@@ -32,7 +33,6 @@
 #include <string.h> /* memset */
 #include <stdlib.h> /* EXIT_SUCCESS */
 #include <getopt.h> /* getopt_long */
-#include <libgen.h> /* basename */
 
 #include "log.h"
 #include "version.h"
@@ -45,11 +45,11 @@ long g_digit = DEFAULT_DIGIT; /**< 桁数 */
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
-    { "digit",     required_argument, NULL, 'd' },
-    { "time",      no_argument,       NULL, 't' },
-    { "help",      no_argument,       NULL, 'h' },
-    { "version",   no_argument,       NULL, 'V' },
-    { NULL,        0,                 NULL, 0   }
+    { "digit",   required_argument, NULL, 'd' },
+    { "time",    no_argument,       NULL, 't' },
+    { "help",    no_argument,       NULL, 'h' },
+    { "version", no_argument,       NULL, 'V' },
+    { NULL,      0,                 NULL, 0   }
 };
 
 /** オプション情報文字列(ショート) */
@@ -57,9 +57,9 @@ static const char *shortopts = "d:thV";
 
 /* 内部関数 */
 /** ヘルプの表示 */
-static void print_help(const char *prog_name);
+static void print_help(const char *progname);
 /** バージョン情報表示 */
-static void print_version(const char *prog_name);
+static void print_version(const char *progname);
 /** getoptエラー表示 */
 static void parse_error(const int c, const char *msg);
 
@@ -74,7 +74,7 @@ static void parse_error(const int c, const char *msg);
 void
 parse_args(int argc, char *argv[])
 {
-    int opt = 0;         /* getopt_longの戻り値格納 */
+    int opt = 0;         /* オプション */
     const int base = 10; /* 基数 */
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
@@ -87,14 +87,14 @@ parse_args(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
             break;
-        case 't':
+        case 't': /* 処理時間計測 */
             g_tflag = true;
             break;
         case 'h': /* ヘルプ表示 */
-            print_help(basename(argv[0]));
+            print_help(get_progname());
             exit(EXIT_SUCCESS);
         case 'V': /* バージョン情報表示 */
-            print_version(basename(argv[0]));
+            print_version(get_progname());
             exit(EXIT_SUCCESS);
         case '?':
         case ':':
@@ -117,21 +117,20 @@ parse_args(int argc, char *argv[])
  * ヘルプ表示
  *
  * ヘルプを表示する.
- * @param[in] prog_name プログラム名
+ * @param[in] progname プログラム名
  * @return なし
  */
 static void
-print_help(const char *prog_name)
+print_help(const char *progname)
 {
-    FILE *fp = stderr;
-    (void)fprintf(fp, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(fp, "  -d, --digit            %s%ld%s",
+    (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
+    (void)fprintf(stderr, "  -d, --digit            %s%ld%s",
                   "set digit(1-", MAX_DIGIT, ")\n");
-    (void)fprintf(fp, "  -t, --time             %s",
+    (void)fprintf(stderr, "  -t, --time             %s",
                   "time test\n");
-    (void)fprintf(fp, "  -h, --help             %s",
+    (void)fprintf(stderr, "  -h, --help             %s",
                   "display this help and exit\n");
-    (void)fprintf(fp, "  -V, --version          %s",
+    (void)fprintf(stderr, "  -V, --version          %s",
                   "output version information and exit\n");
 }
 
@@ -139,14 +138,13 @@ print_help(const char *prog_name)
  * バージョン情報表示
  *
  * バージョン情報を表示する.
- * @param[in] prog_name プログラム名
+ * @param[in] progname プログラム名
  * @return なし
  */
 static void
-print_version(const char *prog_name)
+print_version(const char *progname)
 {
-    FILE *fp = stderr;
-    (void)fprintf(fp, "%s %s\n", prog_name, VERSION);
+    (void)fprintf(stderr, "%s %s\n", progname, VERSION);
 }
 
 /**
@@ -160,9 +158,8 @@ print_version(const char *prog_name)
 static void
 parse_error(const int c, const char *msg)
 {
-    FILE *fp = stderr;
     if (msg)
-        (void)fprintf(fp, "getopt[%d]: %s\n", c, msg);
-    (void)fprintf(fp, "Try `getopt --help' for more information\n");
+        (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
+    (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }
 
