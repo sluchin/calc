@@ -82,7 +82,7 @@ _readline(FILE *fp)
 
     } while (*(alloc + total - 1) != '\n');
 
-    if (alloc && *(alloc + total - 1) == '\n')
+    if (alloc && (*(alloc + total - 1) == '\n'))
         *(alloc + total - 1) = '\0'; /* 改行削除 */
 
     return alloc;

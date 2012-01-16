@@ -34,7 +34,9 @@
 #ifdef _USE_SELECT
 #  include <sys/select.h> /* pselect */
 #else
-#  include <sys/poll.h>   /* ppoll */
+#  define _GNU_SOURCE
+#  define __USE_GNU
+#  include <poll.h>       /* ppoll */
 #endif
 
 #include "readline.h"

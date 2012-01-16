@@ -526,7 +526,7 @@ test_sys_print_termattr(void)
 void
 test_strmon(void)
 {
-    char *result = NULL;
+    char *result = NULL; /* 結果文字列 */
 
     /* 正常系 */
     result = log.strmon(0);
@@ -553,8 +553,8 @@ test_strmon(void)
 void
 test_destroy_progname(void)
 {
-    char *ptr = NULL;
-    char *prog = "testprog";
+    char *ptr = NULL;        /* テスト関数戻り値 */
+    char *prog = "testprog"; /* テストデータ */
 
     set_progname(prog);
     ptr = get_progname();

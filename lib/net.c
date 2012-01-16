@@ -57,7 +57,7 @@ set_hostname(struct sockaddr_in *addr, const char *host)
 
     dbglog("start: host=%s", host);
 
-    if (!host)
+    if (!addr || !host)
         return EX_NG;
 
     (void)memset(&s_addr, 0, sizeof(struct in_addr));
@@ -101,7 +101,7 @@ set_port(struct sockaddr_in *addr, const char *port)
 
     dbglog("start: addr=%p, port=%s", addr, port);
 
-    if (!port)
+    if (!addr || !port)
         return EX_NG;
 
     if (isdigit(port[0])) { /* 先頭が数字 */

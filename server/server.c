@@ -179,6 +179,7 @@ server_loop(int sock)
                     continue;
                 }
                 (void)memset(dt, 0, sizeof(thread_data));
+                dbglog("dt=%p", dt);
 
                 /* 接続受付 */
                 /* addrlenは入出力なのでここで初期化する */
@@ -236,6 +237,7 @@ server_proc(void *arg)
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
            dt->sock, inet_ntoa(dt->addr.sin_addr),
            ntohs(dt->addr.sin_port), dt->len);
+    dbglog("dt=%p", dt);
 
     if (!dt)
         pthread_exit((void *)EXIT_FAILURE);
@@ -246,8 +248,8 @@ server_proc(void *arg)
     pthread_cleanup_push(thread_cleanup, &dt);
     do {
         /* ヘッダ受信 */
-        (void)memset(&hd, 0, length);
         length = sizeof(struct header);
+        (void)memset(&hd, 0, length);
         retval = recv_data(dt->sock, &hd, &length);
         if (retval < 0) /* エラーまたは接続先がシャットダウンされた */
             pthread_exit((void *)EXIT_FAILURE);
@@ -303,15 +305,15 @@ server_proc(void *arg)
 
         if (g_gflag)
             outdump(sdata, slen,
-                    "send: sdata=%p, length=%zd", sdata, slen);
+                    "send: sdata=%p, slen=%zd", sdata, slen);
         stddump(sdata, slen,
-                "send: sdata=%p, length=%zd", sdata, slen);
+                "send: sdata=%p, slen=%zd", sdata, slen);
 
         retval = send_data(dt->sock, sdata, (size_t *)&slen);
         if (retval < 0) /* エラー */
             pthread_exit((void *)EXIT_FAILURE);
 
-        dbglog("send_data: sdata=%p, length=%zu", sdata, slen);
+        dbglog("send_data: sdata=%p, slen=%zu", sdata, slen);
 
         pthread_cleanup_pop(1);
         pthread_cleanup_pop(1);

@@ -12,10 +12,10 @@
  sudo make install
 
 クライアントサーバ
- サーバでデーモン起動
+ サーバデーモン起動
  cd server
  ./calcd
- クライアントでプログラム起動
+ クライアントプログラム起動
  cd client
  ./calcc
 

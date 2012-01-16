@@ -285,6 +285,10 @@ stderr_log(const char *pname,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
 
+    if (mon)
+        free(mon);
+    mon = NULL;
+
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);
     va_end(ap);
@@ -294,10 +298,6 @@ stderr_log(const char *pname,
     }
 
     (void)fprintf(fp, "): %m(%d)\n", errsv);
-
-    if (mon)
-        free(mon);
-    mon = NULL;
 
     errno = 0; /* errno初期化 */
 }
@@ -316,7 +316,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 {
     int retval = 0;                   /* 戻り値 */
     int pt = 0;                       /* アドレス用変数 */
-    unsigned char *p;                 /* バッファポインタ */
+    unsigned char *p = NULL;          /* バッファポインタ */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                       /* va_list */
 
@@ -392,7 +392,7 @@ dump_sys(const int level,
 {
     int retval = 0;                   /* 戻り値 */
     int pt = 0;                       /* アドレス用変数 */
-    unsigned char *p;                 /* バッファポインタ */
+    unsigned char *p = NULL;          /* バッファポインタ */
     char hexdump[68];                 /* ログ出力用バッファ */
     char tmp[4] = {0};                /* 一時バッファ */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
@@ -423,6 +423,7 @@ dump_sys(const int level,
         (void)snprintf(hexdump, hsize, "%08X : ", pt);
         /* ダンプの表示 */
         for (j = 0; j < 16; j++) {
+            (void)memset(tmp, 0, tsize);
             if ((i + j) >= len ) {
                 (void)snprintf(tmp, tsize,
                                "  %s", (j % 2 == 1 ? " " : ""));
@@ -438,6 +439,7 @@ dump_sys(const int level,
         }
         /* アスキー文字の表示 */
         for (j = 0; (i < len) && (j < 16); i++, j++) {
+            (void)memset(tmp, 0, tsize);
             (void)snprintf(tmp, tsize, "%c",
                            (*(p + i) < ' ' || '~' < *(p + i) ?
                             '.' : *(p + i)));
