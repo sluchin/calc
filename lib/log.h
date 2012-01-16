@@ -30,7 +30,7 @@
 #include <syslog.h> /* syslog */
 
 #define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       LOG_INFO, LOG_PID, get_progname(),      \
+#define LOGARGS       LOG_INFO, LOG_PID, get_progname(),        \
         __FILE__, __LINE__, __FUNCTION__
 
 /* エラー時ログメッセージ出力 */
@@ -100,9 +100,9 @@ void sys_print_termattr(const int level, const int option,
 
 #ifdef UNITTEST
 struct _testlog {
-   char *(*strmon)(int mon);
-   void (*destroy_progname)(void);
-   char *progname;
+    char *(*strmon)(int mon);
+    void (*destroy_progname)(void);
+    char *progname;
 };
 typedef struct _testlog testlog;
 

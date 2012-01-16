@@ -177,6 +177,7 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
  * リダイレクト
  *
  * @param[in] fd ファイルディスクリプタ
+ * @param[in] path ファイルパス
  * @retval EX_NG エラー
  */
 int

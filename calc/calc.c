@@ -294,7 +294,7 @@ alloc_key(void)
 /**
  * スレッド固有バッファ解放
  *
- * @param[in] ptr 解放するポインタ
+ * @param[in] tsd 解放するポインタ
  * @return なし
  */
 static void

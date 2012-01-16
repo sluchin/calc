@@ -228,7 +228,6 @@ client_loop(int sock)
  * ソケット送信
  *
  * @param[in] sock ソケット
- * @param[in] buf バッファ
  * @return ステータス
  */
 static st_client

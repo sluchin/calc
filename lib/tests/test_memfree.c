@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_util.c
+ * @file lib/tests/test_memfree.c
  * @brief 単体テスト
  *
  * @author higashi
