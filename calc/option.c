@@ -125,9 +125,9 @@ print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
     (void)fprintf(stderr, "  -d, --digit            %s%ld%s",
-                  "set digit(1-", MAX_DIGIT, ")\n");
+                  "set digit (1-", MAX_DIGIT, ")\n");
     (void)fprintf(stderr, "  -t, --time             %s",
-                  "time test\n");
+                  "print time\n");
     (void)fprintf(stderr, "  -h, --help             %s",
                   "display this help and exit\n");
     (void)fprintf(stderr, "  -V, --version          %s",

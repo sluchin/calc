@@ -72,15 +72,17 @@ set_progname(char *name)
 {
     char *ptr = NULL; /* strrchr戻り値 */
 
-    ptr = strrchr(name, '/');
-    if (ptr)
-        progname = strdup(ptr + 1);
-    else
-        progname = strdup(name);
+    if (!progname) { /* 一度のみ設定される */
+        ptr = strrchr(name, '/');
+        if (ptr)
+            progname = strdup(ptr + 1);
+        else
+            progname = strdup(name);
 
-    if (atexit(destroy_progname)) {
-        outlog("atexit");
-        exit(EXIT_FAILURE);
+        if (atexit(destroy_progname)) {
+            outlog("atexit");
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -680,6 +682,7 @@ test_init_log(testlog *log)
 {
     log->strmon = strmon;
     log->destroy_progname = destroy_progname;
+    log->progname = progname;
 }
 #endif
 

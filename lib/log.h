@@ -102,6 +102,7 @@ void sys_print_termattr(const int level, const int option,
 struct _testlog {
    char *(*strmon)(int mon);
    void (*destroy_progname)(void);
+   char *progname;
 };
 typedef struct _testlog testlog;
 

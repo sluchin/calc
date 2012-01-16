@@ -152,14 +152,16 @@ static void
 print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(stderr, "  -i, --ipaddress        %s",
-                  "ip address(hostname)\n");
-    (void)fprintf(stderr, "  -p, --port             %s",
-                  "port\n");
+    (void)fprintf(stderr, "  -i, --ipaddress        %s%s%s",
+                  "set ip address or host name (default: ",
+                  DEFAULT_IPADDR, ")\n");
+    (void)fprintf(stderr, "  -p, --port             %s%s%s",
+                  "set port number or service name (default: ",
+                  DEFAULT_PORTNO, ")\n");
     (void)fprintf(stderr, "  -g, --debug            %s",
-                  "execute test mode\n");
+                  "execute for debug mode\n");
     (void)fprintf(stderr, "  -t, --time             %s",
-                  "time test\n");
+                  "print time\n");
     (void)fprintf(stderr, "  -h, --help             %s",
                   "display this help and exit\n");
     (void)fprintf(stderr, "  -V, --version          %s",

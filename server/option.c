@@ -141,10 +141,11 @@ static void
 print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(stderr, "  -p, --port              %s",
-                  "port\n");
+    (void)fprintf(stderr, "  -p, --port              %s%s%s",
+                  "set port number or service name (default: ",
+                  DEFAULT_PORTNO, ")\n");
     (void)fprintf(stderr, "  -g, --debug             %s",
-                  "execute test mode\n");
+                  "execute for debug mode\n");
     (void)fprintf(stderr, "  -h, --help              %s",
                   "display this help and exit\n");
     (void)fprintf(stderr, "  -V, --version           %s",

@@ -145,11 +145,11 @@ cut_teardown(void)
 void
 test_set_progname(void)
 {
-    char *ptr = NULL;
-    char *prog = "/tmp/testprog";
+    char *prog = "/tmp/testprog"; /* テストデータ */
+
     set_progname(prog);
-    ptr = get_progname();
-    cut_assert_equal_string("testprog", ptr);
+    test_init_log(&log);
+    cut_assert_equal_string("testprog", log.progname);
 }
 
 /**
@@ -160,8 +160,9 @@ test_set_progname(void)
 void
 test_get_progname(void)
 {
-    char *ptr = NULL;
-    char *prog = "testprog";
+    char *ptr = NULL;        /* テスト関数戻り値 */
+    char *prog = "testprog"; /* テストデータ */
+
     set_progname(prog);
     ptr = get_progname();
     cut_assert_equal_string("testprog", ptr);

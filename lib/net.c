@@ -34,7 +34,7 @@
 #include <errno.h>      /* errno */
 #include <fcntl.h>      /* fcntl */
 #ifdef __cplusplus
-# define __STDC_FORMAT_MACROS 1
+# define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>   /* uint16_t, PRIu16 */
 

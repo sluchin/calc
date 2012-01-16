@@ -28,7 +28,6 @@
 
 #include <stdbool.h> /* bool */
 
-#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトIPアドレス */
 #define DEFAULT_PORTNO "12345"     /**< デフォルトポート番号 */
 #define HOST_SIZE      48          /**< ホスト名サイズ */
 #define PORT_SIZE      48          /**< ポート名サイズ */
