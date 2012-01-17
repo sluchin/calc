@@ -83,7 +83,7 @@ parse_args(int argc, char *argv[])
         case 'd': /* 有効桁数設定 */
             g_digit = strtol(optarg, NULL, base);
             if (g_digit <= 0 || MAX_DIGIT < g_digit) {
-                (void)fprintf(stderr, "Maximum digit is %ld.\n", MAX_DIGIT);
+                (void)fprintf(stderr, "Digits is 1-%ld.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }
             break;

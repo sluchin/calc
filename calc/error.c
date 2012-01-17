@@ -202,7 +202,8 @@ check_math_feexcept(calcinfo *tsd)
 void
 clear_math_feexcept(void)
 {
-    feclearexcept(FE_ALL_EXCEPT);
+    if (feclearexcept(FE_ALL_EXCEPT)) /* エラー(非0) */
+        outlog("feclearexcept");
     errno = 0;
 }
 

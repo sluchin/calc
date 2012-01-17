@@ -30,17 +30,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* FILE */
-#include <stdlib.h>  /* realloc */
-#include <string.h>  /* strndup memcpy memset */
-#include <ctype.h>   /* isdigit isalpha */
-#include <math.h>    /* powl */
-#include <pthread.h> /* pthread_once */
-#include <signal.h>  /* sigaction */
+#include <stdio.h>    /* FILE */
+#include <stdlib.h>   /* realloc */
+#include <string.h>   /* strndup memcpy memset */
+#include <ctype.h>    /* isdigit isalpha */
+#include <math.h>     /* powl */
+#include <pthread.h>  /* pthread_once */
+#include <signal.h>   /* sigaction */
 #ifdef _DEBUG
-#  include <unistd.h> /* write */
 #  include <limits.h> /* INT_MAX */
-#  include <float.h>  /* DBL_MAX */
 #endif /* _DEBUG */
 
 #include "timer.h"
