@@ -158,9 +158,6 @@ check_validate(calcinfo *tsd, dbl val)
 /**
  * 浮動小数点例外チェック
  *
- * math.h で宣言されている数学関数使用時,\n
- * 浮動小数点例外をチェックする.
- *
  * @param[in] tsd calcinfo構造体
  * @return なし
  */

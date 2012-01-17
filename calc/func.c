@@ -370,7 +370,12 @@ get_sqrt(calcinfo *tsd, dbl x)
         return EX_ERROR;
     }
 
+    clear_math_feexcept();
+
     result = sqrt(x);
+
+    check_math_feexcept(tsd);
+
     return result;
 }
 
@@ -439,6 +444,8 @@ get_factorial(calcinfo *tsd, dbl n)
     if (is_error(tsd))
         return EX_ERROR;
 
+    clear_math_feexcept();
+
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
     dbglog("decimal=%f, integer=%f", decimal, integer);
@@ -459,7 +466,7 @@ get_factorial(calcinfo *tsd, dbl n)
         result *= -1;
     minus = false;
 
-    check_validate(tsd, result);
+    check_math_feexcept(tsd);
 
     dbglog(tsd->fmt, result);
     return result;
@@ -488,6 +495,8 @@ get_permutation(calcinfo *tsd, dbl n, dbl r)
     if (is_error(tsd))
         return EX_ERROR;
 
+    clear_math_feexcept();
+
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
@@ -503,7 +512,7 @@ get_permutation(calcinfo *tsd, dbl n, dbl r)
 
     result = x / y;
 
-    check_validate(tsd, result);
+    check_math_feexcept(tsd);
 
     dbglog(tsd->fmt, result);
     return result;
@@ -532,6 +541,8 @@ get_combination(calcinfo *tsd, dbl n, dbl r)
     if (is_error(tsd))
         return EX_ERROR;
 
+    clear_math_feexcept();
+
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
@@ -546,7 +557,7 @@ get_combination(calcinfo *tsd, dbl n, dbl r)
 
     result = x / (y * z);
 
-    check_validate(tsd, result);
+    check_math_feexcept(tsd);
 
     dbglog(tsd->fmt, result);
     return result;
