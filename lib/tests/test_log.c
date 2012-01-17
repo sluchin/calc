@@ -59,8 +59,6 @@ void test_systrace(void);
 void test_print_trace(void);
 /** sys_print_termattr() 関数テスト */
 void test_sys_print_termattr(void);
-/** strmon() 関数テスト */
-void test_strmon(void);
 /** destroy_progname() 関数テスト */
 void test_destroy_progname(void);
 
@@ -516,33 +514,6 @@ test_sys_print_termattr(void)
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
-}
-
-/**
- * strmon() 関数テスト
- *
- * @return なし
- */
-void
-test_strmon(void)
-{
-    char *result = NULL; /* 結果文字列 */
-
-    /* 正常系 */
-    result = log.strmon(0);
-    cut_assert_equal_string(result, "Jan");
-
-    if (result)
-        free(result);
-    result = NULL;
-
-    /* 異常系 */
-    result = log.strmon(12);
-    cut_assert_null(result);
-
-    if (result)
-        free(result);
-    result = NULL;
 }
 
 /**

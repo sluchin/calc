@@ -226,7 +226,7 @@ init_func(void)
     assert(MAXFUNC == NELEMS(fstring));
     assert(MAXFUNC == NELEMS(finfo));
 
-    (void)memset(finfo, 0, sizeof(finfo));
+    (void)memset(finfo, 0, sizeof(struct funcinfo));
 
     /* pi */
     finfo[FN_PI].type = FUNC0;
@@ -300,7 +300,7 @@ get_pi(calcinfo *tsd)
 }
 
 /**
- * ネイピア数(オイラー数)を取得
+ * ネイピア数(オイラー数)取得
  *
  * @param[in] tsd calcinfo構造体
  * @return ネイピア数(オイラー数)
@@ -324,10 +324,18 @@ get_e(calcinfo *tsd)
 static dbl
 get_rad(calcinfo *tsd, dbl x)
 {
+    dbl result = 0.0; /* 計算結果 */
+
     dbglog("start");
+
     if (is_error(tsd))
         return EX_ERROR;
-    return (x * DEF_PI / 180);
+
+    result = x * DEF_PI / 180;
+
+    check_validate(tsd, result);
+
+    return result;
 }
 
 /**
@@ -340,10 +348,18 @@ get_rad(calcinfo *tsd, dbl x)
 static dbl
 get_deg(calcinfo *tsd, dbl x)
 {
+    dbl result = 0.0; /* 計算結果 */
+
     dbglog("start");
+
     if (is_error(tsd))
         return EX_ERROR;
-    return (x * 180 / DEF_PI);
+
+    result = x * 180 / DEF_PI;
+
+    check_validate(tsd, result);
+
+    return result;
 }
 
 /**
@@ -357,7 +373,7 @@ get_deg(calcinfo *tsd, dbl x)
 static dbl
 get_sqrt(calcinfo *tsd, dbl x)
 {
-    dbl result = 0; /* 計算結果 */
+    dbl result = 0.0; /* 計算結果 */
 
     dbglog("start: x=%g", x);
 
@@ -390,7 +406,7 @@ get_sqrt(calcinfo *tsd, dbl x)
 static dbl
 check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
 {
-    dbl result = 0; /* 計算結果 */
+    dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
@@ -434,17 +450,15 @@ factorial(dbl *x, dbl n)
 static dbl
 get_factorial(calcinfo *tsd, dbl n)
 {
-    dbl result = 0;     /* 計算結果 */
-    dbl decimal = 0;    /* 小数 */
-    dbl integer = 0;    /* 整数 */
+    dbl result = 0.0;   /* 計算結果 */
+    dbl decimal = 0.0;  /* 小数 */
+    dbl integer = 0.0;  /* 整数 */
     bool minus = false; /* マイナスフラグ */
 
     dbglog("start");
 
     if (is_error(tsd))
         return EX_ERROR;
-
-    clear_math_feexcept();
 
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
@@ -453,6 +467,8 @@ get_factorial(calcinfo *tsd, dbl n)
         set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
+
+    clear_math_feexcept();
 
     if (isless(n, 0)) { /* マイナス */
         n = check_math(tsd, n, fabs);
@@ -487,21 +503,21 @@ get_factorial(calcinfo *tsd, dbl n)
 static dbl
 get_permutation(calcinfo *tsd, dbl n, dbl r)
 {
-    dbl result = 0;   /* 計算結果 */
-    dbl x = 0, y = 1; /* 値 */
+    dbl result = 0.0;     /* 計算結果 */
+    dbl x = 0.0, y = 1.0; /* 値 */
 
     dbglog("start");
 
     if (is_error(tsd))
         return EX_ERROR;
 
-    clear_math_feexcept();
-
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
+
+    clear_math_feexcept();
 
     x = get_factorial(tsd, n);
     dbglog(tsd->fmt, x);
@@ -533,21 +549,21 @@ get_permutation(calcinfo *tsd, dbl n, dbl r)
 static dbl
 get_combination(calcinfo *tsd, dbl n, dbl r)
 {
-    dbl result = 0;          /* 計算結果 */
-    dbl x = 0, y = 0, z = 1; /* 値 */
+    dbl result = 0.0;              /* 計算結果 */
+    dbl x = 0.0, y = 0.0, z = 1.0; /* 値 */
 
     dbglog("start");
 
     if (is_error(tsd))
         return EX_ERROR;
 
-    clear_math_feexcept();
-
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
         set_errorcode(tsd, E_NAN);
         return EX_ERROR;
     }
+
+    clear_math_feexcept();
 
     x = get_factorial(tsd, n);
     y = get_factorial(tsd, r);

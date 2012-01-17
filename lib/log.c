@@ -52,12 +52,16 @@
     (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)",                    \
                   __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
 
+/** 月省略名配列 */
+static const char *mon[] = {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
 /* 内部変数 */
 static char *progname = NULL; /**< プログラム名 */
 
 /* 内部関数 */
-/** 月省略名 */
-static char *strmon(int mon);
 /** プログラム名解放 */
 static void destroy_progname(void);
 
@@ -249,7 +253,6 @@ stderr_log(const char *pname,
     va_list ap;                      /* va_list */
     char h_buf[MAX_HOST_SIZE] = {0}; /* ホスト */
     pthread_t tid = 0;               /* スレッドID */
-    char *mon = NULL;                /* 月名 */
     /* スレッドID用バッファ
      * 64bit ULONG_MAX: 18446744073709551615UL
      * 32bit ULONG_MAX: 4294967295UL */
@@ -277,17 +280,14 @@ stderr_log(const char *pname,
     if (tid)
         (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
 
-    mon = strmon(t.tm_mon);
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  mon ? : "", t.tm_mday, t.tm_hour, t.tm_min,
+                  0 <= t.tm_mon && t.tm_mon < NELEMS(mon) ?
+                  mon[t.tm_mon] : "",
+                  t.tm_mday, t.tm_hour, t.tm_min,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),
                   fname, line, getppid(), tid ? t_buf : "", func);
-
-    if (mon)
-        free(mon);
-    mon = NULL;
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);
@@ -314,6 +314,7 @@ stderr_log(const char *pname,
 int
 dump_log(const void *buf, const size_t len, const char *format, ...)
 {
+    FILE *fp = stderr;                /* 標準エラー出力 */
     int retval = 0;                   /* 戻り値 */
     int pt = 0;                       /* アドレス用変数 */
     unsigned char *p = NULL;          /* バッファポインタ */
@@ -333,33 +334,33 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
         return EX_NG;
     }
 
-    (void)fprintf(stderr, "%s\n", message);
-    (void)fprintf(stderr, "%s%s",
+    (void)fprintf(fp, "%s\n", message);
+    (void)fprintf(fp, "%s%s",
                   "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F ",
                   "0123456789ABCDEF\n");
-    (void)fprintf(stderr, "%s%s",
+    (void)fprintf(fp, "%s%s",
                   "--------   ---- ---- ---- ---- ---- ---- ---- ---- ",
                   "----------------\n");
 
     unsigned int i, j;
     for (i = 0; i < len; ) {
-        (void)fprintf(stderr, "%08X : ", pt);
+        (void)fprintf(fp, "%08X : ", pt);
         for (j = 0; j < 16; j++) {
             if ((i + j) >= len)
-                (void)fprintf(stderr, "  %s", (j % 2 == 1 ? " " : ""));
+                (void)fprintf(fp, "  %s", (j % 2 == 1 ? " " : ""));
             else
-                (void)fprintf(stderr, "%02x%s",
+                (void)fprintf(fp, "%02x%s",
                               (unsigned int)*(p + i + j),
                               (j % 2 == 1 ? " " : ""));
         }
         for (j = 0; (i < len) && (j < 16); i++, j++) {
-            (void)fprintf(stderr, "%c",
+            (void)fprintf(fp, "%c",
                           *(p + i) < ' ' || '~' < *(p + i) ? '.' : *(p + i));
         }
-        (void)fprintf(stderr, "\n");
+        (void)fprintf(fp, "\n");
         pt += j;
     }
-    (void)fprintf(stderr, "\n");
+    (void)fprintf(fp, "\n");
 
     return EX_OK;
 }
@@ -625,47 +626,6 @@ sys_print_termattr(const int level, const int option,
 }
 
 /**
- * 月省略名
- *
- * @param[in] mon 月
- * @return 月省略名
- * @attention 戻り値ポインタは解放しなければならない
- */
-static char *
-strmon(int mon)
-{
-    switch(mon) {
-    case  0:
-        return strdup("Jan");
-    case  1:
-        return strdup("Feb");
-    case  2:
-        return strdup("Mar");
-    case  3:
-        return strdup("Apr");
-    case  4:
-        return strdup("May");
-    case  5:
-        return strdup("Jun");
-    case  6:
-        return strdup("Jul");
-    case  7:
-        return strdup("Aug");
-    case  8:
-        return strdup("Sep");
-    case  9:
-        return strdup("Oct");
-    case 10:
-        return strdup("Nov");
-    case 11:
-        return strdup("Dec");
-    default:
-        return NULL;
-    }
-    return NULL;
-}
-
-/**
  * プログラム名解放
  *
  * @return なし
@@ -682,7 +642,6 @@ destroy_progname(void)
 void
 test_init_log(testlog *log)
 {
-    log->strmon = strmon;
     log->destroy_progname = destroy_progname;
     log->progname = progname;
 }
