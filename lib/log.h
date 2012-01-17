@@ -98,15 +98,5 @@ void sys_print_termattr(const int level, const int option,
                         const char *pname, const char *fname,
                         const int line, const char *func, int fd);
 
-#ifdef UNITTEST
-struct _testlog {
-    void (*destroy_progname)(void);
-    char *progname;
-};
-typedef struct _testlog testlog;
-
-void test_init_log(testlog *log);
-#endif /* UNITTEST */
-
 #endif /* _OUTPUTLOG_H_ */
 

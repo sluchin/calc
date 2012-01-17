@@ -59,8 +59,6 @@ void test_systrace(void);
 void test_print_trace(void);
 /** sys_print_termattr() 関数テスト */
 void test_sys_print_termattr(void);
-/** destroy_progname() 関数テスト */
-void test_destroy_progname(void);
 
 /* 内部変数 */
 static testlog log;
@@ -143,11 +141,12 @@ cut_teardown(void)
 void
 test_set_progname(void)
 {
+    char *ptr = NULL;             /* テスト関数戻り値 */
     char *prog = "/tmp/testprog"; /* テストデータ */
 
     set_progname(prog);
-    test_init_log(&log);
-    cut_assert_equal_string("testprog", log.progname);
+    ptr = get_progname();
+    cut_assert_equal_string("testprog", ptr);
 }
 
 /**
@@ -514,25 +513,6 @@ test_sys_print_termattr(void)
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
-}
-
-/**
- * destroy_progname() 関数テスト
- *
- * @return なし
- */
-void
-test_destroy_progname(void)
-{
-    char *ptr = NULL;        /* テスト関数戻り値 */
-    char *prog = "testprog"; /* テストデータ */
-
-    set_progname(prog);
-    ptr = get_progname();
-    cut_assert_not_null(ptr);
-    log.destroy_progname();
-    ptr = get_progname();
-    cut_assert_null(ptr);
 }
 
 /**

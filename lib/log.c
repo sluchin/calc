@@ -43,6 +43,7 @@
 #define MAX_HOST_SIZE  25 /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE  256 /**< 最大メッセージサイズ */
 #define STACK_SIZE    100 /**< スタックサイズ */
+#define MAX_PROGNAME   25 /**< 最大プログラム名文字列長 */
 
 #define SYSMSG(lv, fmt, ...)                                    \
     syslog(lv, "%s[%d]: %s: " fmt "(%d)",                       \
@@ -59,11 +60,9 @@ static const char *mon[] = {
 };
 
 /* 内部変数 */
-static char *progname = NULL; /**< プログラム名 */
+static char progname[MAX_PROGNAME] = {0}; /**< プログラム名 */
 
 /* 内部関数 */
-/** プログラム名解放 */
-static void destroy_progname(void);
 
 /**
  * プログラム名設定
@@ -76,17 +75,12 @@ set_progname(char *name)
 {
     char *ptr = NULL; /* strrchr戻り値 */
 
-    if (!progname) { /* 一度のみ設定される */
+    if (!progname[0]) { /* 一度のみ設定される */
         ptr = strrchr(name, '/');
         if (ptr)
-            progname = strdup(ptr + 1);
+            (void)strncpy(progname, ptr + 1, sizeof(progname));
         else
-            progname = strdup(name);
-
-        if (atexit(destroy_progname)) {
-            outlog("atexit");
-            exit(EXIT_FAILURE);
-        }
+            (void)strncpy(progname, name, sizeof(progname));
     }
 }
 
@@ -624,26 +618,4 @@ sys_print_termattr(const int level, const int option,
         free(result);
     result = NULL;
 }
-
-/**
- * プログラム名解放
- *
- * @return なし
- */
-static void
-destroy_progname(void)
-{
-    if (progname)
-        free(progname);
-    progname = NULL;
-}
-
-#ifdef UNITTEST
-void
-test_init_log(testlog *log)
-{
-    log->destroy_progname = destroy_progname;
-    log->progname = progname;
-}
-#endif
 
