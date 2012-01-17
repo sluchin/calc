@@ -94,7 +94,7 @@ cut_startup(void)
         cut_error("tmpnam(%d)", errno);
 
     /* sockaddr_un構造体の設定 */
-    memset(&addr, 0, sizeof(addr));
+    (void)memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     (void)strncpy(addr.sun_path, sockfile, sizeof(addr.sun_path));
     addrlen = sizeof(addr.sun_family) + strlen(addr.sun_path);

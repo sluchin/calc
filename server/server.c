@@ -365,7 +365,7 @@ thread_memfree(void *arg)
 static sigset_t
 get_sigmask(void)
 {
-    sigset_t sigmask;
+    sigset_t sigmask; /* シグナルマスク */
 
     /* 初期化 */
     if (sigemptyset(&sigmask) < 0)

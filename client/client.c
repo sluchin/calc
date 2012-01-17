@@ -22,6 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
+
 #include <stdio.h>        /* FILE */
 #include <stdlib.h>       /* strtol */
 #include <string.h>       /* memcpy memset */
@@ -74,6 +75,8 @@ static uchar *answer = NULL;             /**< 受信データ */
 static st_client send_sock(int sock);
 /** ソケット受信 */
 static st_client read_sock(int sock);
+/** シグナルマスク取得 */
+static sigset_t get_sigmask(void);
 /** atexit登録関数 */
 static void exit_memfree(void);
 
@@ -154,14 +157,8 @@ client_loop(int sock)
     FD_SET(STDIN_FILENO, &fds); /* 標準入力をマスク */
 #endif /* _USE_SELECT */
 
-    /* シグナルマスクの設定 */
-    if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=0x%x", sigmask);
-    if (sigfillset(&sigmask) < 0) /* シグナル全て */
-        outlog("sigfillset=0x%x", sigmask);
-    if (sigdelset(&sigmask, SIGINT) < 0) /* SIGINT除く*/
-        outlog("sigdelset=0x%x", sigmask);
-    dbglog("sigmask=0x%x", sigmask);
+    /* シグナルマスクの取得 */
+    sigmask = get_sigmask();
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
@@ -332,6 +329,30 @@ read_sock(int sock)
 
     memfree((void **)&answer, NULL);
     return EX_SUCCESS;
+}
+
+/**
+ * シグナルマスク取得
+ *
+ * @return シグナルマスク
+ */
+static sigset_t
+get_sigmask(void)
+{
+    sigset_t sigmask; /* シグナルマスク */
+
+    /* 初期化 */
+    if (sigemptyset(&sigmask) < 0)
+        outlog("sigemptyset=0x%x", sigmask);
+    /* シグナル全て */
+    if (sigfillset(&sigmask) < 0)
+        outlog("sigfillset=0x%x", sigmask);
+    /* SIGINT除く*/
+    if (sigdelset(&sigmask, SIGINT) < 0)
+        outlog("sigdelset=0x%x", sigmask);
+    dbglog("sigmask=0x%x", sigmask);
+
+    return sigmask;
 }
 
 /**
