@@ -515,6 +515,7 @@ test_sys_print_termattr(void)
  * 標準エラー出力用文字列設定
  *
  * @param[in,out] buf バッファ
+ * @param[in] len バッファサイズ
  * @return なし
  */
 static void
@@ -539,6 +540,7 @@ set_print_hex(char *buf, size_t len)
  *
  * @param[in,out] buf バッファ
  * @param[in] prefix プレフィックス
+ * @param[in] len バッファサイズ
  * @return なし
  */
 static void

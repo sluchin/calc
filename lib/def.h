@@ -26,16 +26,16 @@
 #ifndef _DEF_H_
 #define _DEF_H_
 
-/* 配列要素数 */
+/** 配列要素数 */
 #define NELEMS(array) (sizeof(array) / sizeof(array[0]))
 
 /* 型定義 */
-typedef unsigned char uchar;
-typedef unsigned int uint;
-typedef unsigned short ushort;
-typedef unsigned long ulong;
-typedef double dbl;
-typedef long double ldbl;
+typedef unsigned char uchar;   /**< unsigned char */
+typedef unsigned int uint;     /**< unsigned int */
+typedef unsigned short ushort; /**< unsigned short */
+typedef unsigned long ulong;   /**< unsigned long */
+typedef double dbl;            /**< double */
+typedef long double ldbl;      /**< long double */
 
 /** 関数戻り値 */
 enum {

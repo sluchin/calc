@@ -163,7 +163,7 @@ get_termattr(const int fd, struct termios *mode)
         *endp = '\0';
     (void)strncat(buf, ")", sizeof(buf) - strlen(buf) - 1);
 
-    ptr = strndup(buf, strlen(buf));
+    ptr = strdup(buf);
     if (!ptr) {
         outlog("strdup: buf=%p", buf);
         return NULL;
