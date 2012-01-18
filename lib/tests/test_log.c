@@ -526,12 +526,12 @@ set_print_hex(char *buf, size_t len)
     int i;
     for (i = 0; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
-        strncpy(buf + total, print_hex[i], len - total - 1);
+        strncat(buf, print_hex[i], len - total - 1);
         total += length;
-        strncpy(buf + total, "\n", len - total - 1);
+        strncat(buf, "\n", len - total - 1);
         total += strlen("\n");
     }
-    strncpy(buf + total, "\n", strlen("\n"));
+    strncat(buf, "\n", strlen("\n"));
 }
 
 /**
@@ -550,12 +550,12 @@ set_print_hex_sys(char *buf, const char *prefix, size_t len)
     int i;
     const size_t prefix_len = strlen(prefix);
     for (i = 0; i < NELEMS(print_hex); i++) {
-        strncpy(buf + total, prefix, len - total - 1);
+        strncat(buf, prefix, len - total - 1);
         total += prefix_len;
         length = strlen(print_hex[i]);
-        strncpy(buf + total, print_hex[i], len - total - 1);
+        strncat(buf, print_hex[i], len - total - 1);
         total += length;
-        strncpy(buf + total, "\\n", len - total - 1);
+        strncat(buf, "\\n", len - total - 1);
         total += strlen("\\n");
     }
     *(buf + total - strlen("\\n")) = '\0'; /* 改行削除 */
