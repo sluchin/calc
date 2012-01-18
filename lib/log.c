@@ -75,7 +75,7 @@ set_progname(char *name)
 {
     char *ptr = NULL; /* strrchr戻り値 */
 
-    if (!progname[0]) { /* 一度のみ設定される */
+    if (progname[0] == '\0') { /* 一度のみ設定される */
         ptr = strrchr(name, '/');
         if (ptr)
             (void)strncpy(progname, ptr + 1, sizeof(progname));

@@ -48,8 +48,8 @@ static char test_data[BUF_SIZE]; /* テストデータ */
 static uchar *result = NULL;     /* 結果文字列 */
 
 /* 内部関数 */
-/** 正常処理 */
-static uchar *normal_process(char *data, size_t length);
+/** readline() 実行 */
+static uchar *exec_readline(char *data, size_t length);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -100,7 +100,7 @@ test_readline(void)
     char nolf_data[] = "test"; /* 改行なし文字列 */
 
     /* 正常系 */
-    result = normal_process(test_data, sizeof(test_data));
+    result = exec_readline(test_data, sizeof(test_data));
 
     /* 改行削除 */
     if (test_data[strlen(test_data) - 1] == '\n')
@@ -112,7 +112,7 @@ test_readline(void)
 
     /* 異常系 */
     /* 改行ない場合 */
-    result = normal_process(nolf_data, sizeof(nolf_data));
+    result = exec_readline(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
     cut_assert_null((char *)result);
 
@@ -122,14 +122,14 @@ test_readline(void)
 }
 
 /**
- * 正常処理
+ * readline() 実行
  *
  * @param[in] data テストデータ
  * @param[in] length バイト数
  * @return 結果文字列
  */
 static uchar *
-normal_process(char *data, size_t length)
+exec_readline(char *data, size_t length)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* 戻り値 */

@@ -61,7 +61,6 @@ void test_print_trace(void);
 void test_sys_print_termattr(void);
 
 /* 内部変数 */
-static testlog log;
 static char dump[0xFF + 1];           /**< ダンプデータ */
 static int fd = -1;                   /**< ファイルディスクリプタ */
 static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
@@ -110,9 +109,6 @@ void cut_startup(void)
     for (i = 0; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
-
-    (void)memset(&log, 0, sizeof(testlog));
-    test_init_log(&log);
 }
 
 void
