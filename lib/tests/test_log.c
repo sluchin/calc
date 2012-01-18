@@ -67,9 +67,9 @@ static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
 
 /* 内部関数 */
 /** 標準エラー出力用文字列設定 */
-static void set_print_hex(char *data);
+static void set_print_hex(char *data, size_t len);
 /** シスログ出力用文字列設定 */
-static void set_print_hex_sys(char *data, const char *prefix);
+static void set_print_hex_sys(char *data, const char *prefix, size_t len);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -296,7 +296,7 @@ test_dump_log(void)
         return;
     }
 
-    set_print_hex(tmp);
+    set_print_hex(tmp, sizeof(tmp));
     (void)snprintf(expected, sizeof(expected), "%s%s",
                    "filename[15]: function(test)\n" \
                    "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F " \
@@ -349,7 +349,7 @@ test_dump_sys(void)
         return;
     }
 
-    set_print_hex_sys(expected, prefix);
+    set_print_hex_sys(expected, prefix, sizeof(expected));
     cut_assert_match(expected, actual,
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
@@ -518,7 +518,7 @@ test_sys_print_termattr(void)
  * @return なし
  */
 static void
-set_print_hex(char *buf)
+set_print_hex(char *buf, size_t len)
 {
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
@@ -526,9 +526,9 @@ set_print_hex(char *buf)
     int i;
     for (i = 0; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
-        strncpy(buf + total, print_hex[i], length);
+        strncpy(buf + total, print_hex[i], len - total - 1);
         total += length;
-        strncpy(buf + total, "\n", strlen("\n"));
+        strncpy(buf + total, "\n", len - total - 1);
         total += strlen("\n");
     }
     strncpy(buf + total, "\n", strlen("\n"));
@@ -542,7 +542,7 @@ set_print_hex(char *buf)
  * @return なし
  */
 static void
-set_print_hex_sys(char *buf, const char *prefix)
+set_print_hex_sys(char *buf, const char *prefix, size_t len)
 {
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
@@ -550,12 +550,12 @@ set_print_hex_sys(char *buf, const char *prefix)
     int i;
     const size_t prefix_len = strlen(prefix);
     for (i = 0; i < NELEMS(print_hex); i++) {
-        strncpy(buf + total, prefix, prefix_len);
+        strncpy(buf + total, prefix, len - total - 1);
         total += prefix_len;
         length = strlen(print_hex[i]);
-        strncpy(buf + total, print_hex[i], length);
+        strncpy(buf + total, print_hex[i], len - total - 1);
         total += length;
-        strncpy(buf + total, "\\n", strlen("\\n"));
+        strncpy(buf + total, "\\n", len - total - 1);
         total += strlen("\\n");
     }
     *(buf + total - strlen("\\n")) = '\0'; /* 改行削除 */

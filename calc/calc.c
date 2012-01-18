@@ -192,17 +192,10 @@ answer(calcinfo *tsd)
     }
 
     if (is_error(tsd)) { /* エラー */
-        tsd->errormsg = get_errormsg(tsd);
-        if (!tsd->errormsg)
-            return NULL;
-        length = strlen((char *)tsd->errormsg); /* 文字数 */
-        tsd->result = (uchar *)strndup((char *)tsd->errormsg, length);
+        tsd->result = get_errormsg(tsd);
         clear_error(tsd);
-        dbglog("errormsg=%p", tsd->errormsg);
-        if (!tsd->result) {
-            outlog("strndup");
+        if (!tsd->result)
             return NULL;
-        }
         dbglog("result=%p, length=%zu", tsd->result, length);
     } else {
         /* 文字数取得 */

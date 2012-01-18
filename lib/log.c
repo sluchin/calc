@@ -78,9 +78,9 @@ set_progname(char *name)
     if (progname[0] == '\0') { /* 一度のみ設定される */
         ptr = strrchr(name, '/');
         if (ptr)
-            (void)strncpy(progname, ptr + 1, sizeof(progname));
+            (void)strncpy(progname, ptr + 1, sizeof(progname) - 1);
         else
-            (void)strncpy(progname, name, sizeof(progname));
+            (void)strncpy(progname, name, sizeof(progname) - 1);
     }
 }
 
@@ -277,7 +277,7 @@ stderr_log(const char *pname,
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  0 <= t.tm_mon && t.tm_mon < NELEMS(mon) ?
+                  (0 <= t.tm_mon && t.tm_mon < NELEMS(mon)) ?
                   mon[t.tm_mon] : "",
                   t.tm_mday, t.tm_hour, t.tm_min,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),

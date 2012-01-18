@@ -81,11 +81,11 @@ test_get_errormsg(void)
         if (!tsd)
             cut_error("i=%d, tsd=%p, expr=%s(%d)", i, tsd, "dammy", errno);
         tsd->errorcode = (ER)i;
-        tsd->errormsg = get_errormsg(tsd);
+        tsd->result = get_errormsg(tsd);
         cut_assert_equal_string(error.errormsg[i],
-                                (char *)tsd->errormsg,
+                                (char *)tsd->result,
                                 cut_message("%s==%s",
-                                            (char *)tsd->errormsg,
+                                            (char *)tsd->result,
                                             (char *)error.errormsg));
         clear_error(tsd);
         destroy_calc(tsd);
@@ -125,24 +125,17 @@ test_set_errorcode(void)
 void
 test_clear_error(void)
 {
-    size_t slen = 0;      /* 文字列長 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     tsd = set_string("dammy");
     if (!tsd)
         cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
 
-    slen = strlen("dammy");
-    tsd->errormsg = (uchar *)malloc(slen * sizeof(uchar));
-    if (!tsd->errormsg)
-        cut_error("malloc: size=%zu(%d)", slen, errno);
-    (void)memset(tsd->errormsg, 0, slen);
-    (void)strncpy((char *)tsd->errormsg, "dammy", slen);
-
+    tsd->result = (uchar *)strdup("dammy");
     clear_error(tsd);
 
-    cut_assert_null_string((char *)tsd->errormsg);
     cut_assert_equal_int((int)E_NONE, (int)tsd->errorcode);
+    destroy_calc(tsd);
 }
 
 /**

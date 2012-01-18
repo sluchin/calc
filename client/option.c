@@ -85,11 +85,11 @@ parse_args(int argc, char *argv[])
 
     /* デフォルトのIPアドレスを設定 */
     (void)memset(g_hostname, 0, sizeof(g_hostname));
-    (void)strncpy(g_hostname, DEFAULT_IPADDR, sizeof(g_hostname));
+    (void)strncpy(g_hostname, DEFAULT_IPADDR, sizeof(g_hostname) - 1);
 
     /* デフォルトのポート番号を設定 */
     (void)memset(g_portno, 0, sizeof(g_portno));
-    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno));
+    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno) - 1);
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
@@ -97,7 +97,7 @@ parse_args(int argc, char *argv[])
         case 'i': /* IPアドレス指定 */
             if (strlen(optarg) < sizeof(g_hostname)) {
                 (void)memset(g_hostname, 0, sizeof(g_hostname));
-                (void)strncpy(g_hostname, optarg, sizeof(g_hostname));
+                (void)strncpy(g_hostname, optarg, sizeof(g_hostname) - 1);
             } else {
                 print_help(get_progname());
                 exit(EXIT_FAILURE);
@@ -106,7 +106,7 @@ parse_args(int argc, char *argv[])
         case 'p': /* ポート番号指定 */
             if (strlen(optarg) < sizeof(g_portno)) {
                 (void)memset(g_portno, 0, sizeof(g_portno));
-                (void)strncpy(g_portno, optarg, sizeof(g_portno));
+                (void)strncpy(g_portno, optarg, sizeof(g_portno) - 1);
             } else {
                 print_help(get_progname());
                 exit(EXIT_FAILURE);

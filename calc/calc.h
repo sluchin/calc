@@ -69,7 +69,6 @@ struct _calcinfo {
     uchar *result;             /**< 結果文字列 */
     char fmt[sizeof("%.18g")]; /**< フォーマット */
     ER errorcode;              /**< エラーコード */
-    uchar *errormsg;           /**< エラーメッセージ */
 };
 typedef struct _calcinfo calcinfo;
 

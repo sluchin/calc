@@ -83,7 +83,7 @@ parse_args(int argc, char *argv[])
 
     /* デフォルトのポート番号を設定 */
     (void)memset(g_portno, 0, sizeof(g_portno));
-    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno));
+    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno) - 1);
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
@@ -91,7 +91,7 @@ parse_args(int argc, char *argv[])
         case 'p':
             if (strlen(optarg) < sizeof(g_portno)) {
                 (void)memset(g_portno, 0, sizeof(g_portno));
-                (void)strncpy(g_portno, optarg, sizeof(g_portno));
+                (void)strncpy(g_portno, optarg, sizeof(g_portno) - 1);
             } else {
                 print_help(get_progname());
                 exit(EXIT_FAILURE);

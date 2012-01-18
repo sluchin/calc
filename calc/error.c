@@ -50,12 +50,12 @@ static const char *errormsg[] = {
  *
  * @param[in] tsd calcinfo構造体
  * @return エラーメッセージ
- * @attention 呼び出し元で, clear_error()すること.
+ * @attention 呼び出し元で, clear_error()すること.\n
+ *            戻り値ポインタは解放しなければならない.
  */
 uchar *
 get_errormsg(calcinfo *tsd)
 {
-    size_t slen = 0;   /* 文字列長 */
     uchar *msg = NULL; /* エラーメッセージ */
 
     dbglog("start: errorcode=%d", tsd->errorcode);
@@ -64,17 +64,12 @@ get_errormsg(calcinfo *tsd)
     if (tsd->errorcode == E_NONE)
         return NULL;
 
-    slen = strlen(errormsg[tsd->errorcode]) + 1;
-    dbglog("slen=%zu", slen);
-    msg = (uchar *)malloc(slen * sizeof(uchar));
-    if (!msg) {
-        outlog("malloc: slen=%zu", slen);
-        return NULL;
-    }
-    (void)memset(msg, 0, slen);
-    (void)strncpy((char *)msg, errormsg[tsd->errorcode], slen);
     dbglog("errormsg=%s, errorcode=%d",
            errormsg[tsd->errorcode], (int)tsd->errorcode);
+
+    msg = (uchar *)strdup(errormsg[tsd->errorcode]);
+    if (!msg)
+        outlog("strdup");
 
     return msg;
 }
@@ -105,8 +100,6 @@ void
 clear_error(calcinfo *tsd)
 {
     dbglog("start");
-
-    memfree((void **)&tsd->errormsg, NULL);
     tsd->errorcode = E_NONE;
 }
 
