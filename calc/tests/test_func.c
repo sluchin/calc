@@ -54,8 +54,6 @@ void test_get_pow(void);
 void test_get_sqrt(void);
 /** check_math() 関数テスト */
 void test_check_math(void);
-/** factorial() 関数テスト */
-void test_factorial(void);
 /** get_factorial() 関数テスト */
 void test_get_factorial(void);
 /** get_permutation() 関数テスト */
@@ -152,21 +150,6 @@ static const struct test_data_math math_data[] = {
     { "log(2)",     0.301029995664,  2,   log10, E_NONE, 0.000000000001 },
 };
 
-/** factorial() 関数テスト用データ */
-static const struct test_data fact_data[] = {
-    { "",       1,  1, 0, E_NONE, 0.0 },
-    { "",       1,  1, 0, E_NONE, 0.0 },
-    { "",       2,  2, 0, E_NONE, 0.0 },
-    { "",       6,  3, 0, E_NONE, 0.0 },
-    { "",      24,  4, 0, E_NONE, 0.0 },
-    { "",     120,  5, 0, E_NONE, 0.0 },
-    { "",     720,  6, 0, E_NONE, 0.0 },
-    { "",    5040,  7, 0, E_NONE, 0.0 },
-    { "",   40320,  8, 0, E_NONE, 0.0 },
-    { "",  362880,  9, 0, E_NONE, 0.0 },
-    { "", 3628800, 10, 0, E_NONE, 0.0 }
-};
-
 /** get_factorial() 関数テスト用データ */
 static const struct test_data factorial_data[] = {
     { "n(0)",         1,    0,   0, E_NONE, 0.0 },
@@ -216,7 +199,7 @@ void cut_startup(void)
 void
 test_exec_func(void)
 {
-    dbl result = 0;                 /* 結果 */
+    dbl result = 0.0;               /* 結果 */
     calcinfo *tsd = NULL;           /* calcinfo構造体 */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
@@ -262,7 +245,7 @@ test_exec_func(void)
 void
 test_get_pow(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -296,7 +279,7 @@ test_get_pow(void)
 void
 test_get_pi(void)
 {
-    dbl result = 0;               /* 結果 */
+    dbl result = 0.0;             /* 結果 */
     calcinfo *tsd = NULL;         /* calcinfo構造体 */
     const dbl pi = 3.14159265359; /* pi */
 
@@ -322,7 +305,7 @@ test_get_pi(void)
 void
 test_get_e(void)
 {
-    dbl result = 0;              /* 結果 */
+    dbl result = 0.0;            /* 結果 */
     calcinfo *tsd = NULL;        /* calcinfo構造体 */
     const dbl e = 2.71828182846; /* e */
 
@@ -349,7 +332,7 @@ test_get_e(void)
 void
 test_get_rad(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -378,7 +361,7 @@ test_get_rad(void)
 void
 test_get_deg(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -407,7 +390,7 @@ test_get_deg(void)
 void
 test_get_sqrt(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -441,7 +424,7 @@ test_get_sqrt(void)
 void
 test_check_math(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -464,26 +447,6 @@ test_check_math(void)
 }
 
 /**
- * factorial() 関数テスト
- *
- * @return なし
- */
-void
-test_factorial(void)
-{
-    dbl result = 0; /* 結果 */
-
-    int i;
-    for (i = 0; i < NELEMS(fact_data); i++) {
-        result = 1;
-        func.factorial(&result, fact_data[i].x);
-        cut_assert_equal_double(fact_data[i].answer,
-                                fact_data[i].error,
-                                result);
-    }
-}
-
-/**
  * get_factorial() 関数テスト
  *
  * @return なし
@@ -491,7 +454,7 @@ test_factorial(void)
 void
 test_get_factorial(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -525,7 +488,7 @@ test_get_factorial(void)
 void
 test_get_permutation(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -561,7 +524,7 @@ test_get_permutation(void)
 void
 test_get_combination(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;

@@ -25,7 +25,7 @@
 
 #include <stdio.h>  /* NULL */
 #include <stdlib.h> /* malloc free */
-#include <string.h> /* strlen */
+#include <string.h> /* strlen strdup */
 #include <errno.h>  /* errno */
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* fetestexcept FE_INVALID */
@@ -68,8 +68,10 @@ get_errormsg(calcinfo *tsd)
            errormsg[tsd->errorcode], (int)tsd->errorcode);
 
     msg = (uchar *)strdup(errormsg[tsd->errorcode]);
-    if (!msg)
+    if (!msg) {
         outlog("strdup");
+        return NULL;
+    }
 
     return msg;
 }

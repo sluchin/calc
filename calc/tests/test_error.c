@@ -169,7 +169,7 @@ test_is_error(void)
 void
 test_check_validate(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     tsd = set_string("dammy");
@@ -207,7 +207,7 @@ test_check_validate(void)
 void
 test_check_math_feexcept(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     tsd = set_string("dammy");
@@ -247,7 +247,7 @@ test_check_math_feexcept(void)
 void
 test_clear_math_feexcept(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     tsd = set_string("dammy");

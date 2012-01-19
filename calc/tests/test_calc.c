@@ -330,7 +330,7 @@ test_answer_error(void)
 void
 test_parse_func_args(void)
 {
-    dbl x = 0, y = 0;     /* 値 */
+    dbl x = 0.0, y = 0.0; /* 値 */
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
     tsd = set_string("(235)");
@@ -402,7 +402,7 @@ test_readch(void)
 void
 test_expression(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -431,7 +431,7 @@ test_expression(void)
 void
 test_term(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -465,7 +465,7 @@ test_term(void)
 void
 test_factor(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -499,7 +499,7 @@ test_factor(void)
 void
 test_token(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;
@@ -533,7 +533,7 @@ test_token(void)
 void
 test_number(void)
 {
-    dbl result = 0;       /* 結果 */
+    dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     int i;

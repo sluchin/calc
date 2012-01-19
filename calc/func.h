@@ -46,7 +46,6 @@ struct _testfunc {
     dbl (*get_deg)(calcinfo *tsd, dbl x);
     dbl (*get_sqrt)(calcinfo *tsd, dbl x);
     dbl (*check_math)(calcinfo *tsd, dbl x, dbl (*callback)(dbl));
-    void (*factorial)(dbl *x, dbl n);
     dbl (*get_factorial)(calcinfo *tsd, dbl n);
     dbl (*get_permutation)(calcinfo *tsd, dbl n, dbl r);
     dbl (*get_combination)(calcinfo *tsd, dbl n, dbl r);

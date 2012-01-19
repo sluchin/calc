@@ -57,8 +57,6 @@ static dbl get_deg(calcinfo *tsd, dbl x);
 static dbl get_sqrt(calcinfo *tsd, dbl x);
 /** 関数エラーチェック */
 static dbl check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl));
-/** 階乗 */
-static void factorial(dbl *x, dbl n);
 /** 階乗取得 */
 static dbl get_factorial(calcinfo *tsd, dbl n);
 /** 順列(nPr) */
@@ -138,10 +136,10 @@ static struct funcinfo finfo[MAXFUNC];
 dbl
 exec_func(calcinfo *tsd, const char *func)
 {
-    dbl result = 0;      /* 戻り値 */
-    dbl x = 0, y = 0;    /* 値 */
-    bool exec;           /* 関数実行フラグ */
-    enum functype ftype; /* 関数種別 */
+    dbl result = 0.0;     /* 戻り値 */
+    dbl x = 0.0, y = 0.0; /* 値 */
+    bool exec;            /* 関数実行フラグ */
+    enum functype ftype;  /* 関数種別 */
 
     dbglog("start: func=%s", func);
 
@@ -193,7 +191,7 @@ exec_func(calcinfo *tsd, const char *func)
 dbl
 get_pow(calcinfo *tsd, dbl x, dbl y)
 {
-    dbl result = 0; /* 計算結果 */
+    dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
@@ -423,24 +421,6 @@ check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
 }
 
 /**
- * 階乗
- *
- * n! = n * (n - 1)!
- *
- * @param[in] x 値
- * @param[in] n 値
- * @return なし
- */
-static void
-factorial(dbl *x, dbl n)
-{
-    if (n <= 1)
-        return;
-    *x = (*x) * n;
-    factorial(x, n - 1);
-}
-
-/**
  * 階乗取得
  *
  * @param[in] tsd calcinfo構造体
@@ -471,12 +451,13 @@ get_factorial(calcinfo *tsd, dbl n)
     clear_math_feexcept();
 
     if (isless(n, 0)) { /* マイナス */
-        n = check_math(tsd, n, fabs);
+        n *= -1;
         minus = true;
     }
 
     result = 1;
-    factorial(&result, n);
+    while (n > 0)
+        result *= n--;
 
     if (minus)
         result *= -1;
@@ -589,7 +570,6 @@ test_init_func(testfunc *func)
     func->get_deg = get_deg;
     func->get_sqrt = get_sqrt;
     func->check_math = check_math;
-    func->factorial = factorial;
     func->get_factorial = get_factorial;
     func->get_permutation = get_permutation;
     func->get_combination = get_combination;
