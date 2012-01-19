@@ -306,8 +306,8 @@ recv_data_new(const int sock, size_t *length)
  * @retval EX_NG エラー
  */
 int
-close_sock(int *sock) {
-
+close_sock(int *sock)
+{
     int retval = 0;           /* 戻り値 */
     const int sockfd = *sock; /* ソケット */
 

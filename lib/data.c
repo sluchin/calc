@@ -45,7 +45,8 @@
  * @retval EX_NG メモリ確保できない
  */
 ssize_t
-set_client_data(struct client_data **dt, uchar *buf, const size_t len)
+set_client_data(struct client_data **dt,
+                const uchar *buf, const size_t len)
 {
     size_t length = 0;  /* 構造体バイト数 */
     size_t datalen = 0; /* データ長 */
@@ -84,7 +85,8 @@ set_client_data(struct client_data **dt, uchar *buf, const size_t len)
  * @return 構造体バイト数
  */
 ssize_t
-set_server_data(struct server_data **dt, uchar *buf, const size_t len)
+set_server_data(struct server_data **dt,
+                const uchar *buf, const size_t len)
 {
     size_t length = 0;  /* 構造体バイト数 */
     size_t datalen = 0; /* データ長 */

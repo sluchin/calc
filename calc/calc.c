@@ -32,7 +32,7 @@
 
 #include <stdio.h>    /* FILE */
 #include <stdlib.h>   /* realloc */
-#include <string.h>   /* strndup memcpy memset */
+#include <string.h>   /* memcpy memset */
 #include <ctype.h>    /* isdigit isalpha */
 #include <math.h>     /* powl */
 #include <pthread.h>  /* pthread_once */
@@ -168,7 +168,7 @@ destroy_calc(void *tsd)
 uchar *
 answer(calcinfo *tsd)
 {
-    dbl val = 0;       /* 値 */
+    dbl val = 0.0;     /* 値 */
     size_t length = 0; /* 文字数 */
     int retval = 0;    /* 戻り値 */
     uint start = 0;    /* タイマ開始 */
@@ -208,12 +208,12 @@ answer(calcinfo *tsd)
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        tsd->result = (uchar *)malloc(length * sizeof(uchar));
+        tsd->result = (uchar *)malloc(length);
         if (!tsd->result) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
-        (void)memset(tsd->result, 0, length * sizeof(uchar));
+        (void)memset(tsd->result, 0, length);
 
         /* 値を文字列に変換 */
         retval = snprintf((char *)tsd->result, length, tsd->fmt, val);
@@ -327,7 +327,7 @@ readch(calcinfo *tsd)
 static dbl
 expression(calcinfo *tsd)
 {
-    dbl x = 0; /* 値 */
+    dbl x = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -362,7 +362,7 @@ expression(calcinfo *tsd)
 static dbl
 term(calcinfo *tsd)
 {
-    dbl x = 0, y = 0; /* 値 */
+    dbl x = 0.0, y = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -405,7 +405,7 @@ term(calcinfo *tsd)
 static dbl
 factor(calcinfo *tsd)
 {
-    dbl x = 0; /* 値 */
+    dbl x = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -437,7 +437,7 @@ factor(calcinfo *tsd)
 static dbl
 token(calcinfo *tsd)
 {
-    dbl result = 0;                 /* 結果 */
+    dbl result = 0.0;               /* 結果 */
     int sign = '+';                 /* 単項+- */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
@@ -485,7 +485,7 @@ token(calcinfo *tsd)
 static dbl
 number(calcinfo *tsd)
 {
-    dbl x = 0, y = 1; /* 値 */
+    dbl x = 0.0, y = 1.0; /* 値 */
 
     dbglog("start");
 

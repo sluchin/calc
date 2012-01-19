@@ -67,14 +67,15 @@ _readline(FILE *fp)
         length = strlen((char *)buf);
         dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
-        tmp = (uchar *)realloc(alloc, (total + length + 1) * sizeof(uchar));
+        tmp = (uchar *)realloc(alloc, total + length + 1);
         if (!tmp) {
             outlog("realloc: total+length+1=%zu", total + length + 1);
             return NULL;
         }
         alloc = tmp;
+        (void)memset(alloc + total, 0, length + 1);
 
-        (void)memcpy(alloc + total, buf, length + 1);
+        (void)memcpy(alloc + total, buf, length);
 
         total += length;
         dbglog("alloc=%p, length=%zu, total=%zu",

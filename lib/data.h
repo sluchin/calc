@@ -49,11 +49,11 @@ struct server_data {
 
 /** クライアントデータ構造体設定 */
 ssize_t set_client_data(struct client_data **dt,
-                        uchar *buf, const size_t len);
+                        const uchar *buf, const size_t len);
 
 /** サーバデータ構造体設定 */
 ssize_t set_server_data(struct server_data **dt,
-                        uchar *buf, const size_t len);
+                        const uchar *buf, const size_t len);
 
 #endif /* _DATA_H_ */
 
