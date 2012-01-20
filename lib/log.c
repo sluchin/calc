@@ -277,7 +277,7 @@ stderr_log(const char *pname,
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  (0 <= t.tm_mon && t.tm_mon < NELEMS(mon)) ?
+                  (0 <= t.tm_mon && t.tm_mon < (int)NELEMS(mon)) ?
                   mon[t.tm_mon] : "",
                   t.tm_mday, t.tm_hour, t.tm_min,
                   t.tm_sec, tv.tv_usec, h_buf, pname ? : "", getpid(),

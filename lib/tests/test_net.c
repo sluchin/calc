@@ -345,9 +345,9 @@ test_send_data(void)
         dbglog("send_data=%d, %s", retval, sendbuf);
         cut_assert_equal_int(EX_OK, retval,
                              cut_message("return value"));
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait");
+            cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
             cut_error("status=%d", WEXITSTATUS(status));
@@ -421,9 +421,9 @@ test_recv_data(void)
                                 cut_message("%s==%s", sendbuf, readbuf));
         cut_assert_equal_int(EX_OK, retval,
                              cut_message("return value"));
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait");
+            cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
             cut_error("status=%d", WEXITSTATUS(status));
@@ -494,9 +494,9 @@ test_recv_data_new(void)
                                 cut_message("%s==%s", sendbuf, readnew));
         cut_assert_equal_int(EX_OK, retval,
                              cut_message("return value"));
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait");
+            cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
             cut_error("status=%d", WEXITSTATUS(status));
@@ -568,9 +568,9 @@ test_close_sock(void)
 
         cut_assert_equal_int(EX_OK, retval);
 
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait");
+            cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
             cut_error("status=%d", WEXITSTATUS(status));

@@ -182,9 +182,9 @@ exec_readline(char *data, size_t length)
         dbglog("result=%s", result);
 
         close_fd(&pfd[PIPE_R], NULL);
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait");
+            cut_notify("wait: status=%d(%d)", status, errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status)) {
             cut_notify("child error");

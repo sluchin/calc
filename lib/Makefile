@@ -28,8 +28,6 @@ OBJECTS = data.o \
           term.o \
           log.o
 CUTTER = /usr/bin/cutter -v v
-#PYTHON = python
-#TESTOPT = -Wd -3 -E -tt
 
 .SUFFIXES: .c .o
 
@@ -64,11 +62,6 @@ debug:
 test:
 	$(MAKE) -C $(testdir)
 	$(CUTTER) $(testdir)
-	@#for file in `ls $(testdir)`; do \
-	    if test -n "`echo $$file | grep -E '*\.py$$'`"; then \
-	        $(PYTHON) $(TESTOPT) "$(testdir)/$$file"; \
-	    fi; \
-	done
 
 .PHONY: install
 install: all

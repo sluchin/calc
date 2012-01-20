@@ -148,7 +148,7 @@ test_readn(void)
         return;
     }
 
-    w = wait(&status);
+    w = waitpid(-1, &status, WNOHANG);
     if (w < 0)
         cut_notify("wait(%d)", errno);
     dbglog("w=%d", (int)w);
@@ -186,7 +186,7 @@ test_writen(void)
     }
     cut_assert_equal_string(sendbuf, readbuf);
 
-    w = wait(&status);
+    w = waitpid(-1, &status, WNOHANG);
     if (w < 0)
         cut_notify("wait(%d)", errno);
     dbglog("w=%d", (int)w);
@@ -241,7 +241,7 @@ test_pipe_fd(void)
         }
         cut_assert_equal_string(sendbuf, readbuf);
 
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
             cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
@@ -336,7 +336,7 @@ test_pipe_fd2(void)
         cut_assert_equal_int(EX_OK, retval, cut_message("return value"));
         cut_assert_equal_string(sendbuf, readbuf);
 
-        w = wait(&status);
+        w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
             cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);

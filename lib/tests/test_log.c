@@ -578,8 +578,6 @@ set_sig_handler(void)
         cut_notify("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)
         cut_notify("SIGQUIT");
-    if (signal(SIGCHLD, SIG_IGN) < 0)
-        cut_notify("SIGCHLD");
     if (signal(SIGHUP, SIG_IGN) < 0)
         cut_notify("SIGHUP");
     if (signal(SIGALRM, SIG_IGN) < 0)
