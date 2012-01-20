@@ -243,7 +243,7 @@ test_stderr_log(void)
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
         "[A-Z][a-z]. [ 0-9][0-9] [0-9].:[0-9].:[0-9].\\.[0-9]+ " \
-        "[A-Za-z]+ programname\\[[0-9]+\\]: filename\\[15\\]: " \
+        ".* programname\\[[0-9]+\\]: filename\\[15\\]: " \
         "ppid=[0-9]+, tid=[0-9]+: function\\(test\\): (.*)\\([0-9]+\\)";
 
     /* 正常系 */
