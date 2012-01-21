@@ -408,7 +408,7 @@ test_recv_data(void)
 
         len = writen(csock, command, sizeof(command));
         if (len < 0) {
-            cut_error("writen=%d(%d)", len, errno);
+            cut_error("writen=%zd(%d)", len, errno);
             return;
         }
 
@@ -481,7 +481,7 @@ test_recv_data_new(void)
 
         len = writen(csock, command, sizeof(command));
         if (len < 0) {
-            cut_error("writen=%d(%d)", len, errno);
+            cut_error("writen=%zd(%d)", len, errno);
             return;
         }
 
@@ -554,7 +554,7 @@ test_close_sock(void)
 
         len = writen(csock, sendbuf, sizeof(sendbuf));
         if (len < 0) {
-            cut_error("writen=%d(%d)", len, errno);
+            cut_error("writen=%zd(%d)", len, errno);
             return;
         }
 

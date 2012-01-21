@@ -268,7 +268,7 @@ test_client_loop(void)
         sendlen = sizeof(sendbuf);
         wlen = write(STDIN_FILENO, (char *)sendbuf, sendlen);
         if (wlen < 0) {
-            cut_error("write=%d(%d)", wlen, errno);
+            cut_error("write=%zd(%d)", wlen, errno);
             return;
         }
         dbglog("write=%zd", wlen);
@@ -311,7 +311,7 @@ test_client_loop(void)
         (void)memset(readbuf, 0, sizeof(readbuf));
         rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1);
         if (rlen < 0) {
-            cut_error("read=%d(%d)", rlen, errno);
+            cut_error("read=%zd(%d)", rlen, errno);
             return;
         }
         dbglog("readbuf=%s", readbuf);
@@ -439,7 +439,7 @@ test_read_sock(void)
         /* 標準出力から受信 */
         rlen = readn(STDOUT_FILENO, (char *)readbuf, sizeof(sendbuf));
         if (rlen < 0) {
-            cut_error("read=%d(%d)", rlen, errno);
+            cut_error("read=%zd(%d)", rlen, errno);
             return;
         }
 
@@ -537,7 +537,7 @@ exec_send_sock(uchar *sbuf, size_t length)
         /* 標準入力に送信 */
         wlen = writen(STDIN_FILENO, (char *)sbuf, length);
         if (wlen < 0) {
-            cut_error("write=%d(%d)", wlen, errno);
+            cut_error("write=%zd(%d)", wlen, errno);
             return EX_NG;
         }
         dbglog("write=%zd", wlen);

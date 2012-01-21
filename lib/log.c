@@ -536,7 +536,7 @@ systrace(const int level,
     size = backtrace(buffer, STACK_SIZE);
     strings = backtrace_symbols(buffer, size);
     if (!strings) {
-        SYSMSG(level, "backtrace_symbols: size=%d", size);
+        SYSMSG(level, "backtrace_symbols: size=%zu", size);
         return;
     }
 
