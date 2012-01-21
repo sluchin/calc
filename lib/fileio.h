@@ -41,7 +41,7 @@ int pipe_fd(const int fd);
 /** ファイルディスクリプタ複製 */
 int pipe_fd2(int *pipefd, int *oldfd, const int newfd);
 /** リダイレクト */
-int redirect(int fd, char *path);
+int redirect(int fd, const char *path);
 /** クローズ */
 int close_fd(int *fd, ...);
 

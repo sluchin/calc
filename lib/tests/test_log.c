@@ -137,8 +137,8 @@ cut_teardown(void)
 void
 test_set_progname(void)
 {
-    char *ptr = NULL;             /* テスト関数戻り値 */
-    char *prog = "/tmp/testprog"; /* テストデータ */
+    char *ptr = NULL;                   /* テスト関数戻り値 */
+    const char *prog = "/tmp/testprog"; /* テストデータ */
 
     set_progname(prog);
     ptr = get_progname();
@@ -153,8 +153,8 @@ test_set_progname(void)
 void
 test_get_progname(void)
 {
-    char *ptr = NULL;        /* テスト関数戻り値 */
-    char *prog = "testprog"; /* テストデータ */
+    char *ptr = NULL;              /* テスト関数戻り値 */
+    const char *prog = "testprog"; /* テストデータ */
 
     set_progname(prog);
     ptr = get_progname();
@@ -524,7 +524,7 @@ set_print_hex(char *buf, size_t len)
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
         strncat(buf, print_hex[i], len - total - 1);
@@ -549,7 +549,7 @@ set_print_hex_sys(char *buf, const char *prefix, size_t len)
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
 
-    int i;
+    uint i;
     const size_t prefix_len = strlen(prefix);
     for (i = 0; i < NELEMS(print_hex); i++) {
         strncat(buf, prefix, len - total - 1);

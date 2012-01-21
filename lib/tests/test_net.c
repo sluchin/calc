@@ -286,7 +286,7 @@ test_set_block(void)
                          cut_message("return value"));
 
     /* 異常系 */
-    retval = set_block(fd, 2);
+    retval = set_block(fd, (blockmode)2);
     cut_assert_equal_int(EX_NG, retval,
                          cut_message("return value"));
 }
@@ -487,7 +487,7 @@ test_recv_data_new(void)
 
         /* テスト関数の実行 */
         length = sizeof(sendbuf);
-        readnew = recv_data_new(csock, &length);
+        readnew = (char *)recv_data_new(csock, &length);
 
         cut_assert_equal_memory(sendbuf, sizeof(sendbuf),
                                 readnew, length,

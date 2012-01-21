@@ -71,7 +71,7 @@ static char progname[MAX_PROGNAME] = {0}; /**< プログラム名 */
  * @return なし
  */
 void
-set_progname(char *name)
+set_progname(const char *name)
 {
     char *ptr = NULL; /* strrchr戻り値 */
 

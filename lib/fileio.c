@@ -181,7 +181,7 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
  * @retval EX_NG エラー
  */
 int
-redirect(int fd, char *path)
+redirect(int fd, const char *path)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int f = 0;       /* ファイルディスクリプタ */

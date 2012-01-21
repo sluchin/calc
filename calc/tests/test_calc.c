@@ -227,7 +227,7 @@ test_answer_four(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(four_data); i++) {
         tsd = exec_calc(four_data[i].expr);
         if (!tsd)
@@ -254,7 +254,7 @@ test_answer_func(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(func_data); i++) {
         tsd = exec_calc(func_data[i].expr);
         if (!tsd)
@@ -280,7 +280,7 @@ test_answer_four_func(void)
 {
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(four_func_data); i++) {
         tsd = exec_calc(four_func_data[i].expr);
         if (!tsd)
@@ -306,7 +306,7 @@ test_answer_error(void)
 {
     calcinfo *tsd = NULL; /* calc情報構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(error_data); i++) {
         tsd = exec_calc(error_data[i].expr);
         if (!tsd)
@@ -405,7 +405,7 @@ test_expression(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(expression_data); i++) {
         tsd = set_string(expression_data[i].expr);
         if (!tsd)
@@ -434,7 +434,7 @@ test_term(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(term_data); i++) {
         tsd = set_string(term_data[i].expr);
         if (!tsd)
@@ -468,7 +468,7 @@ test_factor(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(factor_data); i++) {
         tsd = set_string(factor_data[i].expr);
         if (!tsd)
@@ -502,7 +502,7 @@ test_token(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(token_data); i++) {
         tsd = set_string(token_data[i].expr);
         if (!tsd)
@@ -536,7 +536,7 @@ test_number(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(number_data); i++) {
         tsd = set_string(number_data[i].expr);
         if (!tsd)

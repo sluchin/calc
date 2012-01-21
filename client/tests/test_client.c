@@ -178,15 +178,15 @@ test_connect_sock(void)
 void
 test_client_loop(void)
 {
-    pid_t cpid = 0;     /* 子プロセスID */
-    pid_t w = 0;        /* wait戻り値 */
-    int status = 0;     /* wait引数 */
-    ssize_t wlen = 0;   /* write戻り値 */
-    ssize_t rlen = 0;   /* read戻り値 */
-    int oldfd = 0;      /* 退避用 */
-    size_t sendlen = 0; /* 送信バイト数 */
-    int retval = 0;     /* 戻り値 */
-    st_client st = 0;   /* ステータス */
+    pid_t cpid = 0;            /* 子プロセスID */
+    pid_t w = 0;               /* wait戻り値 */
+    int status = 0;            /* wait引数 */
+    ssize_t wlen = 0;          /* write戻り値 */
+    ssize_t rlen = 0;          /* read戻り値 */
+    int oldfd = 0;             /* 退避用 */
+    size_t sendlen = 0;        /* 送信バイト数 */
+    int retval = 0;            /* 戻り値 */
+    st_client st = EX_SUCCESS; /* ステータス */
 
     dbglog("start");
 
@@ -366,13 +366,13 @@ test_send_sock(void)
 void
 test_read_sock(void)
 {
-    pid_t cpid = 0;      /* プロセスID */
-    pid_t w = 0;         /* wait戻り値 */
-    int status = 0;      /* wait引数 */
-    ssize_t rlen = 0;    /* read戻り値 */
-    int oldfd = 0;       /* 退避用 */
-    int retval = 0;      /* 戻り値 */
-    st_client st = 0;    /* ステータス */
+    pid_t cpid = 0;            /* プロセスID */
+    pid_t w = 0;               /* wait戻り値 */
+    int status = 0;            /* wait引数 */
+    ssize_t rlen = 0;          /* read戻り値 */
+    int oldfd = 0;             /* 退避用 */
+    int retval = 0;            /* 戻り値 */
+    st_client st = EX_SUCCESS; /* ステータス */
 
     dbglog("start");
 
@@ -466,14 +466,14 @@ test_read_sock(void)
 static int
 exec_send_sock(uchar *sbuf, size_t length)
 {
-    pid_t cpid = 0;       /* プロセスID */
-    pid_t w = 0;          /* wait戻り値 */
-    int status = 0;       /* wait引数 */
-    ssize_t wlen = 0;     /* write戻り値 */
-    int oldfd = 0;        /* 退避用 */
-    int retval = 0;       /* 戻り値 */
-    uchar rbuf[length];   /* 受信バッファ */
-    st_client st = 0;     /* ステータス */
+    pid_t cpid = 0;            /* プロセスID */
+    pid_t w = 0;               /* wait戻り値 */
+    int status = 0;            /* wait引数 */
+    ssize_t wlen = 0;          /* write戻り値 */
+    int oldfd = 0;             /* 退避用 */
+    int retval = 0;            /* 戻り値 */
+    uchar rbuf[length];        /* 受信バッファ */
+    st_client st = EX_SUCCESS; /* ステータス */
 
     dbglog("start");
 

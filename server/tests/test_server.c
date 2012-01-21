@@ -392,13 +392,13 @@ test_server_proc(void)
 static void *
 client_thread(void *arg)
 {
-    struct send_data *dt = arg; /* 送信データ構造体 */
-    int retval = 0;             /* 戻り値 */
-    int sockfd = 0;             /* ソケット */
+    struct send_data *dt = (struct send_data *)arg; /* 送信データ構造体 */
+    int retval = 0;                                 /* 戻り値 */
+    int sockfd = 0;                                 /* ソケット */
 
     sockfd = inet_sock_client();
     if (sockfd < 0) {
-        memfree((void *)&dt, NULL);
+        memfree((void **)&dt, NULL);
         return (void *)EXIT_FAILURE;
     }
 
@@ -408,7 +408,7 @@ client_thread(void *arg)
     retval = send_client(sockfd, dt->sdata, dt->len);
     if (retval < 0) {
         outlog("send_client: sockfd=%d", sockfd);
-        memfree((void *)&dt, NULL);
+        memfree((void **)&dt, NULL);
         return (void *)EXIT_FAILURE;
     }
 
@@ -416,13 +416,13 @@ client_thread(void *arg)
     retval = recv_client(sockfd, dt->rdata);
     if (retval < 0) {
         outlog("recv_client: sockfd=%d", sockfd);
-        memfree((void *)&dt, NULL);
+        memfree((void **)&dt, NULL);
         return (void *)EXIT_FAILURE;
     }
     dbglog("rdata=%s", dt->rdata);
 
     retval = strcmp((char *)dt->expected, (char *)dt->rdata);
-    memfree((void *)&dt, NULL);
+    memfree((void **)&dt, NULL);
     if (retval) { /* 文字列が一致しない */
         pthread_exit((void *)EXIT_FAILURE);
         return (void *)EXIT_FAILURE;

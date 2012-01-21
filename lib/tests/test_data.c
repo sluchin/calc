@@ -33,7 +33,7 @@
 #define ALIGNOF(type)  offsetof(struct { char dummy; type var; } , var)
 #define ALIGN  8  /**< アライメント */
 
-char *test_data[] = {
+const char *test_data[] = {
     "a",
     "aa",
     "aaa",

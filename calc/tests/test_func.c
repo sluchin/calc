@@ -204,7 +204,7 @@ test_exec_func(void)
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(func_data); i++) {
         tsd = set_string(func_data[i].expr);
         if (!tsd)
@@ -248,7 +248,7 @@ test_get_pow(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(pow_data); i++) {
         tsd = set_string(pow_data[i].expr);
         if (!tsd)
@@ -335,7 +335,7 @@ test_get_rad(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(rad_data); i++) {
         tsd = set_string(rad_data[i].expr);
         if (!tsd)
@@ -364,7 +364,7 @@ test_get_deg(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(deg_data); i++) {
         tsd = set_string(deg_data[i].expr);
         if (!tsd)
@@ -393,7 +393,7 @@ test_get_sqrt(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(sqrt_data); i++) {
         tsd = set_string(sqrt_data[i].expr);
         if (!tsd)
@@ -427,7 +427,7 @@ test_check_math(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(math_data); i++) {
         tsd = set_string(math_data[i].expr);
         if (!tsd)
@@ -457,7 +457,7 @@ test_get_factorial(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(factorial_data); i++) {
         tsd = set_string(factorial_data[i].expr);
         if (!tsd)
@@ -491,7 +491,7 @@ test_get_permutation(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(permutation_data); i++) {
         tsd = set_string(permutation_data[i].expr);
         if (!tsd)
@@ -527,7 +527,7 @@ test_get_combination(void)
     dbl result = 0.0;     /* 結果 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    int i;
+    uint i;
     for (i = 0; i < NELEMS(combination_data); i++) {
         tsd = set_string(combination_data[i].expr);
         if (!tsd)

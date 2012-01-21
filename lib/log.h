@@ -55,7 +55,7 @@
 #endif /* _DEBUG */
 
 /** プログラム名設定 */
-void set_progname(char *name);
+void set_progname(const char *name);
 
 /** プログラム名取得 */
 char *get_progname(void);
