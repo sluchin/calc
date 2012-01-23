@@ -32,7 +32,8 @@
 
 /** ヘッダー構造体 */
 struct header {
-    uint64_t length; /**< データ長 */
+    uint32_t length;  /**< データ長 */
+    uchar padding[4]; /**< パディング */
 };
 
 /** クライアントデータ構造体 */

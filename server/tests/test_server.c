@@ -29,7 +29,7 @@
 #include <fcntl.h>      /* open */
 #include <sys/socket.h> /* socket setsockopt */
 #include <sys/types.h>  /* setsockopt */
-#include <arpa/inet.h>  /* inet_addr */
+#include <arpa/inet.h>  /* inet_addr ntohl */
 #include <sys/select.h> /* select */
 #include <sys/wait.h>   /* wait */
 #include <pthread.h>    /* pthread */
@@ -491,7 +491,7 @@ recv_client(int sockfd, uchar *rbuf)
         cut_notify("recv_data: length=%zu(%d)", length, errno);
         return EX_NG;
     }
-    length = hd.length;
+    length = (size_t)ntohl((uint32_t)hd.length);
 
     /* 受信 */
     retval = recv_data(sockfd, rbuf, &length);

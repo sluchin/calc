@@ -139,15 +139,8 @@ check_validate(calcinfo *tsd, dbl val)
     else if (isinf(val) != 0)
         set_errorcode(tsd, E_INFINITY);
 
-#ifdef _DEBUG
-    int retval = 0;
-    if ((retval = isnan(val)) != 0)
-        dbglog("isnan(%g)=%d", val, retval);
-    if ((retval = isinf(val)) != 0)
-        dbglog("isinf(%g)=%d", val, retval);
-    if ((retval = fpclassify(val)) == FP_SUBNORMAL)
-        dbglog("fpclassify(%g)=%d", val, retval);
-#endif /* _DEBUG */
+    dbglog("isnan=%d, isinf=%d, fpclassify=%d",
+           isnan(val), isinf(val), fpclassify(val));
 }
 
 /**
@@ -169,19 +162,13 @@ check_math_feexcept(calcinfo *tsd)
         if (fetestexcept(FE_INVALID))
             set_errorcode(tsd, E_NAN);
     }
-#ifdef _DEBUG
-    int retval = 0;
-    if ((retval = fetestexcept(FE_INVALID)) != 0)
-        dbglog("fetestexcept(FE_INVALID)=%d)", retval);
-    if ((retval = fetestexcept(FE_DIVBYZERO)) != 0)
-        dbglog("fetestexcept(FE_DIVBYZERO)=%d)", retval);
-    if ((retval = fetestexcept(FE_OVERFLOW)) != 0)
-        dbglog("fetestexcept(FE_OVERFLOW)=%d)", retval);
-    if ((retval = fetestexcept(FE_UNDERFLOW)) != 0)
-        dbglog("fetestexcept(FE_UNDERFLOW)=%d)", retval);
-    if ((retval = fetestexcept(FE_INEXACT)) != 0)
-        dbglog("fetestexcept(FE_INEXACT)=%d)", retval);
-#endif /* _DEBUG */
+    dbglog("FE_INVALID=%d, FE_DIVBYZERO=%d, FE_OVERFLOW=%d, " \
+           "FE_UNDERFLOW=%d, FE_INEXACT=%d",
+           fetestexcept(FE_INVALID),
+           fetestexcept(FE_DIVBYZERO),
+           fetestexcept(FE_OVERFLOW),
+           fetestexcept(FE_UNDERFLOW),
+           fetestexcept(FE_INEXACT));
 }
 
 /**

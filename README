@@ -1,8 +1,20 @@
 開発環境
+ Ubuntu 11.10
  Linux 3.0.0-14-generic-pae
  gcc バージョン 4.6.1 (Ubuntu/Linaro 4.6.1-9ubuntu3)
  GNU Make 3.81
  GNU gdb (Ubuntu/Linaro 7.3-0ubuntu2) 7.3-2011.08
+
+動作確認環境
+ Fedora 16 i686
+ Fedra 16 x86_64
+ CentOS 6.2 i386
+
+GNU readline インストール
+ Ubuntu の場合
+  sudo apt-get install libreadline6-dev
+ Fedora の場合
+  sudo yum install readline-devel
 
 コンパイル
  cd calc
@@ -22,6 +34,9 @@
 スタンドアロン
  cd calc
  ./calcp
+
+cutter インストール
+ http://cutter.sourceforge.net/reference/ja/install.html
 
 テスト
  cutter ライブラリをインストールし, make test コマンドを実行する.

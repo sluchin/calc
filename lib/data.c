@@ -23,9 +23,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <unistd.h> /* ssize_t */
-#include <string.h> /* memset memcpy */
-#include <stdlib.h> /* malloc */
+#include <unistd.h>    /* ssize_t */
+#include <string.h>    /* memset memcpy */
+#include <stdlib.h>    /* malloc */
+#include <arpa/inet.h> /* htonl */
 
 #include "log.h"
 #include "data.h"
@@ -68,7 +69,7 @@ set_client_data(struct client_data **dt,
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
+    (*dt)->hd.length = htonl((uint32_t)datalen); /* データ長を設定 */
     (void)memcpy((*dt)->expression, buf, len);
 
     dbgdump(*dt, length, "dt=%p, length=%zu", (*dt), length);
@@ -108,7 +109,7 @@ set_server_data(struct server_data **dt,
     (void)memset((*dt), 0, length);
     dbglog("dt=%p", (*dt));
 
-    (*dt)->hd.length = (uint64_t)datalen; /* データ長を設定 */
+    (*dt)->hd.length = htonl((uint32_t)datalen); /* データ長を設定 */
     (void)memcpy((*dt)->answer, buf, len);
 
     dbgdump(*dt, length, "dt=%p, length=%zu", (*dt), length);

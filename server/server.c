@@ -30,6 +30,7 @@
 #include <ctype.h>      /* isdigit */
 #include <sys/socket.h> /* socket setsockopt */
 #include <sys/types.h>  /* setsockopt */
+#include <arpa/inet.h>  /* ntohl */
 #include <errno.h>      /* errno */
 #include <unistd.h>     /* close access */
 #include <pthread.h>    /* pthread */
@@ -262,7 +263,7 @@ server_proc(void *arg)
         stddump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
 
         /* データ受信 */
-        length = hd.length; /* データ長を保持 */
+        length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
         expr = (uchar *)recv_data_new(dt->sock, &length);
         if (!expr) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);

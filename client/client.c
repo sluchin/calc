@@ -28,7 +28,7 @@
 #include <string.h>       /* memcpy memset */
 #include <ctype.h>        /* isdigit */
 #include <sys/socket.h>   /* socket */
-#include <arpa/inet.h>    /* inet_addr */
+#include <arpa/inet.h>    /* inet_addr ntohl*/
 #include <netinet/in.h>   /* struct in_addr */
 #include <errno.h>        /* errno */
 #include <unistd.h>       /* close */
@@ -302,7 +302,7 @@ read_sock(int sock)
         outdump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
     stddump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
 
-    length = hd.length; /* データ長を保持 */
+    length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
 
     /* データ受信 */
     answer = (uchar *)recv_data_new(sock, &length);
