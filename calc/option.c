@@ -3,10 +3,10 @@
  * @brief オプション引数の処理
  *
  * オプション
- *  -d, --digit   有効桁数の設定\n
+ *  -d, --digit   有効桁数設定\n
  *  -t, --time    処理時間計測\n
- *  -h, --help    ヘルプの表示\n
- *  -V, --version バージョンの表示\n
+ *  -h, --help    ヘルプ表示\n
+ *  -V, --version バージョン情報表示\n
  *
  * @author higashi
  * @date 2010-06-27 higashi 新規作成
