@@ -148,7 +148,7 @@ main_loop(void)
             !strcmp((char *)expr, "exit"))
             break;
 
-        tsd = init_calc(expr, g_digit, false);
+        tsd = create_calc(tsd, expr, g_digit);
         if (!tsd) { /* エラー */
             outlog("init_calc: g_digit=%ld", g_digit);
             memfree((void **)&expr, NULL);

@@ -49,7 +49,7 @@ set_string(const char *str)
         return NULL;
     }
 
-    tsd = init_calc(expr, 12L, false);
+    tsd = create_calc(tsd, expr, 12L);
     if (!tsd) {
         outlog("tsd=%p, %p expr=%s", tsd, expr, expr);
         return NULL;

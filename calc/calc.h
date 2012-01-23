@@ -70,14 +70,14 @@ struct _calcinfo {
 };
 typedef struct _calcinfo calcinfo;
 
-/** 初期化 */
-calcinfo *init_calc(void *buf, long digit, bool thread);
+/** calcinfo構造体生成 */
+calcinfo *create_calc(calcinfo *tsd, void *expr, long digit);
+
+/** calcinfo構造体生成(スレッドセーフ版) */
+calcinfo *create_calc_r(void *expr, long digit);
 
 /** メモリ解放 */
 void destroy_calc(void *tsd);
-
-/** キー解放 */
-void destroy_thread_key(void);
 
 /** 入力 */
 uchar *answer(calcinfo *tsd);

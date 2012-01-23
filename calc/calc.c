@@ -77,52 +77,73 @@ static dbl factor(calcinfo *tsd);
 static dbl token(calcinfo *tsd);
 /** 文字列を数値に変換 */
 static dbl number(calcinfo *tsd);
+/** フォーマット設定 */
+static void set_format(calcinfo *tsd, long digit);
 /** 文字数取得 */
 static int get_strlen(const dbl val, const char *fmt);
 /** バッファ読込 */
 static void readch(calcinfo *tsd);
 
 /**
- * 初期化
+ * calcinfo構造体生成
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] expr 式
  * @param[in] digit 桁数
- * @param[in] thread スレッドフラグ
  * @return calcinfo構造体
  */
 calcinfo *
-init_calc(void *expr, long digit, bool thread)
+create_calc(calcinfo *tsd, void *expr, long digit)
+{
+    if (!tsd) { /* 一回のみ領域確保される */
+        tsd = (calcinfo *)malloc(sizeof(calcinfo));
+        if (!tsd) {
+            outlog("malloc: size=%zu", sizeof(calcinfo));
+            return NULL;
+        }
+        dbglog("tsd=%p", tsd);
+    }
+    (void)memset(tsd, 0, sizeof(calcinfo));
+
+    tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
+    dbglog("ptr=%p", tsd->ptr);
+
+    set_format(tsd, digit);
+
+    readch(tsd);
+
+    return tsd;
+}
+
+/**
+ * calcinfo構造体生成(スレッドセーフ版)
+ *
+ * @param[in] expr 式
+ * @param[in] digit 桁数
+ * @return calcinfo構造体
+ */
+calcinfo *
+create_calc_r(void *expr, long digit)
 {
     int retval = 0;       /* 戻り値 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
 
-    if (thread) {
-        /* 1 回限りのキー初期化 */
-        pthread_once(&calc_once, alloc_key);
-        /* スレッド固有のバッファ取得 */
-        tsd = (calcinfo *)pthread_getspecific(calc_key);
-        if (!tsd) { /* 取得できない場合 */
-            /* スレッド固有のバッファ確保 */
-            tsd = (calcinfo *)malloc(sizeof(calcinfo));
-            if (!tsd) {
-                outlog("malloc: size=%zu", sizeof(calcinfo));
-                return NULL;
-            }
-            dbglog("tsd=%p", tsd);
-            retval = pthread_setspecific(calc_key, tsd);
-            if (retval) {
-                outlog("pthread_setspecific: tsd=%p", tsd);
-                return NULL;
-            }
-        }
-    } else {
+    /* 1 回限りのキー初期化 */
+    pthread_once(&calc_once, alloc_key);
+    /* スレッド固有のバッファ取得 */
+    tsd = (calcinfo *)pthread_getspecific(calc_key);
+    if (!tsd) { /* 取得できない場合 */
+        /* スレッド固有のバッファ確保 */
+        tsd = (calcinfo *)malloc(sizeof(calcinfo));
         if (!tsd) {
-            tsd = (calcinfo *)malloc(sizeof(calcinfo));
-            if (!tsd) {
-                outlog("malloc: size=%zu", sizeof(calcinfo));
-                return NULL;
-            }
-            dbglog("tsd=%p", tsd);
+            outlog("malloc: size=%zu", sizeof(calcinfo));
+            return NULL;
+        }
+        dbglog("tsd=%p", tsd);
+        retval = pthread_setspecific(calc_key, tsd);
+        if (retval) {
+            outlog("pthread_setspecific: tsd=%p", tsd);
+            return NULL;
         }
     }
     (void)memset(tsd, 0, sizeof(calcinfo));
@@ -130,14 +151,7 @@ init_calc(void *expr, long digit, bool thread)
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
     dbglog("ptr=%p", tsd->ptr);
 
-    /* フォーマット設定 */
-    retval = snprintf(tsd->fmt, sizeof(tsd->fmt),
-                      "%s%ld%s", "%.", digit, "g");
-    if (retval < 0) {
-        outlog("snprintf");
-        return NULL;
-    }
-    dbglog("fmt=%s", tsd->fmt);
+    set_format(tsd, digit);
 
     readch(tsd);
 
@@ -503,6 +517,26 @@ number(calcinfo *tsd)
     check_validate(tsd, x);
 
     return x;
+}
+
+/**
+ * フォーマット設定
+ *
+ * @return なし
+ */
+static void
+set_format(calcinfo *tsd, long digit)
+{
+    int retval = 0; /* 戻り値 */
+
+    /* フォーマット設定 */
+    retval = snprintf(tsd->fmt, sizeof(tsd->fmt),
+                      "%s%ld%s", "%.", digit, "g");
+    if (retval < 0) {
+        outlog("snprintf");
+        return;
+    }
+    dbglog("fmt=%s", tsd->fmt);
 }
 
 /**

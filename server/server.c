@@ -282,7 +282,7 @@ server_proc(void *arg)
                 "recv: expr=%p, length=%zu", expr, length);
 
         /* サーバ処理 */
-        tsd = init_calc(expr, g_digit, true);
+        tsd = create_calc_r(expr, g_digit);
         if (!tsd) /* エラー */
             pthread_exit((void *)EXIT_FAILURE);
 
