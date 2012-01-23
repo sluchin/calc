@@ -49,7 +49,6 @@ enum _st_client {
     EX_RECV_ERR,    /* 受信エラー */
     EX_SIGNAL,      /* シグナル受信した */
 };
-
 typedef enum _st_client st_client;
 
 /** ソケット接続 */

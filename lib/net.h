@@ -35,7 +35,6 @@ enum _blockmode {
     NONBLOCK = 0, /**< ノンブロッキングモード */
     BLOCKING      /**< ブロッキングモード */
 };
-
 typedef enum _blockmode blockmode;
 
 /** ホスト名設定 */

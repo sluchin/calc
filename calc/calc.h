@@ -46,7 +46,6 @@ enum _argtype {
     ARG_1,
     ARG_2
 };
-
 typedef enum _argtype argtype;
 
 /** エラー種別 */
@@ -59,7 +58,6 @@ enum _ER {
     E_INFINITY,  /**< 極エラーまたは範囲エラー */
     MAXERROR     /**< エラーコード最大数 */
 };
-
 typedef enum _ER ER;
 
 /** calc情報構造体 */
