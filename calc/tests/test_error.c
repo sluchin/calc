@@ -73,22 +73,21 @@ void cut_startup(void)
 void
 test_get_errormsg(void)
 {
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    calcinfo tsd; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < MAXERROR; i++) {
-        tsd = set_string("dammy");
-        if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s(%d)", i, tsd, "dammy", errno);
-        tsd->errorcode = (ER)i;
-        tsd->result = get_errormsg(tsd);
+        (void)memset(&tsd, 0, sizeof(calcinfo));
+        set_string(&tsd, "dammy");
+        tsd.errorcode = (ER)i;
+        tsd.answer = get_errormsg(&tsd);
         cut_assert_equal_string(error.errormsg[i],
-                                (char *)tsd->result,
+                                (char *)tsd.answer,
                                 cut_message("%s==%s",
-                                            (char *)tsd->result,
+                                            (char *)tsd.answer,
                                             (char *)error.errormsg));
-        clear_error(tsd);
-        destroy_calc(tsd);
+        clear_error(&tsd);
+        destroy_answer(&tsd);
     }
 }
 
@@ -100,20 +99,20 @@ test_get_errormsg(void)
 void
 test_set_errorcode(void)
 {
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    calcinfo tsd; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < MAXERROR; i++) {
-        tsd = set_string("dammy");
-        if (!tsd)
-            cut_error("i=%d, tsd=%p, expr=%s(%d)", i, tsd, "dammy", errno);
-        set_errorcode(tsd, (ER)i);
+        (void)memset(&tsd, 0, sizeof(calcinfo));
+        set_string(&tsd, "dammy");
+
+        set_errorcode(&tsd, (ER)i);
         cut_assert_equal_int(i,
-                             (int)tsd->errorcode,
+                             (int)tsd.errorcode,
                              cut_message("%d==%d",
-                                         (int)tsd->errorcode,
+                                         (int)tsd.errorcode,
                                          i));
-        destroy_calc(tsd);
+        clear_error(&tsd);
     }
 }
 
@@ -125,17 +124,16 @@ test_set_errorcode(void)
 void
 test_clear_error(void)
 {
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    calcinfo tsd; /* calcinfo構造体 */
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
-    tsd->result = (uchar *)strdup("dammy");
-    clear_error(tsd);
+    tsd.answer = (uchar *)strdup("dammy");
+    clear_error(&tsd);
 
-    cut_assert_equal_int((int)E_NONE, (int)tsd->errorcode);
-    destroy_calc(tsd);
+    cut_assert_equal_int((int)E_NONE, (int)tsd.errorcode);
+    destroy_answer(&tsd);
 }
 
 /**
@@ -146,19 +144,18 @@ test_clear_error(void)
 void
 test_is_error(void)
 {
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    calcinfo tsd; /* calcinfo構造体 */
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     /* エラー時, trueを返す */
-    set_errorcode(tsd, E_SYNTAX);
-    cut_assert_true((cut_boolean)is_error(tsd));
+    set_errorcode(&tsd, E_SYNTAX);
+    cut_assert_true((cut_boolean)is_error(&tsd));
 
     /* 正常時, falseを返す */
-    clear_error(tsd);
-    cut_assert_false((cut_boolean)is_error(tsd));
+    clear_error(&tsd);
+    cut_assert_false((cut_boolean)is_error(&tsd));
 }
 
 /**
@@ -169,34 +166,30 @@ test_is_error(void)
 void
 test_check_validate(void)
 {
-    dbl result = 0.0;     /* 結果 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    dbl result = 0.0; /* 結果 */
+    calcinfo tsd;     /* calcinfo構造体 */
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     result = sqrt(-1);
     dbglog("result=%g", result);
-    check_validate(tsd, result);
+    check_validate(&tsd, result);
     cut_assert_equal_int((int)E_NAN,
-                         (int)tsd->errorcode,
+                         (int)tsd.errorcode,
                          cut_message("E_NAN"));
-    clear_error(tsd);
-    destroy_calc(tsd);
+    clear_error(&tsd);
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     result = pow(10, 10000);
     dbglog("result=%g", result);
-    check_validate(tsd, result);
+    check_validate(&tsd, result);
     cut_assert_equal_int((int)E_INFINITY,
-                         (int)tsd->errorcode,
+                         (int)tsd.errorcode,
                          cut_message("E_INFINITY"));
-    clear_error(tsd);
-    destroy_calc(tsd);
+    clear_error(&tsd);
 }
 
 /**
@@ -207,36 +200,32 @@ test_check_validate(void)
 void
 test_check_math_feexcept(void)
 {
-    dbl result = 0.0;     /* 結果 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    dbl result = 0.0; /* 結果 */
+    calcinfo tsd;     /* calcinfo構造体 */
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     clear_math_feexcept();
     result = log(-1);
     dbglog("result=%g", result);
-    check_math_feexcept(tsd);
+    check_math_feexcept(&tsd);
     cut_assert_equal_int((int)E_NAN,
-                         (int)tsd->errorcode,
+                         (int)tsd.errorcode,
                          cut_message("NaN: log(-1)=%g", result));
-    clear_error(tsd);
-    destroy_calc(tsd);
+    clear_error(&tsd);
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     clear_math_feexcept();
     result = log(0);
     dbglog("result=%g", result);
-    check_math_feexcept(tsd);
+    check_math_feexcept(&tsd);
     cut_assert_equal_int((int)E_INFINITY,
-                         (int)tsd->errorcode,
+                         (int)tsd.errorcode,
                          cut_message("Infinity: log(0)=%g", result));
-    clear_error(tsd);
-    destroy_calc(tsd);
+    clear_error(&tsd);
 }
 
 /**
@@ -247,21 +236,19 @@ test_check_math_feexcept(void)
 void
 test_clear_math_feexcept(void)
 {
-    dbl result = 0.0;     /* 結果 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
+    dbl result = 0.0; /* 結果 */
+    calcinfo tsd;     /* calcinfo構造体 */
 
-    tsd = set_string("dammy");
-    if (!tsd)
-        cut_error("tsd=%p, expr=%s(%d)", tsd, "dammy", errno);
+    (void)memset(&tsd, 0, sizeof(calcinfo));
+    set_string(&tsd, "dammy");
 
     result = log(-1);
     dbglog("result=%g", result);
     clear_math_feexcept();
-    check_math_feexcept(tsd);
+    check_math_feexcept(&tsd);
     cut_assert_equal_int((int)E_NONE,
-                         (int)tsd->errorcode,
+                         (int)tsd.errorcode,
                          cut_message("None: log(-1)=%g clear", result));
-    clear_error(tsd);
-    destroy_calc(tsd);
+    clear_error(&tsd);
 }
 

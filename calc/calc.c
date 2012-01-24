@@ -66,7 +66,7 @@ static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
 /** キー確保 */
 static void alloc_key(void);
 /** バッファ固有のキー確保 */
-static void destroy_tsd(void *tsd);
+static void final_calc(void *tsd);
 /** 式 */
 static dbl expression(calcinfo *tsd);
 /** 項 */
@@ -85,45 +85,35 @@ static int get_strlen(const dbl val, const char *fmt);
 static void readch(calcinfo *tsd);
 
 /**
- * calcinfo構造体生成
+ * calcinfo構造体初期化
  *
  * @param[in] tsd calcinfo構造体
  * @param[in] expr 式
  * @param[in] digit 桁数
  * @return calcinfo構造体
  */
-calcinfo *
-create_calc(calcinfo *tsd, void *expr, long digit)
+void
+init_calc(calcinfo *tsd, void *expr, long digit)
 {
-    if (!tsd) { /* 一回のみ領域確保される */
-        tsd = (calcinfo *)malloc(sizeof(calcinfo));
-        if (!tsd) {
-            outlog("malloc: size=%zu", sizeof(calcinfo));
-            return NULL;
-        }
-        dbglog("tsd=%p", tsd);
-    }
-    (void)memset(tsd, 0, sizeof(calcinfo));
-
     tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
     dbglog("ptr=%p", tsd->ptr);
 
     set_format(tsd, digit);
 
     readch(tsd);
-
-    return tsd;
 }
 
 /**
- * calcinfo構造体生成(スレッドセーフ版)
+ * calcinfo構造体初期化(スレッドセーフ版)
  *
+ * 戻り値calcinfo構造体はスレッドごとに生成される.
  * @param[in] expr 式
  * @param[in] digit 桁数
  * @return calcinfo構造体
+ * @attention tsdは自動的に解放される.
  */
 calcinfo *
-create_calc_r(void *expr, long digit)
+init_calc_r(void *expr, long digit)
 {
     int retval = 0;       /* 戻り値 */
     calcinfo *tsd = NULL; /* calcinfo構造体 */
@@ -148,28 +138,9 @@ create_calc_r(void *expr, long digit)
     }
     (void)memset(tsd, 0, sizeof(calcinfo));
 
-    tsd->ptr = (uchar *)expr; /* 走査用ポインタ */
-    dbglog("ptr=%p", tsd->ptr);
-
-    set_format(tsd, digit);
-
-    readch(tsd);
+    init_calc(tsd, expr, digit);
 
     return tsd;
-}
-
-/**
- * メモリ解放
- *
- * @param[in] tsd calcinfo構造体ポインタ
- * @return なし
- */
-void
-destroy_calc(void *tsd)
-{
-    calcinfo *ptr = (calcinfo *)tsd;
-    dbglog("start: result=%p", ptr->result);
-    memfree((void **)&ptr->result, NULL);
 }
 
 /**
@@ -178,9 +149,10 @@ destroy_calc(void *tsd)
  * @param[in] tsd calcinfo構造体
  * @return 新たに領域確保された結果文字列ポインタ
  * @retval NULL エラー
+ * @attention destroy_answerを必ず呼ぶこと.
  */
 uchar *
-answer(calcinfo *tsd)
+create_answer(calcinfo *tsd)
 {
     dbl val = 0.0;     /* 値 */
     size_t length = 0; /* 文字数 */
@@ -206,11 +178,11 @@ answer(calcinfo *tsd)
     }
 
     if (is_error(tsd)) { /* エラー */
-        tsd->result = get_errormsg(tsd);
+        tsd->answer = get_errormsg(tsd);
         clear_error(tsd);
-        if (!tsd->result)
+        if (!tsd->answer)
             return NULL;
-        dbglog("result=%p, length=%zu", tsd->result, length);
+        dbglog("answer=%p, length=%zu", tsd->answer, length);
     } else {
         /* 文字数取得 */
         retval = get_strlen(val, tsd->fmt);
@@ -222,23 +194,37 @@ answer(calcinfo *tsd)
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        tsd->result = (uchar *)malloc(length);
-        if (!tsd->result) {
+        tsd->answer = (uchar *)malloc(length);
+        if (!tsd->answer) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
-        (void)memset(tsd->result, 0, length);
+        (void)memset(tsd->answer, 0, length);
 
         /* 値を文字列に変換 */
-        retval = snprintf((char *)tsd->result, length, tsd->fmt, val);
+        retval = snprintf((char *)tsd->answer, length, tsd->fmt, val);
         if (retval < 0) {
-            outlog("snprintf: result=%p, length=%zu", tsd->result, length);
+            outlog("snprintf: answer=%p, length=%zu", tsd->answer, length);
             return NULL;
         }
         dbglog(tsd->fmt, val);
-        dbglog("result=%s, length=%zu", tsd->result, length);
+        dbglog("answer=%s, length=%zu", tsd->answer, length);
     }
-    return tsd->result;
+    return tsd->answer;
+}
+
+/**
+ * メモリ解放
+ *
+ * @param[in] tsd calcinfo構造体ポインタ
+ * @return なし
+ */
+void
+destroy_answer(void *tsd)
+{
+    calcinfo *ptr = (calcinfo *)tsd;
+    dbglog("start: result=%p", ptr->answer);
+    memfree((void **)&ptr->answer, NULL);
 }
 
 /**
@@ -293,17 +279,18 @@ static void
 alloc_key(void)
 {
     dbglog("start");
-    pthread_key_create(&calc_key, destroy_tsd);
+    pthread_key_create(&calc_key, final_calc);
 }
 
 /**
  * スレッド固有バッファ解放
  *
+ * スレッドが破棄される際に、自動的に呼ばれる.
  * @param[in] tsd 解放するポインタ
  * @return なし
  */
 static void
-destroy_tsd(void *tsd)
+final_calc(void *tsd)
 {
     dbglog("start: tsd=%p", tsd);
     memfree((void **)&tsd, NULL);

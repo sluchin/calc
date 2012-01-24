@@ -64,23 +64,23 @@ typedef enum _ER ER;
 struct _calcinfo {
     int ch;                    /**< 文字 */
     uchar *ptr;                /**< 文字列走査用ポインタ */
-    uchar *result;             /**< 結果文字列 */
+    uchar *answer;             /**< 結果文字列 */
     char fmt[sizeof("%.18g")]; /**< フォーマット */
     ER errorcode;              /**< エラーコード */
 };
 typedef struct _calcinfo calcinfo;
 
-/** calcinfo構造体生成 */
-calcinfo *create_calc(calcinfo *tsd, void *expr, long digit);
+/** calcinfo構造体初期化 */
+void init_calc(calcinfo *tsd, void *expr, long digit);
 
 /** calcinfo構造体生成(スレッドセーフ版) */
-calcinfo *create_calc_r(void *expr, long digit);
-
-/** メモリ解放 */
-void destroy_calc(void *tsd);
+calcinfo *init_calc_r(void *expr, long digit);
 
 /** 入力 */
-uchar *answer(calcinfo *tsd);
+uchar *create_answer(calcinfo *tsd);
+
+/** メモリ解放 */
+void destroy_answer(void *tsd);
 
 /** 引数解析 */
 void parse_func_args(calcinfo *tsd, const argtype num, dbl *x, dbl *y);

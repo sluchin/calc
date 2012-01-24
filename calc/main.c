@@ -109,12 +109,12 @@ main(int argc, char *argv[])
 static void
 main_loop(void)
 {
-    int retval = 0;       /* 戻り値 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
-    uchar *expr = NULL;   /* 式 */
+    int retval = 0;      /* 戻り値 */
+    calcinfo tsd;        /* calcinfo構造体 */
+    uchar *expr = NULL;  /* 式 */
 #ifdef HAVE_READLINE
-    uint hist_no = 0;     /* 履歴数 */
-    char *prompt = NULL;  /* プロンプト */
+    uint hist_no = 0;    /* 履歴数 */
+    char *prompt = NULL; /* プロンプト */
 
     rl_event_hook = &check_state;
 #endif /* HAVE_READLINE */
@@ -148,16 +148,14 @@ main_loop(void)
             !strcmp((char *)expr, "exit"))
             break;
 
-        tsd = create_calc(tsd, expr, g_digit);
-        if (!tsd) { /* エラー */
-            outlog("init_calc: g_digit=%ld", g_digit);
-            memfree((void **)&expr, NULL);
-            break;
-        }
+        (void)memset(&tsd, 0, sizeof(calcinfo));
+        init_calc(&tsd, expr, g_digit);
 
-        if (answer(tsd)) {
-            dbglog("expr=%p, result=%p", expr, tsd->result);
-            retval = fprintf(stdout, "%s\n", (char *)tsd->result);
+        if (!create_answer(&tsd)) { /* メモリ不足 */
+            outlog("create_calc");
+        } else {
+            dbglog("expr=%p, answer=%p", expr, tsd.answer);
+            retval = fprintf(stdout, "%s\n", (char *)tsd.answer);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
         }
@@ -167,13 +165,10 @@ main_loop(void)
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
-        destroy_calc(tsd);
+        destroy_answer(&tsd);
         memfree((void **)&expr, NULL);
 
     } while (!sig_handled);
-
-    /* スレッドではないので解放しなければならない */
-    memfree((void **)&tsd, NULL);
 }
 
 #ifdef HAVE_READLINE

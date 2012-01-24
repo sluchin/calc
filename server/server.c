@@ -282,22 +282,22 @@ server_proc(void *arg)
                 "recv: expr=%p, length=%zu", expr, length);
 
         /* サーバ処理 */
-        tsd = create_calc_r(expr, g_digit);
+        tsd = init_calc_r(expr, g_digit);
         if (!tsd) /* エラー */
             pthread_exit((void *)EXIT_FAILURE);
 
-        if (!answer(tsd))
+        if (!create_answer(tsd))
             pthread_exit((void *)EXIT_FAILURE);
 
-        pthread_cleanup_push(destroy_calc, tsd);
+        pthread_cleanup_push(destroy_answer, tsd);
 
-        length = strlen((char *)tsd->result) + 1; /* 文字列長保持 */
+        length = strlen((char *)tsd->answer) + 1; /* 文字列長保持 */
 
-        dbgdump(tsd->result, length,
-                "result=%p, length=%zu", tsd->result, length);
+        dbgdump(tsd->answer, length,
+                "answer=%p, length=%zu", tsd->answer, length);
 
         /* データ送信 */
-        slen = set_server_data(&sdata, tsd->result, length);
+        slen = set_server_data(&sdata, tsd->answer, length);
         if (slen < 0) /* メモリ確保できない */
             pthread_exit((void *)EXIT_FAILURE);
 

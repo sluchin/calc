@@ -32,30 +32,24 @@
 /**
  * 文字列設定
  *
+ * @param[in] tsd calcinfo構造体
  * @param[in] str 文字列
- * @return calcinfo構造体
+ * @return なし
  */
-calcinfo *
-set_string(const char *str)
+void
+set_string(calcinfo *tsd, const char *str)
 {
     size_t length = 0;    /* 文字列長 */
     uchar *expr = NULL;   /* 式 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
 
     length = strlen(str);
     expr = (uchar *)cut_take_strndup(str, length);
-    if (!expr) {
-        outlog("cut_take_strndup=%p", expr);
-        return NULL;
-    }
+    if (!expr)
+        cut_error("cut_take_strndup=%p", expr);
 
-    tsd = create_calc(tsd, expr, 12L);
-    if (!tsd) {
-        outlog("tsd=%p, %p expr=%s", tsd, expr, expr);
-        return NULL;
-    }
+    init_calc(tsd, expr, 12L);
+
     dbglog("tsd=%p", tsd);
     dbglog("%p expr=%s, length=%u", expr, expr, length);
-    return tsd;
 }
 
