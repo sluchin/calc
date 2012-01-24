@@ -232,7 +232,7 @@ server_proc(void *arg)
     ssize_t slen = 0;                     /* 送信するバイト数 */
     struct header hd;                     /* ヘッダ構造体 */
     uchar *expr = NULL;                   /* 受信データ */
-    calcinfo *tsd = NULL;                 /* calc情報構造体 */
+    calcinfo tsd;                         /* calc情報構造体 */
     struct server_data *sdata = NULL;     /* 送信データ構造体 */
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
@@ -282,22 +282,19 @@ server_proc(void *arg)
                 "recv: expr=%p, length=%zu", expr, length);
 
         /* サーバ処理 */
-        tsd = init_calc_r(expr, g_digit);
-        if (!tsd) /* エラー */
+        init_calc(&tsd, expr, g_digit);
+        if (!create_answer(&tsd))
             pthread_exit((void *)EXIT_FAILURE);
 
-        if (!create_answer(tsd))
-            pthread_exit((void *)EXIT_FAILURE);
+        pthread_cleanup_push(destroy_answer, &tsd);
 
-        pthread_cleanup_push(destroy_answer, tsd);
+        length = strlen((char *)tsd.answer) + 1; /* 文字列長保持 */
 
-        length = strlen((char *)tsd->answer) + 1; /* 文字列長保持 */
-
-        dbgdump(tsd->answer, length,
-                "answer=%p, length=%zu", tsd->answer, length);
+        dbgdump(tsd.answer, length,
+                "answer=%p, length=%zu", tsd.answer, length);
 
         /* データ送信 */
-        slen = set_server_data(&sdata, tsd->answer, length);
+        slen = set_server_data(&sdata, tsd.answer, length);
         if (slen < 0) /* メモリ確保できない */
             pthread_exit((void *)EXIT_FAILURE);
 

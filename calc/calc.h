@@ -73,9 +73,6 @@ typedef struct _calcinfo calcinfo;
 /** calcinfo構造体初期化 */
 void init_calc(calcinfo *tsd, void *expr, long digit);
 
-/** calcinfo構造体生成(スレッドセーフ版) */
-calcinfo *init_calc_r(void *expr, long digit);
-
 /** 入力 */
 uchar *create_answer(calcinfo *tsd);
 

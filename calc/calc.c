@@ -57,16 +57,8 @@ bool g_tflag = false;
 /* 内部変数 */
 /** エラー戻り値 */
 static const dbl EX_ERROR = 0.0;
-/** スレッド固有バッファのキー */
-static pthread_key_t calc_key;
-/** キー初期化 */
-static pthread_once_t calc_once = PTHREAD_ONCE_INIT;
 
 /* 内部関数 */
-/** キー確保 */
-static void alloc_key(void);
-/** バッファ固有のキー確保 */
-static void final_calc(void *tsd);
 /** 式 */
 static dbl expression(calcinfo *tsd);
 /** 項 */
@@ -101,46 +93,6 @@ init_calc(calcinfo *tsd, void *expr, long digit)
     set_format(tsd, digit);
 
     readch(tsd);
-}
-
-/**
- * calcinfo構造体初期化(スレッドセーフ版)
- *
- * 戻り値calcinfo構造体はスレッドごとに生成される.
- * @param[in] expr 式
- * @param[in] digit 桁数
- * @return calcinfo構造体
- * @attention tsdは自動的に解放される.
- */
-calcinfo *
-init_calc_r(void *expr, long digit)
-{
-    int retval = 0;       /* 戻り値 */
-    calcinfo *tsd = NULL; /* calcinfo構造体 */
-
-    /* 1 回限りのキー初期化 */
-    pthread_once(&calc_once, alloc_key);
-    /* スレッド固有のバッファ取得 */
-    tsd = (calcinfo *)pthread_getspecific(calc_key);
-    if (!tsd) { /* 取得できない場合 */
-        /* スレッド固有のバッファ確保 */
-        tsd = (calcinfo *)malloc(sizeof(calcinfo));
-        if (!tsd) {
-            outlog("malloc: size=%zu", sizeof(calcinfo));
-            return NULL;
-        }
-        dbglog("tsd=%p", tsd);
-        retval = pthread_setspecific(calc_key, tsd);
-        if (retval) {
-            outlog("pthread_setspecific: tsd=%p", tsd);
-            return NULL;
-        }
-    }
-    (void)memset(tsd, 0, sizeof(calcinfo));
-
-    init_calc(tsd, expr, digit);
-
-    return tsd;
 }
 
 /**
@@ -268,32 +220,6 @@ parse_func_args(calcinfo *tsd, const argtype type, dbl *x, dbl *y)
         return;
     }
     readch(tsd);
-}
-
-/**
- * キー確保
- *
- * @return なし
- */
-static void
-alloc_key(void)
-{
-    dbglog("start");
-    pthread_key_create(&calc_key, final_calc);
-}
-
-/**
- * スレッド固有バッファ解放
- *
- * スレッドが破棄される際に、自動的に呼ばれる.
- * @param[in] tsd 解放するポインタ
- * @return なし
- */
-static void
-final_calc(void *tsd)
-{
-    dbglog("start: tsd=%p", tsd);
-    memfree((void **)&tsd, NULL);
 }
 
 /**
