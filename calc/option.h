@@ -26,9 +26,6 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
 
-/* 外部変数 */
-extern long g_digit; /**< 桁数 */
-
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 

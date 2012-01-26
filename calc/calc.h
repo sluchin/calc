@@ -70,27 +70,27 @@ struct _calcinfo {
 };
 typedef struct _calcinfo calcinfo;
 
-/** calcinfo構造体初期化 */
-void init_calc(calcinfo *tsd, void *expr, long digit);
-
 /** 入力 */
-uchar *create_answer(calcinfo *tsd);
+uchar *create_answer(calcinfo *calc, const uchar *expr);
 
 /** メモリ解放 */
-void destroy_answer(void *tsd);
+void destroy_answer(void *calc);
 
 /** 引数解析 */
-void parse_func_args(calcinfo *tsd, const argtype num, dbl *x, dbl *y);
+void parse_func_args(calcinfo *calc, const argtype num, dbl *x, dbl *y);
+
+/** 桁数設定 */
+void set_digit(long digit);
 
 #ifdef UNITTEST
 struct _testcalc {
-    dbl (*expression)(calcinfo *tsd);
-    dbl (*term)(calcinfo *tsd);
-    dbl (*factor)(calcinfo *tsd);
-    dbl (*token)(calcinfo *tsd);
-    dbl (*number)(calcinfo *tsd);
+    dbl (*expression)(calcinfo *calc);
+    dbl (*term)(calcinfo *calc);
+    dbl (*factor)(calcinfo *calc);
+    dbl (*token)(calcinfo *calc);
+    dbl (*number)(calcinfo *calc);
     int (*get_strlen)(const dbl val, const char *fmt);
-    void (*readch)(calcinfo *tsd);
+    void (*readch)(calcinfo *calc);
 };
 typedef struct _testcalc testcalc;
 

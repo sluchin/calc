@@ -31,7 +31,7 @@
 #define MAX_STRING  32 /**< 最大文字列 */
 
 /** 文字列設定 */
-void set_string(calcinfo *tsd, const char *str);
+void set_string(calcinfo *calc, const char *str);
 
 #endif /* _TEST_COMMON_H_ */
 

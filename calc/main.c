@@ -110,7 +110,7 @@ static void
 main_loop(void)
 {
     int retval = 0;      /* 戻り値 */
-    calcinfo tsd;        /* calcinfo構造体 */
+    calcinfo calc;       /* calcinfo構造体 */
     uchar *expr = NULL;  /* 式 */
 #ifdef HAVE_READLINE
     uint hist_no = 0;    /* 履歴数 */
@@ -148,14 +148,13 @@ main_loop(void)
             !strcmp((char *)expr, "exit"))
             break;
 
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        init_calc(&tsd, expr, g_digit);
+        (void)memset(&calc, 0, sizeof(calcinfo));
 
-        if (!create_answer(&tsd)) { /* メモリ不足 */
+        if (!create_answer(&calc, expr)) { /* メモリ不足 */
             outlog("create_calc");
         } else {
-            dbglog("expr=%p, answer=%p", expr, tsd.answer);
-            retval = fprintf(stdout, "%s\n", (char *)tsd.answer);
+            dbglog("expr=%p, answer=%p", expr, calc.answer);
+            retval = fprintf(stdout, "%s\n", (char *)calc.answer);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
         }
@@ -165,7 +164,7 @@ main_loop(void)
         add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
-        destroy_answer(&tsd);
+        destroy_answer(&calc);
         memfree((void **)&expr, NULL);
 
     } while (!sig_handled);

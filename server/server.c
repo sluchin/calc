@@ -185,6 +185,7 @@ server_loop(int sock)
                 /* 接続受付 */
                 /* addrlenは入出力なのでここで初期化する */
                 dt->len = (socklen_t)sizeof(dt->addr);
+                dt->sigmask = sigmask;
                 dt->sock = accept(sock,
                                   (struct sockaddr *)&dt->addr,
                                   &dt->len);
@@ -197,19 +198,18 @@ server_loop(int sock)
                 }
 
                 /* スレッド生成 */
-                dt->sigmask = sigmask;
                 retval = pthread_create(&tid, NULL, server_proc, dt);
                 if (retval) { /* エラー(非0) */
-                    outlog("pthread_create=%lu", tid);
+                    outlog("pthread_create=%lu", (ulong)tid);
                     close_sock(&dt->sock); /* アクセプトクローズ */
                     memfree((void **)&dt, NULL);
                     continue;
                 }
-                dbglog("pthread_create=%lu, accept=%d", tid, dt->sock);
+                dbglog("pthread_create=%lu, accept=%d", (ulong)tid, dt->sock);
 
                 retval = pthread_detach(tid);
                 if (retval) /* エラー(非0) */
-                    outlog("pthread_detach: tid=%lu", tid);
+                    outlog("pthread_detach: tid=%lu", (ulong)tid);
             }
         } else { /* タイムアウト */
             continue;
@@ -232,7 +232,7 @@ server_proc(void *arg)
     ssize_t slen = 0;                     /* 送信するバイト数 */
     struct header hd;                     /* ヘッダ構造体 */
     uchar *expr = NULL;                   /* 受信データ */
-    calcinfo tsd;                         /* calc情報構造体 */
+    calcinfo calc;                        /* calc情報構造体 */
     struct server_data *sdata = NULL;     /* 送信データ構造体 */
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
@@ -282,19 +282,19 @@ server_proc(void *arg)
                 "recv: expr=%p, length=%zu", expr, length);
 
         /* サーバ処理 */
-        init_calc(&tsd, expr, g_digit);
-        if (!create_answer(&tsd))
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        if (!create_answer(&calc, expr))
             pthread_exit((void *)EXIT_FAILURE);
 
-        pthread_cleanup_push(destroy_answer, &tsd);
+        pthread_cleanup_push(destroy_answer, &calc);
 
-        length = strlen((char *)tsd.answer) + 1; /* 文字列長保持 */
+        length = strlen((char *)calc.answer) + 1; /* 文字列長保持 */
 
-        dbgdump(tsd.answer, length,
-                "answer=%p, length=%zu", tsd.answer, length);
+        dbgdump(calc.answer, length,
+                "answer=%p, length=%zu", calc.answer, length);
 
         /* データ送信 */
-        slen = set_server_data(&sdata, tsd.answer, length);
+        slen = set_server_data(&sdata, calc.answer, length);
         if (slen < 0) /* メモリ確保できない */
             pthread_exit((void *)EXIT_FAILURE);
 

@@ -46,23 +46,23 @@ static const dbl DEF_E = 2.71828182845904523536028747135266249;
 /** 関数情報構造体初期化 */
 static void init_func(void) __attribute__((constructor));
 /** Pi取得 */
-static dbl get_pi(calcinfo *tsd);
+static dbl get_pi(calcinfo *calc);
 /** ネイピア数(オイラー数)取得 */
-static dbl get_e(calcinfo *tsd);
+static dbl get_e(calcinfo *calc);
 /** 角度をラジアンに変換 */
-static dbl get_rad(calcinfo *tsd, dbl x);
+static dbl get_rad(calcinfo *calc, dbl x);
 /** ラジアンを角度に変換 */
-static dbl get_deg(calcinfo *tsd, dbl x);
+static dbl get_deg(calcinfo *calc, dbl x);
 /** 平方根 */
-static dbl get_sqrt(calcinfo *tsd, dbl x);
+static dbl get_sqrt(calcinfo *calc, dbl x);
 /** 関数エラーチェック */
-static dbl check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl));
+static dbl check_math(calcinfo *calc, dbl x, dbl (*callback)(dbl));
 /** 階乗取得 */
-static dbl get_factorial(calcinfo *tsd, dbl n);
+static dbl get_factorial(calcinfo *calc, dbl n);
 /** 順列(nPr) */
-static dbl get_permutation(calcinfo *tsd, dbl n, dbl r);
+static dbl get_permutation(calcinfo *calc, dbl n, dbl r);
 /** 組み合わせ(nCr) */
-static dbl get_combination(calcinfo *tsd, dbl n, dbl r);
+static dbl get_combination(calcinfo *calc, dbl n, dbl r);
 
 /** 関数種別 */
 enum functype {
@@ -103,9 +103,9 @@ static struct funcstring fstring[] = {
 
 /** 関数共用体 */
 union func {
-    dbl (*func0)(calcinfo *tsd);
-    dbl (*func1)(calcinfo *tsd, dbl x);
-    dbl (*func2)(calcinfo *tsd, dbl x, dbl y);
+    dbl (*func0)(calcinfo *calc);
+    dbl (*func1)(calcinfo *calc, dbl x);
+    dbl (*func2)(calcinfo *calc, dbl x, dbl y);
     dbl (*math)(dbl x);
 };
 
@@ -129,12 +129,12 @@ static struct funcinfo finfo[MAXFUNC];
 /**
  * 関数実行
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] func 関数名
  * return なし
  */
 dbl
-exec_func(calcinfo *tsd, const char *func)
+exec_func(calcinfo *calc, const char *func)
 {
     dbl result = 0.0;     /* 戻り値 */
     dbl x = 0.0, y = 0.0; /* 値 */
@@ -151,19 +151,19 @@ exec_func(calcinfo *tsd, const char *func)
             switch (finfo[ftype].type) {
                 dbglog("type=%d", (int)finfo[ftype].type);
             case FUNC0:
-                result = finfo[ftype].func.func0(tsd);
+                result = finfo[ftype].func.func0(calc);
                 break;
             case FUNC1:
-                parse_func_args(tsd, ARG_1, &x, &y);
-                result = finfo[ftype].func.func1(tsd, x);
+                parse_func_args(calc, ARG_1, &x, &y);
+                result = finfo[ftype].func.func1(calc, x);
                 break;
             case FUNC2:
-                parse_func_args(tsd, ARG_2, &x, &y);
-                result = finfo[ftype].func.func2(tsd, x, y);
+                parse_func_args(calc, ARG_2, &x, &y);
+                result = finfo[ftype].func.func2(calc, x, y);
                 break;
             case MATH:
-                parse_func_args(tsd, ARG_1, &x, &y);
-                result = check_math(tsd, x, finfo[ftype].func.math);
+                parse_func_args(calc, ARG_1, &x, &y);
+                result = check_math(calc, x, finfo[ftype].func.math);
                 break;
             default:
                 outlog("no functype");
@@ -173,34 +173,34 @@ exec_func(calcinfo *tsd, const char *func)
         }
     }
     if (!exec) /* エラー */
-        set_errorcode(tsd, E_NOFUNC);
+        set_errorcode(calc, E_NOFUNC);
 
     dbglog("x=%.15g, y=%.15g", x, y);
-    dbglog(tsd->fmt, result);
+    dbglog(calc->fmt, result);
     return result;
 }
 
 /**
  * 指数取得
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] x 値
  * @param[in] y 値
  * @return 指数
  */
 dbl
-get_pow(calcinfo *tsd, dbl x, dbl y)
+get_pow(calcinfo *calc, dbl x, dbl y)
 {
     dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     if ((fpclassify(x) == FP_ZERO) && isless(y, 0)) {
         /* 定義域エラー */
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
@@ -208,7 +208,7 @@ get_pow(calcinfo *tsd, dbl x, dbl y)
 
     result = pow(x, y);
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
     return result;
 }
@@ -285,14 +285,14 @@ init_func(void)
 /**
  * pi取得
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @return pi
  */
 static dbl
-get_pi(calcinfo *tsd)
+get_pi(calcinfo *calc)
 {
     dbglog("start");
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
     return DEF_PI;
 }
@@ -300,14 +300,14 @@ get_pi(calcinfo *tsd)
 /**
  * ネイピア数(オイラー数)取得
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @return ネイピア数(オイラー数)
  */
 static dbl
-get_e(calcinfo *tsd)
+get_e(calcinfo *calc)
 {
     dbglog("start");
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
     return DEF_E;
 }
@@ -315,23 +315,23 @@ get_e(calcinfo *tsd)
 /**
  * 角度をラジアンに変換
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] x 値
  * @return ラジアン
  */
 static dbl
-get_rad(calcinfo *tsd, dbl x)
+get_rad(calcinfo *calc, dbl x)
 {
     dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     result = x * DEF_PI / 180;
 
-    check_validate(tsd, result);
+    check_validate(calc, result);
 
     return result;
 }
@@ -339,23 +339,23 @@ get_rad(calcinfo *tsd, dbl x)
 /**
  * ラジアンを角度に変換
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] x 値
  * @return 角度
  */
 static dbl
-get_deg(calcinfo *tsd, dbl x)
+get_deg(calcinfo *calc, dbl x)
 {
     dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     result = x * 180 / DEF_PI;
 
-    check_validate(tsd, result);
+    check_validate(calc, result);
 
     return result;
 }
@@ -364,23 +364,23 @@ get_deg(calcinfo *tsd, dbl x)
  * 平方根
  *
  * 平方根には, 値域エラーは存在しない.
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] x 値
  * @return 平方根
  */
 static dbl
-get_sqrt(calcinfo *tsd, dbl x)
+get_sqrt(calcinfo *calc, dbl x)
 {
     dbl result = 0.0; /* 計算結果 */
 
     dbglog("start: x=%g", x);
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     /* 複素数・虚数には対応しない */
     if (isless(x, 0)) { /* 定義域エラー */
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
@@ -388,7 +388,7 @@ get_sqrt(calcinfo *tsd, dbl x)
 
     result = sqrt(x);
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
     return result;
 }
@@ -396,26 +396,26 @@ get_sqrt(calcinfo *tsd, dbl x)
 /**
  * 関数エラーチェック
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] x 値
  * @param[in] callback コールバック関数
  * @return 絶対値
  */
 static dbl
-check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
+check_math(calcinfo *calc, dbl x, dbl (*callback)(dbl))
 {
     dbl result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     clear_math_feexcept();
 
     result = callback(x);
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
     return result;
 }
@@ -423,12 +423,12 @@ check_math(calcinfo *tsd, dbl x, dbl (*callback)(dbl))
 /**
  * 階乗取得
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] n 値
  * @return 階乗
  */
 static dbl
-get_factorial(calcinfo *tsd, dbl n)
+get_factorial(calcinfo *calc, dbl n)
 {
     dbl result = 0.0;   /* 計算結果 */
     dbl decimal = 0.0;  /* 小数 */
@@ -437,14 +437,14 @@ get_factorial(calcinfo *tsd, dbl n)
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
     dbglog("decimal=%f, integer=%f", decimal, integer);
     if (decimal) { /* 自然数ではない */
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
@@ -463,9 +463,9 @@ get_factorial(calcinfo *tsd, dbl n)
         result *= -1;
     minus = false;
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
-    dbglog(tsd->fmt, result);
+    dbglog(calc->fmt, result);
     return result;
 }
 
@@ -476,42 +476,42 @@ get_factorial(calcinfo *tsd, dbl n)
  * 順列 nPr を求める関数.\n
  * nPr = n! / (n - r)！
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
  * return 順列
  */
 static dbl
-get_permutation(calcinfo *tsd, dbl n, dbl r)
+get_permutation(calcinfo *calc, dbl n, dbl r)
 {
     dbl result = 0.0;     /* 計算結果 */
     dbl x = 0.0, y = 1.0; /* 値 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
     clear_math_feexcept();
 
-    x = get_factorial(tsd, n);
-    dbglog(tsd->fmt, x);
+    x = get_factorial(calc, n);
+    dbglog(calc->fmt, x);
     if (isgreater((n - r), 0))
-        y = get_factorial(tsd, n - r);
+        y = get_factorial(calc, n - r);
 
     dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
-    dbglog(tsd->fmt, result);
+    dbglog(calc->fmt, result);
     return result;
 }
 
@@ -522,41 +522,41 @@ get_permutation(calcinfo *tsd, dbl n, dbl r)
  * 組み合わせ数 nCr を求める関数.\n
  * nCr = n! / r! (n - r)！
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
  * return 組み合わせ
  */
 static dbl
-get_combination(calcinfo *tsd, dbl n, dbl r)
+get_combination(calcinfo *calc, dbl n, dbl r)
 {
     dbl result = 0.0;              /* 計算結果 */
     dbl x = 0.0, y = 0.0, z = 1.0; /* 値 */
 
     dbglog("start");
 
-    if (is_error(tsd))
+    if (is_error(calc))
         return EX_ERROR;
 
     if (isless(n, 0) || isless(r, 0) ||
         isless(n, r)) { /* 定義域エラー */
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
     clear_math_feexcept();
 
-    x = get_factorial(tsd, n);
-    y = get_factorial(tsd, r);
+    x = get_factorial(calc, n);
+    y = get_factorial(calc, r);
     if (isgreater((n - r), 0))
-        z = get_factorial(tsd, n - r);
+        z = get_factorial(calc, n - r);
     dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
 
-    check_math_feexcept(tsd);
+    check_math_feexcept(calc);
 
-    dbglog(tsd->fmt, result);
+    dbglog(calc->fmt, result);
     return result;
 }
 

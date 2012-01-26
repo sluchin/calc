@@ -48,26 +48,27 @@ static const char *errormsg[] = {
 /**
  * エラーメッセージ取得
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @return エラーメッセージ
  * @attention 呼び出し元で, clear_error()すること.\n
  *            戻り値ポインタは解放しなければならない.
  */
 uchar *
-get_errormsg(calcinfo *tsd)
+get_errormsg(calcinfo *calc)
 {
     uchar *msg = NULL; /* エラーメッセージ */
 
-    dbglog("start: errorcode=%d", tsd->errorcode);
+    dbglog("start: errorcode=%d", (int)calc->errorcode);
     assert(MAXERROR == NELEMS(errormsg));
 
-    if (tsd->errorcode == E_NONE)
+    if (calc->errorcode <= E_NONE ||
+        MAXERROR <= calc->errorcode)
         return NULL;
 
     dbglog("errormsg=%s, errorcode=%d",
-           errormsg[tsd->errorcode], (int)tsd->errorcode);
+           errormsg[calc->errorcode], (int)calc->errorcode);
 
-    msg = (uchar *)strdup(errormsg[tsd->errorcode]);
+    msg = (uchar *)strdup(errormsg[calc->errorcode]);
     if (!msg) {
         outlog("strdup");
         return NULL;
@@ -79,44 +80,44 @@ get_errormsg(calcinfo *tsd)
 /**
  * エラーコード設定
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] error エラー種別
  * @return なし
  */
 void
-set_errorcode(calcinfo *tsd, ER error)
+set_errorcode(calcinfo *calc, ER error)
 {
     dbglog("start: %d", (int)error);
 
-    if (tsd->errorcode == E_NONE)
-        tsd->errorcode = error;
+    if (calc->errorcode == E_NONE)
+        calc->errorcode = error;
 }
 
 /**
  * エラークリア
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @return なし
  */
 void
-clear_error(calcinfo *tsd)
+clear_error(calcinfo *calc)
 {
     dbglog("start");
-    tsd->errorcode = E_NONE;
+    calc->errorcode = E_NONE;
 }
 
 /**
  * エラー判定
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @retval true エラー
  */
 bool
-is_error(calcinfo *tsd)
+is_error(calcinfo *calc)
 {
-    dbglog("start: errorcode=%d", (int)tsd->errorcode);
+    dbglog("start: errorcode=%d", (int)calc->errorcode);
 
-    if (tsd->errorcode)
+    if (calc->errorcode)
         return true;
 
     return false;
@@ -125,19 +126,19 @@ is_error(calcinfo *tsd)
 /**
  * 数値の妥当性チェック
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] val 値
  * @return なし
  */
 void
-check_validate(calcinfo *tsd, dbl val)
+check_validate(calcinfo *calc, dbl val)
 {
     dbglog("start");
 
     if (isnan(val))
-        set_errorcode(tsd, E_NAN);
+        set_errorcode(calc, E_NAN);
     else if (isinf(val) != 0)
-        set_errorcode(tsd, E_INFINITY);
+        set_errorcode(calc, E_INFINITY);
 
     dbglog("isnan=%d, isinf=%d, fpclassify=%d",
            isnan(val), isinf(val), fpclassify(val));
@@ -146,21 +147,21 @@ check_validate(calcinfo *tsd, dbl val)
 /**
  * 浮動小数点例外チェック
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @return なし
  */
 void
-check_math_feexcept(calcinfo *tsd)
+check_math_feexcept(calcinfo *calc)
 {
     dbglog("start");
 
     if (fetestexcept(FE_DIVBYZERO |
                      FE_OVERFLOW  |
                      FE_UNDERFLOW)) {
-        set_errorcode(tsd, E_INFINITY);
+        set_errorcode(calc, E_INFINITY);
     } else {
         if (fetestexcept(FE_INVALID))
-            set_errorcode(tsd, E_NAN);
+            set_errorcode(calc, E_NAN);
     }
     dbglog("FE_INVALID=%d, FE_DIVBYZERO=%d, FE_OVERFLOW=%d, " \
            "FE_UNDERFLOW=%d, FE_INEXACT=%d",

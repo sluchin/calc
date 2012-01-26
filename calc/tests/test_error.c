@@ -52,7 +52,8 @@ void test_clear_math_feexcept(void);
 void test_check_math_feexcept(void);
 
 /* 内部変数 */
-static testerror error; /**< 関数構造体 */
+static testcalc st_calc;   /**< calc関数構造体 */
+static testerror st_error; /**< error関数構造体 */
 
 /**
  * 初期化処理
@@ -61,8 +62,10 @@ static testerror error; /**< 関数構造体 */
  */
 void cut_startup(void)
 {
-    (void)memset(&error, 0, sizeof(testerror));
-    test_init_error(&error);
+    (void)memset(&st_calc, 0, sizeof(testcalc));
+    (void)memset(&st_error, 0, sizeof(testerror));
+    test_init_calc(&st_calc);
+    test_init_error(&st_error);
 }
 
 /**
@@ -73,21 +76,22 @@ void cut_startup(void)
 void
 test_get_errormsg(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < MAXERROR; i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, "dammy");
-        tsd.errorcode = (ER)i;
-        tsd.answer = get_errormsg(&tsd);
-        cut_assert_equal_string(error.errormsg[i],
-                                (char *)tsd.answer,
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, "dammy");
+        st_calc.readch(&calc);
+        calc.errorcode = (ER)i;
+        calc.answer = get_errormsg(&calc);
+        cut_assert_equal_string(st_error.errormsg[i],
+                                (char *)calc.answer,
                                 cut_message("%s==%s",
-                                            (char *)tsd.answer,
-                                            (char *)error.errormsg));
-        clear_error(&tsd);
-        destroy_answer(&tsd);
+                                            (char *)calc.answer,
+                                            (char *)st_error.errormsg));
+        clear_error(&calc);
+        destroy_answer(&calc);
     }
 }
 
@@ -99,20 +103,21 @@ test_get_errormsg(void)
 void
 test_set_errorcode(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
     int i;
     for (i = 0; i < MAXERROR; i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, "dammy");
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, "dammy");
+        st_calc.readch(&calc);
 
-        set_errorcode(&tsd, (ER)i);
+        set_errorcode(&calc, (ER)i);
         cut_assert_equal_int(i,
-                             (int)tsd.errorcode,
+                             (int)calc.errorcode,
                              cut_message("%d==%d",
-                                         (int)tsd.errorcode,
+                                         (int)calc.errorcode,
                                          i));
-        clear_error(&tsd);
+        clear_error(&calc);
     }
 }
 
@@ -124,16 +129,17 @@ test_set_errorcode(void)
 void
 test_clear_error(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
-    tsd.answer = (uchar *)strdup("dammy");
-    clear_error(&tsd);
+    calc.answer = (uchar *)strdup("dammy");
+    clear_error(&calc);
 
-    cut_assert_equal_int((int)E_NONE, (int)tsd.errorcode);
-    destroy_answer(&tsd);
+    cut_assert_equal_int((int)E_NONE, (int)calc.errorcode);
+    destroy_answer(&calc);
 }
 
 /**
@@ -144,18 +150,19 @@ test_clear_error(void)
 void
 test_is_error(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     /* エラー時, trueを返す */
-    set_errorcode(&tsd, E_SYNTAX);
-    cut_assert_true((cut_boolean)is_error(&tsd));
+    set_errorcode(&calc, E_SYNTAX);
+    cut_assert_true((cut_boolean)is_error(&calc));
 
     /* 正常時, falseを返す */
-    clear_error(&tsd);
-    cut_assert_false((cut_boolean)is_error(&tsd));
+    clear_error(&calc);
+    cut_assert_false((cut_boolean)is_error(&calc));
 }
 
 /**
@@ -167,29 +174,31 @@ void
 test_check_validate(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     result = sqrt(-1);
     dbglog("result=%g", result);
-    check_validate(&tsd, result);
+    check_validate(&calc, result);
     cut_assert_equal_int((int)E_NAN,
-                         (int)tsd.errorcode,
+                         (int)calc.errorcode,
                          cut_message("E_NAN"));
-    clear_error(&tsd);
+    clear_error(&calc);
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     result = pow(10, 10000);
     dbglog("result=%g", result);
-    check_validate(&tsd, result);
+    check_validate(&calc, result);
     cut_assert_equal_int((int)E_INFINITY,
-                         (int)tsd.errorcode,
+                         (int)calc.errorcode,
                          cut_message("E_INFINITY"));
-    clear_error(&tsd);
+    clear_error(&calc);
 }
 
 /**
@@ -201,31 +210,33 @@ void
 test_check_math_feexcept(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     clear_math_feexcept();
     result = log(-1);
     dbglog("result=%g", result);
-    check_math_feexcept(&tsd);
+    check_math_feexcept(&calc);
     cut_assert_equal_int((int)E_NAN,
-                         (int)tsd.errorcode,
+                         (int)calc.errorcode,
                          cut_message("NaN: log(-1)=%g", result));
-    clear_error(&tsd);
+    clear_error(&calc);
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     clear_math_feexcept();
     result = log(0);
     dbglog("result=%g", result);
-    check_math_feexcept(&tsd);
+    check_math_feexcept(&calc);
     cut_assert_equal_int((int)E_INFINITY,
-                         (int)tsd.errorcode,
+                         (int)calc.errorcode,
                          cut_message("Infinity: log(0)=%g", result));
-    clear_error(&tsd);
+    clear_error(&calc);
 }
 
 /**
@@ -237,18 +248,19 @@ void
 test_clear_math_feexcept(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "dammy");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
 
     result = log(-1);
     dbglog("result=%g", result);
     clear_math_feexcept();
-    check_math_feexcept(&tsd);
+    check_math_feexcept(&calc);
     cut_assert_equal_int((int)E_NONE,
-                         (int)tsd.errorcode,
+                         (int)calc.errorcode,
                          cut_message("None: log(-1)=%g clear", result));
-    clear_error(&tsd);
+    clear_error(&calc);
 }
 

@@ -46,6 +46,8 @@ void test_answer_four_func(void);
 void test_answer_error(void);
 /** parse_func_args() 関数テスト */
 void test_parse_func_args(void);
+/** set_digit() 関数テスト */
+void test_set_digit(void);
 /** readch() 関数テスト */
 void test_readch(void);
 /** expression() 関数テスト */
@@ -62,11 +64,11 @@ void test_number(void);
 void test_get_strlen(void);
 
 /* 内部変数 */
-static testcalc calc; /**< 関数構造体 */
+static testcalc st_calc; /**< 関数構造体 */
 
 /* 内部関数 */
 /** バッファセット */
-static void exec_calc(calcinfo *tsd, const char *str);
+static void exec_calc(calcinfo *calc, const char *str);
 
 /** テストデータ構造体(answer char) */
 struct test_data_char {
@@ -213,8 +215,8 @@ static const struct test_data_dbl number_data [] = {
 void
 cut_startup(void)
 {
-    (void)memset(&calc, 0, sizeof(testcalc));
-    test_init_calc(&calc);
+    (void)memset(&st_calc, 0, sizeof(testcalc));
+    test_init_calc(&st_calc);
 }
 
 /**
@@ -225,20 +227,20 @@ cut_startup(void)
 void
 test_answer_four(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(four_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        exec_calc(&tsd, four_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        exec_calc(&calc, four_data[i].expr);
 
         cut_assert_equal_string(four_data[i].answer,
-                                (char *)tsd.answer,
+                                (char *)calc.answer,
                                 cut_message("%s=%s",
                                             four_data[i].expr,
                                             four_data[i].answer));
-        destroy_answer(&tsd);
-        memfree((void **)&tsd, NULL);
+        destroy_answer(&calc);
+        memfree((void **)&calc, NULL);
     }
 }
 
@@ -250,19 +252,19 @@ test_answer_four(void)
 void
 test_answer_func(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(func_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        exec_calc(&tsd, func_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        exec_calc(&calc, func_data[i].expr);
 
         cut_assert_equal_string(func_data[i].answer,
-                                (char *)tsd.answer,
+                                (char *)calc.answer,
                                 cut_message("%s=%s",
                                             func_data[i].expr,
                                             func_data[i].answer));
-        destroy_answer(&tsd);
+        destroy_answer(&calc);
     }
 }
 
@@ -274,19 +276,19 @@ test_answer_func(void)
 void
 test_answer_four_func(void)
 {
-    calcinfo tsd; /* calcinfo構造体 */
+    calcinfo calc; /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(four_func_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        exec_calc(&tsd, four_func_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        exec_calc(&calc, four_func_data[i].expr);
 
         cut_assert_equal_string(four_func_data[i].answer,
-                                (char *)tsd.answer,
+                                (char *)calc.answer,
                                 cut_message("%s=%s",
                                             four_func_data[i].expr,
                                             four_func_data[i].answer));
-        destroy_answer(&tsd);
+        destroy_answer(&calc);
     }
 }
 
@@ -298,19 +300,19 @@ test_answer_four_func(void)
 void
 test_answer_error(void)
 {
-    calcinfo tsd; /* calc情報構造体 */
+    calcinfo calc; /* calc情報構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(error_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        exec_calc(&tsd, error_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        exec_calc(&calc, error_data[i].expr);
 
         cut_assert_equal_string(error_data[i].answer,
-                                (char *)tsd.answer,
+                                (char *)calc.answer,
                                 cut_message("%s=%s",
                                             error_data[i].expr,
                                             error_data[i].answer));
-        destroy_answer(&tsd);
+        destroy_answer(&calc);
     }
 }
 
@@ -323,22 +325,44 @@ void
 test_parse_func_args(void)
 {
     dbl x = 0.0, y = 0.0; /* 値 */
-    calcinfo tsd;         /* calc情報構造体 */
+    calcinfo calc;        /* calc情報構造体 */
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "(235)");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "(235)");
+    st_calc.readch(&calc);
 
-    dbglog("ch=%c", tsd.ch);
-    parse_func_args(&tsd, ARG_1, &x, &y);
+    dbglog("ch=%c", calc.ch);
+    parse_func_args(&calc, ARG_1, &x, &y);
     cut_assert_equal_double(235, 0.0, x);
 
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "(123,235)");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "(123,235)");
+    st_calc.readch(&calc);
 
-    dbglog("ch=%c", tsd.ch);
-    parse_func_args(&tsd, ARG_2, &x, &y);
+    dbglog("ch=%c", calc.ch);
+    parse_func_args(&calc, ARG_2, &x, &y);
     cut_assert_equal_double(123, 0.0, x);
     cut_assert_equal_double(235, 0.0, y);
+}
+
+/**
+ * set_digit() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_set_digit(void)
+{
+    calcinfo calc;                            /* calc情報構造体 */
+    const char *expr = "sin(2)";              /* 式 */
+    const char *expect = "0.909297426825682"; /* 期待する文字列 */
+
+    set_digit(15L);
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    exec_calc(&calc, expr);
+    cut_assert_equal_string(expect, (char *)calc.answer,
+                            cut_message("%s=%s",
+                                        expect, calc.answer));
 }
 
 /**
@@ -349,34 +373,35 @@ test_parse_func_args(void)
 void
 test_readch(void)
 {
-    uchar *ptr = NULL;    /* ポインタ */
-    calcinfo tsd;         /* calc情報構造体 */
+    uchar *ptr = NULL; /* ポインタ */
+    calcinfo calc;     /* calc情報構造体 */
 
     /* スペース・タブを含んだ文字列を設定 */
-    (void)memset(&tsd, 0, sizeof(calcinfo));
-    set_string(&tsd, "te s  t");
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "te s  t");
+    st_calc.readch(&calc);
 
-    dbglog("ch=%c", tsd.ch);
-    cut_assert_equal_int('t', tsd.ch,
-                         cut_message("%c==%c", 't', tsd.ch));
-    calc.readch(&tsd);
-    cut_assert_equal_int('e', tsd.ch,
-                         cut_message("%c==%c", 'e', tsd.ch));
-    calc.readch(&tsd);
-    cut_assert_equal_int('s', tsd.ch,
-                         cut_message("%c==%c", 's', tsd.ch));
-    calc.readch(&tsd);
-    cut_assert_equal_int('t', tsd.ch,
-                         cut_message("%c==%c", 't', tsd.ch));
-    calc.readch(&tsd);
-    cut_assert_equal_int('\0', tsd.ch,
-                         cut_message("ptr=%p", tsd.ptr));
-    ptr = tsd.ptr; /* アドレス保持 */
-    calc.readch(&tsd);
-    cut_assert_equal_int('\0', tsd.ch,
-                         cut_message("ptr=%p", tsd.ptr));
+    dbglog("ch=%c", calc.ch);
+    cut_assert_equal_int('t', calc.ch,
+                         cut_message("%c=%c", 't', calc.ch));
+    st_calc.readch(&calc);
+    cut_assert_equal_int('e', calc.ch,
+                         cut_message("%c=%c", 'e', calc.ch));
+    st_calc.readch(&calc);
+    cut_assert_equal_int('s', calc.ch,
+                         cut_message("%c=%c", 's', calc.ch));
+    st_calc.readch(&calc);
+    cut_assert_equal_int('t', calc.ch,
+                         cut_message("%c=%c", 't', calc.ch));
+    st_calc.readch(&calc);
+    cut_assert_equal_int('\0', calc.ch,
+                         cut_message("ptr=%p", calc.ptr));
+    ptr = calc.ptr; /* アドレス保持 */
+    st_calc.readch(&calc);
+    cut_assert_equal_int('\0', calc.ch,
+                         cut_message("ptr=%p", calc.ptr));
     /* アドレスが変わらないことを確認 */
-    cut_assert_equal_memory(ptr, sizeof(ptr), tsd.ptr, sizeof(tsd.ptr));
+    cut_assert_equal_memory(ptr, sizeof(ptr), calc.ptr, sizeof(calc.ptr));
 }
 
 /**
@@ -388,14 +413,15 @@ void
 test_expression(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(expression_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, expression_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, expression_data[i].expr);
+        st_calc.readch(&calc);
 
-        result = calc.expression(&tsd);
+        result = st_calc.expression(&calc);
         cut_assert_equal_double(expression_data[i].answer,
                                 0.0,
                                 result,
@@ -414,14 +440,15 @@ void
 test_term(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(term_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, term_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, term_data[i].expr);
+        st_calc.readch(&calc);
 
-        result = calc.term(&tsd);
+        result = st_calc.term(&calc);
         cut_assert_equal_double(term_data[i].answer,
                                 0.0,
                                 result,
@@ -429,10 +456,10 @@ test_term(void)
                                             term_data[i].expr,
                                             term_data[i].answer));
         cut_assert_equal_int((int)term_data[i].errorcode,
-                             (int)tsd.errorcode,
+                             (int)calc.errorcode,
                              cut_message("%s error",
                                          term_data[i].expr));
-        clear_error(&tsd);
+        clear_error(&calc);
     }
 }
 
@@ -445,14 +472,15 @@ void
 test_factor(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(factor_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, factor_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, factor_data[i].expr);
+        st_calc.readch(&calc);
 
-        result = calc.factor(&tsd);
+        result = st_calc.factor(&calc);
         cut_assert_equal_double(factor_data[i].answer,
                                 0.0,
                                 result,
@@ -460,10 +488,10 @@ test_factor(void)
                                             factor_data[i].expr,
                                             factor_data[i].answer));
         cut_assert_equal_int((int)factor_data[i].errorcode,
-                             (int)tsd.errorcode,
+                             (int)calc.errorcode,
                              cut_message("%s error",
                                          factor_data[i].expr));
-        clear_error(&tsd);
+        clear_error(&calc);
     }
 }
 
@@ -476,14 +504,15 @@ void
 test_token(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(token_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, token_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, token_data[i].expr);
+        st_calc.readch(&calc);
 
-        result = calc.token(&tsd);
+        result = st_calc.token(&calc);
         cut_assert_equal_double(token_data[i].answer,
                                 0.0,
                                 result,
@@ -491,10 +520,10 @@ test_token(void)
                                             token_data[i].expr,
                                             token_data[i].answer));
         cut_assert_equal_int((int)token_data[i].errorcode,
-                             (int)tsd.errorcode,
+                             (int)calc.errorcode,
                              cut_message("%s error",
                                          token_data[i].expr));
-        clear_error(&tsd);
+        clear_error(&calc);
     }
 }
 
@@ -507,14 +536,15 @@ void
 test_number(void)
 {
     dbl result = 0.0; /* 結果 */
-    calcinfo tsd;     /* calcinfo構造体 */
+    calcinfo calc;    /* calcinfo構造体 */
 
     uint i;
     for (i = 0; i < NELEMS(number_data); i++) {
-        (void)memset(&tsd, 0, sizeof(calcinfo));
-        set_string(&tsd, number_data[i].expr);
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, number_data[i].expr);
+        st_calc.readch(&calc);
 
-        result = calc.number(&tsd);
+        result = st_calc.number(&calc);
         cut_assert_equal_double(number_data[i].answer,
                                 0.0,
                                 result,
@@ -532,35 +562,35 @@ test_number(void)
 void
 test_get_strlen(void)
 {
-    cut_assert_equal_int(5, calc.get_strlen(50000, "%.18g"));
-    cut_assert_equal_int(15, calc.get_strlen(123456789012345, "%.18g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.18g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.18g"));
     // 12345678.9000000004
-    cut_assert_equal_int(19, calc.get_strlen(12345678.9, "%.18g"));
+    cut_assert_equal_int(19, st_calc.get_strlen(12345678.9, "%.18g"));
     // 1234567.89012344996
-    cut_assert_equal_int(19, calc.get_strlen(1234567.89012345, "%.18g"));
+    cut_assert_equal_int(19, st_calc.get_strlen(1234567.89012345, "%.18g"));
 
-    cut_assert_equal_int(5, calc.get_strlen(50000, "%.15g"));
-    cut_assert_equal_int(15, calc.get_strlen(123456789012345, "%.15g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.15g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.15g"));
     // 12345678.9
-    cut_assert_equal_int(10, calc.get_strlen(12345678.9, "%.15g"));
+    cut_assert_equal_int(10, st_calc.get_strlen(12345678.9, "%.15g"));
     // 1234567.89012345
-    cut_assert_equal_int(16, calc.get_strlen(1234567.89012345, "%.15g"));
+    cut_assert_equal_int(16, st_calc.get_strlen(1234567.89012345, "%.15g"));
 
     // 5e+04
-    cut_assert_equal_int(5, calc.get_strlen(50000, "%.1g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.1g"));
     // 1e+14
-    cut_assert_equal_int(5, calc.get_strlen(123456789012345, "%.1g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(123456789012345, "%.1g"));
     // 1e+07
-    cut_assert_equal_int(5, calc.get_strlen(12345678.9, "%.1g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(12345678.9, "%.1g"));
     // 1e+06
-    cut_assert_equal_int(5, calc.get_strlen(1234567.89012345, "%.1g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(1234567.89012345, "%.1g"));
 
-    cut_assert_equal_int(5, calc.get_strlen(50000, "%.30g"));
-    cut_assert_equal_int(15, calc.get_strlen(123456789012345, "%.30g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.30g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.30g"));
     // 12345678.9000000003725290298462
-    cut_assert_equal_int(31, calc.get_strlen(12345678.9, "%.30g"));
+    cut_assert_equal_int(31, st_calc.get_strlen(12345678.9, "%.30g"));
     // 1234567.89012344996444880962372
-    cut_assert_equal_int(31, calc.get_strlen(1234567.89012345, "%.30g"));
+    cut_assert_equal_int(31, st_calc.get_strlen(1234567.89012345, "%.30g"));
 }
 
 /**
@@ -570,13 +600,10 @@ test_get_strlen(void)
  * @return calcinfo構造体
  */
 static void
-exec_calc(calcinfo *tsd, const char *str)
+exec_calc(calcinfo *calc, const char *str)
 {
-    (void)memset(tsd, 0, sizeof(calcinfo));
-    set_string(tsd, str);
-    tsd->answer = create_answer(tsd);
-    if (!tsd->answer)
-        cut_error("tsd=%p", tsd);
-    dbglog("%p answer=%s", tsd->answer, tsd->answer);
+    if (!create_answer(calc, (uchar *)str))
+        cut_error("calc=%p", calc);
+    dbglog("%p answer=%s", calc->answer, calc->answer);
 }
 

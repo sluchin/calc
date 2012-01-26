@@ -53,10 +53,10 @@
 
 /** スレッドデータ構造体 */
 struct send_data {
-    uchar *sdata;          /**< 送信データ */
-    uchar rdata[BUF_SIZE]; /**< 受信データ */
-    uchar *expected;         /**< 期待される文字列 */
-    size_t len;            /**< 送信データ長 */
+    uchar sdata[BUF_SIZE];    /**< 送信データ */
+    uchar rdata[BUF_SIZE];    /**< 受信データ */
+    uchar expected[BUF_SIZE]; /**< 期待される文字列 */
+    size_t len;               /**< 送信データ長 */
 };
 
 /* プロトタイプ */
@@ -169,9 +169,9 @@ test_thread(void)
     } else {
         dbglog("parent: cpid=%d", (int)cpid);
 
-        csock = inet_sock_client();
-        if (csock < 0)
-            return;
+        //csock = inet_sock_client();
+        //if (csock < 0)
+        //    return;
 
         int i;
         for (i = 0; i < MAX_THREADS; i++) {
@@ -183,8 +183,8 @@ test_thread(void)
             }
             (void)memset(dt, 0, sizeof(struct send_data));
 
-            dt->sdata = expr;
-            dt->expected = expected;
+            (void)memcpy(dt->sdata, expr, sizeof(dt->sdata));
+            (void)memcpy(dt->expected, expr, sizeof(dt->expected));
             dt->len = sizeof(expr);
 
             retval = pthread_create(&tid[i], NULL, client_thread, dt);
@@ -193,19 +193,22 @@ test_thread(void)
                 memfree((void **)&dt, NULL);
                 break;
             }
+            dbglog("tid=%lu", (ulong)tid[i]);
         }
 
         for (i = 0; i < MAX_THREADS; i++) {
             if (tid[i]) {
-                retval = pthread_join(tid[i], &thread_ret);
+                dbglog("tid=%lu", (ulong)tid[i]);
+                //retval = pthread_join(tid[i], &thread_ret);
+                retval = pthread_join(tid[i], NULL);
                 if (retval) {
                     cut_notify("pthread_join=%lu, i=%d", (ulong)tid[i], i);
                     continue;
                 }
-                if (thread_ret) {
-                    cut_notify("thread error=%ld", (long)thread_ret);
-                    break;
-                }
+                //if (thread_ret) {
+                //    cut_notify("thread error=%ld", (long)thread_ret);
+                //    break;
+                //}
             }
         }
 
@@ -399,7 +402,7 @@ client_thread(void *arg)
     sockfd = inet_sock_client();
     if (sockfd < 0) {
         memfree((void **)&dt, NULL);
-        return (void *)EXIT_FAILURE;
+        pthread_exit((void *)EXIT_FAILURE);
     }
 
     dbglog("sdata=%s", dt->sdata);
@@ -409,7 +412,7 @@ client_thread(void *arg)
     if (retval < 0) {
         outlog("send_client: sockfd=%d", sockfd);
         memfree((void **)&dt, NULL);
-        return (void *)EXIT_FAILURE;
+        pthread_exit((void *)EXIT_FAILURE);
     }
 
     /* 受信 */
@@ -417,16 +420,23 @@ client_thread(void *arg)
     if (retval < 0) {
         outlog("recv_client: sockfd=%d", sockfd);
         memfree((void **)&dt, NULL);
-        return (void *)EXIT_FAILURE;
+        pthread_exit((void *)EXIT_FAILURE);
     }
     dbglog("rdata=%s", dt->rdata);
 
     retval = strcmp((char *)dt->expected, (char *)dt->rdata);
     memfree((void **)&dt, NULL);
-    if (retval) { /* 文字列が一致しない */
+    if (retval) /* 文字列が一致しない */
         pthread_exit((void *)EXIT_FAILURE);
-        return (void *)EXIT_FAILURE;
+
+    retval = shutdown(sockfd, SHUT_RDWR);
+    if (retval < 0) {
+        outlog("shutdown: sockfd=%d", sockfd);
+        pthread_exit((void *)EXIT_FAILURE);
     }
+
+    close_sock(&sockfd);
+
     pthread_exit((void *)EXIT_SUCCESS);
     return (void *)EXIT_SUCCESS;
 }
@@ -553,8 +563,6 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
-        cut_notify("SIGINT");
     if (signal(SIGTERM, SIG_IGN) < 0)
         cut_notify("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)

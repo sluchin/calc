@@ -33,22 +33,22 @@
 #include "func.h"
 
 /** エラーメッセージ取得 */
-uchar *get_errormsg(calcinfo *tsd);
+uchar *get_errormsg(calcinfo *calc);
 
 /** エラーコード設定 */
-void set_errorcode(calcinfo *tsd, ER error);
+void set_errorcode(calcinfo *calc, ER error);
 
 /** エラークリア */
-void clear_error(calcinfo *tsd);
+void clear_error(calcinfo *calc);
 
 /** エラー判定 */
-bool is_error(calcinfo *tsd);
+bool is_error(calcinfo *calc);
 
 /** 数値の妥当性チェック */
-void check_validate(calcinfo *tsd, dbl val);
+void check_validate(calcinfo *calc, dbl val);
 
 /** 浮動小数点例外チェック */
-void check_math_feexcept(calcinfo *tsd);
+void check_math_feexcept(calcinfo *calc);
 
 /** 浮動小数点例外チェッククリア */
 void clear_math_feexcept(void);

@@ -23,33 +23,44 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
+#include <stdio.h> /* snprintf */
 #include <cutter.h> /* cutter library */
 
 #include "log.h"
 #include "def.h"
+#include "calc.h"
 #include "test_common.h"
 
 /**
  * 文字列設定
  *
- * @param[in] tsd calcinfo構造体
+ * @param[in] calc calcinfo構造体
  * @param[in] str 文字列
  * @return なし
  */
 void
-set_string(calcinfo *tsd, const char *str)
+set_string(calcinfo *calc, const char *str)
 {
-    size_t length = 0;    /* 文字列長 */
-    uchar *expr = NULL;   /* 式 */
+    size_t length = 0;  /* 文字列長 */
+    uchar *expr = NULL; /* 式 */
+    int retval = 0;     /* 戻り値 */
 
     length = strlen(str);
     expr = (uchar *)cut_take_strndup(str, length);
     if (!expr)
         cut_error("cut_take_strndup=%p", expr);
 
-    init_calc(tsd, expr, 12L);
+    calc->ptr = expr;
 
-    dbglog("tsd=%p", tsd);
+    /* フォーマット設定 */
+    retval = snprintf(calc->fmt, sizeof(calc->fmt),
+                      "%s%ld%s", "%.", 12L, "g");
+    if (retval < 0)
+        cut_error("snprintf");
+
+    dbglog("fmt=%s", calc->fmt);
+    dbglog("calc=%p", calc);
     dbglog("%p expr=%s, length=%u", expr, expr, length);
 }
 

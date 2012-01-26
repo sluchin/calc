@@ -39,9 +39,6 @@
 #include "calc.h"
 #include "option.h"
 
-/* 外部変数 */
-long g_digit = DEFAULT_DIGIT; /**< 桁数 */
-
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
@@ -75,17 +72,19 @@ void
 parse_args(int argc, char *argv[])
 {
     int opt = 0;         /* オプション */
+    long digit = 0;      /* 桁数 */
     const int base = 10; /* 基数 */
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'd': /* 有効桁数設定 */
-            g_digit = strtol(optarg, NULL, base);
-            if (g_digit <= 0 || MAX_DIGIT < g_digit) {
+            digit = strtol(optarg, NULL, base);
+            if (digit <= 0 || MAX_DIGIT < digit) {
                 (void)fprintf(stderr, "Digits is 1-%ld.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }
+            set_digit(digit);
             break;
         case 't': /* 処理時間計測 */
             g_tflag = true;
