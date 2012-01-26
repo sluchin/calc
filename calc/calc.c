@@ -77,6 +77,7 @@ static void readch(calcinfo *calc);
  * 計算結果
  *
  * @param[in] calc calcinfo構造体
+ * @param[in] expr 式
  * @return 新たに領域確保された結果文字列ポインタ
  * @retval NULL エラー
  * @attention destroy_answerを必ず呼ぶこと.

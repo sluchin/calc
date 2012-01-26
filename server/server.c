@@ -72,7 +72,7 @@ static void set_thread_sigmask(sigset_t sigmask);
  */
 int
 set_port_string(const char *port)
-    {
+{
     if (sizeof(portno) <= strlen(port)) {
         outlog("port: length=%zu", strlen(port));
         return EX_NG;

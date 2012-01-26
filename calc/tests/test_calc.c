@@ -596,6 +596,7 @@ test_get_strlen(void)
 /**
  * 計算実行
  *
+ * @param[in] calc calcinfo構造体
  * @param[in] str 文字列
  * @return calcinfo構造体
  */

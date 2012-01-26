@@ -70,7 +70,7 @@ struct _calcinfo {
 };
 typedef struct _calcinfo calcinfo;
 
-/** 入力 */
+/** 計算結果 */
 uchar *create_answer(calcinfo *calc, const uchar *expr);
 
 /** メモリ解放 */

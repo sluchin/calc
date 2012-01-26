@@ -1,5 +1,5 @@
 /**
- * @file  client/test/thread_client.c
+ * @file  client/tests/thread_client.c
  * @brief クライアントスレッドテスト
  *
  * @author higashi
