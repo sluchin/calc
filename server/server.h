@@ -23,7 +23,6 @@
 /* 外部変数 */
 extern volatile sig_atomic_t g_sig_handled; /**< シグナル */
 extern bool g_gflag;                        /**< gオプションフラグ */
-extern long g_digit;                        /**< 桁数 */
 
 /** ソケット情報構造体 */
 struct _thread_data {

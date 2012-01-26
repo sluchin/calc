@@ -4,6 +4,7 @@
  *
  * オプション
  *  -p, --port    ポート番号指定\n
+ *  -d, --digit   有効桁数設定\n
  *  -g, --debug   デバッグモード\n
  *  -h, --help    ヘルプ表示\n
  *  -V, --version バージョン情報表示\n
@@ -77,6 +78,7 @@ void
 parse_args(int argc, char *argv[])
 {
     int opt = 0;         /* オプション */
+    long digit = 0;      /* 桁数 */
     const int base = 10; /* 基数 */
 
     dbglog("start");
@@ -98,11 +100,12 @@ parse_args(int argc, char *argv[])
             }
             break;
         case 'd': /* 有効桁数設定 */
-            g_digit = strtol(optarg, NULL, base);
-            if (g_digit <= 0 || MAX_DIGIT < g_digit) {
-                (void)fprintf(stderr, "Maximum digit is %ld.\n", MAX_DIGIT);
+            digit = strtol(optarg, NULL, base);
+            if (digit <= 0 || MAX_DIGIT < digit) {
+                (void)fprintf(stderr, "Digits is 1-%ld.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }
+            set_digit(digit);
             break;
         case 'g': /* デバッグモード */
             g_gflag = true;
@@ -141,14 +144,16 @@ static void
 print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(stderr, "  -p, --port              %s%s%s",
+    (void)fprintf(stderr, "  -p, --port             %s%s%s",
                   "set port number or service name (default: ",
                   DEFAULT_PORTNO, ")\n");
-    (void)fprintf(stderr, "  -g, --debug             %s",
+    (void)fprintf(stderr, "  -d, --digit            %s%ld%s",
+                  "set digit (1-", MAX_DIGIT, ")\n");
+    (void)fprintf(stderr, "  -g, --debug            %s",
                   "execute for debug mode\n");
-    (void)fprintf(stderr, "  -h, --help              %s",
+    (void)fprintf(stderr, "  -h, --help             %s",
                   "display this help and exit\n");
-    (void)fprintf(stderr, "  -V, --version           %s",
+    (void)fprintf(stderr, "  -V, --version          %s",
                   "output version information and exit\n");
 }
 

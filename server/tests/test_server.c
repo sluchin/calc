@@ -150,7 +150,7 @@ test_thread(void)
     int retval = 0;                   /* 戻り値 */
     struct send_data *dt = NULL;      /* 送信データ構造体 */
     pthread_t tid[MAX_THREADS] = {0}; /* スレッドID */
-    void *thread_ret = NULL;          /* スレッド戻り値 */
+    //void *thread_ret = NULL;          /* スレッド戻り値 */
 
     ssock = server_sock(port);
 

@@ -48,7 +48,6 @@
 /* 外部変数 */
 volatile sig_atomic_t g_sig_handled = 0; /**< シグナル */
 bool g_gflag = false;                    /**< gオプションフラグ */
-long g_digit = DEFAULT_DIGIT;            /**< 桁数 */
 
 /* 内部関数 */
 /** サーバプロセス */
