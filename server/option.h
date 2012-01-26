@@ -29,11 +29,6 @@
 #include <stdbool.h> /* bool */
 
 #define DEFAULT_PORTNO "12345"     /**< デフォルトポート番号 */
-#define HOST_SIZE      48          /**< ホスト名サイズ */
-#define PORT_SIZE      48          /**< ポート名サイズ */
-
-/* 外部変数 */
-extern char g_portno[PORT_SIZE]; /**< ポート番号またはサービス名 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

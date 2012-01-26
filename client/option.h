@@ -30,12 +30,6 @@
 
 #define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
 #define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
-#define HOST_SIZE      48          /**< ホスト名サイズ */
-#define PORT_SIZE      48          /**< ポート名サイズ */
-
-/* 外部変数 */
-extern char g_hostname[HOST_SIZE]; /**< IPアドレスまたはホスト名 */
-extern char g_portno[PORT_SIZE];   /**< ポート番号またはサービス名 */
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);

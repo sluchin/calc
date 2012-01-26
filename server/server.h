@@ -20,6 +20,10 @@
 #include "data.h"
 #include "calc.h"
 
+#define HOST_SIZE 48 /**< ホスト名サイズ */
+#define PORT_SIZE  6 /**< ポート名サイズ */
+
+
 /* 外部変数 */
 extern volatile sig_atomic_t g_sig_handled; /**< シグナル */
 extern bool g_gflag;                        /**< gオプションフラグ */
@@ -33,8 +37,11 @@ struct _thread_data {
 };
 typedef struct _thread_data thread_data;
 
+/** ポート番号文字列設定 */
+int set_port_string(const char *port);
+
 /** ソケット接続 */
-int server_sock(const char *port);
+int server_sock();
 
 /** 接続受付 */
 void server_loop(int sock);

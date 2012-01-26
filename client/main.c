@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     }
 
     /* ソケット接続 */
-    sockfd = connect_sock(g_hostname, g_portno);
+    sockfd = connect_sock();
     if (sockfd < 0) {
         (void)fprintf(stderr, "Connect error\n");
         exit(EX_CONNECT_ERR);

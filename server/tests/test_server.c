@@ -60,12 +60,14 @@ struct send_data {
 };
 
 /* プロトタイプ */
+/** set_port_string() 関数テスト */
+void test_set_port_string(void);
 /** server_sock() 関数テスト */
 void test_server_sock(void);
 /** server_loop() 関数テスト */
 void test_server_loop(void);
 /** server_proc() 関数テスト */
-//void test_server_proc(void);
+void test_server_proc(void);
 
 /* 内部変数 */
 static testserver server;                  /**< 関数構造体 */
@@ -78,8 +80,6 @@ static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 
 /* 内部関数 */
-/* スレッド関数 */
-static void *client_thread(void *arg);
 /** 送信 */
 static int send_client(int sockfd, uchar *sbuf, size_t length);
 /** 受信 */
@@ -136,93 +136,22 @@ cut_teardown(void)
 }
 
 /**
- * スレッドテスト
+ * test_set_port_string() 関数テスト
  *
- * クライアントを MAX_THREADS 数スレッド化する.
  * @return なし
  */
 void
-test_thread(void)
+test_set_port_string(void)
 {
-    pid_t cpid = 0;                   /* 子プロセスID */
-    pid_t w = 0;                      /* wait戻り値 */
-    int status = 0;                   /* wait引数 */
-    int retval = 0;                   /* 戻り値 */
-    struct send_data *dt = NULL;      /* 送信データ構造体 */
-    pthread_t tid[MAX_THREADS] = {0}; /* スレッドID */
-    //void *thread_ret = NULL;          /* スレッド戻り値 */
+    int retval = 0;                  /* 戻り値 */
+    const char *err_port = "123456"; /* エラー用 */
 
-    ssock = server_sock(port);
-
-    cpid = fork();
-    if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
-    }
-
-    if (cpid == 0) {
-        dbglog("child");
-
-        server_loop(ssock);
-        exit(EXIT_SUCCESS);
-
-    } else {
-        dbglog("parent: cpid=%d", (int)cpid);
-
-        //csock = inet_sock_client();
-        //if (csock < 0)
-        //    return;
-
-        int i;
-        for (i = 0; i < MAX_THREADS; i++) {
-            dt = (struct send_data *)malloc(sizeof(struct send_data));
-            if (!dt) {
-                cut_error("malloc: size=%zu, i=%d(%d)",
-                          sizeof(struct send_data), i, errno);
-                break;
-            }
-            (void)memset(dt, 0, sizeof(struct send_data));
-
-            (void)memcpy(dt->sdata, expr, sizeof(dt->sdata));
-            (void)memcpy(dt->expected, expr, sizeof(dt->expected));
-            dt->len = sizeof(expr);
-
-            retval = pthread_create(&tid[i], NULL, client_thread, dt);
-            if (retval) {
-                cut_notify("pthread_create=%lu, i=%d", (ulong)tid[i], i);
-                memfree((void **)&dt, NULL);
-                break;
-            }
-            dbglog("tid=%lu", (ulong)tid[i]);
-        }
-
-        for (i = 0; i < MAX_THREADS; i++) {
-            if (tid[i]) {
-                dbglog("tid=%lu", (ulong)tid[i]);
-                //retval = pthread_join(tid[i], &thread_ret);
-                retval = pthread_join(tid[i], NULL);
-                if (retval) {
-                    cut_notify("pthread_join=%lu, i=%d", (ulong)tid[i], i);
-                    continue;
-                }
-                //if (thread_ret) {
-                //    cut_notify("thread error=%ld", (long)thread_ret);
-                //    break;
-                //}
-            }
-        }
-
-        retval = kill(cpid, SIGINT);
-        if (retval < 0) {
-            cut_error("kill: cpid=%d(%d)", cpid, errno);
-            return;
-        }
-
-        w = wait(&status);
-        if (w < 0)
-            cut_notify("wait(%d)", errno);
-        dbglog("w=%d", (int)w);
-    }
+    /* 正常系 */
+    retval = set_port_string(port);
+    cut_assert_equal_int(EX_OK, retval);
+    /* 異常系 */
+    retval = set_port_string(err_port);
+    cut_assert_equal_int(EX_NG, retval);
 }
 
 /**
@@ -235,7 +164,9 @@ test_server_sock(void)
 {
     dbglog("start");
 
-    ssock = server_sock(port);
+    if (set_port_string(port) < 0)
+        cut_error("set_port_string");
+    ssock = server_sock();
     dbglog("server_sock=%d", ssock);
 
     cut_assert_not_equal_int(EX_NG, ssock);
@@ -259,7 +190,9 @@ test_server_loop(void)
     int status = 0; /* wait引数 */
     int retval = 0; /* 戻り値 */
 
-    ssock = server_sock(port);
+    if (set_port_string(port) < 0)
+        cut_error("set_port_string");
+    ssock = server_sock();
 
     cpid = fork();
     if (cpid < 0) {
@@ -324,7 +257,9 @@ test_server_proc(void)
     thread_data *dt = NULL; /* ソケット情報構造体 */
     void *servret = NULL;   /* テスト関数戻り値 */
 
-    ssock = server_sock(port);
+    if (set_port_string(port) < 0)
+        cut_error("set_port_string");
+    ssock = server_sock();
 
     cpid = fork();
     if (cpid < 0) {
@@ -390,55 +325,6 @@ test_server_proc(void)
         if (WEXITSTATUS(status))
             cut_error("child failed");
     }
-}
-
-static void *
-client_thread(void *arg)
-{
-    struct send_data *dt = (struct send_data *)arg; /* 送信データ構造体 */
-    int retval = 0;                                 /* 戻り値 */
-    int sockfd = 0;                                 /* ソケット */
-
-    sockfd = inet_sock_client();
-    if (sockfd < 0) {
-        memfree((void **)&dt, NULL);
-        pthread_exit((void *)EXIT_FAILURE);
-    }
-
-    dbglog("sdata=%s", dt->sdata);
-
-    /* 送信 */
-    retval = send_client(sockfd, dt->sdata, dt->len);
-    if (retval < 0) {
-        outlog("send_client: sockfd=%d", sockfd);
-        memfree((void **)&dt, NULL);
-        pthread_exit((void *)EXIT_FAILURE);
-    }
-
-    /* 受信 */
-    retval = recv_client(sockfd, dt->rdata);
-    if (retval < 0) {
-        outlog("recv_client: sockfd=%d", sockfd);
-        memfree((void **)&dt, NULL);
-        pthread_exit((void *)EXIT_FAILURE);
-    }
-    dbglog("rdata=%s", dt->rdata);
-
-    retval = strcmp((char *)dt->expected, (char *)dt->rdata);
-    memfree((void **)&dt, NULL);
-    if (retval) /* 文字列が一致しない */
-        pthread_exit((void *)EXIT_FAILURE);
-
-    retval = shutdown(sockfd, SHUT_RDWR);
-    if (retval < 0) {
-        outlog("shutdown: sockfd=%d", sockfd);
-        pthread_exit((void *)EXIT_FAILURE);
-    }
-
-    close_sock(&sockfd);
-
-    pthread_exit((void *)EXIT_SUCCESS);
-    return (void *)EXIT_SUCCESS;
 }
 
 /**

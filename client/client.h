@@ -31,6 +31,9 @@
 
 #include "def.h"
 
+#define HOST_SIZE 48 /**< ホスト名サイズ */
+#define PORT_SIZE  6 /**< ポート名サイズ */
+
 /* 外部変数 */
 extern volatile sig_atomic_t g_sig_handled; /**< シグナル */
 extern struct sigaction g_sigaction;        /**< sigaction構造体 */
@@ -51,8 +54,14 @@ enum _st_client {
 };
 typedef enum _st_client st_client;
 
+/** ポート番号文字列設定 */
+int set_port_string(const char *port);
+
+/** ホスト名文字列設定 */
+int set_host_string(const char *host);
+
 /** ソケット接続 */
-int connect_sock(const char *host, const char *port);
+int connect_sock(void);
 
 /** ソケット送受信 */
 st_client client_loop(int sock);

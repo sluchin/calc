@@ -61,6 +61,10 @@ static int pfd2[] = { -1, -1 };            /**< パイプ2 */
 static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
 /* プロトタイプ */
+/** set_port_string() 関数テスト */
+void test_set_port_string(void);
+/** set_host_string() 関数テスト */
+void test_set_host_string(void);
 /** connect_sock() 関数テスト */
 void test_connect_sock(void);
 /** client_loop() 関数テスト */
@@ -149,6 +153,45 @@ cut_teardown(void)
 }
 
 /**
+ * test_set_port_string() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_set_port_string(void)
+{
+    int retval = 0;                  /* 戻り値 */
+    const char *err_port = "123456"; /* エラー用 */
+
+    /* 正常系 */
+    retval = set_port_string(port);
+    cut_assert_equal_int(EX_OK, retval);
+    /* 異常系 */
+    retval = set_port_string(err_port);
+    cut_assert_equal_int(EX_NG, retval);
+}
+
+/**
+ * test_set_host_string() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_set_host_string(void)
+{
+    int retval = 0;        /* 戻り値 */
+    const char *err_host = /* エラー用 */
+        "123456789012345678901234567890123456789012345678";
+
+    /* 正常系 */
+    retval = set_host_string(hostname);
+    cut_assert_equal_int(EX_OK, retval);
+    /* 異常系 */
+    retval = set_host_string(err_host);
+    cut_assert_equal_int(EX_NG, retval);
+}
+
+/**
  * test_connect_sock() 関数テスト
  *
  * @return なし
@@ -164,7 +207,11 @@ test_connect_sock(void)
         return;
     }
 
-    csock = connect_sock(hostname, port);
+    if (set_host_string(hostname) < 0)
+        cut_error("set_host_string");
+    if (set_port_string(port) < 0)
+        cut_error("set_port_string");
+    csock = connect_sock();
     dbglog("connect_sock=%d", csock);
 
     cut_assert_not_equal_int(EX_NG, csock);
@@ -223,7 +270,11 @@ test_client_loop(void)
         dbglog("child");
 
         /* コネクト */
-        csock = connect_sock(hostname, port);
+        if (set_host_string(hostname) < 0)
+            cut_error("set_host_string");
+        if (set_port_string(port) < 0)
+            cut_error("set_port_string");
+        csock = connect_sock();
         if (csock < 0) {
             outlog("connect_sock");
             close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W],
@@ -397,7 +448,11 @@ test_read_sock(void)
     if (cpid == 0) { /* 子プロセス */
         dbglog("child");
 
-        csock = connect_sock(hostname, port);
+        if (set_host_string(hostname) < 0)
+            cut_error("set_host_string");
+        if (set_port_string(port) < 0)
+            cut_error("set_port_string");
+        csock = connect_sock();
         if (csock < 0) {
             outlog("connect_sock");
             close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], NULL);
@@ -503,7 +558,11 @@ exec_send_sock(uchar *sbuf, size_t length)
     if (cpid == 0) { /* 子プロセス */
         dbglog("child");
 
-        csock = connect_sock(hostname, port);
+        if (set_host_string(hostname) < 0)
+            cut_error("set_host_string");
+        if (set_port_string(port) < 0)
+            cut_error("set_port_string");
+        csock = connect_sock();
         if (csock < 0) {
             cut_error("pipe_fd2(%d)", errno);
             close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], NULL);

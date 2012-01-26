@@ -65,6 +65,8 @@ bool g_gflag = false;                    /**< gオプションフラグ */
 bool g_tflag = false;                    /**< tオプションフラグ */
 
 /* 内部変数 */
+static char hostname[HOST_SIZE] = {0};   /**< ホスト名 */
+static char portno[PORT_SIZE] = {0};     /**< ポート番号 */
 static uint start_time = 0;              /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
 static uchar *expr = NULL;               /**< 入力バッファ */
@@ -81,14 +83,46 @@ static sigset_t get_sigmask(void);
 static void exit_memfree(void);
 
 /**
+ * ポート番号文字列設定
+ *
+ * @param[in] port ポート番号
+ * @retval EX_NG エラー
+ */
+int
+set_port_string(const char *port)
+{
+    if (sizeof(portno) <= strlen(port)) {
+        outlog("port: length=%zu", strlen(port));
+        return EX_NG;
+    }
+    (void)strcpy(portno, port);
+    return EX_OK;
+}
+
+/**
+ * ホスト名文字列設定
+ *
+ * @param[in] host ホスト名
+ * @retval EX_NG エラー
+ */
+int
+set_host_string(const char *host)
+{
+    if (sizeof(hostname) <= strlen(host)) {
+        outlog("host: length=%zu", strlen(host));
+        return EX_NG;
+    }
+    (void)strcpy(hostname, host);
+    return EX_OK;
+}
+
+/**
  * ソケット接続
  *
- * @param[in] host ホスト名またはIPアドレス　
- * @param[in] port ポート番号
  * @return ソケット
  */
 int
-connect_sock(const char *host, const char *port)
+connect_sock(void)
 {
     struct sockaddr_in server; /* ソケットアドレス情報構造体 */
     int sock = -1;             /* ソケット */
@@ -100,9 +134,9 @@ connect_sock(const char *host, const char *port)
     (void)memset(&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
 
-    if (set_hostname(&server, host) < 0)
+    if (set_hostname(&server, hostname) < 0)
         return EX_NG;
-    if (set_port(&server, port) < 0)
+    if (set_port(&server, portno) < 0)
         return EX_NG;
 
     /* ソケット生成 */

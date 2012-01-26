@@ -30,21 +30,21 @@
 #include <syslog.h> /* syslog */
 
 #define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       LOG_INFO, LOG_PID, get_progname(),        \
-        __FILE__, __LINE__, __FUNCTION__
+#define LOGARGS       get_progname(), __FILE__, __LINE__, __FUNCTION__
+#define SYSARGS       LOG_INFO, LOG_PID, LOGARGS
 
 /* エラー時ログメッセージ出力 */
-#define outlog(fmt, ...)        system_log(LOGARGS, fmt, ## __VA_ARGS__)
+#define outlog(fmt, ...)        system_log(SYSARGS, fmt, ## __VA_ARGS__)
 #define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
-#define outdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
+#define outdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ## __VA_ARGS__)
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
-#  define dbglog(fmt, ...)        system_dbg_log(LOGARGS, fmt, ## __VA_ARGS__)
+#  define dbglog(fmt, ...)        system_dbg_log(SYSARGS, fmt, ## __VA_ARGS__)
 #  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
-#  define dbgdump(a, b, fmt, ...) dump_sys(LOGARGS, a, b, fmt, ## __VA_ARGS__)
+#  define dbgdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ## __VA_ARGS__)
 #  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ## __VA_ARGS__)
-#  define dbgtrace()              systrace(LOGARGS)
-#  define dbgterm(fd)             sys_print_termattr(LOGARGS, fd)
+#  define dbgtrace()              systrace(SYSARGS)
+#  define dbgterm(fd)             sys_print_termattr(SYSARGS, fd)
 #else
 #  define dbglog(fmt, ...)        do { } while (0)
 #  define stdlog(fmt, ...)        do { } while (0)

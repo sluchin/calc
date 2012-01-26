@@ -41,9 +41,6 @@
 #include "server.h"
 #include "option.h"
 
-/* 外部変数 */
-char g_portno[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
-
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
@@ -84,18 +81,15 @@ parse_args(int argc, char *argv[])
     dbglog("start");
 
     /* デフォルトのポート番号を設定 */
-    (void)memset(g_portno, 0, sizeof(g_portno));
-    (void)strncpy(g_portno, DEFAULT_PORTNO, sizeof(g_portno) - 1);
+    if (set_port_string(DEFAULT_PORTNO) < 0)
+        exit(EXIT_FAILURE);
 
     while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'p':
-            if (strlen(optarg) < sizeof(g_portno)) {
-                (void)memset(g_portno, 0, sizeof(g_portno));
-                (void)strncpy(g_portno, optarg, sizeof(g_portno) - 1);
-            } else {
-                print_help(get_progname());
+            if (set_port_string(optarg) < 0) {
+                fprintf(stderr, "Portno size %d", PORT_SIZE);
                 exit(EXIT_FAILURE);
             }
             break;

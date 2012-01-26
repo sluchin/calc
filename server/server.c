@@ -49,6 +49,9 @@
 volatile sig_atomic_t g_sig_handled = 0; /**< シグナル */
 bool g_gflag = false;                    /**< gオプションフラグ */
 
+/* 内部変数 */
+static char portno[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
+
 /* 内部関数 */
 /** サーバプロセス */
 static void *server_proc(void *arg);
@@ -62,13 +65,29 @@ static sigset_t get_sigmask(void);
 static void set_thread_sigmask(sigset_t sigmask);
 
 /**
+ * ポート番号文字列設定
+ *
+ * @param[in] port ポート番号
+ * @retval EX_NG エラー
+ */
+int
+set_port_string(const char *port)
+    {
+    if (sizeof(portno) <= strlen(port)) {
+        outlog("port: length=%zu", strlen(port));
+        return EX_NG;
+    }
+    (void)strcpy(portno, port);
+    return EX_OK;
+}
+
+/**
  * ソケット接続
  *
- * @param[in] port ポート番号またはサービス名
  * @return ソケット
  */
 int
-server_sock(const char *port)
+server_sock(void)
 {
     struct sockaddr_in addr; /* ソケットアドレス情報構造体 */
     int retval = 0;          /* 戻り値 */
@@ -83,7 +102,7 @@ server_sock(const char *port)
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     /* ポート番号またはサービス名を設定 */
-    if (set_port(&addr, port) < 0)
+    if (set_port(&addr, portno) < 0)
         return EX_NG;
 
     /* ソケット生成 */

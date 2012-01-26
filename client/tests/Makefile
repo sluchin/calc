@@ -13,26 +13,35 @@ INCLUDES = -I$(srcdir) -I$(pardir) -I$(libcalcdir) -I/usr/include/cutter
 CFLAGS = -g -Wall -O2 -fPIC -DUNITTEST
 DFLAGS = -g -Wall -O2 -fPIC -DUNITTEST -D_DEBUG
 LDFLAGS =  -L$(srcdir) -L$(pardir) -L$(libcalcdir)
-LIBS = -lcutter -lcalcc
+LIBS = -lpthread
+CLIENTLIBS = -lcalcc
+CUTTERLIBS = -lcutter
+UTILLIBS = -lcalcutil
 COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 CLIENTSOBJ = test_client.so
 CLIENTOBJ = test_client.o
+OBJECTS = thread_client.o
+PROGRAM = thcalcc
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(CLIENTSOBJ)
+all: $(OBJECTS) $(CLIENTSOBJ) $(PROGRAM)
 
 $(CLIENTSOBJ): $(CLIENTOBJ)
 	@$(RM) $@
-	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(LIBS)
+	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(CLIENTLIBS) $(CUTTERLIBS)
+
+$(PROGRAM): $(OBJECTS)
+	@$(RM) $@
+	$(LINK) -o $@ $^ $(CLIENTLIBS) $(UTILLIBS) $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<
 
-$(CLIENTOBJ): Makefile
+$(OBJECTS) $(CLIENTOBJ): Makefile
 
 .PHONY: debug
 debug:
@@ -48,7 +57,7 @@ strip:
 
 .PHONY: clean
 clean:
-	@$(RM) *.so *.o
+	@$(RM) *.so *.o $(PROGRAM)
 
 .PHONY: help
 help:

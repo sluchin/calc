@@ -70,7 +70,7 @@ int main(int argc, char *argv[], char *envp[])
     parse_args(argc, argv);
 
     /* ソケット接続 */
-    sockfd = server_sock(g_portno);
+    sockfd = server_sock();
     if (sockfd < 0)
         exit(EXIT_FAILURE);
 
