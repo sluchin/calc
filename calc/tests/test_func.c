@@ -52,8 +52,6 @@ void test_get_deg(void);
 void test_get_pow(void);
 /** get_sqrt() 関数テスト */
 void test_get_sqrt(void);
-/** check_math() 関数テスト */
-void test_check_math(void);
 /** get_factorial() 関数テスト */
 void test_get_factorial(void);
 /** get_permutation() 関数テスト */
@@ -73,16 +71,6 @@ struct test_data {
     dbl answer;
     dbl x;
     dbl y;
-    ER errorcode;
-    dbl error;
-};
-
-/** テストデータ構造体(check_math) */
-struct test_data_math {
-    char expr[MAX_STRING];
-    dbl answer;
-    dbl x;
-    dbl (*callback)(dbl);
     ER errorcode;
     dbl error;
 };
@@ -134,20 +122,6 @@ static const struct test_data deg_data[] = {
 static const struct test_data sqrt_data[] = {
     { "sqrt(2)",  1.41421356237,  2, 0, E_NONE, 0.00000000001 },
     { "sqrt(-1)", 0.0,           -1, 0, E_NAN,  0             }
-};
-
-/** check_math() 関数テスト用データ */
-static const struct test_data_math math_data[] = {
-    { "abs(-2)",    2,              -2,   fabs,  E_NONE, 0.0            },
-    { "sin(2)" ,    0.909297426826,  2,   sin,   E_NONE, 0.000000000001 },
-    { "cos(2)",    -0.416146836547,  2,   cos,   E_NONE, 0.000000000001 },
-    { "tan(2)",    -2.18503986326,   2,   tan,   E_NONE, 0.00000000001  },
-    { "asin(0.5)",  0.523598775598,  0.5, asin,  E_NONE, 0.000000000001 },
-    { "acos(0.5)",  1.0471975512,    0.5, acos,  E_NONE, 0.0000000001   },
-    { "atan(0.5)",  0.463647609001,  0.5, atan,  E_NONE, 0.000000000001 },
-    { "exp(2)" ,    7.38905609893,   2,   exp,   E_NONE, 0.00000000001  },
-    { "ln(2)",      0.69314718056,   2,   log,   E_NONE, 0.00000000001  },
-    { "log(2)",     0.301029995664,  2,   log10, E_NONE, 0.000000000001 },
 };
 
 /** get_factorial() 関数テスト用データ */
@@ -400,34 +374,6 @@ test_get_sqrt(void)
                              cut_message("%s error",
                                          sqrt_data[i].expr));
         clear_error(&calc);
-    }
-}
-
-/**
- * check_math() 関数テスト
- *
- * @return なし
- */
-void
-test_check_math(void)
-{
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
-
-    uint i;
-    for (i = 0; i < NELEMS(math_data); i++) {
-        (void)memset(&calc, 0, sizeof(calcinfo));
-        set_string(&calc, math_data[i].expr);
-        st_calc.readch(&calc);
-
-        result = st_func.check_math(&calc, math_data[i].x,
-                                    math_data[i].callback);
-        cut_assert_equal_double(math_data[i].answer,
-                                math_data[i].error,
-                                result,
-                                cut_message("%s=%.12g",
-                                            math_data[i].expr,
-                                            math_data[i].answer));
     }
 }
 

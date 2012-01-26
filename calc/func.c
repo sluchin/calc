@@ -55,8 +55,6 @@ static dbl get_rad(calcinfo *calc, dbl x);
 static dbl get_deg(calcinfo *calc, dbl x);
 /** 平方根 */
 static dbl get_sqrt(calcinfo *calc, dbl x);
-/** 関数エラーチェック */
-static dbl check_math(calcinfo *calc, dbl x, dbl (*callback)(dbl));
 /** 階乗取得 */
 static dbl get_factorial(calcinfo *calc, dbl n);
 /** 順列(nPr) */
@@ -143,6 +141,8 @@ exec_func(calcinfo *calc, const char *func)
 
     dbglog("start: func=%s", func);
 
+    clear_math_feexcept();
+
     int i;
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
         if (!strcmp(fstring[i].funcname, func)) {
@@ -163,7 +163,7 @@ exec_func(calcinfo *calc, const char *func)
                 break;
             case MATH:
                 parse_func_args(calc, ARG_1, &x, &y);
-                result = check_math(calc, x, finfo[ftype].func.math);
+                result = finfo[ftype].func.math(x);
                 break;
             default:
                 outlog("no functype");
@@ -174,6 +174,8 @@ exec_func(calcinfo *calc, const char *func)
     }
     if (!exec) /* エラー */
         set_errorcode(calc, E_NOFUNC);
+
+    check_math_feexcept(calc);
 
     dbglog("x=%.15g, y=%.15g", x, y);
     dbglog(calc->fmt, result);
@@ -207,8 +209,6 @@ get_pow(calcinfo *calc, dbl x, dbl y)
     clear_math_feexcept();
 
     result = pow(x, y);
-
-    check_math_feexcept(calc);
 
     return result;
 }
@@ -331,8 +331,6 @@ get_rad(calcinfo *calc, dbl x)
 
     result = x * DEF_PI / 180;
 
-    check_validate(calc, result);
-
     return result;
 }
 
@@ -354,8 +352,6 @@ get_deg(calcinfo *calc, dbl x)
         return EX_ERROR;
 
     result = x * 180 / DEF_PI;
-
-    check_validate(calc, result);
 
     return result;
 }
@@ -384,38 +380,7 @@ get_sqrt(calcinfo *calc, dbl x)
         return EX_ERROR;
     }
 
-    clear_math_feexcept();
-
     result = sqrt(x);
-
-    check_math_feexcept(calc);
-
-    return result;
-}
-
-/**
- * 関数エラーチェック
- *
- * @param[in] calc calcinfo構造体
- * @param[in] x 値
- * @param[in] callback コールバック関数
- * @return 絶対値
- */
-static dbl
-check_math(calcinfo *calc, dbl x, dbl (*callback)(dbl))
-{
-    dbl result = 0.0; /* 計算結果 */
-
-    dbglog("start");
-
-    if (is_error(calc))
-        return EX_ERROR;
-
-    clear_math_feexcept();
-
-    result = callback(x);
-
-    check_math_feexcept(calc);
 
     return result;
 }
@@ -448,8 +413,6 @@ get_factorial(calcinfo *calc, dbl n)
         return EX_ERROR;
     }
 
-    clear_math_feexcept();
-
     if (isless(n, 0)) { /* マイナス */
         n *= -1;
         minus = true;
@@ -462,8 +425,6 @@ get_factorial(calcinfo *calc, dbl n)
     if (minus)
         result *= -1;
     minus = false;
-
-    check_math_feexcept(calc);
 
     dbglog(calc->fmt, result);
     return result;
@@ -498,8 +459,6 @@ get_permutation(calcinfo *calc, dbl n, dbl r)
         return EX_ERROR;
     }
 
-    clear_math_feexcept();
-
     x = get_factorial(calc, n);
     dbglog(calc->fmt, x);
     if (isgreater((n - r), 0))
@@ -508,8 +467,6 @@ get_permutation(calcinfo *calc, dbl n, dbl r)
     dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
-
-    check_math_feexcept(calc);
 
     dbglog(calc->fmt, result);
     return result;
@@ -544,8 +501,6 @@ get_combination(calcinfo *calc, dbl n, dbl r)
         return EX_ERROR;
     }
 
-    clear_math_feexcept();
-
     x = get_factorial(calc, n);
     y = get_factorial(calc, r);
     if (isgreater((n - r), 0))
@@ -553,8 +508,6 @@ get_combination(calcinfo *calc, dbl n, dbl r)
     dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
-
-    check_math_feexcept(calc);
 
     dbglog(calc->fmt, result);
     return result;
@@ -569,7 +522,6 @@ test_init_func(testfunc *func)
     func->get_rad = get_rad;
     func->get_deg = get_deg;
     func->get_sqrt = get_sqrt;
-    func->check_math = check_math;
     func->get_factorial = get_factorial;
     func->get_permutation = get_permutation;
     func->get_combination = get_combination;
