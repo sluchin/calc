@@ -40,6 +40,7 @@
 #include <getopt.h>  /* getopt_long */
 #include <assert.h>  /* assert */
 
+#include "def.h"
 #include "log.h"
 #include "net.h"
 #include "data.h"
@@ -270,7 +271,7 @@ client_thread(void *arg)
     pthread_cleanup_pop(1);
 
     pthread_exit((void *)EX_SUCCESS);
-    return EX_SUCCESS;
+    return (void *)EX_SUCCESS;
 }
 
 /**

@@ -563,14 +563,14 @@ void
 test_get_strlen(void)
 {
     cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.18g"));
-    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.18g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345LL, "%.18g"));
     // 12345678.9000000004
     cut_assert_equal_int(19, st_calc.get_strlen(12345678.9, "%.18g"));
     // 1234567.89012344996
     cut_assert_equal_int(19, st_calc.get_strlen(1234567.89012345, "%.18g"));
 
     cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.15g"));
-    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.15g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345LL, "%.15g"));
     // 12345678.9
     cut_assert_equal_int(10, st_calc.get_strlen(12345678.9, "%.15g"));
     // 1234567.89012345
@@ -579,14 +579,14 @@ test_get_strlen(void)
     // 5e+04
     cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.1g"));
     // 1e+14
-    cut_assert_equal_int(5, st_calc.get_strlen(123456789012345, "%.1g"));
+    cut_assert_equal_int(5, st_calc.get_strlen(123456789012345LL, "%.1g"));
     // 1e+07
     cut_assert_equal_int(5, st_calc.get_strlen(12345678.9, "%.1g"));
     // 1e+06
     cut_assert_equal_int(5, st_calc.get_strlen(1234567.89012345, "%.1g"));
 
     cut_assert_equal_int(5, st_calc.get_strlen(50000, "%.30g"));
-    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345, "%.30g"));
+    cut_assert_equal_int(15, st_calc.get_strlen(123456789012345LL, "%.30g"));
     // 12345678.9000000003725290298462
     cut_assert_equal_int(31, st_calc.get_strlen(12345678.9, "%.30g"));
     // 1234567.89012344996444880962372
