@@ -89,7 +89,7 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'p':
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno size %d", PORT_SIZE);
+                fprintf(stderr, "Portno size %d", PORT_SIZE - 1);
                 exit(EXIT_FAILURE);
             }
             break;

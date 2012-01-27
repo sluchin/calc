@@ -332,7 +332,7 @@ test_parse_func_args(void)
     st_calc.readch(&calc);
 
     dbglog("ch=%c", calc.ch);
-    parse_func_args(&calc, ARG_1, &x, &y);
+    parse_func_args(&calc, &x, NULL);
     cut_assert_equal_double(235, 0.0, x);
 
     (void)memset(&calc, 0, sizeof(calcinfo));
@@ -340,7 +340,7 @@ test_parse_func_args(void)
     st_calc.readch(&calc);
 
     dbglog("ch=%c", calc.ch);
-    parse_func_args(&calc, ARG_2, &x, &y);
+    parse_func_args(&calc, &x, &y, NULL);
     cut_assert_equal_double(123, 0.0, x);
     cut_assert_equal_double(235, 0.0, y);
 }

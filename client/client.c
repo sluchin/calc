@@ -65,8 +65,8 @@ bool g_gflag = false;                    /**< gオプションフラグ */
 bool g_tflag = false;                    /**< tオプションフラグ */
 
 /* 内部変数 */
-static char hostname[HOST_SIZE] = {0};   /**< ホスト名 */
-static char portno[PORT_SIZE] = {0};     /**< ポート番号 */
+static char hostname[HOST_SIZE];         /**< ホスト名 */
+static char portno[PORT_SIZE];           /**< ポート番号 */
 static uint start_time = 0;              /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
 static uchar *expr = NULL;               /**< 入力バッファ */
@@ -95,6 +95,7 @@ set_port_string(const char *port)
         outlog("port: length=%zu", strlen(port));
         return EX_NG;
     }
+    (void)memset(portno, 0, sizeof(portno));
     (void)strcpy(portno, port);
     return EX_OK;
 }
@@ -112,6 +113,7 @@ set_host_string(const char *host)
         outlog("host: length=%zu", strlen(host));
         return EX_NG;
     }
+    (void)memset(hostname, 0, sizeof(hostname));
     (void)strcpy(hostname, host);
     return EX_OK;
 }

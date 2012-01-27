@@ -31,8 +31,10 @@
 
 #include "def.h"
 
-#define HOST_SIZE 48 /**< ホスト名サイズ */
-#define PORT_SIZE  6 /**< ポート名サイズ */
+#define HOST_SIZE 48               /**< ホスト名サイズ */
+#define PORT_SIZE  6               /**< ポート名サイズ */
+#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
+#define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
 
 /* 外部変数 */
 extern volatile sig_atomic_t g_sig_handled; /**< シグナル */

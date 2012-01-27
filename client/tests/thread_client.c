@@ -1,6 +1,15 @@
 /**
  * @file  client/tests/thread_client.c
- * @brief クライアントスレッドテスト
+ * @brief サーバストレステスト
+ *
+ * クライアント送信をスレッド化する.
+ *
+ * オプション
+ *  -i, --ipaddress  IPアドレス指定\n
+ *  -p, --port       ポート番号指定\n
+ *  -t, --threads    スレッド数設定\n
+ *  -h, --help       ヘルプ表示\n
+ *  -V, --version    バージョン情報表示\n
  *
  * @author higashi
  * @date 2012-01-25 higashi 新規作成
@@ -28,17 +37,18 @@
 #include <string.h>  /* memset strlen */
 #include <signal.h>  /* signal */
 #include <pthread.h> /* pthread */
+#include <getopt.h>  /* getopt_long */
 #include <assert.h>  /* assert */
 
 #include "log.h"
 #include "net.h"
 #include "data.h"
 #include "memfree.h"
-#include "option.h"
+#include "version.h"
 #include "client.h"
 
 #define MAX_THREADS 1000 /**< スレッド数 */
-#define BUF_SIZE     256 /**< バッファサイズ */
+#define BUF_SIZE      30 /**< バッファサイズ */
 
 /** スレッドデータ構造体 */
 struct _thread_data {
@@ -52,10 +62,20 @@ struct _thread_data {
 typedef struct _thread_data thread_data;
 
 /* 内部変数 */
-char expr[MAX_THREADS][BUF_SIZE];   /**< 式 */
-char answer[MAX_THREADS][BUF_SIZE]; /**< 答え */
-char *hostname = "127.0.0.1";       /**< ホスト名 */
-char *port = "12345";               /**< ポート番号 */
+static int threads = 0; /**< スレッド数 */
+
+/** オプション情報構造体(ロング) */
+static struct option longopts[] = {
+    { "ipaddress", required_argument, NULL, 'i' },
+    { "port",      required_argument, NULL, 'p' },
+    { "threads",   required_argument, NULL, 't' },
+    { "help",      no_argument,       NULL, 'h' },
+    { "version",   no_argument,       NULL, 'V' },
+    { NULL,        0,                 NULL, 0   }
+};
+
+/** オプション情報文字列(ショート) */
+static const char *shortopts = "p:i:t:hV";
 
 /* 内部関数 */
 /** スレッド生成 */
@@ -66,8 +86,17 @@ static void *client_thread(void *arg);
 static void thread_cleanup(void *arg);
 /** スレッドメモリ解放ハンドラ */
 static void thread_memfree(void *arg);
+/** オプション引数 */
+static void parse_args(int argc, char *argv[]);
+/** ヘルプの表示 */
+static void print_help(const char *progname);
+/** バージョン情報表示 */
+static void print_version(const char *progname);
+/** getoptエラー表示 */
+static void parse_error(const int c, const char *msg);
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
+
 
 /**
  * main関数
@@ -84,6 +113,9 @@ int main(int argc, char *argv[])
 
     /* シグナルハンドラ設定 */
     set_sig_handler();
+
+    /* オプション引数 */
+    parse_args(argc, argv);
 
     /* バッファリングしない */
     if (setvbuf(stdin, (char *)NULL, _IONBF, 0))
@@ -106,58 +138,63 @@ int main(int argc, char *argv[])
 static void
 create_threads(void)
 {
-    int retval = 0;                   /* 戻り値 */
-    thread_data *dt = NULL;           /* 送信データ構造体 */
-    pthread_t tid[MAX_THREADS] = {0}; /* スレッドID */
-    void *thread_ret = NULL;          /* スレッド戻り値 */
-    char tmp[48];                     /* 一時バッファ */
+    int retval = 0;                 /* 戻り値 */
+    thread_data *dt = NULL;         /* 送信データ構造体 */
+    pthread_t tid[threads];         /* スレッドID */
+    void *thread_ret = NULL;        /* スレッド戻り値 */
+    char tmp[48];                   /* 一時バッファ */
+    char expr[threads][BUF_SIZE];   /* 式 */
+    char answer[threads][BUF_SIZE]; /* 答え */
 
     /* データ作成 */
     int i;
-    for (i = 0; i < MAX_THREADS; i++) {
+    for (i = 0; i < threads; i++) {
         (void)memset(tmp, 0, sizeof(tmp));
         (void)memset(expr[i], 0, sizeof(expr[i]));
         (void)snprintf(tmp, sizeof(tmp), "%d", i);
         (void)strncpy(expr[i], "1+", sizeof(expr[i]) - 1);
         (void)strncat(expr[i], tmp, sizeof(expr[i]) - strlen(expr[i]) - 1);
+        (void)memset(answer[i], 0, sizeof(answer[i]));
         (void)snprintf(answer[i], sizeof(answer[i]), "%d", (1 + i));
     }
 
-    for (i = 0; i < MAX_THREADS; i++) {
+    (void)memset(tid, 0, sizeof(tid));
+    int j;
+    for (j = 0; j < threads; j++) {
         dt = (thread_data *)malloc(sizeof(thread_data));
         if (!dt) {
             outstd("malloc: size=%zu", sizeof(thread_data));
             break;
         }
         (void)memset(dt, 0, sizeof(thread_data));
-        (void)memcpy(dt->expr, expr[i], sizeof(dt->expr));
-        (void)memcpy(dt->expected, answer[i], sizeof(dt->expected));
-        retval = pthread_create(&tid[i], NULL, client_thread, dt);
+        (void)memcpy(dt->expr, expr[j], sizeof(dt->expr));
+        (void)memcpy(dt->expected, answer[j], sizeof(dt->expected));
+        retval = pthread_create(&tid[j], NULL, client_thread, dt);
         if (retval) {
-            outstd("pthread_create=%lu, i=%d", (ulong)tid[i], i);
+            outstd("pthread_create=%lu, j=%d", (ulong)tid[j], j);
             memfree((void **)&dt, NULL);
             break;
         }
-        outstd("pthread_create: tid=%lu", (ulong)tid[i]);
+        stdlog("pthread_create: tid=%lu", (ulong)tid[j]);
     }
 
-    for (i = 0; i < MAX_THREADS; i++) {
-        if (tid[i]) {
-            dbglog("tid=%lu", (ulong)tid[i]);
-            retval = pthread_join(tid[i], &thread_ret);
+    int k;
+    for (k = 0; k < threads; k++) {
+        if (tid[k]) {
+            dbglog("tid=%lu", (ulong)tid[k]);
+            retval = pthread_join(tid[k], &thread_ret);
             if (retval) {
-                outstd("pthread_join=%lu, i=%jd", (ulong)tid[i], i);
+                outstd("pthread_join=%lu, k=%jd", (ulong)tid[k], k);
                 continue;
             }
-            if (thread_ret) {
+            if (thread_ret)
                 outstd("thread error=%ld", (long)thread_ret);
-                break;
-            }
-            outstd("pthread_join=%ld: tid=%lu",
-                   (long)thread_ret, (ulong)tid[i]);
+            stdlog("pthread_join=%ld: tid=%lu",
+                   (long)thread_ret, (ulong)tid[k]);
             assert(0 == thread_ret);
         }
     }
+    (void)fprintf(stderr, "threads: %d", j);
 }
 
 /**
@@ -177,17 +214,9 @@ client_thread(void *arg)
 
     pthread_cleanup_push(thread_cleanup, &dt);
 
-    if (set_host_string(hostname) < 0) {
-        outstd("set_host_string");
-        pthread_exit((void *)EX_FAILURE);
-    }
-    if (set_port_string(port) < 0) {
-        outstd("set_port_string");
-        pthread_exit((void *)EX_FAILURE);
-    }
     dt->sock = connect_sock();
     if (dt->sock < 0) {
-        outstd("Connect error\n");
+        outstd("Connect error");
         pthread_exit((void *)EX_CONNECT_ERR);
     }
 
@@ -224,10 +253,10 @@ client_thread(void *arg)
         pthread_exit((void *)EX_RECV_ERR);
     dbglog("answer=%p, length=%zu", dt->answer, length);
 
-    outstd("%s", dt->answer);
+    stdlog("%s", dt->answer);
 
     retval = strcmp((char *)dt->expected, (char *)dt->answer);
-    outstd("strcmp=%d", retval);
+    stdlog("strcmp=%d", retval);
     assert(0 == retval);
 
     retval = shutdown(dt->sock, SHUT_RDWR);
@@ -273,6 +302,130 @@ thread_memfree(void *arg)
     void **ptr = (void **)arg;
     dbglog("start: *ptr=%p, ptr=%p", *ptr, ptr);
     memfree(ptr, NULL);
+}
+
+/**
+ * オプション引数
+ *
+ * オプション引数ごとに処理を分岐する.
+ * @param[in] argc 引数の数
+ * @param[in] argv コマンド引数・オプション引数
+ * @return なし
+ */
+static void
+parse_args(int argc, char *argv[])
+{
+    int opt = 0;         /* オプション */
+    const int base = 10; /* 基数 */
+
+    dbglog("start");
+
+    /* デフォルトのポート番号を設定 */
+    if (set_port_string(DEFAULT_PORTNO) < 0)
+        exit(EXIT_FAILURE);
+
+    /* デフォルトのIPアドレスを設定 */
+    if (set_host_string(DEFAULT_IPADDR) < 0)
+        exit(EXIT_FAILURE);
+
+    /* デフォルトのスレッド数を設定 */
+    threads = MAX_THREADS;
+
+    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+        dbglog("opt=%c, optarg=%s", opt, optarg);
+        switch (opt) {
+        case 'i': /* IPアドレス指定 */
+            if (set_host_string(optarg) < 0) {
+                fprintf(stderr, "Hostname size %d", HOST_SIZE);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'p': /* ポート番号指定 */
+            if (set_port_string(optarg) < 0) {
+                fprintf(stderr, "Portno size %d", PORT_SIZE);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 't': /* スレッド数設定 */
+            threads = (int)strtol(optarg, NULL, base);
+            break;
+        case 'h': /* ヘルプ表示 */
+            print_help(get_progname());
+            exit(EXIT_SUCCESS);
+        case 'V': /* バージョン情報表示 */
+            print_version(get_progname());
+            exit(EXIT_SUCCESS);
+        case '?':
+        case ':':
+            parse_error(opt, NULL);
+            exit(EXIT_FAILURE);
+        default:
+            parse_error(opt, "internal error");
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (optind < argc) {
+        printf("non-option ARGV-elements: ");
+        while (optind < argc)
+            printf("%s ", argv[optind++]);
+        printf("\n");
+    }
+}
+
+/**
+ * ヘルプ表示
+ *
+ * ヘルプを表示する.
+ * @param[in] progname プログラム名
+ * @return なし
+ */
+static void
+print_help(const char *progname)
+{
+    (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
+    (void)fprintf(stderr, "  -i, --ipaddress        %s%s%s",
+                  "set ip address or host name (default: ",
+                  DEFAULT_IPADDR, ")\n");
+    (void)fprintf(stderr, "  -p, --port             %s%s%s",
+                  "set port number or service name (default: ",
+                  DEFAULT_PORTNO, ")\n");
+    (void)fprintf(stderr, "  -t, --threads          %s",
+                  "threads count\n");
+    (void)fprintf(stderr, "  -t, --time             %s",
+                  "print time\n");
+    (void)fprintf(stderr, "  -h, --help             %s",
+                  "display this help and exit\n");
+    (void)fprintf(stderr, "  -V, --version          %s",
+                  "output version information and exit\n");
+}
+
+/**
+ * バージョン情報表示
+ *
+ * バージョン情報を表示する.
+ * @param[in] progname プログラム名
+ * @return なし
+ */
+static void
+print_version(const char *progname)
+{
+    (void)fprintf(stderr, "%s %s\n", progname, VERSION);
+}
+
+/**
+ * getopt エラー表示
+ *
+ * getopt が異常な動作をした場合, エラーを表示する.
+ * @param[in] c オプション引数
+ * @param[in] msg メッセージ文字列
+ * @return なし
+ */
+static void
+parse_error(const int c, const char *msg)
+{
+    if (msg)
+        (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
+    (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }
 
 /**

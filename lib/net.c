@@ -28,7 +28,7 @@
 #include <unistd.h>     /* close */
 #include <ctype.h>      /* isdigit */
 #include <sys/types.h>  /* send recv */
-#include <sys/socket.h> /* send recv shutdown */
+#include <sys/socket.h> /* send recv */
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */

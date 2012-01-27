@@ -36,6 +36,7 @@
 #include <ctype.h>    /* isdigit isalpha */
 #include <math.h>     /* powl */
 #include <pthread.h>  /* pthread_once */
+#include <stdarg.h>   /* va_list va_arg */
 #include <signal.h>   /* sigaction */
 #ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
@@ -176,14 +177,16 @@ destroy_answer(void *calc)
  * 引数解析
  *
  * @param[in] calc calcinfo構造体
- * @param[in] type 引数のタイプ
  * @param[out] x 値
- * @param[out] y 値
+ * @param[out] ... 可変引数
  * @return なし
  */
 void
-parse_func_args(calcinfo *calc, const argtype type, dbl *x, dbl *y)
+parse_func_args(calcinfo *calc, dbl *x, ...)
 {
+    dbl *val = NULL; /* 値 */
+    va_list ap;      /* va_list */
+
     dbglog("start");
 
     if (is_error(calc))
@@ -198,15 +201,19 @@ parse_func_args(calcinfo *calc, const argtype type, dbl *x, dbl *y)
     *x = expression(calc);
     dbglog(calc->fmt, *x);
 
-    if (type == ARG_2) {
+    va_start(ap, x);
+
+    while ((val = va_arg(ap, dbl *)) != NULL) {
         if (calc->ch != ',') {
             set_errorcode(calc, E_SYNTAX);
             return;
         }
         readch(calc);
-        *y = expression(calc);
-        dbglog(calc->fmt, *y);
+        *val = expression(calc);
+        dbglog(calc->fmt, *val);
     }
+
+    va_end(ap);
 
     if (calc->ch != ')') {
         set_errorcode(calc, E_SYNTAX);

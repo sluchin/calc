@@ -154,15 +154,15 @@ exec_func(calcinfo *calc, const char *func)
                 result = finfo[ftype].func.func0(calc);
                 break;
             case FUNC1:
-                parse_func_args(calc, ARG_1, &x, &y);
+                parse_func_args(calc, &x, NULL);
                 result = finfo[ftype].func.func1(calc, x);
                 break;
             case FUNC2:
-                parse_func_args(calc, ARG_2, &x, &y);
+                parse_func_args(calc, &x, &y, NULL);
                 result = finfo[ftype].func.func2(calc, x, y);
                 break;
             case MATH:
-                parse_func_args(calc, ARG_1, &x, &y);
+                parse_func_args(calc, &x, NULL);
                 result = finfo[ftype].func.math(x);
                 break;
             default:

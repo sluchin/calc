@@ -28,8 +28,6 @@
 
 #include <stdbool.h> /* bool */
 
-#define DEFAULT_PORTNO "12345"     /**< デフォルトポート番号 */
-
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 

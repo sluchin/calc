@@ -28,9 +28,6 @@
 
 #include <stdbool.h> /* bool */
 
-#define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
-#define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
-
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 

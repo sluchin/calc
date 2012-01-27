@@ -50,7 +50,7 @@ volatile sig_atomic_t g_sig_handled = 0; /**< シグナル */
 bool g_gflag = false;                    /**< gオプションフラグ */
 
 /* 内部変数 */
-static char portno[PORT_SIZE] = {0}; /**< ポート番号またはサービス名 */
+static char portno[PORT_SIZE];           /**< ポート番号またはサービス名 */
 
 /* 内部関数 */
 /** サーバプロセス */
@@ -77,6 +77,7 @@ set_port_string(const char *port)
         outlog("port: length=%zu", strlen(port));
         return EX_NG;
     }
+    (void)memset(portno, 0, sizeof(portno));
     (void)strcpy(portno, port);
     return EX_OK;
 }

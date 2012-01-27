@@ -40,14 +40,6 @@
 /* 外部変数 */
 extern bool g_tflag; /**< tオプションフラグ */
 
-/** 引数の数 */
-enum _argtype {
-    ARG_0 = 0,
-    ARG_1,
-    ARG_2
-};
-typedef enum _argtype argtype;
-
 /** エラー種別 */
 enum _ER {
     E_NONE = 0,  /**< エラーなし */
@@ -77,7 +69,7 @@ uchar *create_answer(calcinfo *calc, const uchar *expr);
 void destroy_answer(void *calc);
 
 /** 引数解析 */
-void parse_func_args(calcinfo *calc, const argtype num, dbl *x, dbl *y);
+void parse_func_args(calcinfo *calc, dbl *x, ...);
 
 /** 桁数設定 */
 void set_digit(long digit);

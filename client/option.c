@@ -92,13 +92,13 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'i': /* IPアドレス指定 */
             if (set_host_string(optarg) < 0) {
-                fprintf(stderr, "Hostname size %d", HOST_SIZE);
+                fprintf(stderr, "Hostname size %d", HOST_SIZE - 1);
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno size %d", PORT_SIZE);
+                fprintf(stderr, "Portno size %d", PORT_SIZE - 1);
                 exit(EXIT_FAILURE);
             }
             break;
