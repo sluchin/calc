@@ -24,14 +24,13 @@
  */
 
 #include <stdio.h>     /* tmpnam */
-#include <unistd.h>    /* access dup2 fork STDERR_FILENO */
+#include <unistd.h>    /* access fork */
 #include <fcntl.h>     /* open fcntl */
 #include <arpa/inet.h> /* inet_ntoa */
 #include <sys/stat.h>  /* chmod */
-#include <sys/wait.h>  /* wait */
+#include <sys/wait.h>  /* wait waitpid */
 #include <errno.h>     /* errno */
-#include <pthread.h>   /* pthread */
-#include <signal.h>    /* sigaction signal */
+#include <signal.h>    /* signal */
 #include <cutter.h>    /* cutter library */
 
 #include "def.h"

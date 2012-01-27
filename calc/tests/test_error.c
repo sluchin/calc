@@ -24,9 +24,6 @@
  */
 
 #include <math.h>   /* sqrt log */
-#include <fcntl.h>  /* open */
-#include <unistd.h> /* dup2 close */
-#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"

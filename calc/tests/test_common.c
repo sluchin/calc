@@ -24,7 +24,7 @@
  */
 
 
-#include <stdio.h> /* snprintf */
+#include <stdio.h>  /* snprintf */
 #include <cutter.h> /* cutter library */
 
 #include "log.h"

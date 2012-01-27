@@ -24,9 +24,9 @@
  */
 
 #include <unistd.h>   /* pipe fork */
-#include <sys/wait.h> /* wait */
+#include <sys/wait.h> /* wait waitpid */
 #include <errno.h>    /* errno */
-#include <signal.h>   /* signal sigaction */
+#include <signal.h>   /* signal */
 #include <cutter.h>   /* cutter library */
 
 #include "def.h"

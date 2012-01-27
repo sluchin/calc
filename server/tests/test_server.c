@@ -23,17 +23,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>      /* snprintf */
-#include <string.h>     /* memset strndup */
-#include <unistd.h>     /* close pipe fork */
-#include <fcntl.h>      /* open */
+#include <stdio.h>      /* setvbuf stdin stdout */
+#include <string.h>     /* memset */
+#include <unistd.h>     /* pipe fork */
 #include <sys/socket.h> /* socket setsockopt */
-#include <sys/types.h>  /* setsockopt */
-#include <arpa/inet.h>  /* inet_addr ntohl */
-#include <sys/select.h> /* select */
+#include <sys/types.h>  /* sockopt etc... */
+#include <arpa/inet.h>  /* ntohl */
 #include <sys/wait.h>   /* wait */
-#include <pthread.h>    /* pthread */
-#include <signal.h>     /* signal sigaction */
+#include <signal.h>     /* signal */
 #include <errno.h>      /* errno */
 #include <cutter.h>     /* cutter library */
 

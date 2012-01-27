@@ -24,10 +24,6 @@
  */
 
 #include <ctype.h>  /* isalpha */
-#include <math.h>   /* abs sqrt sin cos tan etc... */
-#include <fcntl.h>  /* open */
-#include <unistd.h> /* dup2 close */
-#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"

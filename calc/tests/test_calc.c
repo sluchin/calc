@@ -23,9 +23,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <fcntl.h>  /* open */
-#include <unistd.h> /* close dup2 */
-#include <errno.h>  /* errno */
 #include <cutter.h> /* cutter library */
 
 #include "def.h"

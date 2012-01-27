@@ -25,9 +25,9 @@
 
 #include <stdio.h>    /* tmpnam */
 #include <unistd.h>   /* dup2 unlink pipe fork */
-#include <fcntl.h>    /* open */
+#include <fcntl.h>    /* open creat */
 #include <sys/stat.h> /* chmod */
-#include <sys/wait.h> /* wait */
+#include <sys/wait.h> /* wait waitpid */
 #include <signal.h>   /* signal */
 #include <errno.h>    /* errno */
 #include <cutter.h>   /* cutter library */
