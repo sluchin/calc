@@ -31,13 +31,13 @@
  * メモリ解放
  *
  * freeした後, NULLを代入する.
- * 最後の引数はNULLにする.
  * 例: memfree((void **)pointer, NULL);
  * void **にキャストしなければ警告が出る.
  *
  * @param[in,out] ptr freeするポインタ
  * @param[in,out] ... 可変引数
  * @return なし
+ * @attention 最後の引数はNULLにすること.
  */
 void
 memfree(void** ptr, ...)

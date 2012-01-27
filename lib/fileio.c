@@ -230,7 +230,7 @@ redirect(int fd, const char *path)
  * @param[in,out] fd ファイルディスクリプタ
  * @param[in] ... 可変引数
  * @retval EX_NG エラー
- * @attention 最後の引数は必ず NULL にすること.
+ * @attention 最後の引数はNULLにすること.
  */
 int
 close_fd(int *fd, ...)

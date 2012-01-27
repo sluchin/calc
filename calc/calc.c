@@ -180,6 +180,7 @@ destroy_answer(void *calc)
  * @param[out] x 値
  * @param[out] ... 可変引数
  * @return なし
+ * @attention 最後の引数はNULLにすること.
  */
 void
 parse_func_args(calcinfo *calc, dbl *x, ...)
