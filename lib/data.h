@@ -26,7 +26,7 @@
 #ifndef _DATA_H_
 #define _DATA_H_
 
-#include <stdint.h> /* uint64_t */
+#include <stdint.h> /* uint32_t */
 
 #include "def.h"
 

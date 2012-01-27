@@ -23,10 +23,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>  /* FILE stderr */
+#include <stdio.h>  /* stderr */
 #include <stdlib.h> /* exit EXIT_SUCCESS */
-#include <string.h> /* memset strlen */
-#include <unistd.h> /* close write */
+#include <string.h> /* memset */
 #include <signal.h> /* sigaction */
 
 #include "log.h"

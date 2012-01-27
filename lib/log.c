@@ -25,16 +25,15 @@
 
 #include <stdio.h>     /* fprintf vsprintf */
 #include <string.h>    /* memset strrchr */
-#include <stdlib.h>    /* exit atexit */
+#include <stdlib.h>    /* free */
 #include <stdarg.h>    /* va_list va_start va_end */
-#include <errno.h>     /* errno */
 #include <time.h>      /* struct tm */
 #include <sys/time.h>  /* struct timeval */
-#include <sys/types.h> /* getpid */
 #include <unistd.h>    /* getpid gethostname */
-#include <ctype.h>     /* isprint */
+#include <sys/types.h> /* getpid */
 #include <pthread.h>   /* pthread_self */
 #include <execinfo.h>  /* backtrace */
+#include <errno.h>     /* errno */
 
 #include "def.h"
 #include "term.h"

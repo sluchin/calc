@@ -24,14 +24,13 @@
  */
 
 #include <stdio.h>        /* FILE */
-#include <stdlib.h>       /* strtol */
-#include <string.h>       /* memcpy memset */
-#include <ctype.h>        /* isdigit */
-#include <sys/socket.h>   /* socket */
-#include <arpa/inet.h>    /* inet_addr ntohl*/
-#include <netinet/in.h>   /* struct in_addr */
+#include <stdlib.h>       /* atexit */
+#include <string.h>       /* memcpy memset strcpy */
+#include <sys/socket.h>   /* socket connect */
+#include <sys/types.h>    /* socket etc... */
+#include <arpa/inet.h>    /* ntohl*/
 #include <errno.h>        /* errno */
-#include <unistd.h>       /* close */
+#include <unistd.h>       /* STDIN_FILENO */
 #ifdef _USE_SELECT
 #  include <sys/select.h> /* pselect */
 #else

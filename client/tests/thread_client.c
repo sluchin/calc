@@ -213,13 +213,14 @@ client_thread(void *arg)
     ssize_t slen = 0;  /* 送信するバイト数 */
     struct header hd;  /* ヘッダ */
 
-    pthread_cleanup_push(thread_cleanup, &dt);
-
+    /* コネクト */
     dt->sock = connect_sock();
     if (dt->sock < 0) {
         outstd("Connect error");
         pthread_exit((void *)EX_CONNECT_ERR);
     }
+
+    pthread_cleanup_push(thread_cleanup, &dt);
 
     length = strlen((char *)dt->expr) + 1;
 
@@ -337,13 +338,13 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'i': /* IPアドレス指定 */
             if (set_host_string(optarg) < 0) {
-                fprintf(stderr, "Hostname size %d", HOST_SIZE);
+                fprintf(stderr, "Hostname string length %d", (HOST_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno size %d", PORT_SIZE);
+                fprintf(stderr, "Portno string length %d", (PORT_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;

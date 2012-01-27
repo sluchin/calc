@@ -24,7 +24,6 @@
  */
 
 #include <stdio.h>  /* snprintf */
-#include <unistd.h> /* ssize_t */
 #include <string.h> /* memset */
 
 #include "def.h"

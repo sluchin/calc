@@ -30,8 +30,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>  /* fputs fprintf */
-#include <string.h> /* memset */
+#include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* EXIT_SUCCESS */
 #include <getopt.h> /* getopt_long */
 
@@ -89,7 +88,7 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'p':
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno size %d", PORT_SIZE - 1);
+                fprintf(stderr, "Portno string length %d", (PORT_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;

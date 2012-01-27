@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* fflush */
+#include <stdio.h>   /* fflush fdopen */
 #include <unistd.h>  /* read write */
 #include <stdbool.h> /* bool */
 #include <fcntl.h>   /* open */

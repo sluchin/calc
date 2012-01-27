@@ -23,9 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdlib.h> /* realloc free */
+#include <stdlib.h> /* realloc */
 #include <string.h> /* memcpy memset */
-#include <errno.h>  /* errno */
 
 #include "log.h"
 #include "readline.h"

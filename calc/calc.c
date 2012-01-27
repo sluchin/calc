@@ -30,14 +30,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>    /* snprintf FILE */
-#include <stdlib.h>   /* realloc */
+#include <stdio.h>    /* fprintf snprintf FILE */
 #include <string.h>   /* memcpy memset */
 #include <ctype.h>    /* isdigit isalpha */
-#include <math.h>     /* powl */
-#include <pthread.h>  /* pthread_once */
 #include <stdarg.h>   /* va_list va_arg */
-#include <signal.h>   /* sigaction */
 #ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
 #endif /* _DEBUG */

@@ -189,6 +189,7 @@ test_server_loop(void)
     pid_t w = 0;    /* wait戻り値 */
     int status = 0; /* wait引数 */
     int retval = 0; /* 戻り値 */
+    int count = 1;  /* ループカウント */
 
     if (set_port_string(port) < 0)
         cut_error("set_port_string");
@@ -203,7 +204,10 @@ test_server_loop(void)
     if (cpid == 0) {
         dbglog("child");
 
-        server_loop(ssock);
+        count = 2;
+        g_sig_handled = 1;
+        while (count--)
+            server_loop(ssock);
         exit(EXIT_SUCCESS);
 
     } else {
@@ -224,12 +228,6 @@ test_server_loop(void)
         retval = recv_client(csock, readbuf);
         if (retval < 0) {
             cut_error("recv_client: csock=%d(%d)", csock, errno);
-            return;
-        }
-
-        retval = kill(cpid, SIGINT);
-        if (retval < 0) {
-            cut_error("kill: cpid=%d(%d)", cpid, errno);
             return;
         }
 

@@ -26,7 +26,7 @@
 #ifndef _TERM_H_
 #define _TERM_H_
 
-#include <termios.h> /* tcgetattr */
+#include <termios.h> /* tcgetattr struct termios tcflag_t */
 
 enum mode_type {
     control = 0,

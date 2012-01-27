@@ -31,10 +31,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>   /* fputs fprintf */
-#include <string.h>  /* memset */
-#include <stdlib.h>  /* EXIT_SUCCESS */
-#include <getopt.h>  /* getopt_long */
+#include <stdio.h>  /* fprintf */
+#include <stdlib.h> /* EXIT_SUCCESS */
+#include <getopt.h> /* getopt_long */
 
 #include "log.h"
 #include "version.h"
@@ -92,13 +91,13 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'i': /* IPアドレス指定 */
             if (set_host_string(optarg) < 0) {
-                fprintf(stderr, "Hostname size %d", HOST_SIZE - 1);
+                fprintf(stderr, "Hostname string length %d", (HOST_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno size %d", PORT_SIZE - 1);
+                fprintf(stderr, "Portno string length %d", (PORT_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;

@@ -26,8 +26,6 @@
 #ifndef _OPTION_H_
 #define _OPTION_H_
 
-#include <stdbool.h> /* bool */
-
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 

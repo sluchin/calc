@@ -24,11 +24,10 @@
  */
 
 #include <stdio.h>  /* NULL */
-#include <stdlib.h> /* malloc free */
-#include <string.h> /* strlen strdup */
-#include <errno.h>  /* errno */
+#include <string.h> /* strdup */
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* fetestexcept FE_INVALID */
+#include <errno.h>  /* errno */
 #include <assert.h> /* assert */
 
 #include "log.h"

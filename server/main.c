@@ -25,8 +25,8 @@
 
 #include <stdlib.h> /* exit EXIT_SUCCESS */
 #include <string.h> /* memset */
-#include <unistd.h> /* close */
-#include <signal.h> /* sigaction */
+#include <unistd.h> /* alarm execve */
+#include <signal.h> /* sigaction sigemptyset */
 
 #include "log.h"
 #include "net.h"

@@ -23,18 +23,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>      /* FILE */
-#include <stdlib.h>     /* strtol */
-#include <string.h>     /* memcpy memset */
-#include <stdbool.h>    /* true */
-#include <ctype.h>      /* isdigit */
-#include <sys/socket.h> /* socket setsockopt */
-#include <sys/types.h>  /* setsockopt */
-#include <arpa/inet.h>  /* ntohl */
-#include <errno.h>      /* errno */
-#include <unistd.h>     /* close access */
+#include <stdio.h>      /* fprintf */
+#include <stdlib.h>     /* EXIT_SUCCESS */
+#include <string.h>     /* memcpy memset strcpy */
+#include <stdbool.h>    /* bool */
+#include <sys/socket.h> /* socket setsockopt bind listen */
+#include <sys/types.h>  /* socket etc... */
 #include <pthread.h>    /* pthread */
-#include <signal.h>     /* sig_atomic_t */
 #include <errno.h>      /* errno */
 #include <sys/select.h> /* select */
 

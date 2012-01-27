@@ -23,12 +23,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdlib.h>     /* strtol EXIT_SUCCESS */
-#include <string.h>     /* memcpy memset strdup */
+#include <stdlib.h>     /* strtol */
+#include <string.h>     /* memcpy memset */
 #include <unistd.h>     /* close */
 #include <ctype.h>      /* isdigit */
-#include <sys/types.h>  /* send recv */
 #include <sys/socket.h> /* send recv */
+#include <sys/types.h>  /* send etc... */
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* struct in_addr */
 #include <errno.h>      /* errno */

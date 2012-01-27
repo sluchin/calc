@@ -13,9 +13,8 @@
 #define _SERVER_H_
 
 #include <stdbool.h>   /* bool */
-#include <signal.h>    /* sig_atomic_t */
-#include <signal.h>    /* sig_atomic_t */
-#include <arpa/inet.h> /* struct sockaddr_in inet_addr */
+#include <signal.h>    /* sig_atomic_t sigemptyset */
+#include <arpa/inet.h> /* struct sockaddr_in ntohl */
 
 #include "data.h"
 #include "calc.h"

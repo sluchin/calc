@@ -27,7 +27,7 @@
 #define _OUTPUTLOG_H_
 
 #include <stddef.h> /* size_t */
-#include <syslog.h> /* syslog */
+#include <syslog.h> /* syslog LOG_INFO LOG_PID */
 
 #define SYS_FACILITY  LOG_SYSLOG
 #define LOGARGS       get_progname(), __FILE__, __LINE__, __FUNCTION__

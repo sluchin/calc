@@ -6,8 +6,8 @@
  GNU gdb (Ubuntu/Linaro 7.3-0ubuntu2) 7.3-2011.08
 
 動作確認環境
- Fedora 16 i686
- Fedora 16 x86_64
+ Fedora 16 i686 3.1.0-7.fc16.i686 #1 SMP
+ Fedora 16 x86_64 3.1.0-7.fc16.x86_64 #1 SMP
  CentOS 6.2 i386
  debian 6.0.3 i386 2.6.32-5-686-bigmem
 

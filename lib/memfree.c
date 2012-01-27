@@ -22,7 +22,7 @@
  */
 
 #include <stdlib.h> /* free */
-#include <stdarg.h> /* va_list va_arg */
+#include <stdarg.h> /* va_list va_arg va_end */
 
 #include "log.h"
 #include "memfree.h"

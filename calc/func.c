@@ -24,10 +24,7 @@
  */
 
 #include <string.h>  /* strcmp */
-#include <stdbool.h> /* bool */
-#include <errno.h>   /* errno */
-#include <math.h>    /* sinl cosl tanl logl log10l */
-#include <fenv.h>    /* FE_ALL_EXCEPT */
+#include <math.h>    /* sin cos tan log log10 */
 #include <assert.h>  /* assert */
 
 #include "log.h"
