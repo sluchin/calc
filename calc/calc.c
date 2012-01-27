@@ -207,6 +207,7 @@ parse_func_args(calcinfo *calc, dbl *x, ...)
     while ((val = va_arg(ap, dbl *)) != NULL) {
         if (calc->ch != ',') {
             set_errorcode(calc, E_SYNTAX);
+            va_end(ap);
             return;
         }
         readch(calc);

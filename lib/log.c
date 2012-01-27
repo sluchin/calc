@@ -76,7 +76,8 @@ set_progname(const char *name)
     char *ptr = NULL; /* strrchr戻り値 */
 
     if (progname[0] == '\0') { /* 一度のみ設定される */
-        ptr = strrchr(name, '/');
+        /* g++ではchar*にキャストしなければ警告される */
+        ptr = strrchr((char *)name, '/');
         if (ptr)
             (void)strncpy(progname, ptr + 1, sizeof(progname) - 1);
         else
