@@ -76,13 +76,13 @@ void set_digit(long digit);
 
 #ifdef UNITTEST
 struct _testcalc {
+    void (*readch)(calcinfo *calc);
     dbl (*expression)(calcinfo *calc);
     dbl (*term)(calcinfo *calc);
     dbl (*factor)(calcinfo *calc);
     dbl (*token)(calcinfo *calc);
     dbl (*number)(calcinfo *calc);
     int (*get_strlen)(const dbl val, const char *fmt);
-    void (*readch)(calcinfo *calc);
 };
 typedef struct _testcalc testcalc;
 

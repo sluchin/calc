@@ -55,6 +55,8 @@ static const dbl EX_ERROR = 0.0;   /**< エラー戻り値 */
 static long digit = DEFAULT_DIGIT; /**< 桁数 */
 
 /* 内部関数 */
+/** バッファ読込 */
+static void readch(calcinfo *calc);
 /** 式 */
 static dbl expression(calcinfo *calc);
 /** 項 */
@@ -67,8 +69,6 @@ static dbl token(calcinfo *calc);
 static dbl number(calcinfo *calc);
 /** 文字数取得 */
 static int get_strlen(const dbl val, const char *fmt);
-/** バッファ読込 */
-static void readch(calcinfo *calc);
 
 /**
  * 計算結果
