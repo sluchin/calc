@@ -23,9 +23,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <string.h>  /* strcmp */
-#include <math.h>    /* sin cos tan log log10 */
-#include <assert.h>  /* assert */
+#include <string.h> /* strcmp */
+#include <math.h>   /* sin cos tan log log10 */
+#include <assert.h> /* assert */
 
 #include "log.h"
 #include "error.h"
@@ -52,6 +52,10 @@ static dbl get_rad(calcinfo *calc, dbl x);
 static dbl get_deg(calcinfo *calc, dbl x);
 /** 平方根 */
 static dbl get_sqrt(calcinfo *calc, dbl x);
+/** 自然対数 */
+static dbl get_ln(calcinfo *calc, dbl x);
+/** 常用対数 */
+static dbl get_log(calcinfo *calc, dbl x);
 /** 階乗取得 */
 static dbl get_factorial(calcinfo *calc, dbl n);
 /** 順列(nPr) */
@@ -259,11 +263,11 @@ init_func(void)
     finfo[FN_EXP].type = MATH;
     finfo[FN_EXP].func.math = exp;
     /* 自然対数 */
-    finfo[FN_LN].type = MATH;
-    finfo[FN_LN].func.math = log;
+    finfo[FN_LN].type = FUNC1;
+    finfo[FN_LN].func.func1 = get_ln;
     /* 常用対数 */
-    finfo[FN_LOG].type = MATH;
-    finfo[FN_LOG].func.math = log10;
+    finfo[FN_LOG].type = FUNC1;
+    finfo[FN_LOG].func.func1 = get_log;
     /* 角度をラジアンに変換 */
     finfo[FN_RAD].type = FUNC1;
     finfo[FN_RAD].func.func1 = get_rad;
@@ -380,6 +384,62 @@ get_sqrt(calcinfo *calc, dbl x)
     }
 
     result = sqrt(x);
+
+    return result;
+}
+
+/**
+ * 自然対数
+ *
+ * @param[in] calc calcinfo構造体
+ * @param[in] x 値
+ * @return 平方根
+ */
+static dbl
+get_ln(calcinfo *calc, dbl x)
+{
+    dbl result = 0.0; /* 計算結果 */
+
+    dbglog("start: x=%g", x);
+
+    if (is_error(calc))
+        return EX_ERROR;
+
+    /* 複素数・虚数には対応しない */
+    if (isless(x, 0)) { /* 定義域エラー */
+        set_errorcode(calc, E_NAN);
+        return EX_ERROR;
+    }
+
+    result = log(x);
+
+    return result;
+}
+
+/**
+ * 常用対数
+ *
+ * @param[in] calc calcinfo構造体
+ * @param[in] x 値
+ * @return 平方根
+ */
+static dbl
+get_log(calcinfo *calc, dbl x)
+{
+    dbl result = 0.0; /* 計算結果 */
+
+    dbglog("start: x=%g", x);
+
+    if (is_error(calc))
+        return EX_ERROR;
+
+    /* 複素数・虚数には対応しない */
+    if (isless(x, 0)) { /* 定義域エラー */
+        set_errorcode(calc, E_NAN);
+        return EX_ERROR;
+    }
+
+    result = log10(x);
 
     return result;
 }
@@ -520,6 +580,8 @@ test_init_func(testfunc *func)
     func->get_rad = get_rad;
     func->get_deg = get_deg;
     func->get_sqrt = get_sqrt;
+    func->get_ln = get_ln;
+    func->get_log = get_log;
     func->get_factorial = get_factorial;
     func->get_permutation = get_permutation;
     func->get_combination = get_combination;

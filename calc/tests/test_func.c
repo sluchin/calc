@@ -48,6 +48,10 @@ void test_get_deg(void);
 void test_get_pow(void);
 /** get_sqrt() 関数テスト */
 void test_get_sqrt(void);
+/** get_ln() 関数テスト */
+void test_get_ln(void);
+/** get_log() 関数テスト */
+void test_get_log(void);
 /** get_factorial() 関数テスト */
 void test_get_factorial(void);
 /** get_permutation() 関数テスト */
@@ -78,16 +82,25 @@ static const struct test_data func_data[] = {
     { "abs(-2)",     2,               0, 0, E_NONE,   0.0             },
     { "sqrt(2)",     1.41421356237,   0, 0, E_NONE,   0.00000000001   },
     { "sin(2)" ,     0.909297426826,  0, 0, E_NONE,   0.000000000001  },
+    { "sin(-2)" ,   -0.909297426826,  0, 0, E_NONE,   0.000000000001  },
     { "cos(2)",     -0.416146836547,  0, 0, E_NONE,   0.000000000001  },
+    { "cos(-2)",    -0.416146836547,  0, 0, E_NONE,   0.000000000001  },
     { "tan(2)",     -2.18503986326,   0, 0, E_NONE,   0.00000000001   },
+    { "tan(-2)",     2.18503986326,   0, 0, E_NONE,   0.00000000001   },
     { "asin(0.5)",   0.523598775598,  0, 0, E_NONE,   0.000000000001  },
+    { "asin(-0.5)", -0.523598775598,  0, 0, E_NONE,   0.000000000001  },
     { "acos(0.5)",   1.0471975512,    0, 0, E_NONE,   0.0000000001    },
+    { "acos(-0.5)",  2.09439510239,   0, 0, E_NONE,   0.0000000001    },
     { "atan(0.5)",   0.463647609001,  0, 0, E_NONE,   0.000000000001  },
-    { "exp(2)" ,     7.38905609893,   0, 0, E_NONE,   0.00000000001   },
+    { "atan(-0.5)", -0.463647609001,  0, 0, E_NONE,   0.000000000001  },
+    { "exp(2)",      7.38905609893,   0, 0, E_NONE,   0.00000000001   },
+    { "exp(-2)",     0.135335283237,  0, 0, E_NONE,   0.00000000001   },
     { "ln(2)",       0.69314718056,   0, 0, E_NONE,   0.00000000001   },
     { "log(2)",      0.301029995664,  0, 0, E_NONE,   0.000000000001  },
     { "deg(2)",    114.591559026,     0, 0, E_NONE,   0.000000001     },
+    { "deg(-2)",  -114.591559026,     0, 0, E_NONE,   0.000000001     },
     { "rad(2)",      0.0349065850399, 0, 0, E_NONE,   0.0000000000001 },
+    { "rad(-2)",    -0.0349065850399, 0, 0, E_NONE,   0.0000000000001 },
     { "n(10)",       3628800,         0, 0, E_NONE,   0.0             },
     { "nPr(5,2)",    20,              0, 0, E_NONE,   0.0             },
     { "nCr(5,2)",    10,              0, 0, E_NONE,   0.0             },
@@ -106,18 +119,32 @@ static const struct test_data pow_data[] = {
 
 /** get_rad() 関数テスト用データ */
 static const struct test_data rad_data[] = {
-    { "rad(2)", 0.0349065850399, 2, 0, E_NONE, 0.0000000000001 }
+    { "rad(2)",   0.0349065850399,  2, 0, E_NONE, 0.0000000000001 },
+    { "rad(-2)", -0.0349065850399, -2, 0, E_NONE, 0.0000000000001 }
 };
 
 /** get_deg() 関数テスト用データ */
 static const struct test_data deg_data[] = {
-    { "deg(2)", 114.591559026, 2, 0, E_NONE, 0.000000001 }
+    { "deg(2)",   114.591559026,  2, 0, E_NONE, 0.000000001 },
+    { "deg(-2)", -114.591559026, -2, 0, E_NONE, 0.000000001 }
 };
 
 /** get_sqrt() 関数テスト用データ */
 static const struct test_data sqrt_data[] = {
     { "sqrt(2)",  1.41421356237,  2, 0, E_NONE, 0.00000000001 },
     { "sqrt(-1)", 0.0,           -1, 0, E_NAN,  0             }
+};
+
+/** get_ln() 関数テスト用データ */
+static const struct test_data ln_data[] = {
+    { "ln(2)",  0.69314718056,  2, 0, E_NONE, 0.00000000001 },
+    { "ln(-1)", 0.0,           -1, 0, E_NAN,  0             }
+};
+
+/** get_sqrt() 関数テスト用データ */
+static const struct test_data log_data[] = {
+    { "log(2)",  0.301029995664,  2, 0, E_NONE, 0.00000000001 },
+    { "log(-1)", 0.0,            -1, 0, E_NAN,  0             }
 };
 
 /** get_factorial() 関数テスト用データ */
@@ -369,6 +396,70 @@ test_get_sqrt(void)
                              (int)calc.errorcode,
                              cut_message("%s error",
                                          sqrt_data[i].expr));
+        clear_error(&calc);
+    }
+}
+
+/**
+ * get_ln() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_get_ln(void)
+{
+    dbl result = 0.0; /* 結果 */
+    calcinfo calc;    /* calcinfo構造体 */
+
+    uint i;
+    for (i = 0; i < NELEMS(ln_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, ln_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_ln(&calc, ln_data[i].x);
+        cut_assert_equal_double(ln_data[i].answer,
+                                ln_data[i].error,
+                                result,
+                                cut_message("%s=%.12g",
+                                            ln_data[i].expr,
+                                            ln_data[i].answer));
+        cut_assert_equal_int((int)ln_data[i].errorcode,
+                             (int)calc.errorcode,
+                             cut_message("%s error",
+                                         ln_data[i].expr));
+        clear_error(&calc);
+    }
+}
+
+/**
+ * get_log() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_get_log(void)
+{
+    dbl result = 0.0; /* 結果 */
+    calcinfo calc;    /* calcinfo構造体 */
+
+    uint i;
+    for (i = 0; i < NELEMS(log_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, log_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_log(&calc, log_data[i].x);
+        cut_assert_equal_double(log_data[i].answer,
+                                log_data[i].error,
+                                result,
+                                cut_message("%s=%.12g",
+                                            log_data[i].expr,
+                                            log_data[i].answer));
+        cut_assert_equal_int((int)log_data[i].errorcode,
+                             (int)calc.errorcode,
+                             cut_message("%s error",
+                                         log_data[i].expr));
         clear_error(&calc);
     }
 }

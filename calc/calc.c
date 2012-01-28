@@ -236,7 +236,7 @@ set_digit(long dgt)
  * 空白, タブは読み飛ばす.
  *
  * @param[in] calc calcinfo構造体
- * @return 文字
+ * @return なし
  */
 static void
 readch(calcinfo *calc)
@@ -291,7 +291,7 @@ expression(calcinfo *calc)
  * 項
  *
  * @param[in] calc calcinfo構造体
- * @return 結果
+ * @return 値
  */
 static dbl
 term(calcinfo *calc)
@@ -366,7 +366,7 @@ factor(calcinfo *calc)
  * 数または関数
  *
  * @param[in] calc calcinfo構造体
- * @return 結果
+ * @return 値
  */
 static dbl
 token(calcinfo *calc)
@@ -414,7 +414,7 @@ token(calcinfo *calc)
  * 文字列を数値に変換
  *
  * @param[in] calc calcinfo構造体
- * @return 数値
+ * @return 値
  */
 static dbl
 number(calcinfo *calc)
@@ -453,7 +453,7 @@ get_strlen(const dbl val, const char *fmt)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* fclose戻り値 */
-    int result = 0;  /* 文字数 */
+    int length = 0;  /* 文字数 */
 
     dbglog("start: fmt=%s", fmt);
     dbglog(fmt, val);
@@ -462,17 +462,17 @@ get_strlen(const dbl val, const char *fmt)
     if (!fp) { /* fopen エラー */
         outlog("fopen");
     } else {
-        result = fprintf(fp, fmt, val);
-        if (result < 0)
-            outlog("fprintf=%d", retval);
+        length = fprintf(fp, fmt, val);
+        if (length < 0)
+            outlog("fprintf: fp=%p, fmt=%s, val=%g", fp, fmt, val);
 
         retval = fclose(fp);
         if (retval == EOF) /* fclose エラー */
-            outlog("fclose");
+            outlog("fclose: fp=%p", fp);
     }
 
-    dbglog("result=%d", result);
-    return result;
+    dbglog("length=%d", length);
+    return length;
 }
 
 #ifdef UNITTEST

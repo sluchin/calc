@@ -1,6 +1,6 @@
 開発環境
  Ubuntu 11.10
- Linux 3.0.0-14-generic-pae
+ Linux 3.0.0-15-generic-pae #26-Ubuntu SMP
  gcc バージョン 4.6.1 (Ubuntu/Linaro 4.6.1-9ubuntu3)
  GNU Make 3.81
  GNU gdb (Ubuntu/Linaro 7.3-0ubuntu2) 7.3-2011.08
@@ -13,28 +13,28 @@
 
 GNU readline インストール
  Ubuntu の場合
-  sudo apt-get install libreadline6-dev
+  $ sudo apt-get install libreadline6-dev
  Fedora の場合
-  sudo yum install readline-devel
+  $ sudo yum install readline-devel
 
 コンパイル
- cd calc
- make clean all または make clean debug
+ $ cd calc
+ $ make clean all または make clean debug
 
 インストール
- sudo make install
+ $ sudo make install
 
 クライアントサーバ
  サーバデーモン起動
- cd server
- ./calcd
+ $ cd server
+ $ ./calcd
  クライアントプログラム起動
- cd client
- ./calcc
+ $ cd client
+ $ ./calcc
 
 スタンドアロン
- cd calc
- ./calcp
+ $ cd calc
+ $ ./calcp
 
 cutter インストール
  http://cutter.sourceforge.net/reference/ja/install.html
