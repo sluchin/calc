@@ -27,7 +27,6 @@
 #include <string.h> /* memset */
 
 #include "def.h"
-#include "memfree.h"
 #include "log.h"
 #include "term.h"
 

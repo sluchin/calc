@@ -207,6 +207,8 @@ get_pow(calcinfo *calc, dbl x, dbl y)
 
     result = pow(x, y);
 
+    check_math_feexcept(calc);
+
     return result;
 }
 
@@ -392,7 +394,7 @@ get_sqrt(calcinfo *calc, dbl x)
 static dbl
 get_factorial(calcinfo *calc, dbl n)
 {
-    dbl result = 0.0;   /* 計算結果 */
+    dbl result = 1.0;   /* 計算結果 */
     dbl decimal = 0.0;  /* 小数 */
     dbl integer = 0.0;  /* 整数 */
     bool minus = false; /* マイナスフラグ */
@@ -415,7 +417,6 @@ get_factorial(calcinfo *calc, dbl n)
         minus = true;
     }
 
-    result = 1;
     while (n > 0)
         result *= n--;
 

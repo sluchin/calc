@@ -104,10 +104,10 @@ parse_args(int argc, char *argv[])
         }
     }
     if (optind < argc) {
-        printf("non-option ARGV-elements: ");
+        (void)printf("non-option ARGV-elements: ");
         while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
+            (void)printf("%s ", argv[optind++]);
+        (void)printf("\n");
     }
 }
 

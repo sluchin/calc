@@ -37,7 +37,6 @@
 #include "log.h"
 #include "net.h"
 #include "memfree.h"
-#include "option.h"
 #include "server.h"
 
 /* 外部変数 */

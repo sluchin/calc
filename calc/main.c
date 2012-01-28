@@ -37,7 +37,6 @@
 
 #include "def.h"
 #include "memfree.h"
-#include "data.h"
 #include "option.h"
 #include "log.h"
 #include "term.h"

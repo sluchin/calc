@@ -39,14 +39,12 @@
 #  include <poll.h>       /* ppoll */
 #endif
 
+#include "timer.h"
 #include "readline.h"
 #include "log.h"
 #include "data.h"
 #include "net.h"
 #include "memfree.h"
-#include "option.h"
-#include "timer.h"
-#include "fileio.h"
 #include "client.h"
 
 #ifndef _USE_SELECT

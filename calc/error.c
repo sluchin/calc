@@ -31,7 +31,6 @@
 #include <assert.h> /* assert */
 
 #include "log.h"
-#include "memfree.h"
 #include "error.h"
 
 /** エラーメッセージ文字列構造体 */

@@ -27,8 +27,8 @@
 #include <string.h>    /* memset strrchr */
 #include <stdlib.h>    /* free */
 #include <stdarg.h>    /* va_list va_start va_end */
-#include <time.h>      /* struct tm */
-#include <sys/time.h>  /* struct timeval */
+#include <time.h>      /* tm */
+#include <sys/time.h>  /* timeval */
 #include <unistd.h>    /* getpid gethostname */
 #include <sys/types.h> /* getpid */
 #include <pthread.h>   /* pthread_self */

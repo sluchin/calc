@@ -14,7 +14,7 @@
 
 #include <stdbool.h>   /* bool */
 #include <signal.h>    /* sig_atomic_t sigemptyset */
-#include <arpa/inet.h> /* struct sockaddr_in ntohl */
+#include <arpa/inet.h> /* sockaddr_in ntohl */
 
 #include "data.h"
 #include "calc.h"

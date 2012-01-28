@@ -30,13 +30,13 @@
 #include <sys/socket.h> /* send recv */
 #include <sys/types.h>  /* send etc... */
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
-#include <netinet/in.h> /* struct in_addr */
+#include <netinet/in.h> /* in_addr */
 #include <errno.h>      /* errno */
 #include <fcntl.h>      /* fcntl */
 #ifdef __cplusplus
 # define __STDC_FORMAT_MACROS
 #endif
-#include <inttypes.h>   /* uint16_t, PRIu16 */
+#include <inttypes.h>   /* uint16_t PRIu16 */
 
 #include "log.h"
 #include "net.h"

@@ -41,8 +41,6 @@
 #include "timer.h"
 #include "log.h"
 #include "memfree.h"
-#include "data.h"
-#include "option.h"
 #include "func.h"
 #include "error.h"
 #include "calc.h"
@@ -136,12 +134,12 @@ create_answer(calcinfo *calc, const uchar *expr)
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        calc->answer = (uchar *)malloc(length);
+        calc->answer = (uchar *)malloc(length * sizeof(uchar));
         if (!calc->answer) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
-        (void)memset(calc->answer, 0, length);
+        (void)memset(calc->answer, 0, length * sizeof(uchar));
 
         /* 値を文字列に変換 */
         retval = snprintf((char *)calc->answer, length, calc->fmt, val);

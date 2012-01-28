@@ -26,7 +26,7 @@
 #ifndef _NET_H_
 #define _NET_H_
 
-#include <netdb.h>   /* struct sockaddr_in */
+#include <netdb.h>   /* sockaddr_in */
 
 #include "def.h"
 
