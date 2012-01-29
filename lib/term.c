@@ -60,7 +60,9 @@ static const struct _mode_info mode_info[] = {
     { "cstopb",  control, CSTOPB,  0      },
     { "cread",   control, CREAD,   0      },
     { "clocal",  control, CLOCAL,  0      },
+#ifdef CRTSCTS
     { "crtscts", control, CRTSCTS, 0      },
+#endif
     { "ignbrk",  input,   IGNBRK,  0      },
     { "brkint",  input,   BRKINT,  0      },
     { "ignpar",  input,   IGNPAR,  0      },
@@ -72,47 +74,104 @@ static const struct _mode_info mode_info[] = {
     { "icrnl",   input,   ICRNL,   0      },
     { "ixon",    input,   IXON,    0      },
     { "ixoff",   input,   IXOFF,   1      },
+#ifdef IUCLC
     { "iuclc",   input,   IUCLC,   0      },
+#endif
+#ifdef IXANY
     { "ixany",   input,   IXANY,   0      },
+#endif
+#ifdef IMAXBEL
     { "imaxbel", input,   IMAXBEL, 0      },
+#endif
+#ifdef IUTF8
     { "iutf8",   input,   IUTF8,   0      },
+#endif
     { "opost",   output,  OPOST,   0      },
+#ifdef OLCUC
     { "olcuc",   output,  OLCUC,   0      },
+#endif
+#ifdef OCRNL
     { "ocrnl",   output,  OCRNL,   0      },
+#endif
+#ifdef ONLCR
     { "onlcr",   output,  ONLCR,   0      },
+#endif
+#ifdef ONOCR
     { "onocr",   output,  ONOCR,   0      },
+#endif
+#ifdef ONLRET
     { "onlret",  output,  ONLRET,  0      },
+#endif
+#ifdef OFILL
     { "ofill",   output,  OFILL,   0      },
+#endif
+#ifdef OFDEL
     { "ofdel",   output,  OFDEL,   0      },
+#endif
+#ifdef NLDLY
     { "nl1",     output,  NL1,     NLDLY  },
     { "nl0",     output,  NL0,     NLDLY  },
+#endif
+#ifdef CRDLY
     { "cr3",     output,  CR3,     CRDLY  },
     { "cr2",     output,  CR2,     CRDLY  },
     { "cr1",     output,  CR1,     CRDLY  },
     { "cr0",     output,  CR0,     CRDLY  },
+#endif
+#ifdef TABDLY
+#  ifdef TAB3
     { "tab3",    output,  TAB3,    TABDLY },
+#  endif
+#  ifdef TAB2
     { "tab2",    output,  TAB2,    TABDLY },
+#  endif
+#  ifdef TAB1
     { "tab1",    output,  TAB1,    TABDLY },
+#  endif
+#  ifdef TAB0
     { "tab0",    output,  TAB0,    TABDLY },
+#  endif
+#  ifdef OXTABS
+    { "tab0",    output,  OXTABS,  TABDLY },
+#  endif
+#endif
+#ifdef BSDLY
     { "bs1",     output,  BS1,     BSDLY  },
     { "bs0",     output,  BS0,     BSDLY  },
+#endif
+#ifdef VTDLY
     { "vt1",     output,  VT1,     VTDLY  },
     { "vt0",     output,  VT0,     VTDLY  },
+#endif
+#ifdef FFDLY
     { "ff1",     output,  FF1,     FFDLY  },
     { "ff0",     output,  FF0,     FFDLY  },
+#endif
     { "isig",    local,   ISIG,    0      },
     { "icanon",  local,   ICANON,  0      },
+#ifdef IEXTEN
     { "iexten",  local,   IEXTEN,  0      },
+#endif
     { "echo",    local,   ECHO,    0      },
     { "echoe",   local,   ECHOE,   0      },
     { "echok",   local,   ECHOK,   0      },
     { "echonl",  local,   ECHONL,  0      },
     { "noflsh",  local,   NOFLSH,  0      },
+#ifdef XCASE
     { "xcase",   local,   XCASE,   0      },
+#endif
+#ifdef TOSTOP
     { "tostop",  local,   TOSTOP,  0      },
+#endif
+#ifdef ECHOPRT
     { "echoprt", local,   ECHOPRT, 0      },
+#endif
+#ifdef ECHOCTL
     { "echoctl", local,   ECHOCTL, 0      },
+#endif
+#ifdef ECHOKE
     { "echoke",  local,   ECHOKE,  0      },
+#endif
     { NULL,      control, 0,       0      }
 };
 
@@ -237,6 +296,7 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
 void
 test_init_term(testterm *term)
 {
+    term->get_termattr = get_termattr;
     term->mode_type_flag = mode_type_flag;
 }
 #endif

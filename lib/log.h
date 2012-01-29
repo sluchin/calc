@@ -45,7 +45,11 @@
 #  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
 #  define dbgdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ## __VA_ARGS__)
 #  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ## __VA_ARGS__)
-#  define dbgtrace()              systrace(SYSARGS)
+#  ifdef HAVE_EXECINFO
+#    define dbgtrace()            systrace(SYSARGS)
+#  else
+#    define dbgtrace()            do { } while (0)
+#  endif
 #  define dbgterm(fd)             sys_print_termattr(SYSARGS, fd)
 #else
 #  define dbglog(fmt, ...)        do { } while (0)
@@ -95,10 +99,6 @@ void systrace(const int level, const int option, const char *pname,
 
 /** バックトレース出力 */
 void print_trace(void);
-
-void sys_print_termattr(const int level, const int option,
-                        const char *pname, const char *fname,
-                        const int line, const char *func, int fd);
 
 #endif /* _OUTPUTLOG_H_ */
 

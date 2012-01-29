@@ -53,12 +53,12 @@ void test_dump_log(void);
 void test_dump_sys(void);
 /** dump_file() 関数テスト */
 void test_dump_file(void);
+#ifdef HAVE_EXECINFO
 /** systrace() 関数テスト */
 void test_systrace(void);
 /** print_trace() 関数テスト */
 void test_print_trace(void);
-/** sys_print_termattr() 関数テスト */
-void test_sys_print_termattr(void);
+#endif
 
 /* 内部変数 */
 static char dump[0xFF + 1];           /**< ダンプデータ */
@@ -111,6 +111,11 @@ void cut_startup(void)
     }
 }
 
+/**
+ * 終了処理
+ *
+ * @return なし
+ */
 void
 cut_teardown(void)
 {
@@ -408,6 +413,7 @@ test_dump_file(void)
 
 }
 
+#ifdef HAVE_EXECINFO
 /**
  * systrace() 関数テスト
  *
@@ -475,41 +481,7 @@ test_print_trace(void)
                      cut_message("expected=%s actual=%s",
                                  expected, actual));
 }
-
-/**
- * print_termattr() 関数テスト
- *
- * @return なし
- */
-void
-test_sys_print_termattr(void)
-{
-    int rlen = 0;                /* 戻り値 */
-    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =      /* 期待する文字列 */
-        "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
-        "tcgetattr\\(.*\\)";
-
-    /* 正常系 */
-    fd = pipe_fd(STDERR_FILENO);
-    if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
-    }
-
-    sys_print_termattr(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                       "filename", 15, "function", STDIN_FILENO);
-
-    rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
-    }
-
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
-}
+#endif
 
 /**
  * 標準エラー出力用文字列設定

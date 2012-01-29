@@ -28,6 +28,7 @@
 
 #include <termios.h> /* termios */
 
+/** モードタイプ */
 enum mode_type {
     control = 0,
     input,
@@ -35,8 +36,14 @@ enum mode_type {
     local
 };
 
+/** ターミナル属性シスログ出力 */
+void sys_print_termattr(const int level, const int option,
+                        const char *pname, const char *fname,
+                        const int line, const char *func, int fd);
+
 #ifdef UNITTEST
 struct _testterm {
+    char *(*get_termattr)(const int fd, struct termios *mode);
     tcflag_t *(*mode_type_flag)(const enum mode_type type,
                                 struct termios *mode);
 };

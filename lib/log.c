@@ -32,7 +32,9 @@
 #include <unistd.h>    /* getpid gethostname */
 #include <sys/types.h> /* getpid */
 #include <pthread.h>   /* pthread_self */
+#ifdef HAVE_EXECINFO
 #include <execinfo.h>  /* backtrace */
+#endif
 #include <errno.h>     /* errno */
 
 #include "def.h"
@@ -506,6 +508,7 @@ dump_file(const char *pname,
     return EX_OK;
 }
 
+#ifdef HAVE_EXECINFO
 /**
  * バックトレースシスログ出力
  *
@@ -582,4 +585,5 @@ print_trace(void)
         free(strings);
     strings = NULL;
 }
+#endif
 

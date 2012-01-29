@@ -30,9 +30,14 @@
 
 #include "def.h"
 #include "log.h"
+#include "fileio.h"
 #include "term.h"
 
+#define BUF_SIZE 2048 /**< バッファサイズ */
+
 /* プロトタイプ */
+/** sys_print_termattr() 関数テスト */
+void test_sys_print_termattr(void);
 /** get_termattr() 関数テスト */
 void test_get_termattr(void);
 /** mode_type_flag() 関数テスト */
@@ -40,6 +45,7 @@ void test_mode_type_flag(void);
 
 /* 内部変数 */
 static testterm term; /**< 関数構造体 */
+static int fd = -1;   /**< ファイルディスクリプタ */
 
 /**
  * 初期化処理
@@ -54,6 +60,56 @@ cut_startup(void)
 }
 
 /**
+ * 終了処理
+ *
+ * @return なし
+ */
+void
+cut_teardown(void)
+{
+    if (fd != -1) {
+        if (close(fd) < 0)
+            cut_notify("close: fd=%d(%d)", fd, errno);
+        fd = -1;
+    }
+}
+
+/**
+ * print_termattr() 関数テスト
+ *
+ * @return なし
+ */
+void
+test_sys_print_termattr(void)
+{
+    int rlen = 0;                /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char expected[] =      /* 期待する文字列 */
+        "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
+        "tcgetattr\\(.*\\)";
+
+    /* 正常系 */
+    fd = pipe_fd(STDERR_FILENO);
+    if (fd < 0) {
+        cut_error("pipe_fd(%d)", errno);
+        return;
+    }
+
+    sys_print_termattr(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                       "filename", 15, "function", STDIN_FILENO);
+
+    rlen = read(fd, actual, sizeof(actual));
+    if (rlen < 0) {
+        cut_fail("read: fd=%d(%d)", fd, errno);
+        return;
+    }
+
+    cut_assert_match(expected, actual,
+                     cut_message("expected=%s actual=%s",
+                                 expected, actual));
+}
+
+/**
  * get_termattr() 関数テスト
  *
  * @return なし
@@ -65,7 +121,7 @@ test_get_termattr(void)
     struct termios mode; /* termios構造体 */
 
     (void)memset(&mode, 0, sizeof(struct termios));
-    ptr = get_termattr(STDIN_FILENO, &mode);
+    ptr = term.get_termattr(STDIN_FILENO, &mode);
 
     cut_assert_match("tcgetattr(.*)", ptr);
 
