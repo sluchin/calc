@@ -25,12 +25,17 @@
 
 #include <stdio.h>  /* snprintf */
 #include <string.h> /* memset */
+#include <syslog.h> /* syslog */
+#include <errno.h>  /* errno */
 
 #include "def.h"
-#include "log.h"
 #include "term.h"
 
 #define BUF_SIZE 512 /**< バッファサイズ */
+
+#define SYSMSG(fmt, ...)                                    \
+     syslog(LOG_INFO, "%s[%d]: %s: " fmt "(%d)",             \
+            __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
 
 /* 内部関数 */
 /** モードからフラグ取得 */
@@ -130,18 +135,14 @@ get_termattr(const int fd, struct termios *mode)
     char *endp = NULL;      /* strrchr戻り値 */
     int retval = 0;         /* 戻り値 */
 
-    dbglog("start: fd=%d", fd);
-
-    if (fd < 0)
-        return NULL;
-
-    retval = tcgetattr(fd, mode);
-    if (retval < 0) {
-        outlog("tcgetattr: fd=%d, mode=%p", fd, mode);
+    if (fd < 0) {
+        SYSMSG("tcgetattr: fd=%d, mode=%p", fd, mode);
         return NULL;
     }
-    dbglog("c_cflag=0x%x, c_iflag=0x%x, c_oflag=0x%x, c_lflag=0x%x",
-           mode->c_cflag, mode->c_iflag, mode->c_oflag, mode->c_lflag);
+
+    retval = tcgetattr(fd, mode);
+    if (retval < 0)
+        return NULL;
 
     (void)memset(buf, 0, sizeof(buf));
     (void)snprintf(buf, sizeof(buf), "tcgetattr(");
@@ -163,9 +164,10 @@ get_termattr(const int fd, struct termios *mode)
 
     ptr = strdup(buf);
     if (!ptr) {
-        outlog("strdup: buf=%p", buf);
+        SYSMSG("strdup: buf=%p", buf);
         return NULL;
     }
+
     return ptr;
 }
 

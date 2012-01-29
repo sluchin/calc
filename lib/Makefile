@@ -20,13 +20,13 @@ COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = libcalcutil.a
 SHAREDOBJ = libcalcutil.so
-OBJECTS = data.o \
+OBJECTS = term.o \
+          log.o \
           memfree.o \
+          data.o \
           net.o \
           readline.o \
-          fileio.o \
-          term.o \
-          log.o
+          fileio.o
 CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o

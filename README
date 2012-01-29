@@ -8,7 +8,7 @@
 動作確認環境
  Fedora 16 i686 3.1.0-7.fc16.i686 #1 SMP
  Fedora 16 x86_64 3.1.0-7.fc16.x86_64 #1 SMP
- CentOS 6.2 i386
+ CentOS 6.2 i386 2.6.32-220.el6.i686 #1 SMP
  debian 6.0.3 i386 2.6.32-5-686-bigmem
 
 GNU readline インストール
@@ -40,7 +40,7 @@ cutter インストール
  http://cutter.sourceforge.net/reference/ja/install.html
 
 テスト
- cutter ライブラリをインストールし, make test コマンドを実行する.
+ cutter ライブラリをインストールし, make clean debug && make test コマンドを実行する.
 
 ドキュメント生成
  doxygen, graphviz, mscgen をインストールし, make doc コマンドを実行する.
