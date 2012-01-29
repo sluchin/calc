@@ -195,7 +195,7 @@ create_threads(void)
             assert(0 == thread_ret);
         }
     }
-    (void)fprintf(stderr, "threads: %d", j);
+    (void)fprintf(stderr, "threads: %d\n", j);
 }
 
 /**
@@ -367,10 +367,10 @@ parse_args(int argc, char *argv[])
         }
     }
     if (optind < argc) {
-        printf("non-option ARGV-elements: ");
+        (void)printf("non-option ARGV-elements: ");
         while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
+            (void)printf("%s ", argv[optind++]);
+        (void)printf("\n");
     }
 }
 

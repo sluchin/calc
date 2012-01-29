@@ -32,6 +32,7 @@
 
 #include <stdio.h>    /* fprintf snprintf FILE */
 #include <string.h>   /* memcpy memset */
+#include <stdlib.h>   /* malloc */
 #include <ctype.h>    /* isdigit isalpha */
 #include <stdarg.h>   /* va_list va_arg */
 #ifdef _DEBUG
