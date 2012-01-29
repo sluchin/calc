@@ -29,6 +29,8 @@
 #include <stddef.h> /* size_t */
 #include <syslog.h> /* syslog LOG_INFO LOG_PID */
 
+#include "term.h"
+
 #define SYS_FACILITY  LOG_SYSLOG
 #define LOGARGS       get_progname(), __FILE__, __LINE__, __FUNCTION__
 #define SYSARGS       LOG_INFO, LOG_PID, LOGARGS

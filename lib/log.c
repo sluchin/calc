@@ -583,39 +583,3 @@ print_trace(void)
     strings = NULL;
 }
 
-/**
- * ターミナル属性シスログ出力
- *
- * @param[in] level ログレベル
- * @param[in] option オプション
- * @param[in] pname プログラム名
- * @param[in] fname ファイル名
- * @param[in] line 行番号
- * @param[in] func 関数名
- * @param[in] fd ファイルディスクリプタ
- * @return なし
- */
-void
-sys_print_termattr(const int level, const int option,
-                   const char *pname, const char *fname,
-                   const int line, const char *func, int fd)
-{
-    struct termios mode;
-    char *result = NULL;
-
-    (void)memset(&mode, 0, sizeof(struct termios));
-
-    result = get_termattr(STDIN_FILENO, &mode);
-    if (!result)
-        return;
-
-    openlog(pname, option, SYS_FACILITY);
-    syslog(level, "%s[%d]: %s: %s", fname, line, func, result);
-
-    closelog();
-
-    if (result)
-        free(result);
-    result = NULL;
-}
-

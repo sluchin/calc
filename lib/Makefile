@@ -20,8 +20,8 @@ COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 LIBRARY = libcalcutil.a
 SHAREDOBJ = libcalcutil.so
-OBJECTS = term.o \
-          log.o \
+OBJECTS = log.o \
+          term.o \
           memfree.o \
           data.o \
           net.o \

@@ -24,20 +24,19 @@
  */
 
 #include <stdio.h>  /* snprintf */
+#include <stdlib.h> /* free */
 #include <string.h> /* memset */
-#include <syslog.h> /* syslog */
-#include <errno.h>  /* errno */
+#include <unistd.h> /* STDIN_FILENO */
 
 #include "def.h"
+#include "log.h"
 #include "term.h"
 
 #define BUF_SIZE 512 /**< バッファサイズ */
 
-#define SYSMSG(fmt, ...)                                    \
-     syslog(LOG_INFO, "%s[%d]: %s: " fmt "(%d)",             \
-            __FILE__, __LINE__, __func__, ## __VA_ARGS__, errno)
-
 /* 内部関数 */
+/** ターミナル属性文字列取得 */
+static char *get_termattr(const int fd, struct termios *mode);
 /** モードからフラグ取得 */
 static tcflag_t *mode_type_flag(const enum mode_type type,
                                 struct termios *mode);
@@ -118,6 +117,42 @@ static const struct _mode_info mode_info[] = {
 };
 
 /**
+ * ターミナル属性シスログ出力
+ *
+ * @param[in] level ログレベル
+ * @param[in] option オプション
+ * @param[in] pname プログラム名
+ * @param[in] fname ファイル名
+ * @param[in] line 行番号
+ * @param[in] func 関数名
+ * @param[in] fd ファイルディスクリプタ
+ * @return なし
+ */
+void
+sys_print_termattr(const int level, const int option,
+                   const char *pname, const char *fname,
+                   const int line, const char *func, int fd)
+{
+    struct termios mode;
+    char *result = NULL;
+
+    (void)memset(&mode, 0, sizeof(struct termios));
+
+    result = get_termattr(STDIN_FILENO, &mode);
+    if (!result)
+        return;
+
+    openlog(pname, option, SYS_FACILITY);
+    syslog(level, "%s[%d]: %s: %s", fname, line, func, result);
+
+    closelog();
+
+    if (result)
+        free(result);
+    result = NULL;
+}
+
+/**
  * ターミナル属性文字列取得
  *
  * @param[in] fd ファイルディスクリプタ
@@ -125,7 +160,7 @@ static const struct _mode_info mode_info[] = {
  * @return ターミナル属性文字列
  * @attention 戻り値ポインタは解放しなければならない
  */
-char *
+static char *
 get_termattr(const int fd, struct termios *mode)
 {
     tcflag_t *bitsp = NULL; /* ビット */
@@ -135,10 +170,15 @@ get_termattr(const int fd, struct termios *mode)
     char *endp = NULL;      /* strrchr戻り値 */
     int retval = 0;         /* 戻り値 */
 
+    dbglog("start: fd=%d", fd);
+
     if (fd < 0) {
-        SYSMSG("tcgetattr: fd=%d, mode=%p", fd, mode);
+        outlog("tcgetattr: fd=%d, mode=%p", fd, mode);
         return NULL;
     }
+
+    dbglog("c_cflag=0x%x, c_iflag=0x%x, c_oflag=0x%x, c_lflag=0x%x",
+           mode->c_cflag, mode->c_iflag, mode->c_oflag, mode->c_lflag);
 
     retval = tcgetattr(fd, mode);
     if (retval < 0)
@@ -164,7 +204,7 @@ get_termattr(const int fd, struct termios *mode)
 
     ptr = strdup(buf);
     if (!ptr) {
-        SYSMSG("strdup: buf=%p", buf);
+        outlog("strdup: buf=%p", buf);
         return NULL;
     }
 

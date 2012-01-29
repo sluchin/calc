@@ -35,9 +35,6 @@ enum mode_type {
     local
 };
 
-/** ターミナル属性文字列取得 */
-char *get_termattr(const int fd, struct termios *mode);
-
 #ifdef UNITTEST
 struct _testterm {
     tcflag_t *(*mode_type_flag)(const enum mode_type type,
