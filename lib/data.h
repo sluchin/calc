@@ -30,7 +30,7 @@
 
 #include "def.h"
 
-/** ヘッダー構造体 */
+/** ヘッダ構造体 */
 struct header {
     uint32_t length;  /**< データ長 */
     uchar padding[4]; /**< パディング */
@@ -38,13 +38,13 @@ struct header {
 
 /** クライアントデータ構造体 */
 struct client_data {
-    struct header hd;    /**< ヘッダー構造体 */
+    struct header hd;    /**< ヘッダ構造体 */
     uchar expression[1]; /**< データバッファ */
 };
 
 /** サーバデータ構造体 */
 struct server_data {
-    struct header hd; /**< ヘッダー構造体 */
+    struct header hd; /**< ヘッダ構造体 */
     uchar answer[1];  /**< データバッファ */
 };
 

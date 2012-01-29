@@ -23,19 +23,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>     /* fprintf vsprintf */
-#include <string.h>    /* memset strrchr */
-#include <stdlib.h>    /* free */
-#include <stdarg.h>    /* va_list va_start va_end */
-#include <time.h>      /* tm */
-#include <sys/time.h>  /* timeval */
-#include <unistd.h>    /* getpid gethostname */
-#include <sys/types.h> /* getpid */
-#include <pthread.h>   /* pthread_self */
+#include <stdio.h>      /* fprintf vsprintf */
+#include <string.h>     /* memset strrchr */
+#include <stdlib.h>     /* free */
+#include <stdarg.h>     /* va_list va_start va_end */
+#include <time.h>       /* tm */
+#include <sys/time.h>   /* timeval */
+#include <unistd.h>     /* getpid gethostname */
+#include <sys/types.h>  /* getpid */
+#include <pthread.h>    /* pthread_self */
+#include <errno.h>      /* errno */
 #ifdef HAVE_EXECINFO
-#include <execinfo.h>  /* backtrace */
+#  include <execinfo.h> /* backtrace */
 #endif
-#include <errno.h>     /* errno */
 
 #include "def.h"
 #include "term.h"
@@ -508,7 +508,6 @@ dump_file(const char *pname,
     return EX_OK;
 }
 
-#ifdef HAVE_EXECINFO
 /**
  * バックトレースシスログ出力
  *
@@ -520,6 +519,7 @@ dump_file(const char *pname,
  * @param[in] func 関数名
  * @return なし
  */
+#ifdef HAVE_EXECINFO
 void
 systrace(const int level,
          const int option,
@@ -559,12 +559,14 @@ systrace(const int level,
         free(strings);
     strings = NULL;
 }
+#endif
 
 /**
  * バックトレース出力
  *
  * @return なし
  */
+#ifdef HAVE_EXECINFO
 void
 print_trace(void)
 {
