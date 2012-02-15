@@ -94,11 +94,15 @@ int dump_file(const char *pname, const char *fname, const char *buf,
               const size_t len);
 
 /** バックトレースシスログ出力 */
+#ifdef HAVE_EXECINFO
 void systrace(const int level, const int option, const char *pname,
               const char *fname, const int line, const char *func);
+#endif
 
 /** バックトレース出力 */
+#ifdef HAVE_EXECINFO
 void print_trace(void);
+#endif
 
 #endif /* _OUTPUTLOG_H_ */
 
