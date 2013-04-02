@@ -166,12 +166,12 @@ connect_sock(void)
 st_client
 client_loop(int sock)
 {
-    int ready = 0;                   /* select戻り値 */
-    struct timespec timeout;         /* タイムアウト値 */
-    sigset_t sigmask;                /* シグナルマスク */
-    st_client status = EX_SUCCESS;   /* ステータス */
+    int ready = 0;                 /* select戻り値 */
+    struct timespec timeout;       /* タイムアウト値 */
+    sigset_t sigmask;              /* シグナルマスク */
+    st_client status = EX_SUCCESS; /* ステータス */
 #ifdef _USE_SELECT
-    fd_set fds, rfds;                /* selectマスク */
+    fd_set fds, rfds;        /* selectマスク */
 #else
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
@@ -317,9 +317,9 @@ send_sock(int sock)
 static st_client
 read_sock(int sock)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 送信または受信する長さ */
-    struct header hd;  /* ヘッダ */
+    int retval = 0;       /* 戻り値 */
+    size_t length = 0;    /* 送信または受信する長さ */
+    struct header hd;     /* ヘッダ */
 
     dbglog("start");
 

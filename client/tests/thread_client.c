@@ -338,15 +338,13 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'i': /* IPアドレス指定 */
             if (set_host_string(optarg) < 0) {
-                (void)fprintf(stderr, "Hostname string length %d",
-                              (HOST_SIZE - 1));
+                fprintf(stderr, "Hostname string length %d", (HOST_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             if (set_port_string(optarg) < 0) {
-                (void)fprintf(stderr, "Portno string length %d",
-                              (PORT_SIZE - 1));
+                fprintf(stderr, "Portno string length %d", (PORT_SIZE - 1));
                 exit(EXIT_FAILURE);
             }
             break;

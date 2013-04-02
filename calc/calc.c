@@ -222,7 +222,6 @@ parse_func_args(calcinfo *calc, dbl *x, ...)
 /**
  * 桁数設定
  *
- * @param[in] dgt 桁数
  * @return なし
  */
 void
