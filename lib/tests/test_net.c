@@ -215,7 +215,7 @@ test_set_port(void)
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, port[i]);
-        cut_assert_equal_unsigned int((unsigned int)portno[i],
+        cut_assert_equal_uint((unsigned int)portno[i],
                               (unsigned int)ntohs((uint16_t)server.sin_port),
                               cut_message("expected=%u, actual=%u",
                                           portno[i], ntohs(server.sin_port)));

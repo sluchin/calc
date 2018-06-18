@@ -95,7 +95,7 @@ test_start_timer(void)
     unsigned int t = 0; /* タイマ用変数 */
 
     start_timer(&t);
-    cut_assert_not_equal_unsigned int(0, t);
+    cut_assert_not_equal_uint(0, t);
 }
 
 /**
@@ -126,6 +126,6 @@ test_get_time(void)
     unsigned long long t = 0; /* 戻り値 */
 
     t = get_time();
-    cut_assert_not_equal_unsigned int(0, (unsigned int)t);
+    cut_assert_not_equal_uint(0, (unsigned int)t);
 }
 
