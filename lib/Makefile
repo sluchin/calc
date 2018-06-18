@@ -61,7 +61,7 @@ debug:
 .PHONY: test
 test:
 	$(MAKE) -C $(testdir)
-#	$(CUTTER) $(testdir)
+	$(CUTTER) $(testdir)
 
 .PHONY: install
 install: all

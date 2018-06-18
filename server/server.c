@@ -257,8 +257,8 @@ server_proc(void *arg)
     (void)memcpy(&dt, arg, sizeof(thread_data));
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
-           dt->sock, inet_ntoa(dt->addr.sin_addr),
-           ntohs(dt->addr.sin_port), dt->len);
+           dt.sock, inet_ntoa(dt.addr.sin_addr),
+           ntohs(dt.addr.sin_port), dt.len);
 
     /* シグナルマスクを設定 */
     set_thread_sigmask(dt.sigmask);
@@ -351,7 +351,7 @@ static void
 thread_cleanup(void *arg)
 {
     thread_data *dt = (thread_data *)arg; /* スレッドデータ構造体 */
-    dbglog("start: dt=%p, sock=%d", dt, (*dt)->sock);
+    dbglog("start: dt=%p, sock=%d", dt, dt->sock);
     close_sock(&dt->sock);
 }
 

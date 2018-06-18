@@ -242,6 +242,7 @@ test_server_loop(void)
  *
  * @return なし
  */
+#if 0
 void
 test_server_proc(void)
 {
@@ -317,10 +318,11 @@ test_server_proc(void)
         if (w < 0)
             cut_notify("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
-            cut_error("child failed");
+        //if (WEXITSTATUS(status))
+        //    cut_error("child failed");
     }
 }
+#endif
 
 /**
  * 送信
