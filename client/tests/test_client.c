@@ -50,8 +50,8 @@ static testclient client;                  /**< 関数構造体 */
 static char port[] = "12345";              /**< ポート番号 */
 static const char *hostname = "localhost"; /**< ホスト名 */
 static struct sockaddr_in addr;            /**< ソケットアドレス情報構造体 */
-static uchar readbuf[BUF_SIZE];            /**< 受信バッファ */
-static uchar sendbuf[BUF_SIZE];            /**< 送信データ */
+static unsigned char readbuf[BUF_SIZE];    /**< 受信バッファ */
+static unsigned char sendbuf[BUF_SIZE];    /**< 送信データ */
 static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 static int acc = -1;                       /**< アクセプト */
@@ -77,13 +77,13 @@ void test_read_sock(void);
 
 /* 内部関数 */
 /** send_sock() 関数実行 */
-static int exec_send_sock(uchar *sbuf, size_t length);
+static int exec_send_sock(unsigned char *sbuf, size_t length);
 /** アクセプト */
 static int accept_server(int sockfd);
 /** 受信 */
-static int recv_server(int sockfd, uchar *rbuf);
+static int recv_server(int sockfd, unsigned char *rbuf);
 /** 送信 */
-static int send_server(int sockfd, uchar *sbuf, size_t length);
+static int send_server(int sockfd, unsigned char *sbuf, size_t length);
 /** ソケット生成 */
 static int inet_sock_server(void);
 /** シグナル設定 */
@@ -389,9 +389,9 @@ test_client_loop(void)
 void
 test_send_sock(void)
 {
-    int retval = 0;          /* 戻り値 */
-    uchar estr[] = "exit\n"; /* exit文字列 */
-    uchar qstr[] = "quit\n"; /* quit文字列 */
+    int retval = 0;                  /* 戻り値 */
+    unsigned char estr[] = "exit\n"; /* exit文字列 */
+    unsigned char qstr[] = "quit\n"; /* quit文字列 */
 
     dbglog("start");
 
@@ -518,16 +518,16 @@ test_read_sock(void)
  * @return なし
  */
 static int
-exec_send_sock(uchar *sbuf, size_t length)
+exec_send_sock(unsigned char *sbuf, size_t length)
 {
-    pid_t cpid = 0;            /* プロセスID */
-    pid_t w = 0;               /* wait戻り値 */
-    int status = 0;            /* wait引数 */
-    ssize_t wlen = 0;          /* write戻り値 */
-    int oldfd = 0;             /* 退避用 */
-    int retval = 0;            /* 戻り値 */
-    uchar rbuf[length];        /* 受信バッファ */
-    st_client st = EX_SUCCESS; /* ステータス */
+    pid_t cpid = 0;             /* プロセスID */
+    pid_t w = 0;                /* wait戻り値 */
+    int status = 0;             /* wait引数 */
+    ssize_t wlen = 0;           /* write戻り値 */
+    int oldfd = 0;              /* 退避用 */
+    int retval = 0;             /* 戻り値 */
+    unsigned char rbuf[length]; /* 受信バッファ */
+    st_client st = EX_SUCCESS;  /* ステータス */
 
     dbglog("start");
 
@@ -708,7 +708,7 @@ accept_server(int sockfd)
  * @retval EX_NG エラー
  */
 static int
-recv_server(int sockfd, uchar *rbuf)
+recv_server(int sockfd, unsigned char *rbuf)
 {
     size_t length = 0; /* バイト数 */
     struct header hd;  /* ヘッダ構造体 */
@@ -745,7 +745,7 @@ recv_server(int sockfd, uchar *rbuf)
  * @retval EX_NG エラー
  */
 static int
-send_server(int sockfd, uchar *sbuf, size_t length)
+send_server(int sockfd, unsigned char *sbuf, size_t length)
 {
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     ssize_t slen = 0;                 /* 送信データバイト数 */

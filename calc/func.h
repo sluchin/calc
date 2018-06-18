@@ -33,23 +33,23 @@
 #define MAX_FUNC_STRING    4
 
 /** 関数実行 */
-dbl exec_func(calcinfo *calc, const char *func);
+double exec_func(calcinfo *calc, const char *func);
 
 /** 指数取得 */
-dbl get_pow(calcinfo *calc, dbl x, dbl y);
+double get_pow(calcinfo *calc, double x, double y);
 
 #ifdef UNITTEST
 struct _testfunc {
-    dbl (*get_pi)(calcinfo *calc);
-    dbl (*get_e)(calcinfo *calc);
-    dbl (*get_rad)(calcinfo *calc, dbl x);
-    dbl (*get_deg)(calcinfo *calc, dbl x);
-    dbl (*get_sqrt)(calcinfo *calc, dbl x);
-    dbl (*get_ln)(calcinfo *calc, dbl x);
-    dbl (*get_log)(calcinfo *calc, dbl x);
-    dbl (*get_factorial)(calcinfo *calc, dbl n);
-    dbl (*get_permutation)(calcinfo *calc, dbl n, dbl r);
-    dbl (*get_combination)(calcinfo *calc, dbl n, dbl r);
+    double (*get_pi)(calcinfo *calc);
+    double (*get_e)(calcinfo *calc);
+    double (*get_rad)(calcinfo *calc, double x);
+    double (*get_deg)(calcinfo *calc, double x);
+    double (*get_sqrt)(calcinfo *calc, double x);
+    double (*get_ln)(calcinfo *calc, double x);
+    double (*get_log)(calcinfo *calc, double x);
+    double (*get_factorial)(calcinfo *calc, double n);
+    double (*get_permutation)(calcinfo *calc, double n, double r);
+    double (*get_combination)(calcinfo *calc, double n, double r);
 };
 typedef struct _testfunc testfunc;
 

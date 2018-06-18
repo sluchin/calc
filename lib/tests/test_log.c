@@ -105,7 +105,7 @@ void cut_startup(void)
     char hex = 0x00; /* 16進数 */
     (void)memset(dump, 0, sizeof(dump));
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
@@ -496,7 +496,7 @@ set_print_hex(char *buf, size_t len)
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
         strncat(buf, print_hex[i], len - total - 1);
@@ -521,7 +521,7 @@ set_print_hex_sys(char *buf, const char *prefix, size_t len)
     size_t length = 0; /* 文字列長(一行) */
     size_t total = 0;  /* 文字列長(全て) */
 
-    uint i;
+    unsigned int i;
     const size_t prefix_len = strlen(prefix);
     for (i = 0; i < NELEMS(print_hex); i++) {
         strncat(buf, prefix, len - total - 1);

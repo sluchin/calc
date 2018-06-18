@@ -219,16 +219,16 @@ server_loop(int sock)
                 /* スレッド生成 */
                 retval = pthread_create(&tid, NULL, server_proc, dt);
                 if (retval) { /* エラー(非0) */
-                    outlog("pthread_create=%lu", (ulong)tid);
+                    outlog("pthread_create=%lu", (unsigned long)tid);
                     close_sock(&dt->sock); /* アクセプトクローズ */
                     memfree((void **)&dt, NULL);
                     continue;
                 }
-                dbglog("pthread_create=%lu, accept=%d", (ulong)tid, dt->sock);
+                dbglog("pthread_create=%lu, accept=%d", (unsigned long)tid, dt->sock);
 
                 retval = pthread_detach(tid);
                 if (retval) /* エラー(非0) */
-                    outlog("pthread_detach: tid=%lu", (ulong)tid);
+                    outlog("pthread_detach: tid=%lu", (unsigned long)tid);
             }
         } else { /* タイムアウト */
             continue;
@@ -250,7 +250,7 @@ server_proc(void *arg)
     size_t length = 0;                /* 長さ */
     ssize_t slen = 0;                 /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
-    uchar *expr = NULL;               /* 受信データ */
+    unsigned char *expr = NULL;       /* 受信データ */
     calcinfo calc;                    /* calc情報構造体 */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
 
@@ -281,7 +281,7 @@ server_proc(void *arg)
 
         /* データ受信 */
         length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
-        expr = (uchar *)recv_data_new(dt.sock, &length);
+        expr = (unsigned char *)recv_data_new(dt.sock, &length);
         if (!expr) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);
 
@@ -353,7 +353,6 @@ thread_cleanup(void *arg)
     thread_data *dt = (thread_data *)arg; /* スレッドデータ構造体 */
     dbglog("start: dt=%p, sock=%d", dt, (*dt)->sock);
     close_sock(&dt->sock);
-    //memfree((void **)dt, NULL);
 }
 
 /**

@@ -55,21 +55,21 @@ typedef enum _ER ER;
 /** calc情報構造体 */
 struct _calcinfo {
     int ch;                    /**< 文字 */
-    uchar *ptr;                /**< 文字列走査用ポインタ */
-    uchar *answer;             /**< 結果文字列 */
+    unsigned char *ptr;        /**< 文字列走査用ポインタ */
+    unsigned char *answer;     /**< 結果文字列 */
     char fmt[sizeof("%.18g")]; /**< フォーマット */
     ER errorcode;              /**< エラーコード */
 };
 typedef struct _calcinfo calcinfo;
 
 /** 計算結果 */
-uchar *create_answer(calcinfo *calc, const uchar *expr);
+unsigned char *create_answer(calcinfo *calc, const unsigned char *expr);
 
 /** メモリ解放 */
 void destroy_answer(void *calc);
 
 /** 引数解析 */
-void parse_func_args(calcinfo *calc, dbl *x, ...);
+void parse_func_args(calcinfo *calc, double *x, ...);
 
 /** 桁数設定 */
 void set_digit(long digit);
@@ -77,12 +77,12 @@ void set_digit(long digit);
 #ifdef UNITTEST
 struct _testcalc {
     void (*readch)(calcinfo *calc);
-    dbl (*expression)(calcinfo *calc);
-    dbl (*term)(calcinfo *calc);
-    dbl (*factor)(calcinfo *calc);
-    dbl (*token)(calcinfo *calc);
-    dbl (*number)(calcinfo *calc);
-    int (*get_strlen)(const dbl val, const char *fmt);
+    double (*expression)(calcinfo *calc);
+    double (*term)(calcinfo *calc);
+    double (*factor)(calcinfo *calc);
+    double (*token)(calcinfo *calc);
+    double (*number)(calcinfo *calc);
+    int (*get_strlen)(const double val, const char *fmt);
 };
 typedef struct _testcalc testcalc;
 

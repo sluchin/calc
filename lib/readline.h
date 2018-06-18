@@ -33,7 +33,7 @@
 #define FGETSBUF 1024 /**< バッファサイズ */
 
 /** 一行読込 */
-uchar *_readline(FILE *fp);
+unsigned char *_readline(FILE *fp);
 
 #endif /* _READLINE_H_ */
 

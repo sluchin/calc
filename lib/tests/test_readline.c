@@ -43,13 +43,13 @@
 void test_readline(void);
 
 /* 内部変数 */
-static int pfd[] = { -1, -1 };   /* パイプ1 */
-static char test_data[BUF_SIZE]; /* テストデータ */
-static uchar *result = NULL;     /* 結果文字列 */
+static int pfd[] = { -1, -1 };       /* パイプ */
+static char test_data[BUF_SIZE];     /* テストデータ */
+static unsigned char *result = NULL; /* 結果文字列 */
 
 /* 内部関数 */
 /** readline() 実行 */
-static uchar *exec_readline(char *data, size_t length);
+static unsigned char *exec_readline(char *data, size_t length);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -128,7 +128,7 @@ test_readline(void)
  * @param[in] length バイト数
  * @return 結果文字列
  */
-static uchar *
+static unsigned char *
 exec_readline(char *data, size_t length)
 {
     FILE *fp = NULL; /* ファイルポインタ */

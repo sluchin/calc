@@ -132,7 +132,7 @@ test_clear_error(void)
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
 
-    calc.answer = (uchar *)strdup("dammy");
+    calc.answer = (unsigned char *)strdup("dammy");
     clear_error(&calc);
 
     cut_assert_equal_int((int)E_NONE, (int)calc.errorcode);
@@ -170,8 +170,8 @@ test_is_error(void)
 void
 test_check_validate(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
@@ -206,8 +206,8 @@ test_check_validate(void)
 void
 test_check_math_feexcept(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
@@ -244,8 +244,8 @@ test_check_math_feexcept(void)
 void
 test_clear_math_feexcept(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");

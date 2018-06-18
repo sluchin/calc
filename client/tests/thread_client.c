@@ -53,12 +53,12 @@
 
 /** スレッドデータ構造体 */
 struct _thread_data {
-    uchar expr[BUF_SIZE];      /**< 式 */
-    struct client_data *sdata; /**< 送信データ */
-    uchar *answer;             /**< 受信データ */
-    uchar *expected[BUF_SIZE]; /**< 期待する文字列 */
-    size_t len;                /**< 送信データ長 */
-    int sock;                  /**< ソケット */
+    unsigned char expr[BUF_SIZE];      /**< 式 */
+    struct client_data *sdata;         /**< 送信データ */
+    unsigned char *answer;             /**< 受信データ */
+    unsigned char *expected[BUF_SIZE]; /**< 期待する文字列 */
+    size_t len;                        /**< 送信データ長 */
+    int sock;                          /**< ソケット */
 };
 typedef struct _thread_data thread_data;
 
@@ -172,26 +172,26 @@ create_threads(void)
         (void)memcpy(dt->expected, answer[j], sizeof(dt->expected));
         retval = pthread_create(&tid[j], NULL, client_thread, dt);
         if (retval) {
-            outstd("pthread_create=%lu, j=%d", (ulong)tid[j], j);
+            outstd("pthread_create=%lu, j=%d", (unsigned long)tid[j], j);
             memfree((void **)&dt, NULL);
             break;
         }
-        stdlog("pthread_create: tid=%lu", (ulong)tid[j]);
+        stdlog("pthread_create: tid=%lu", (unsigned long)tid[j]);
     }
 
     int k;
     for (k = 0; k < threads; k++) {
         if (tid[k]) {
-            dbglog("tid=%lu", (ulong)tid[k]);
+            dbglog("tid=%lu", (unsigned long)tid[k]);
             retval = pthread_join(tid[k], &thread_ret);
             if (retval) {
-                outstd("pthread_join=%lu, k=%jd", (ulong)tid[k], k);
+                outstd("pthread_join=%lu, k=%jd", (unsigned long)tid[k], k);
                 continue;
             }
             if (thread_ret)
                 outstd("thread error=%ld", (long)thread_ret);
             stdlog("pthread_join=%ld: tid=%lu",
-                   (long)thread_ret, (ulong)tid[k]);
+                   (long)thread_ret, (unsigned long)tid[k]);
             assert(0 == thread_ret);
         }
     }
@@ -245,7 +245,7 @@ client_thread(void *arg)
     length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
 
     /* データ受信 */
-    dt->answer = (uchar *)recv_data_new(dt->sock, &length);
+    dt->answer = (unsigned char *)recv_data_new(dt->sock, &length);
     if (!dt->answer) /* メモリ確保できない */
         pthread_exit((void *)EX_ALLOC_ERR);
 

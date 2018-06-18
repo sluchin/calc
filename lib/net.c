@@ -179,13 +179,13 @@ set_block(int fd, blockmode mode)
 int
 send_data(const int sock, const void *sdata, size_t *length)
 {
-    ssize_t len = 0;         /* send戻り値 */
-    size_t left = 0;         /* 残りのバイト数 */
-    const uchar *ptr = NULL; /* ポインタ */
+    ssize_t len = 0;                 /* send戻り値 */
+    size_t left = 0;                 /* 残りのバイト数 */
+    const unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: sdata=%p, length=%zu", sdata, *length);
 
-    ptr = (uchar *)sdata;
+    ptr = (unsigned char *)sdata;
     left = *length;
     while (left > 0) {
         len = send(sock, sdata, *length, 0);
@@ -223,13 +223,13 @@ error_handler:
 int
 recv_data(const int sock, void *rdata, size_t *length)
 {
-    ssize_t len = 0;   /* recv戻り値 */
-    size_t left = 0;   /* 残りのバイト数 */
-    uchar *ptr = NULL; /* ポインタ */
+    ssize_t len = 0;           /* recv戻り値 */
+    size_t left = 0;           /* 残りのバイト数 */
+    unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: rdata=%p, length=%zu", rdata, *length);
 
-    ptr = (uchar *)rdata;
+    ptr = (unsigned char *)rdata;
     left = *length;
     while (left > 0) {
         len = recv(sock, ptr, left, 0);

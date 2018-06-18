@@ -50,10 +50,10 @@
 
 /** スレッドデータ構造体 */
 struct send_data {
-    uchar sdata[BUF_SIZE];    /**< 送信データ */
-    uchar rdata[BUF_SIZE];    /**< 受信データ */
-    uchar expected[BUF_SIZE]; /**< 期待される文字列 */
-    size_t len;               /**< 送信データ長 */
+    unsigned char sdata[BUF_SIZE];    /**< 送信データ */
+    unsigned char rdata[BUF_SIZE];    /**< 受信データ */
+    unsigned char expected[BUF_SIZE]; /**< 期待される文字列 */
+    size_t len;                       /**< 送信データ長 */
 };
 
 /* プロトタイプ */
@@ -70,17 +70,17 @@ void test_server_proc(void);
 static testserver server;                  /**< 関数構造体 */
 static char port[] = "12345";              /**< ポート番号 */
 static const char *hostname = "localhost"; /**< ホスト名 */
-static uchar readbuf[BUF_SIZE];            /**< 受信バッファ */
-static uchar expr[] = "1+1";               /**< 式 */
-static uchar expected[] = "2";             /**< 期待される文字列 */
+static unsigned char readbuf[BUF_SIZE];    /**< 受信バッファ */
+static unsigned char expr[] = "1+1";       /**< 式 */
+static unsigned char expected[] = "2";     /**< 期待される文字列 */
 static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 
 /* 内部関数 */
 /** 送信 */
-static int send_client(int sockfd, uchar *sbuf, size_t length);
+static int send_client(int sockfd, unsigned char *sbuf, size_t length);
 /** 受信 */
-static int recv_client(int sockfd, uchar *rbuf);
+static int recv_client(int sockfd, unsigned char *rbuf);
 /** ソケット生成 */
 static int inet_sock_client(void);
 /** シグナル設定 */
@@ -331,7 +331,7 @@ test_server_proc(void)
  * @retval EX_NG エラー
  */
 static int
-send_client(int sockfd, uchar *sbuf, size_t length)
+send_client(int sockfd, unsigned char *sbuf, size_t length)
 {
     struct client_data *cdata = NULL; /* 送信データ構造体 */
     ssize_t slen = 0;                 /* 送信データバイト数 */
@@ -365,7 +365,7 @@ send_client(int sockfd, uchar *sbuf, size_t length)
  * @retval EX_NG エラー
  */
 static int
-recv_client(int sockfd, uchar *rbuf)
+recv_client(int sockfd, unsigned char *rbuf)
 {
     size_t length = 0; /* バイト数 */
     struct header hd;  /* ヘッダ構造体 */

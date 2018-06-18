@@ -170,7 +170,7 @@ test_set_hostname(void)
     const char nohost[] = "nohostxhlkjiherlgfsd";      /* エラー用データ */
 
     /* 正常系 */
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(host); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
@@ -210,13 +210,13 @@ test_set_port(void)
     const char *err_port[] = { "0", "65535", "noservice" }; /* エラー */
 
     /* 正常系 */
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(port); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, port[i]);
-        cut_assert_equal_uint((uint)portno[i],
-                              (uint)ntohs((uint16_t)server.sin_port),
+        cut_assert_equal_unsigned int((unsigned int)portno[i],
+                              (unsigned int)ntohs((uint16_t)server.sin_port),
                               cut_message("expected=%u, actual=%u",
                                           portno[i], ntohs(server.sin_port)));
         cut_assert_equal_int(EX_OK, retval,

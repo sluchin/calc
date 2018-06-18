@@ -42,12 +42,12 @@
 void
 set_string(calcinfo *calc, const char *str)
 {
-    size_t length = 0;  /* 文字列長 */
-    uchar *expr = NULL; /* 式 */
-    int retval = 0;     /* 戻り値 */
+    size_t length = 0;          /* 文字列長 */
+    unsigned char *expr = NULL; /* 式 */
+    int retval = 0;             /* 戻り値 */
 
     length = strlen(str);
-    expr = (uchar *)cut_take_strndup(str, length);
+    expr = (unsigned char *)cut_take_strndup(str, length);
     if (!expr)
         cut_error("cut_take_strndup=%p", expr);
 

@@ -64,10 +64,10 @@ bool g_tflag = false;                    /**< tオプションフラグ */
 /* 内部変数 */
 static char hostname[HOST_SIZE];         /**< ホスト名 */
 static char portno[PORT_SIZE];           /**< ポート番号 */
-static uint start_time = 0;              /**< タイマ開始 */
+static unsigned int start_time = 0;      /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
-static uchar *expr = NULL;               /**< 入力バッファ */
-static uchar *answer = NULL;             /**< 受信データ */
+static unsigned char *expr = NULL;       /**< 入力バッファ */
+static unsigned char *answer = NULL;     /**< 受信データ */
 
 /* 内部関数 */
 /** ソケット送信 */
@@ -166,12 +166,12 @@ connect_sock(void)
 st_client
 client_loop(int sock)
 {
-    int ready = 0;                 /* select戻り値 */
-    struct timespec timeout;       /* タイムアウト値 */
-    sigset_t sigmask;              /* シグナルマスク */
-    st_client status = EX_SUCCESS; /* ステータス */
+    int ready = 0;                   /* select戻り値 */
+    struct timespec timeout;         /* タイムアウト値 */
+    sigset_t sigmask;                /* シグナルマスク */
+    st_client status = EX_SUCCESS;   /* ステータス */
 #ifdef _USE_SELECT
-    fd_set fds, rfds;        /* selectマスク */
+    fd_set fds, rfds;                /* selectマスク */
 #else
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
@@ -317,9 +317,9 @@ send_sock(int sock)
 static st_client
 read_sock(int sock)
 {
-    int retval = 0;       /* 戻り値 */
-    size_t length = 0;    /* 送信または受信する長さ */
-    struct header hd;     /* ヘッダ */
+    int retval = 0;    /* 戻り値 */
+    size_t length = 0; /* 送信または受信する長さ */
+    struct header hd;  /* ヘッダ */
 
     dbglog("start");
 
@@ -338,7 +338,7 @@ read_sock(int sock)
     length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
 
     /* データ受信 */
-    answer = (uchar *)recv_data_new(sock, &length);
+    answer = (unsigned char *)recv_data_new(sock, &length);
     if (!answer) /* メモリ確保できない */
         return EX_ALLOC_ERR;
     if (!length) /* 受信エラー */
@@ -352,7 +352,7 @@ read_sock(int sock)
             "recv: answer=%p, length=%zu", answer, length);
 
     if (g_tflag) {
-        uint client_time = stop_timer(&start_time);
+        unsigned int client_time = stop_timer(&start_time);
         print_timer(client_time);
     }
 

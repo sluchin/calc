@@ -76,11 +76,11 @@ test_set_client_data(void)
     ssize_t len = 0;
     struct client_data *dt = NULL;
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(test_data); i++) {
         length = strlen(test_data[i]) + 1;
         dbglog("length=%zu", length);
-        len = set_client_data(&dt, (uchar *)test_data[i], length);
+        len = set_client_data(&dt, (unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         cut_assert_equal_int(0, len % ALIGN);
         dbglog("dt=%p", dt);
@@ -103,11 +103,11 @@ test_set_server_data(void)
     ssize_t len = 0;
     struct server_data *dt = NULL;
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(test_data); i++) {
         length = strlen(test_data[i]) + 1;
         dbglog("length=%zu", length);
-        len = set_server_data(&dt, (uchar *)test_data[i], length);
+        len = set_server_data(&dt, (unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         cut_assert_equal_int(0, len % ALIGN);
         dbglog("dt=%p", dt);

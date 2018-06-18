@@ -52,11 +52,11 @@ void test_get_time(void);
 void
 test_print_timer(void)
 {
-    uint t = 0, time = 0;        /* タイマ用変数 */
-    int fd = -1;                 /* ファイルディスクリプタ */
-    int retval = 0;              /* 戻り値 */
-    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
-    const char expected[] =      /* 期待する文字列 */
+    unsigned int t = 0, time = 0; /* タイマ用変数 */
+    int fd = -1;                  /* ファイルディスクリプタ */
+    int retval = 0;               /* 戻り値 */
+    char actual[BUF_SIZE] = {0};  /* 実際の文字列 */
+    const char expected[] =       /* 期待する文字列 */
         "time of time: [0-9]+\\.[0-9]+\\[msec\\]";
 
     start_timer(&t);
@@ -92,10 +92,10 @@ error_handler:
 void
 test_start_timer(void)
 {
-    uint t = 0; /* タイマ用変数 */
+    unsigned int t = 0; /* タイマ用変数 */
 
     start_timer(&t);
-    cut_assert_not_equal_uint(0, t);
+    cut_assert_not_equal_unsigned int(0, t);
 }
 
 /**
@@ -106,7 +106,7 @@ test_start_timer(void)
 void
 test_stop_timer(void)
 {
-    uint t = 0, time = 0; /* タイマ用変数 */
+    unsigned int t = 0, time = 0; /* タイマ用変数 */
 
     start_timer(&t);
     dbglog("t=%u", t);
@@ -126,6 +126,6 @@ test_get_time(void)
     unsigned long long t = 0; /* 戻り値 */
 
     t = get_time();
-    cut_assert_not_equal_uint(0, (uint)t);
+    cut_assert_not_equal_unsigned int(0, (unsigned int)t);
 }
 

@@ -51,10 +51,10 @@ static const char *errormsg[] = {
  * @attention 呼び出し元で, clear_error()すること.\n
  *            戻り値ポインタは解放しなければならない.
  */
-uchar *
+unsigned char *
 get_errormsg(calcinfo *calc)
 {
-    uchar *msg = NULL; /* エラーメッセージ */
+    unsigned char *msg = NULL; /* エラーメッセージ */
 
     dbglog("start: errorcode=%d", (int)calc->errorcode);
     assert(MAXERROR == NELEMS(errormsg));
@@ -66,7 +66,7 @@ get_errormsg(calcinfo *calc)
     dbglog("errormsg=%s, errorcode=%d",
            errormsg[calc->errorcode], (int)calc->errorcode);
 
-    msg = (uchar *)strdup(errormsg[calc->errorcode]);
+    msg = (unsigned char *)strdup(errormsg[calc->errorcode]);
     if (!msg) {
         outlog("strdup");
         return NULL;
@@ -129,7 +129,7 @@ is_error(calcinfo *calc)
  * @return なし
  */
 void
-check_validate(calcinfo *calc, dbl val)
+check_validate(calcinfo *calc, double val)
 {
     dbglog("start");
 

@@ -44,8 +44,8 @@ static tcflag_t *mode_type_flag(const enum mode_type type,
 struct _mode_info {
     const char *name;    /**< モード名 */
     enum mode_type type; /**< tcflag_t構造体種別 */
-    ulong bits;          /**< モード設定されている */
-    ulong mask;          /**< 未設定のとき設定されるべきビット */
+    unsigned long bits;  /**< モード設定されている */
+    unsigned long mask;  /**< 未設定のとき設定されるべきビット */
 };
 
 /** モード情報 */
@@ -223,7 +223,7 @@ static char *
 get_termattr(const int fd, struct termios *mode)
 {
     tcflag_t *bitsp = NULL; /* ビット */
-    ulong mask = 0;         /* マスク */
+    unsigned long mask = 0; /* マスク */
     char buf[BUF_SIZE];     /* バッファ */
     char *ptr = NULL;       /* 戻り値ポインタ */
     char *endp = NULL;      /* strrchr戻り値 */

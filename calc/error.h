@@ -33,7 +33,7 @@
 #include "func.h"
 
 /** エラーメッセージ取得 */
-uchar *get_errormsg(calcinfo *calc);
+unsigned char *get_errormsg(calcinfo *calc);
 
 /** エラーコード設定 */
 void set_errorcode(calcinfo *calc, ER error);
@@ -45,7 +45,7 @@ void clear_error(calcinfo *calc);
 bool is_error(calcinfo *calc);
 
 /** 数値の妥当性チェック */
-void check_validate(calcinfo *calc, dbl val);
+void check_validate(calcinfo *calc, double val);
 
 /** 浮動小数点例外チェック */
 void check_math_feexcept(calcinfo *calc);

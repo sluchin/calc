@@ -142,7 +142,7 @@ system_log(const int level,
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
     syslog(level, "ppid=%d%s: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "", fname, line, func, message, errsv);
@@ -212,7 +212,7 @@ system_dbg_log(const int level,
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
     syslog(level, "ppid=%d%s: %02d.%06ld: %s[%d]: %s(%s): %m(%d)",
            getppid(), tid ? t_buf : "",
@@ -274,7 +274,7 @@ stderr_log(const char *pname,
 
     tid = pthread_self();
     if (tid)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (ulong)tid);
+        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld " \

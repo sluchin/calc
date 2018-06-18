@@ -36,15 +36,15 @@
  * @return 文字列
  * @retval NULL エラー
  */
-uchar *
+unsigned char *
 _readline(FILE *fp)
 {
-    char *fgetsp = NULL; /* fgets戻り値 */
-    size_t length = 0;   /* 文字列長 */
-    size_t total = 0;    /* 文字列長全て */
-    uchar *alloc = NULL; /* reallocバッファ */
-    uchar *tmp = NULL;   /* 一時ポインタ */
-    uchar buf[FGETSBUF]; /* fgetsバッファ */
+    char *fgetsp = NULL;         /* fgets戻り値 */
+    size_t length = 0;           /* 文字列長 */
+    size_t total = 0;            /* 文字列長全て */
+    unsigned char *alloc = NULL; /* reallocバッファ */
+    unsigned char *tmp = NULL;   /* 一時ポインタ */
+    unsigned char buf[FGETSBUF]; /* fgetsバッファ */
 
     /* fgetsのファイルポインタにNULLを渡した場合,
      * crashするかもしれない */
@@ -66,19 +66,19 @@ _readline(FILE *fp)
         length = strlen((char *)buf);
         dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
-        tmp = (uchar *)realloc(alloc, (total + length + 1) * sizeof(uchar));
+        tmp = (unsigned char *)realloc(alloc, (total + length + 1) * sizeof(unsigned char));
         if (!tmp) {
             outlog("realloc: total+length+1=%zu", total + length + 1);
             return NULL;
         }
         alloc = tmp;
-        (void)memset(alloc + total, 0, (length + 1) * sizeof(uchar));
+        (void)memset(alloc + total, 0, (length + 1) * sizeof(unsigned char));
 
-        (void)memcpy(alloc + total, buf, length * sizeof(uchar));
+        (void)memcpy(alloc + total, buf, length * sizeof(unsigned char));
 
         total += length;
         dbglog("alloc=%p, length=%zu, total=%zu",
-               alloc + total, length * sizeof(uchar), total);
+               alloc + total, length * sizeof(unsigned char), total);
 
     } while (*(alloc + total - 1) != '\n');
 

@@ -68,11 +68,11 @@ static testfunc st_func; /**< func関数構造体 */
 /** テストデータ構造体 */
 struct test_data {
     char expr[MAX_STRING];
-    dbl answer;
-    dbl x;
-    dbl y;
+    double answer;
+    double x;
+    double y;
     ER errorcode;
-    dbl error;
+    double error;
 };
 
 /** exec_func() 関数テスト用データ */
@@ -196,12 +196,12 @@ void cut_startup(void)
 void
 test_exec_func(void)
 {
-    dbl result = 0.0;               /* 結果 */
+    double result = 0.0;            /* 結果 */
     calcinfo calc;                  /* calcinfo構造体 */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, func_data[i].expr);
@@ -240,10 +240,10 @@ test_exec_func(void)
 void
 test_get_pow(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(pow_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, pow_data[i].expr);
@@ -272,9 +272,9 @@ test_get_pow(void)
 void
 test_get_pi(void)
 {
-    dbl result = 0.0;             /* 結果 */
-    calcinfo calc;                /* calcinfo構造体 */
-    const dbl pi = 3.14159265359; /* pi */
+    double result = 0.0;             /* 結果 */
+    calcinfo calc;                   /* calcinfo構造体 */
+    const double pi = 3.14159265359; /* pi */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "pi");
@@ -297,9 +297,9 @@ test_get_pi(void)
 void
 test_get_e(void)
 {
-    dbl result = 0.0;            /* 結果 */
-    calcinfo calc;               /* calcinfo構造体 */
-    const dbl e = 2.71828182846; /* e */
+    double result = 0.0;            /* 結果 */
+    calcinfo calc;                  /* calcinfo構造体 */
+    const double e = 2.71828182846; /* e */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "e");
@@ -322,10 +322,10 @@ test_get_e(void)
 void
 test_get_rad(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(rad_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, rad_data[i].expr);
@@ -349,10 +349,10 @@ test_get_rad(void)
 void
 test_get_deg(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(deg_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, deg_data[i].expr);
@@ -376,10 +376,10 @@ test_get_deg(void)
 void
 test_get_sqrt(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(sqrt_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, sqrt_data[i].expr);
@@ -408,10 +408,10 @@ test_get_sqrt(void)
 void
 test_get_ln(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(ln_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, ln_data[i].expr);
@@ -440,10 +440,10 @@ test_get_ln(void)
 void
 test_get_log(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(log_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, log_data[i].expr);
@@ -472,10 +472,10 @@ test_get_log(void)
 void
 test_get_factorial(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(factorial_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factorial_data[i].expr);
@@ -504,10 +504,10 @@ test_get_factorial(void)
 void
 test_get_permutation(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(permutation_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, permutation_data[i].expr);
@@ -538,10 +538,10 @@ test_get_permutation(void)
 void
 test_get_combination(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(combination_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, combination_data[i].expr);

@@ -47,27 +47,27 @@
 #include "calc.h"
 
 /* 外部変数 */
-bool g_tflag = false;              /**< tオプションフラグ */
+bool g_tflag = false;               /**< tオプションフラグ */
 
 /* 内部変数 */
-static const dbl EX_ERROR = 0.0;   /**< エラー戻り値 */
-static long digit = DEFAULT_DIGIT; /**< 桁数 */
+static const double EX_ERROR = 0.0; /**< エラー戻り値 */
+static long digit = DEFAULT_DIGIT;  /**< 桁数 */
 
 /* 内部関数 */
 /** バッファ読込 */
 static void readch(calcinfo *calc);
 /** 式 */
-static dbl expression(calcinfo *calc);
+static double expression(calcinfo *calc);
 /** 項 */
-static dbl term(calcinfo *calc);
+static double term(calcinfo *calc);
 /** 因子 */
-static dbl factor(calcinfo *calc);
+static double factor(calcinfo *calc);
 /** 数または関数 */
-static dbl token(calcinfo *calc);
+static double token(calcinfo *calc);
 /** 文字列を数値に変換 */
-static dbl number(calcinfo *calc);
+static double number(calcinfo *calc);
 /** 文字数取得 */
-static int get_strlen(const dbl val, const char *fmt);
+static int get_strlen(const double val, const char *fmt);
 
 /**
  * 計算結果
@@ -78,17 +78,17 @@ static int get_strlen(const dbl val, const char *fmt);
  * @retval NULL エラー
  * @attention destroy_answerを必ず呼ぶこと.
  */
-uchar *
-create_answer(calcinfo *calc, const uchar *expr)
+unsigned char *
+create_answer(calcinfo *calc, const unsigned char *expr)
 {
-    dbl val = 0.0;     /* 値 */
-    size_t length = 0; /* 文字数 */
-    int retval = 0;    /* 戻り値 */
-    uint start = 0;    /* タイマ開始 */
+    double val = 0.0;        /* 値 */
+    size_t length = 0;       /* 文字数 */
+    int retval = 0;          /* 戻り値 */
+    unsigned int start = 0;  /* タイマ開始 */
 
     dbglog("start");
 
-    calc->ptr = (uchar *)expr; /* 走査用ポインタ */
+    calc->ptr = (unsigned char *)expr; /* 走査用ポインタ */
     dbglog("ptr=%p", calc->ptr);
 
     /* フォーマット設定 */
@@ -114,7 +114,7 @@ create_answer(calcinfo *calc, const uchar *expr)
         set_errorcode(calc, E_SYNTAX);
 
     if (g_tflag) {
-        uint calc_time = stop_timer(&start);
+        unsigned int calc_time = stop_timer(&start);
         print_timer(calc_time);
     }
 
@@ -135,12 +135,12 @@ create_answer(calcinfo *calc, const uchar *expr)
         length = (size_t)retval + 1; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        calc->answer = (uchar *)malloc(length * sizeof(uchar));
+        calc->answer = (unsigned char *)malloc(length * sizeof(unsigned char));
         if (!calc->answer) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
-        (void)memset(calc->answer, 0, length * sizeof(uchar));
+        (void)memset(calc->answer, 0, length * sizeof(unsigned char));
 
         /* 値を文字列に変換 */
         retval = snprintf((char *)calc->answer, length, calc->fmt, val);
@@ -178,10 +178,10 @@ destroy_answer(void *calc)
  * @attention 最後の引数はNULLにすること.
  */
 void
-parse_func_args(calcinfo *calc, dbl *x, ...)
+parse_func_args(calcinfo *calc, double *x, ...)
 {
-    dbl *val = NULL; /* 値 */
-    va_list ap;      /* va_list */
+    double *val = NULL; /* 値 */
+    va_list ap;         /* va_list */
 
     dbglog("start");
 
@@ -199,7 +199,7 @@ parse_func_args(calcinfo *calc, dbl *x, ...)
 
     va_start(ap, x);
 
-    while ((val = va_arg(ap, dbl *)) != NULL) {
+    while ((val = va_arg(ap, double *)) != NULL) {
         if (calc->ch != ',') {
             set_errorcode(calc, E_SYNTAX);
             va_end(ap);
@@ -259,10 +259,10 @@ readch(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return 値
  */
-static dbl
+static double
 expression(calcinfo *calc)
 {
-    dbl x = 0.0; /* 値 */
+    double x = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -294,10 +294,10 @@ expression(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return 値
  */
-static dbl
+static double
 term(calcinfo *calc)
 {
-    dbl x = 0.0, y = 0.0; /* 値 */
+    double x = 0.0, y = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -337,10 +337,10 @@ term(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return 値
  */
-static dbl
+static double
 factor(calcinfo *calc)
 {
-    dbl x = 0.0; /* 値 */
+    double x = 0.0; /* 値 */
 
     dbglog("start");
 
@@ -369,10 +369,10 @@ factor(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return 値
  */
-static dbl
+static double
 token(calcinfo *calc)
 {
-    dbl result = 0.0;               /* 結果 */
+    double result = 0.0;               /* 結果 */
     int sign = '+';                 /* 単項+- */
     char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
     int pos = 0;                    /* 配列位置 */
@@ -417,10 +417,10 @@ token(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return 値
  */
-static dbl
+static double
 number(calcinfo *calc)
 {
-    dbl x = 0.0, y = 1.0; /* 値 */
+    double x = 0.0, y = 1.0; /* 値 */
 
     dbglog("start");
 
@@ -450,7 +450,7 @@ number(calcinfo *calc)
  * @retval -1 fprintfエラー
  */
 static int
-get_strlen(const dbl val, const char *fmt)
+get_strlen(const double val, const char *fmt)
 {
     FILE *fp = NULL; /* ファイルポインタ */
     int retval = 0;  /* fclose戻り値 */

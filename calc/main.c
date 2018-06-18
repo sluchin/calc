@@ -46,7 +46,7 @@
 static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 #ifdef HAVE_READLINE
 static HIST_ENTRY *history = NULL;            /**< 履歴 */
-static const uint MAX_HISTORY = 100;          /**< 最大履歴数 */
+static const unsigned int MAX_HISTORY = 100;  /**< 最大履歴数 */
 #endif /* HAVE_READLINE */
 
 /* 内部関数 */
@@ -108,12 +108,12 @@ main(int argc, char *argv[])
 static void
 main_loop(void)
 {
-    int retval = 0;      /* 戻り値 */
-    calcinfo calc;       /* calcinfo構造体 */
-    uchar *expr = NULL;  /* 式 */
+    int retval = 0;              /* 戻り値 */
+    calcinfo calc;               /* calcinfo構造体 */
+    unsigned char *expr = NULL;  /* 式 */
 #ifdef HAVE_READLINE
-    uint hist_no = 0;    /* 履歴数 */
-    char *prompt = NULL; /* プロンプト */
+    unsigned int hist_no = 0;    /* 履歴数 */
+    char *prompt = NULL;         /* プロンプト */
 
     rl_event_hook = &check_state;
 #endif /* HAVE_READLINE */
@@ -127,7 +127,7 @@ main_loop(void)
     do {
         dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
-        expr = (uchar *)readline(prompt);
+        expr = (unsigned char *)readline(prompt);
 #else
         expr = _readline(stdin);
 #endif /* HAVE_READLINE */

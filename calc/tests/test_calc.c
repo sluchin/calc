@@ -74,9 +74,9 @@ struct test_data_char {
 };
 
 /** テストデータ構造体(answer double) */
-struct test_data_dbl {
+struct test_data_double {
     char expr[MAX_STRING];
-    dbl answer;
+    double answer;
     ER errorcode;
 };
 
@@ -170,13 +170,13 @@ static const struct test_data_char error_data [] = {
 };
 
 /** expression() 関数テスト用データ */
-static const struct test_data_dbl expression_data [] = {
+static const struct test_data_double expression_data [] = {
     { "5+7", 12, E_NONE },
     { "5-1",  4, E_NONE }
 };
 
 /** term() 関数テスト用データ */
-static const struct test_data_dbl term_data [] = {
+static const struct test_data_double term_data [] = {
     { "5*7", 35,   E_NONE      },
     { "6/2",  3,   E_NONE      },
     { "6^2", 36,   E_NONE      },
@@ -184,13 +184,13 @@ static const struct test_data_dbl term_data [] = {
 };
 
 /** factor() 関数テスト用データ */
-static const struct test_data_dbl factor_data [] = {
+static const struct test_data_double factor_data [] = {
     { "(5+4)", 9,   E_NONE   },
     { "(5+4",  0.0, E_SYNTAX }
 };
 
 /** token() 関数テスト用データ */
-static const struct test_data_dbl token_data [] = {
+static const struct test_data_double token_data [] = {
     { "+54321",    54321,   E_NONE   },
     { "-54321",   -54321,   E_NONE   },
     { "54231",     54231,   E_NONE   },
@@ -199,7 +199,7 @@ static const struct test_data_dbl token_data [] = {
 };
 
 /** number() 関数テスト用データ */
-static const struct test_data_dbl number_data [] = {
+static const struct test_data_double number_data [] = {
     { "54321",  54321,     E_NONE },
     { "543.21",   543.21,  E_NONE },
 };
@@ -226,7 +226,7 @@ test_answer_four(void)
 {
     calcinfo calc; /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(four_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
@@ -251,7 +251,7 @@ test_answer_func(void)
 {
     calcinfo calc; /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
@@ -275,7 +275,7 @@ test_answer_four_func(void)
 {
     calcinfo calc; /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(four_func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
@@ -299,7 +299,7 @@ test_answer_error(void)
 {
     calcinfo calc; /* calc情報構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(error_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
@@ -321,8 +321,8 @@ test_answer_error(void)
 void
 test_parse_func_args(void)
 {
-    dbl x = 0.0, y = 0.0; /* 値 */
-    calcinfo calc;        /* calc情報構造体 */
+    double x = 0.0, y = 0.0; /* 値 */
+    calcinfo calc;           /* calc情報構造体 */
 
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "(235)");
@@ -370,8 +370,8 @@ test_set_digit(void)
 void
 test_readch(void)
 {
-    uchar *ptr = NULL; /* ポインタ */
-    calcinfo calc;     /* calc情報構造体 */
+    unsigned char *ptr = NULL; /* ポインタ */
+    calcinfo calc;             /* calc情報構造体 */
 
     /* スペース・タブを含んだ文字列を設定 */
     (void)memset(&calc, 0, sizeof(calcinfo));
@@ -409,10 +409,10 @@ test_readch(void)
 void
 test_expression(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(expression_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, expression_data[i].expr);
@@ -436,10 +436,10 @@ test_expression(void)
 void
 test_term(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(term_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, term_data[i].expr);
@@ -468,10 +468,10 @@ test_term(void)
 void
 test_factor(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(factor_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factor_data[i].expr);
@@ -500,10 +500,10 @@ test_factor(void)
 void
 test_token(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(token_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, token_data[i].expr);
@@ -532,10 +532,10 @@ test_token(void)
 void
 test_number(void)
 {
-    dbl result = 0.0; /* 結果 */
-    calcinfo calc;    /* calcinfo構造体 */
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
 
-    uint i;
+    unsigned int i;
     for (i = 0; i < NELEMS(number_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, number_data[i].expr);
@@ -600,7 +600,7 @@ test_get_strlen(void)
 static void
 exec_calc(calcinfo *calc, const char *str)
 {
-    if (!create_answer(calc, (uchar *)str))
+    if (!create_answer(calc, (unsigned char *)str))
         cut_error("calc=%p", calc);
     dbglog("%p answer=%s", calc->answer, calc->answer);
 }

@@ -33,35 +33,35 @@
 
 /* 内部変数 */
 /** エラー戻り値 */
-static const dbl EX_ERROR = 0.0;
+static const double EX_ERROR = 0.0;
 /** pi(4*atan(1)) */
-static const dbl DEF_PI = 3.14159265358979323846264338327950288;
+static const double DEF_PI = 3.14159265358979323846264338327950288;
 /** ネイピア数(オイラー数) */
-static const dbl DEF_E = 2.71828182845904523536028747135266249;
+static const double DEF_E = 2.71828182845904523536028747135266249;
 
 /* 内部関数 */
 /** 関数情報構造体初期化 */
 static void init_func(void) __attribute__((constructor));
 /** Pi取得 */
-static dbl get_pi(calcinfo *calc);
+static double get_pi(calcinfo *calc);
 /** ネイピア数(オイラー数)取得 */
-static dbl get_e(calcinfo *calc);
+static double get_e(calcinfo *calc);
 /** 角度をラジアンに変換 */
-static dbl get_rad(calcinfo *calc, dbl x);
+static double get_rad(calcinfo *calc, double x);
 /** ラジアンを角度に変換 */
-static dbl get_deg(calcinfo *calc, dbl x);
+static double get_deg(calcinfo *calc, double x);
 /** 平方根 */
-static dbl get_sqrt(calcinfo *calc, dbl x);
+static double get_sqrt(calcinfo *calc, double x);
 /** 自然対数 */
-static dbl get_ln(calcinfo *calc, dbl x);
+static double get_ln(calcinfo *calc, double x);
 /** 常用対数 */
-static dbl get_log(calcinfo *calc, dbl x);
+static double get_log(calcinfo *calc, double x);
 /** 階乗取得 */
-static dbl get_factorial(calcinfo *calc, dbl n);
+static double get_factorial(calcinfo *calc, double n);
 /** 順列(nPr) */
-static dbl get_permutation(calcinfo *calc, dbl n, dbl r);
+static double get_permutation(calcinfo *calc, double n, double r);
 /** 組み合わせ(nCr) */
-static dbl get_combination(calcinfo *calc, dbl n, dbl r);
+static double get_combination(calcinfo *calc, double n, double r);
 
 /** 関数種別 */
 enum functype {
@@ -102,10 +102,10 @@ static struct funcstring fstring[] = {
 
 /** 関数共用体 */
 union func {
-    dbl (*func0)(calcinfo *calc);
-    dbl (*func1)(calcinfo *calc, dbl x);
-    dbl (*func2)(calcinfo *calc, dbl x, dbl y);
-    dbl (*math)(dbl x);
+    double (*func0)(calcinfo *calc);
+    double (*func1)(calcinfo *calc, double x);
+    double (*func2)(calcinfo *calc, double x, double y);
+    double (*math)(double x);
 };
 
 /** 関数種別列挙体 */
@@ -132,13 +132,13 @@ static struct funcinfo finfo[MAXFUNC];
  * @param[in] func 関数名
  * return なし
  */
-dbl
+double
 exec_func(calcinfo *calc, const char *func)
 {
-    dbl result = 0.0;     /* 戻り値 */
-    dbl x = 0.0, y = 0.0; /* 値 */
-    bool exec;            /* 関数実行フラグ */
-    enum functype ftype;  /* 関数種別 */
+    double result = 0.0;     /* 戻り値 */
+    double x = 0.0, y = 0.0; /* 値 */
+    bool exec;               /* 関数実行フラグ */
+    enum functype ftype;     /* 関数種別 */
 
     dbglog("start: func=%s", func);
 
@@ -191,10 +191,10 @@ exec_func(calcinfo *calc, const char *func)
  * @param[in] y 値
  * @return 指数
  */
-dbl
-get_pow(calcinfo *calc, dbl x, dbl y)
+double
+get_pow(calcinfo *calc, double x, double y)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
@@ -291,7 +291,7 @@ init_func(void)
  * @param[in] calc calcinfo構造体
  * @return pi
  */
-static dbl
+static double
 get_pi(calcinfo *calc)
 {
     dbglog("start");
@@ -306,7 +306,7 @@ get_pi(calcinfo *calc)
  * @param[in] calc calcinfo構造体
  * @return ネイピア数(オイラー数)
  */
-static dbl
+static double
 get_e(calcinfo *calc)
 {
     dbglog("start");
@@ -322,10 +322,10 @@ get_e(calcinfo *calc)
  * @param[in] x 値
  * @return ラジアン
  */
-static dbl
-get_rad(calcinfo *calc, dbl x)
+static double
+get_rad(calcinfo *calc, double x)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
@@ -344,10 +344,10 @@ get_rad(calcinfo *calc, dbl x)
  * @param[in] x 値
  * @return 角度
  */
-static dbl
-get_deg(calcinfo *calc, dbl x)
+static double
+get_deg(calcinfo *calc, double x)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start");
 
@@ -367,10 +367,10 @@ get_deg(calcinfo *calc, dbl x)
  * @param[in] x 値
  * @return 平方根
  */
-static dbl
-get_sqrt(calcinfo *calc, dbl x)
+static double
+get_sqrt(calcinfo *calc, double x)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start: x=%g", x);
 
@@ -395,10 +395,10 @@ get_sqrt(calcinfo *calc, dbl x)
  * @param[in] x 値
  * @return 平方根
  */
-static dbl
-get_ln(calcinfo *calc, dbl x)
+static double
+get_ln(calcinfo *calc, double x)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start: x=%g", x);
 
@@ -423,10 +423,10 @@ get_ln(calcinfo *calc, dbl x)
  * @param[in] x 値
  * @return 平方根
  */
-static dbl
-get_log(calcinfo *calc, dbl x)
+static double
+get_log(calcinfo *calc, double x)
 {
-    dbl result = 0.0; /* 計算結果 */
+    double result = 0.0; /* 計算結果 */
 
     dbglog("start: x=%g", x);
 
@@ -451,13 +451,13 @@ get_log(calcinfo *calc, dbl x)
  * @param[in] n 値
  * @return 階乗
  */
-static dbl
-get_factorial(calcinfo *calc, dbl n)
+static double
+get_factorial(calcinfo *calc, double n)
 {
-    dbl result = 1.0;   /* 計算結果 */
-    dbl decimal = 0.0;  /* 小数 */
-    dbl integer = 0.0;  /* 整数 */
-    bool minus = false; /* マイナスフラグ */
+    double result = 1.0;   /* 計算結果 */
+    double decimal = 0.0;  /* 小数 */
+    double integer = 0.0;  /* 整数 */
+    bool minus = false;    /* マイナスフラグ */
 
     dbglog("start");
 
@@ -500,11 +500,11 @@ get_factorial(calcinfo *calc, dbl n)
  * @param[in] r 値
  * return 順列
  */
-static dbl
-get_permutation(calcinfo *calc, dbl n, dbl r)
+static double
+get_permutation(calcinfo *calc, double n, double r)
 {
-    dbl result = 0.0;     /* 計算結果 */
-    dbl x = 0.0, y = 1.0; /* 値 */
+    double result = 0.0;     /* 計算結果 */
+    double x = 0.0, y = 1.0; /* 値 */
 
     dbglog("start");
 
@@ -542,11 +542,11 @@ get_permutation(calcinfo *calc, dbl n, dbl r)
  * @param[in] r 値
  * return 組み合わせ
  */
-static dbl
-get_combination(calcinfo *calc, dbl n, dbl r)
+static double
+get_combination(calcinfo *calc, double n, double r)
 {
-    dbl result = 0.0;              /* 計算結果 */
-    dbl x = 0.0, y = 0.0, z = 1.0; /* 値 */
+    double result = 0.0;              /* 計算結果 */
+    double x = 0.0, y = 0.0, z = 1.0; /* 値 */
 
     dbglog("start");
 

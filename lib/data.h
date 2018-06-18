@@ -32,29 +32,29 @@
 
 /** ヘッダ構造体 */
 struct header {
-    uint32_t length;  /**< データ長 */
-    uchar padding[4]; /**< パディング */
+    uint32_t length;          /**< データ長 */
+    unsigned char padding[4]; /**< パディング */
 };
 
 /** クライアントデータ構造体 */
 struct client_data {
-    struct header hd;    /**< ヘッダ構造体 */
-    uchar expression[1]; /**< データバッファ */
+    struct header hd;            /**< ヘッダ構造体 */
+    unsigned char expression[1]; /**< データバッファ */
 };
 
 /** サーバデータ構造体 */
 struct server_data {
-    struct header hd; /**< ヘッダ構造体 */
-    uchar answer[1];  /**< データバッファ */
+    struct header hd;         /**< ヘッダ構造体 */
+    unsigned char answer[1];  /**< データバッファ */
 };
 
 /** クライアントデータ構造体設定 */
 ssize_t set_client_data(struct client_data **dt,
-                        const uchar *buf, const size_t len);
+                        const unsigned char *buf, const size_t len);
 
 /** サーバデータ構造体設定 */
 ssize_t set_server_data(struct server_data **dt,
-                        const uchar *buf, const size_t len);
+                        const unsigned char *buf, const size_t len);
 
 #endif /* _DATA_H_ */
 
