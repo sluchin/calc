@@ -78,7 +78,7 @@ set_port_string(const char *port)
         return EX_NG;
     }
     (void)memset(portno, 0, sizeof(portno));
-    (void)strcpy(portno, port);
+    (void)snprintf(portno, sizeof(portno), "%s", port);
     return EX_OK;
 }
 

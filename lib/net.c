@@ -188,7 +188,7 @@ send_data(const int sock, const void *sdata, size_t *length)
     ptr = (unsigned char *)sdata;
     left = *length;
     while (left > 0) {
-        len = send(sock, sdata, *length, 0);
+        len = send(sock, ptr, left, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0) {
             if ((errno == EINTR) ||
@@ -291,6 +291,10 @@ recv_data_new(const int sock, size_t *length)
     retval = recv_data(sock, rdata, &len);
     if (retval < 0) { /* エラー */
         *length = 0;
+        if (rdata != NULL) {
+            free(rdata);
+        }
+        rdata = NULL;
         return rdata;
     }
 

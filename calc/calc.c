@@ -393,8 +393,8 @@ token(calcinfo *calc)
     if (isdigit(calc->ch)) { /* 数値 */
         result = number(calc);
     } else if (isalpha(calc->ch)) { /* 関数 */
-        while (isalpha(calc->ch) && calc->ch != '\0' &&
-               pos <= MAX_FUNC_STRING) {
+        while (isalpha(calc->ch) && (calc->ch != '\0') &&
+               (pos < MAX_FUNC_STRING)) {
             func[pos++] = calc->ch;
             readch(calc);
         }
@@ -452,28 +452,7 @@ number(calcinfo *calc)
 static int
 get_strlen(const double val, const char *fmt)
 {
-    FILE *fp = NULL; /* ファイルポインタ */
-    int retval = 0;  /* fclose戻り値 */
-    int length = 0;  /* 文字数 */
-
-    dbglog("start: fmt=%s", fmt);
-    dbglog(fmt, val);
-
-    fp = fopen("/dev/null", "w");
-    if (!fp) { /* fopen エラー */
-        outlog("fopen");
-    } else {
-        length = fprintf(fp, fmt, val);
-        if (length < 0)
-            outlog("fprintf: fp=%p, fmt=%s, val=%g", fp, fmt, val);
-
-        retval = fclose(fp);
-        if (retval == EOF) /* fclose エラー */
-            outlog("fclose");
-    }
-
-    dbglog("length=%d", length);
-    return length;
+    return snprintf(NULL, 0, fmt, val);
 }
 
 #ifdef UNITTEST
