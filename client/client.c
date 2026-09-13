@@ -93,7 +93,7 @@ set_port_string(const char *port)
         return EX_NG;
     }
     (void)memset(portno, 0, sizeof(portno));
-    (void)strcpy(portno, port);
+    (void)snprintf(portno, sizeof(portno), "%s", port);
     return EX_OK;
 }
 
@@ -111,7 +111,7 @@ set_host_string(const char *host)
         return EX_NG;
     }
     (void)memset(hostname, 0, sizeof(hostname));
-    (void)strcpy(hostname, host);
+    (void)snprintf(hostname, sizeof(hostname), "%s", host);
     return EX_OK;
 }
 
