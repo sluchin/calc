@@ -226,8 +226,8 @@ get_termattr(const int fd, struct termios *mode)
     unsigned long mask = 0; /* マスク */
     char buf[BUF_SIZE];     /* バッファ */
     char *ptr = NULL;       /* 戻り値ポインタ */
-    char *endp = NULL;      /* strrchr戻り値 */
     int retval = 0;         /* 戻り値 */
+    size_t off = 0;         /* オフセット */
 
     dbglog("start: fd=%d", fd);
 
@@ -236,34 +236,39 @@ get_termattr(const int fd, struct termios *mode)
         return NULL;
     }
 
-    dbglog("c_cflag=0x%x, c_iflag=0x%x, c_oflag=0x%x, c_lflag=0x%x",
-           mode->c_cflag, mode->c_iflag, mode->c_oflag, mode->c_lflag);
-
     retval = tcgetattr(fd, mode);
     if (retval < 0)
         return NULL;
 
-    (void)memset(buf, 0, sizeof(buf));
-    (void)snprintf(buf, sizeof(buf), "tcgetattr(");
-    int i;
+    /* 最初に "tcgetattr(" を書き込む */
+    off += (size_t)snprintf(buf + off, sizeof(buf) - off, "tcgetattr(");
+
+    int i = 0;
     for (i = 0; mode_info[i].name != NULL; i++) {
         bitsp = mode_type_flag(mode_info[i].type, mode);
-        mask = mode_info[i].mask ? : mode_info[i].bits;
+        mask = mode_info[i].mask ? mode_info[i].mask : mode_info[i].bits;
+
         if ((*bitsp & mask) == mode_info[i].bits) {
-            (void)strncat(buf, mode_info[i].name,
-                          sizeof(buf) - strlen(buf) - 1);
-            (void)strncat(buf, ", ", sizeof(buf) - strlen(buf) - 1);
+            if (off < sizeof(buf)) {
+                off += (size_t)snprintf(buf + off, sizeof(buf) - off, "%s, ", mode_info[i].name);
+            }
         }
     }
 
-    endp = strrchr(buf, ',');
-    if (endp)
-        *endp = '\0';
-    (void)strncat(buf, ")", sizeof(buf) - strlen(buf) - 1);
+    /* 末尾の ", " を削る処理 */
+    if ((off >= 10) && (buf[off - 2] == ',') && (buf[off - 1] == ' ')) {
+        off -= 2;
+        buf[off] = '\0';
+    }
+
+    /* 閉じカッコを追加 */
+    if (off < sizeof(buf)) {
+        (void)snprintf(buf + off, sizeof(buf) - off, ")");
+    }
 
     ptr = strdup(buf);
     if (!ptr) {
-        outlog("strdup: buf=%p", buf);
+        outlog("strdup failed for buf");
         return NULL;
     }
 
