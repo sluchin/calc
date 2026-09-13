@@ -1,0 +1,8 @@
+*.o
+*.a
+*.so
+*.swp
+
+calcp
+calcc
+calcd

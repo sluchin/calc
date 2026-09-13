@@ -469,7 +469,7 @@ get_strlen(const double val, const char *fmt)
 
         retval = fclose(fp);
         if (retval == EOF) /* fclose エラー */
-            outlog("fclose: fp=%p", fp);
+            outlog("fclose");
     }
 
     dbglog("length=%d", length);
