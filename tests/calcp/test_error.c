@@ -89,6 +89,7 @@ test_get_errormsg(void)
     calcinfo calc; /* calcinfo構造体 */
 
     int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < MAXERROR; i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, "dammy");
@@ -115,6 +116,7 @@ test_set_errorcode(void)
     calcinfo calc; /* calcinfo構造体 */
 
     int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < MAXERROR; i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, "dammy");
@@ -139,6 +141,7 @@ test_clear_error(void)
 {
     calcinfo calc; /* calcinfo構造体 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
@@ -186,6 +189,7 @@ test_check_validate(void)
     double result = 0.0; /* 結果 */
     calcinfo calc;       /* calcinfo構造体 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
@@ -266,6 +270,7 @@ test_clear_math_feexcept(void)
     double result = 0.0; /* 結果 */
     calcinfo calc;       /* calcinfo構造体 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
@@ -283,6 +288,7 @@ test_clear_math_feexcept(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -296,6 +302,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -348,15 +355,27 @@ test_clear_math_feexcept_failure(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_get_errormsg);
     RUN_TEST(test_get_errormsg_failure);
     RUN_TEST(test_set_errorcode);
@@ -366,5 +385,6 @@ main(int argc, char **argv)
     RUN_TEST(test_check_math_feexcept);
     RUN_TEST(test_clear_math_feexcept);
     RUN_TEST(test_clear_math_feexcept_failure);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

@@ -76,6 +76,7 @@ startup(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -91,6 +92,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -278,16 +280,29 @@ test_readline_failure(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_readline);
     RUN_TEST(test_readline_failure);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

@@ -149,7 +149,7 @@ record_alloc(void *ptr, size_t size)
 void *
 malloc(size_t size)
 {
-    void *ptr = NULL;
+    void *ptr = NULL; /* 確保したメモリ */
 
     if (fail_malloc_count > 0 && size == fail_malloc_size) {
         fail_malloc_count--;
@@ -175,7 +175,7 @@ malloc(size_t size)
 void *
 calloc(size_t nmemb, size_t size)
 {
-    void *ptr = NULL;
+    void *ptr = NULL; /* 確保したメモリ */
 
     if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
         fail_malloc_count--;
@@ -279,11 +279,13 @@ startup(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
 setup(void *data)
 {
+    /* モックと状態を, 初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(setsockopt);
     TEST_PASSTHROUGH_RESET(listen);
@@ -313,6 +315,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -350,6 +353,7 @@ test_set_port_string(void)
 TEST
 test_server_sock(void)
 {
+    /* 準備をして, 関数を実行し, 結果を確認する */
     dbglog("start");
 
     if (set_port_string(port) < 0)
@@ -956,7 +960,7 @@ TEST
 test_server_proc_no_nul(void)
 {
     struct header hd;              /* ヘッダ */
-    unsigned char noterm[] = { '1', '+', '1', '+', '1', '+', '1', '+' };
+    unsigned char noterm[] = { '1', '+', '1', '+', '1', '+', '1', '+' }; /* 終端の NUL がない式 */
     unsigned char rbuf[BUF_SIZE];  /* 受信バッファ */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
@@ -979,15 +983,27 @@ test_server_proc_no_nul(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_set_port_string);
     RUN_TEST(test_server_sock);
     RUN_TEST(test_server_loop);
@@ -1000,5 +1016,6 @@ main(int argc, char **argv)
     RUN_TEST(test_server_proc_free_arg);
     RUN_TEST(test_server_proc_length_limit);
     RUN_TEST(test_server_proc_no_nul);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

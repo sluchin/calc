@@ -71,14 +71,16 @@ static int (*real_fcntl)(int, int, ...) = NULL; /**< 本物の fcntl() */
 int
 fcntl(int fd, int cmd, ...)
 {
-    va_list ap;
-    long arg = 0;
+    va_list ap; /* 可変引数 */
+    long arg = 0; /* fcntl の引数 */
 
+    /* 本物の fcntl() を探す */
     if (!real_fcntl)
         *(void **)(&real_fcntl) = dlsym(RTLD_NEXT, "fcntl");
     va_start(ap, cmd);
     arg = va_arg(ap, long);
     va_end(ap);
+    /* F_SETFL のときだけ, 注入した失敗を返す */
     if (cmd == F_SETFL && inject_fcntl.count > 0) {
         inject_fcntl.count--;
         errno = inject_fcntl.err;
@@ -169,6 +171,7 @@ startup(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -185,6 +188,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -885,7 +889,7 @@ test_send_data_interrupted(void)
     int sv[2] = { -1, -1 }; /* ソケットペア */
     size_t length = 0;      /* 送信バイト数 */
     char readbuf[8] = {0};  /* 受信バッファ */
-    const int errnos[] = { EINTR, EAGAIN };
+    const int errnos[] = { EINTR, EAGAIN }; /* 注入する errno */
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
@@ -955,7 +959,7 @@ test_recv_data_interrupted(void)
     int sv[2] = { -1, -1 }; /* ソケットペア */
     size_t length = 0;      /* 受信バイト数 */
     char readbuf[8] = {0};  /* 受信バッファ */
-    const int errnos[] = { EINTR, EAGAIN };
+    const int errnos[] = { EINTR, EAGAIN }; /* 注入する errno */
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
@@ -1034,15 +1038,27 @@ test_close_sock_failure(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_set_hostname);
     RUN_TEST(test_set_port);
     RUN_TEST(test_set_block);
@@ -1059,5 +1075,6 @@ main(int argc, char **argv)
     RUN_TEST(test_recv_data_interrupted);
     RUN_TEST(test_recv_data_new_failure);
     RUN_TEST(test_close_sock_failure);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

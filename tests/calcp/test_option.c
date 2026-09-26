@@ -70,6 +70,7 @@ startup(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -102,6 +103,7 @@ run_parse_args(void *arg)
  * parse_args() を子プロセスで実行する
  *
  * @param[out] out 標準出力と標準エラー出力
+ * @param[in] size 出力バッファのサイズ
  * @param[in] argc 引数の数
  * @param[in] argv 引数
  * @return 終了ステータス
@@ -122,8 +124,8 @@ exec_parse_args(char *out, size_t size, int argc, char **argv)
 TEST
 test_parse_args_digit(void)
 {
-    char *argv1[] = { "testprog", "-d", "5", NULL };
-    char *argv2[] = { "testprog", "--digit=10", NULL };
+    char *argv1[] = { "testprog", "-d", "5", NULL }; /* 引数 (-d 5) */
+    char *argv2[] = { "testprog", "--digit=10", NULL }; /* 引数 (--digit=10) */
 
     /* ショートオプション */
     parse_args(3, argv1);
@@ -148,13 +150,13 @@ test_parse_args_digit_failure(void)
 {
     char out[BUF_SIZE] = {0};                 /* 出力 */
     char maxplus[16] = {0};                   /* MAX_DIGIT + 1 */
-    char *argv0[] = { "testprog", "-d", "0", NULL };
-    char *argv1[] = { "testprog", "-d", "-1", NULL };
-    char *argv2[] = { "testprog", "-d", "abc", NULL };
-    char *argv3[] = { "testprog", "-d", maxplus, NULL };
-    char *argv4[] = { "testprog", "-d", NULL };
-    char **argvs[] = { argv0, argv1, argv2, argv3 };
-    int argcs[] = { 3, 3, 3, 3 };
+    char *argv0[] = { "testprog", "-d", "0", NULL }; /* 引数 (-d 0) */
+    char *argv1[] = { "testprog", "-d", "-1", NULL }; /* 引数 (-d -1) */
+    char *argv2[] = { "testprog", "-d", "abc", NULL }; /* 引数 (-d abc) */
+    char *argv3[] = { "testprog", "-d", maxplus, NULL }; /* 引数 (-d maxplus) */
+    char *argv4[] = { "testprog", "-d", NULL }; /* 引数 (-d) */
+    char **argvs[] = { argv0, argv1, argv2, argv3 }; /* 引数の配列 */
+    int argcs[] = { 3, 3, 3, 3 }; /* 引数の数 */
 
     (void)snprintf(maxplus, sizeof(maxplus), "%ld", MAX_DIGIT + 1);
 
@@ -182,8 +184,8 @@ test_parse_args_digit_failure(void)
 TEST
 test_parse_args_non_option(void)
 {
-    char out[BUF_SIZE] = {0};
-    char *argv[] = { "testprog", "abc", "def", NULL };
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char *argv[] = { "testprog", "abc", "def", NULL }; /* 引数 (abc def) */
 
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 3, argv));
     TEST_ASSERT_STR("non-option ARGV-elements: abc def \n", out);
@@ -198,10 +200,11 @@ test_parse_args_non_option(void)
 TEST
 test_print_help(void)
 {
-    char out[BUF_SIZE] = {0};
-    char *argv1[] = { "testprog", "-h", NULL };
-    char *argv2[] = { "testprog", "--help", NULL };
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char *argv1[] = { "testprog", "-h", NULL }; /* 引数 (-h) */
+    char *argv2[] = { "testprog", "--help", NULL }; /* 引数 (--help) */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 2, argv1));
     TEST_ASSERT_MATCH("Usage: testprog \\[OPTION\\]", out);
     TEST_ASSERT_MATCH("-h, --help", out);
@@ -218,10 +221,11 @@ test_print_help(void)
 TEST
 test_print_version(void)
 {
-    char out[BUF_SIZE] = {0};
-    char *argv1[] = { "testprog", "-V", NULL };
-    char *argv2[] = { "testprog", "--version", NULL };
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char *argv1[] = { "testprog", "-V", NULL }; /* 引数 (-V) */
+    char *argv2[] = { "testprog", "--version", NULL }; /* 引数 (--version) */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 2, argv1));
     TEST_ASSERT_STR("testprog " VERSION "\n", out);
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 2, argv2));
@@ -237,8 +241,8 @@ test_print_version(void)
 TEST
 test_parse_error(void)
 {
-    char out[BUF_SIZE] = {0};
-    char *argv[] = { "testprog", "-x", NULL };
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char *argv[] = { "testprog", "-x", NULL }; /* 引数 (-x) */
 
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 2, argv));
     TEST_ASSERT_MATCH("Try `getopt --help' for more information", out);
@@ -253,9 +257,10 @@ test_parse_error(void)
 TEST
 test_parse_args_time(void)
 {
-    char *argv1[] = { "testprog", "-t", NULL };
-    char *argv2[] = { "testprog", "--time", NULL };
+    char *argv1[] = { "testprog", "-t", NULL }; /* 引数 (-t) */
+    char *argv2[] = { "testprog", "--time", NULL }; /* 引数 (--time) */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     ASSERT_FALSE(g_tflag);
     parse_args(2, argv1);
     ASSERT(g_tflag);
@@ -275,8 +280,8 @@ test_parse_args_time(void)
 TEST
 test_parse_args_internal_error(void)
 {
-    char out[BUF_SIZE] = {0};
-    char *argv[] = { "testprog", NULL };
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char *argv[] = { "testprog", NULL }; /* 引数 */
 
     TEST_INJECT(getopt_long, 0, 1, 'z', 0);
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 1, argv));
@@ -284,14 +289,26 @@ test_parse_args_internal_error(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
+    /* テストの実行 */
     RUN_TEST(test_parse_args_digit);
     RUN_TEST(test_parse_args_digit_failure);
     RUN_TEST(test_parse_args_time);
@@ -300,5 +317,6 @@ main(int argc, char **argv)
     RUN_TEST(test_print_version);
     RUN_TEST(test_parse_error);
     RUN_TEST(test_parse_args_internal_error);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

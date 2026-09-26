@@ -68,10 +68,11 @@ static enum snprintf_target fail_snprintf = SNPRINTF_NONE; /**< 失敗させる�
 int
 snprintf(char *str, size_t size, const char *format, ...)
 {
-    va_list ap;
-    int retval = 0;
+    va_list ap; /* 可変引数 */
+    int retval = 0; /* 戻り値 */
     bool fail = false; /* 失敗させるか */
 
+    /* 失敗させる種類ごとに, 今回の呼び出しが対象か判定する */
     switch (fail_snprintf) {
     case SNPRINTF_FORMAT:
         fail = !strcmp(format, "%s%ld%s");
@@ -90,6 +91,7 @@ snprintf(char *str, size_t size, const char *format, ...)
         errno = EIO;
         return -1;
     }
+    /* 対象でなければ, 本物の処理 */
     va_start(ap, format);
     retval = vsnprintf(str, size, format, ap);
     va_end(ap);
@@ -360,6 +362,7 @@ test_answer_four(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(four_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
@@ -384,6 +387,7 @@ test_answer_func(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
@@ -407,6 +411,7 @@ test_answer_four_func(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(four_func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
@@ -430,6 +435,7 @@ test_answer_error(void)
     calcinfo calc; /* calc情報構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(error_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
@@ -453,6 +459,7 @@ test_parse_func_args(void)
     double x = 0.0, y = 0.0; /* 値 */
     calcinfo calc;           /* calc情報構造体 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "(235)");
     st_calc.readch(&calc);
@@ -484,6 +491,7 @@ test_set_digit(void)
     const char *expr = "sin(2)";              /* 式 */
     const char *expect = "0.909297426825682"; /* 期待する文字列 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     set_digit(15L);
     (void)memset(&calc, 0, sizeof(calcinfo));
     exec_calc(&calc, expr);
@@ -538,6 +546,7 @@ test_expression(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(expression_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, expression_data[i].expr);
@@ -563,6 +572,7 @@ test_term(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(term_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, term_data[i].expr);
@@ -591,6 +601,7 @@ test_factor(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(factor_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factor_data[i].expr);
@@ -619,6 +630,7 @@ test_token(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(token_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, token_data[i].expr);
@@ -647,6 +659,7 @@ test_number(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(number_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, number_data[i].expr);
@@ -668,6 +681,7 @@ test_number(void)
 TEST
 test_get_strlen(void)
 {
+    /* 準備をして, 関数を実行し, 結果を確認する */
     TEST_ASSERT_INT(5, st_calc.get_strlen(50000, "%.18g"));
     TEST_ASSERT_INT(15, st_calc.get_strlen(123456789012345LL, "%.18g"));
     // 12345678.9000000004
@@ -721,6 +735,7 @@ exec_calc(calcinfo *calc, const char *str)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -736,6 +751,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -755,6 +771,7 @@ test_answer_timer(void)
 {
     calcinfo calc; /* calcinfo構造体 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     g_tflag = true;
     (void)memset(&calc, 0, sizeof(calcinfo));
     exec_calc(&calc, "(105+312)+2*(5-3)");
@@ -824,6 +841,7 @@ test_calc_error_state(void)
     calcinfo calc;               /* calcinfo構造体 */
     const double EX_ERROR = 0.0; /* エラー戻り値 (calc.c の内部定数と同じ) */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "1+2");
     st_calc.readch(&calc);
@@ -856,15 +874,27 @@ test_parse_func_args_failure(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_answer_four);
     RUN_TEST(test_answer_timer);
     RUN_TEST(test_answer_failure);
@@ -882,5 +912,6 @@ main(int argc, char **argv)
     RUN_TEST(test_token);
     RUN_TEST(test_number);
     RUN_TEST(test_get_strlen);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

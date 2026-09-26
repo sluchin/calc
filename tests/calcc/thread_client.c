@@ -197,13 +197,14 @@ create_threads(void)
 /**
  * スレッド処理
  *
+ * @param[in] arg 使用しない
  * @return なし
  */
 static void *
 client_thread(void *arg)
 {
     /* スレッドデータ */
-    thread_data *dt = (thread_data *)arg;
+    thread_data *dt = (thread_data *)arg; /* スレッドデータ構造体 */
     int retval = 0;    /* 戻り値 */
     size_t length = 0; /* 長さ */
     ssize_t slen = 0;  /* 送信するバイト数 */
@@ -297,7 +298,7 @@ thread_cleanup(void *arg)
 static void
 thread_memfree(void *arg)
 {
-    void **ptr = (void **)arg;
+    void **ptr = (void **)arg; /* 解放するポインタ */
     dbglog("start: *ptr=%p, ptr=%p", *ptr, ptr);
     memfree(ptr, NULL);
 }

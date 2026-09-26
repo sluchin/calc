@@ -148,11 +148,13 @@ fake_daemon(int nochdir, int noclose)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
 setup(void *data)
 {
+    /* モックと状態を, 初期状態 (素通し) に戻す */
     (void)data;
     RESET_FAKE(parse_args);
     TEST_PASSTHROUGH_RESET(sigaction);
@@ -180,6 +182,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -215,7 +218,7 @@ run_main(void *arg)
 TEST
 test_main_success(void)
 {
-    char *argv[] = { "calcd", NULL };
+    char *argv[] = { "calcd", NULL }; /* 引数 */
 
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->parse_count);
@@ -238,7 +241,7 @@ test_main_success(void)
 TEST
 test_main_server_sock_failure(void)
 {
-    char *argv[] = { "calcd", NULL };
+    char *argv[] = { "calcd", NULL }; /* 引数 */
 
     server_sock_fake.return_val = EX_NG;
     TEST_ASSERT_INT(EXIT_FAILURE,
@@ -257,7 +260,7 @@ test_main_server_sock_failure(void)
 TEST
 test_main_daemon_failure(void)
 {
-    char *argv[] = { "calcd", NULL };
+    char *argv[] = { "calcd", NULL }; /* 引数 */
 
     daemon_fake.custom_fake = NULL;
     daemon_fake.return_val = -1;
@@ -276,7 +279,7 @@ test_main_daemon_failure(void)
 TEST
 test_main_signal(void)
 {
-    char *argv[] = { "calcd", NULL };
+    char *argv[] = { "calcd", NULL }; /* 引数 */
 
     /* SIGTERM: ループを終了して, 正常終了する */
     raise_signo = SIGTERM;
@@ -295,7 +298,7 @@ TEST
 test_main_sighup(void)
 {
     /* argv[0] を再実行する. sh に 42 で終了させて, 再実行を確認する */
-    char *argv[] = { "/bin/sh", "-c", "exit 42", NULL };
+    char *argv[] = { "/bin/sh", "-c", "exit 42", NULL }; /* 引数 (-c exit 42) */
 
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(42, test_run_child(run_main, argv, NULL, NULL, 0));
@@ -329,7 +332,7 @@ run_main_failure(void *arg)
 TEST
 test_main_failure(void)
 {
-    char *argv[] = { "calcd", NULL };
+    char *argv[] = { "calcd", NULL }; /* 引数 */
 
     /* 失敗しても, 続行する */
     TEST_ASSERT_INT(EXIT_SUCCESS,
@@ -363,7 +366,7 @@ TEST
 test_main_sighup_relative(void)
 {
     /* /bin/sh を, 相対パスで再実行し, sh に 42 で終了させる */
-    char *argv[] = { "./sh", "-c", "exit 42", NULL };
+    char *argv[] = { "./sh", "-c", "exit 42", NULL }; /* 引数 (-c exit 42) */
 
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(42, test_run_child(run_main_relative, argv, NULL, NULL, 0));
@@ -378,7 +381,7 @@ test_main_sighup_relative(void)
 TEST
 test_main_sighup_failure(void)
 {
-    char *argv[] = { "/nonexistent/calcd", NULL };
+    char *argv[] = { "/nonexistent/calcd", NULL }; /* 引数 */
 
     /* 再実行できなければ, 異常終了する (以前は, ログもなく, 正常終了した) */
     raise_signo = SIGHUP;
@@ -391,14 +394,25 @@ test_main_sighup_failure(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_main_success);
     RUN_TEST(test_main_server_sock_failure);
 #ifndef _DEBUG
@@ -409,5 +423,6 @@ main(int argc, char **argv)
     RUN_TEST(test_main_sighup_relative);
     RUN_TEST(test_main_sighup_failure);
     RUN_TEST(test_main_failure);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }
