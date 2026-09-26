@@ -131,7 +131,7 @@ static struct funcinfo finfo[MAXFUNC];
  *
  * @param[in] calc calcinfo構造体
  * @param[in] func 関数名
- * return なし
+ * @return 関数の計算結果 (エラーのときは, 0 でエラーコードを設定する)
  */
 double
 exec_func(calcinfo *calc, const char *func)
@@ -508,7 +508,7 @@ get_factorial(calcinfo *calc, double n)
  * @param[in] calc calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
- * return 順列
+ * @return 順列
  */
 static double
 get_permutation(calcinfo *calc, double n, double r)
@@ -550,7 +550,7 @@ get_permutation(calcinfo *calc, double n, double r)
  * @param[in] calc calcinfo構造体
  * @param[in] n 値
  * @param[in] r 値
- * return 組み合わせ
+ * @return 組み合わせ
  */
 static double
 get_combination(calcinfo *calc, double n, double r)
@@ -582,6 +582,12 @@ get_combination(calcinfo *calc, double n, double r)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] func 関数構造体
+ * @return なし
+ */
 void
 test_init_func(testfunc *func)
 {

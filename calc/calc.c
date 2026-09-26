@@ -167,7 +167,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
 void
 destroy_answer(void *calc)
 {
-    calcinfo *ptr = (calcinfo *)calc;
+    calcinfo *ptr = (calcinfo *)calc; /* calcinfo構造体 */
     dbglog("start: result=%p", ptr->answer);
     memfree((void **)&ptr->answer, NULL);
 }
@@ -192,17 +192,20 @@ parse_func_args(calcinfo *calc, double *x, ...)
     if (is_error(calc))
         return;
 
+    /* 引数は '(' で始まる */
     if (calc->ch != '(') {
         set_errorcode(calc, E_SYNTAX);
         return;
     }
 
+    /* 1 つ目の引数 */
     readch(calc);
     *x = expression(calc);
     dbglog(calc->fmt, *x);
 
     va_start(ap, x);
 
+    /* 2 つ目以降の引数は, ',' で区切られる */
     while ((val = va_arg(ap, double *)) != NULL) {
         if (calc->ch != ',') {
             set_errorcode(calc, E_SYNTAX);
@@ -216,6 +219,7 @@ parse_func_args(calcinfo *calc, double *x, ...)
 
     va_end(ap);
 
+    /* 引数は ')' で終わる */
     if (calc->ch != ')') {
         set_errorcode(calc, E_SYNTAX);
         return;
@@ -226,6 +230,7 @@ parse_func_args(calcinfo *calc, double *x, ...)
 /**
  * 桁数設定
  *
+ * @param[in] dgt 有効桁数
  * @return なし
  */
 void
@@ -273,9 +278,11 @@ expression(calcinfo *calc)
     if (is_error(calc))
         return EX_ERROR;
 
+    /* 最初の項 */
     x = term(calc);
     dbglog(calc->fmt, x);
 
+    /* 続く項を, '+' '-' で, 左から順に加減算する */
     while (true) {
         if (calc->ch == '+') {
             readch(calc);
@@ -509,6 +516,12 @@ get_strlen(const double val, const char *fmt)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] calc 関数構造体
+ * @return なし
+ */
 void
 test_init_calc(testcalc *calc)
 {

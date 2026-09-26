@@ -406,6 +406,12 @@ exit_memfree(void)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] client 関数構造体
+ * @return なし
+ */
 void
 test_init_client(testclient *client)
 {

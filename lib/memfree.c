@@ -48,12 +48,14 @@ memfree(void** ptr, ...)
     dbglog("start: ptr=%p", *ptr);
     dbgtrace();
 
+    /* 最初のポインタ. 解放したら NULL を代入する */
     if (*ptr)
         free(*ptr);
     *ptr = NULL;
 
     va_start(ap, ptr);
 
+    /* 続くポインタ (最後は NULL) */
     while ((mem = va_arg(ap, void **)) != NULL) {
         dbglog("mem=%p", *mem);
         if (*mem)

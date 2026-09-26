@@ -57,6 +57,7 @@ static inline unsigned long long get_time(void);
 /**
  * タイマースタート
  *
+ * @param[out] start_time 開始時刻を保持する変数
  * @return なし
  */
 static inline void
@@ -75,7 +76,7 @@ start_timer(unsigned int *start_time)
 static inline unsigned int
 stop_timer(unsigned int *start_time)
 {
-    unsigned int stop_time = (unsigned int)get_time();
+    unsigned int stop_time = (unsigned int)get_time(); /* 終了時刻 */
     /* 32 ビットに切り詰めた時刻 (約 71 分で一周する) は, 符号なしの引き算で,
      * 一周しても, 正しい経過時間になる */
     return stop_time - *start_time;
@@ -89,7 +90,7 @@ stop_timer(unsigned int *start_time)
 static inline unsigned long long
 get_time(void)
 {
-    struct timeval tv;
+    struct timeval tv; /* timeval構造体 */
 
     timerclear(&tv);
 
