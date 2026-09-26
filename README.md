@@ -98,6 +98,10 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 テストは `tests/` 配下にある. テストランナーは [greatest](https://github.com/silentbicycle/greatest), モックは [FFF](https://github.com/meekrosoft/fff) (`fff.h`) を使用する.
 どちらもヘッダのみで, `tests/third_party/` に含まれるので, インストールは不要.
 
+## 結合テスト
+
+`calcp` `calcd` `calcc` を, 実際に動かして確認する項目は, [INTEGRATION_TESTS.md](INTEGRATION_TESTS.md) にある.
+
 ## カバレッジ
 
 gcovr をインストールし (`sudo apt install gcovr`), `make coverage` コマンドを実行する.
@@ -114,7 +118,15 @@ make coverage
 
 ## ドキュメント生成
 
-doxygen, graphviz, mscgen をインストールし, `make doc` コマンドを実行する.
+doxygen と graphviz をインストールし (`sudo apt install doxygen graphviz`), `make doc` コマンドを実行する.
+
+```sh
+cd build
+make doc     # build/doc/html/index.html
+```
+
+リポジトリ直下で `make doc` (GNU make) を実行すると, `doc/html/index.html` に出力される.
+graphviz (dot) がなくても生成できる (グラフは出力されない).
 
 ## コーディングのコンセプト
 

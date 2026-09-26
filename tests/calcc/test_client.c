@@ -1383,7 +1383,6 @@ count_line(const char *out, const char *line)
  * 要求を受け取って, "ok" を返し続ける接続先 (子プロセスで実行する)
  *
  * @param[in] sock ソケット
- * @return なし
  */
 static void
 responder(int sock)
@@ -1419,7 +1418,6 @@ responder(int sock)
  * 標準入力は, 全ての行が, 最初から読める (パイプ) ので, 答えを受信する前に, quit になる.
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop_drain(void *arg)
@@ -1443,7 +1441,6 @@ child_client_loop_drain(void *arg)
 /**
  * client_loop() 関数テスト (quit や入力の終わりの前に, 未受信の答えを受信する)
  *
- * @return なし
  */
 TEST
 test_client_loop_drain(void)
