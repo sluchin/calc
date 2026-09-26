@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _ERROR_H_
-#define _ERROR_H_
+#ifndef ERROR_H
+#define ERROR_H
 
 #include <stdbool.h> /* bool */
 
@@ -62,5 +62,5 @@ typedef struct _testerror testerror;
 void test_init_error(testerror *error);
 #endif /* UNITTEST */
 
-#endif /* _ERROR_H_ */
+#endif /* ERROR_H */
 

@@ -7,8 +7,8 @@
  * 子プロセスは exit() で終了する (_exit() だとカバレッジが出力されない).
  */
 
-#ifndef _TEST_PROCESS_H_
-#define _TEST_PROCESS_H_
+#ifndef TEST_PROCESS_H
+#define TEST_PROCESS_H
 
 #include <stdio.h>    /* fflush */
 #include <stdlib.h>   /* exit EXIT_SUCCESS */
@@ -190,4 +190,4 @@ test_shared_free(void *ptr, size_t size)
         (void)munmap(ptr, size);
 }
 
-#endif /* _TEST_PROCESS_H_ */
+#endif /* TEST_PROCESS_H */

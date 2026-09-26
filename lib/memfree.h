@@ -23,11 +23,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _MEMFREE_H_
-#define _MEMFREE_H_
+#ifndef MEMFREE_H
+#define MEMFREE_H
 
 /** メモリ解放 */
 void memfree(void **ptr, ...);
 
-#endif /* _MEMFREE_H_ */
+#endif /* MEMFREE_H */
 

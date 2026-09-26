@@ -9,8 +9,8 @@
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
 
-#ifndef _SERVER_H_
-#define _SERVER_H_
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <stdbool.h>   /* bool */
 #include <signal.h>    /* sig_atomic_t sigemptyset */
@@ -55,5 +55,5 @@ typedef struct _testserver testserver;
 void test_init_server(testserver *server);
 #endif /* UNITTEST */
 
-#endif /* _SERVER_H_ */
+#endif /* SERVER_H */
 

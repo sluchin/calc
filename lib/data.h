@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _DATA_H_
-#define _DATA_H_
+#ifndef DATA_H
+#define DATA_H
 
 #include <stdint.h> /* uint32_t */
 
@@ -56,5 +56,5 @@ ssize_t set_client_data(struct client_data **dt,
 ssize_t set_server_data(struct server_data **dt,
                         const unsigned char *buf, const size_t len);
 
-#endif /* _DATA_H_ */
+#endif /* DATA_H */
 

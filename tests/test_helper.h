@@ -8,8 +8,8 @@
  * の中でのみ使用できる.
  */
 
-#ifndef _TEST_HELPER_H_
-#define _TEST_HELPER_H_
+#ifndef TEST_HELPER_H
+#define TEST_HELPER_H
 
 #include <stdio.h>    /* printf */
 #include <stdlib.h>   /* malloc free */
@@ -284,4 +284,4 @@ struct test_inject {
     } while (0)
 #define TEST_MAIN_END()    GREATEST_MAIN_END()
 
-#endif /* _TEST_HELPER_H_ */
+#endif /* TEST_HELPER_H */

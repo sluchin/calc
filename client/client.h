@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CLIENT_H_
-#define _CLIENT_H_
+#ifndef CLIENT_H
+#define CLIENT_H
 
 #include <stdbool.h> /* bool */
 #include <signal.h>  /* sig_atomic_t sigaction */
@@ -66,7 +66,7 @@ int connect_sock(void);
 /** ソケット送受信 */
 st_client client_loop(int sock);
 
-#endif /* _CLIENT_H_ */
+#endif /* CLIENT_H */
 
 #ifdef UNITTEST
 struct _testclient {
