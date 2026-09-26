@@ -26,6 +26,7 @@
 #include <stdio.h>  /* snprintf */
 #include <stdlib.h> /* free */
 #include <execinfo.h> /* backtrace_symbols */
+#include <dirent.h> /* opendir readdir */
 #include <sys/time.h> /* gettimeofday */
 #include <time.h>   /* localtime_r */
 #include <stdarg.h> /* va_list */
@@ -765,6 +766,26 @@ test_dump_sys_failure(void)
 }
 
 /**
+ * オープンしているファイルディスクリプタの数を数える (リークの確認用)
+ *
+ * @return ファイルディスクリプタの数
+ */
+static int
+count_open_fds(void)
+{
+    int count = 0;              /* 数 */
+    DIR *dir = opendir("/proc/self/fd");
+    struct dirent *ent = NULL;  /* ディレクトリエントリ */
+
+    if (!dir)
+        return -1;
+    while ((ent = readdir(dir)) != NULL)
+        count++;
+    (void)closedir(dir);
+    return count;
+}
+
+/**
  * dump_file() 関数テスト (失敗)
  *
  * @return なし
@@ -773,6 +794,7 @@ TEST
 test_dump_file_failure(void)
 {
     char big[BUF_SIZE * 4]; /* stdio のバッファより大きいデータ */
+    int fds = 0;            /* オープンしているファイルディスクリプタの数 */
 
     quiet_stderr();
     (void)memset(big, 'a', sizeof(big));
@@ -780,8 +802,10 @@ test_dump_file_failure(void)
     /* オープンできない */
     TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file",
                                      "abc", 3));
-    /* 書込に失敗 (/dev/full は, 常に ENOSPC になる) */
+    /* 書込に失敗 (/dev/full は, 常に ENOSPC になる). ファイルは閉じる */
+    fds = count_open_fds();
     TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/full", big, sizeof(big)));
+    TEST_ASSERT_INT(fds, count_open_fds());
     /* バッファに収まるデータは, fwrite では失敗せず, fflush で失敗する
      * (ログを出力するだけで, 戻り値は変わらない) */
     TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3));
