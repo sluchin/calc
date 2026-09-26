@@ -25,18 +25,42 @@
 
 #include <stdio.h>  /* snprintf */
 #include <stdlib.h> /* exit EXIT_SUCCESS */
-#include <signal.h> /* raise */
+#include <signal.h> /* raise sigaction */
+#include <unistd.h> /* alarm fork usleep */
 
 #include "test_helper.h"
 #include "test_process.h"
 #include "def.h"
 #include "log.h"
 #include "option.h"
+#include "calc.h"
 
 DEFINE_FFF_GLOBALS;
 
 /* main.c が呼び出す, option.c の関数は, モックにする */
 FAKE_VOID_FUNC(parse_args, int, char **);
+
+/* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
+                struct sigaction *);
+TEST_PASSTHROUGH(int, sigaction,
+                 (int signo, const struct sigaction *act,
+                  struct sigaction *oldact),
+                 (signo, act, oldact))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t);
+TEST_PASSTHROUGH(int, setvbuf,
+                 (FILE *fp, char *buf, int mode, size_t size),
+                 (fp, buf, mode, size))
+FAKE_VALUE_FUNC(int, fflush, FILE *);
+TEST_PASSTHROUGH(int, fflush, (FILE *fp), (fp))
+FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *,
+                const unsigned char *);
+TEST_PASSTHROUGH(unsigned char *, create_answer,
+                 (calcinfo *calc, const unsigned char *expr), (calc, expr))
 
 #define BUF_SIZE 1024 /**< バッファサイズ */
 
@@ -81,6 +105,12 @@ setup(void *data)
 {
     (void)data;
     RESET_FAKE(parse_args);
+    TEST_PASSTHROUGH_RESET(sigaction);
+    TEST_PASSTHROUGH_RESET(sigemptyset);
+    TEST_PASSTHROUGH_RESET(sigfillset);
+    TEST_PASSTHROUGH_RESET(setvbuf);
+    TEST_PASSTHROUGH_RESET(fflush);
+    TEST_PASSTHROUGH_RESET(create_answer);
     FFF_RESET_HISTORY();
     parse_args_fake.custom_fake = fake_parse_args;
     raise_signo = 0;
@@ -203,6 +233,120 @@ test_main_signal(void)
     PASS();
 }
 
+/**
+ * 失敗を注入して, main() を子プロセスで実行するための関数
+ * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_failure(void *arg)
+{
+    /* シグナルハンドラの設定 (get 側と set 側で, 3 つのシグナル分) */
+    TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigaction, 0, 6, -1, EINVAL);
+    /* バッファリングの設定 (標準入力と標準出力) */
+    TEST_INJECT(setvbuf, 0, 2, -1, EBADF);
+    /* main_loop() の最初の fflush(NULL) */
+    TEST_INJECT(fflush, 0, 1, EOF, EIO);
+    /* 最初の計算 */
+    TEST_INJECT(create_answer, 0, 1, NULL, ENOMEM);
+    run_main(arg);
+}
+
+/**
+ * 標準出力を閉じて, main() を子プロセスで実行するための関数
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_closed_stdout(void *arg)
+{
+    (void)close(STDOUT_FILENO); /* fprintf() が失敗する */
+    run_main(arg);
+}
+
+/**
+ * 一定時間後に SIGINT を受け取る, main() を子プロセスで実行するための関数
+ * 標準入力が閉じていても, readline はイベントフックを呼び続けるので,
+ * SIGINT で, フックが readline を終了させる.
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_sigint(void *arg)
+{
+    pid_t ppid = getpid(); /* main() を実行するプロセス */
+
+    (void)alarm(10); /* 終了しなかったときの保険 */
+    if (fork() == 0) {
+        (void)usleep(300000);
+        (void)kill(ppid, SIGINT);
+        _exit(EXIT_SUCCESS);
+    }
+    run_main(arg);
+}
+
+/**
+ * main() 関数テスト (システムコールなどの失敗)
+ *
+ * @return なし
+ */
+TEST
+test_main_failure(void)
+{
+    char out[BUF_SIZE] = {0}; /* 出力 */
+
+    /* 失敗しても, 最初の計算に失敗した以外は, 続行する */
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_failure, NULL,
+                                   "100*3\n200*3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_MSG(strstr(out, "600") != NULL, "out=%s", out);
+
+    /* 標準出力に書き込めなくても, 続行する */
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_closed_stdout, NULL,
+                                   "100*3\nquit\n", out, sizeof(out)));
+    PASS();
+}
+
+/**
+ * main() 関数テスト (履歴が上限に達する)
+ *
+ * @return なし
+ */
+TEST
+test_main_history(void)
+{
+    char out[BUF_SIZE] = {0}; /* 出力 */
+    char input[1024] = {0};   /* 標準入力 (パイプに収まる長さ) */
+    unsigned int i;
+
+    for (i = 0; i < 101; i++)
+        (void)strcat(input, "1+2\n");
+    (void)strcat(input, "quit\n");
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main, NULL, input, out, sizeof(out)));
+    PASS();
+}
+
+/**
+ * main() 関数テスト (入力待ちのときに, シグナルを受け取る)
+ *
+ * @return なし
+ */
+TEST
+test_main_event_hook(void)
+{
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_sigint, NULL, NULL, NULL, 0));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -215,5 +359,8 @@ main(int argc, char **argv)
     RUN_TEST(test_main_exit);
     RUN_TEST(test_main_error);
     RUN_TEST(test_main_signal);
+    RUN_TEST(test_main_failure);
+    RUN_TEST(test_main_history);
+    RUN_TEST(test_main_event_hook);
     TEST_MAIN_END();
 }
