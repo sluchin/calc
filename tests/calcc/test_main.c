@@ -39,6 +39,49 @@ DEFINE_FFF_GLOBALS;
 
 /* main.c が呼び出す, option.c と client.c と net.c の関数は, モックにする */
 FAKE_VOID_FUNC(parse_args, int, char **);
+
+/* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
+                struct sigaction *);
+TEST_PASSTHROUGH(int, sigaction,
+                 (int signo, const struct sigaction *act,
+                  struct sigaction *oldact),
+                 (signo, act, oldact))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t);
+TEST_PASSTHROUGH(int, setvbuf,
+                 (FILE *fp, char *buf, int mode, size_t size),
+                 (fp, buf, mode, size))
+
+/*
+ * atexit() は, libc の共有ライブラリには無い (静的ライブラリの関数) ので,
+ * 本物は, __cxa_atexit() で呼ぶ. テストの実行ファイルにある main.c の呼び出しだけが,
+ * このモックになる (共有ライブラリの中の呼び出しは, 置き換えられない).
+ */
+typedef void (*atexit_func_t)(void);
+FAKE_VALUE_FUNC(int, atexit, atexit_func_t);
+extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
+extern void *__dso_handle;
+static struct test_inject inject_atexit; /**< atexit() に注入する失敗 */
+/**
+ * atexit() の素通し (失敗を注入できる)
+ *
+ * @param[in] func 終了時に呼ぶ関数
+ * @return 0, または注入した失敗
+ */
+static int
+pass_atexit(atexit_func_t func)
+{
+    if (inject_atexit.count > 0) {
+        inject_atexit.count--;
+        errno = inject_atexit.err;
+        return (int)inject_atexit.value;
+    }
+    return __cxa_atexit((void (*)(void *))func, NULL, __dso_handle);
+}
 FAKE_VALUE_FUNC(int, connect_sock);
 FAKE_VALUE_FUNC(st_client, client_loop, int);
 FAKE_VALUE_FUNC(int, close_sock, int *);
@@ -118,6 +161,13 @@ setup(void *data)
 {
     (void)data;
     RESET_FAKE(parse_args);
+    TEST_PASSTHROUGH_RESET(sigaction);
+    TEST_PASSTHROUGH_RESET(sigemptyset);
+    TEST_PASSTHROUGH_RESET(sigfillset);
+    TEST_PASSTHROUGH_RESET(setvbuf);
+    RESET_FAKE(atexit);
+    (void)memset(&inject_atexit, 0, sizeof(inject_atexit));
+    atexit_fake.custom_fake = pass_atexit;
     RESET_FAKE(connect_sock);
     RESET_FAKE(client_loop);
     RESET_FAKE(close_sock);
@@ -228,6 +278,60 @@ test_main_signal(void)
     PASS();
 }
 
+/**
+ * 失敗を注入して, main() を子プロセスで実行するための関数
+ * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_failure(void *arg)
+{
+    /* シグナルハンドラの設定 (get 側と set 側で, 3 つのシグナル分) */
+    TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigaction, 0, 6, -1, EINVAL);
+    /* バッファリングの設定 (標準入力と標準出力) */
+    TEST_INJECT(setvbuf, 0, 2, -1, EBADF);
+    run_main(arg);
+}
+
+/**
+ * atexit() に失敗する main() を, 子プロセスで実行するための関数
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_atexit_failure(void *arg)
+{
+    inject_atexit.count = 1;
+    inject_atexit.value = -1;
+    inject_atexit.err = ENOMEM;
+    run_main(arg);
+}
+
+/**
+ * main() 関数テスト (システムコールなどの失敗)
+ *
+ * @return なし
+ */
+TEST
+test_main_failure(void)
+{
+    /* シグナルハンドラの設定と, バッファリングの設定に失敗しても, 続行する */
+    TEST_ASSERT_INT(EX_SUCCESS,
+                    test_run_child(run_main_failure, NULL, NULL, NULL, 0));
+    TEST_ASSERT_INT(1, shm->loop_count);
+
+    /* atexit() に失敗すると, 終了する */
+    TEST_ASSERT_INT(EX_FAILURE,
+                    test_run_child(run_main_atexit_failure, NULL, NULL, NULL,
+                                   0));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -240,5 +344,6 @@ main(int argc, char **argv)
     RUN_TEST(test_main_status);
     RUN_TEST(test_main_connect_failure);
     RUN_TEST(test_main_signal);
+    RUN_TEST(test_main_failure);
     TEST_MAIN_END();
 }

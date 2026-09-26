@@ -37,6 +37,14 @@
 
 DEFINE_FFF_GLOBALS;
 
+/* getopt_long() は, モックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
+FAKE_VALUE_FUNC(int, getopt_long, int, char *const *, const char *,
+                const struct option *, int *);
+TEST_PASSTHROUGH(int, getopt_long,
+                 (int argc, char *const *argv, const char *shortopts,
+                  const struct option *longopts, int *longindex),
+                 (argc, argv, shortopts, longopts, longindex))
+
 /* option.c が呼び出す calc.c の関数は, モックにする */
 FAKE_VOID_FUNC(set_digit, long);
 
@@ -70,6 +78,7 @@ setup(void *data)
     (void)data;
     RESET_FAKE(set_digit);
     g_tflag = false;
+    TEST_PASSTHROUGH_RESET(getopt_long);
     FFF_RESET_HISTORY();
     optind = 0; /* getopt の状態を初期化 */
 }
@@ -258,6 +267,23 @@ test_parse_args_time(void)
     PASS();
 }
 
+/**
+ * parse_args() 関数テスト (getopt_long() が想定外の値を返す)
+ *
+ * @return なし
+ */
+TEST
+test_parse_args_internal_error(void)
+{
+    char out[BUF_SIZE] = {0};
+    char *argv[] = { "testprog", NULL };
+
+    TEST_INJECT(getopt_long, 0, 1, 'z', 0);
+    TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 1, argv));
+    TEST_ASSERT_MATCH("getopt\\[122\\]: internal error", out);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -273,5 +299,6 @@ main(int argc, char **argv)
     RUN_TEST(test_print_help);
     RUN_TEST(test_print_version);
     RUN_TEST(test_parse_error);
+    RUN_TEST(test_parse_args_internal_error);
     TEST_MAIN_END();
 }

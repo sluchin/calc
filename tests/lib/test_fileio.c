@@ -53,6 +53,10 @@ TEST_PASSTHROUGH(ssize_t, write, (int fd, const void *buf, size_t n),
 FAKE_VALUE_FUNC(int, pipe, int *);
 TEST_PASSTHROUGH(int, pipe, (int *pipefd), (pipefd))
 #pragma GCC diagnostic pop
+FAKE_VALUE_FUNC(int, fflush, FILE *);
+TEST_PASSTHROUGH(int, fflush, (FILE *fp), (fp))
+FAKE_VALUE_FUNC(int, close, int);
+TEST_PASSTHROUGH(int, close, (int fd), (fd))
 FAKE_VALUE_FUNC(int, dup2, int, int);
 TEST_PASSTHROUGH(int, dup2, (int oldfd, int newfd), (oldfd, newfd))
 
@@ -124,6 +128,8 @@ setup(void *data)
     TEST_PASSTHROUGH_RESET(write);
     TEST_PASSTHROUGH_RESET(pipe);
     TEST_PASSTHROUGH_RESET(dup2);
+    TEST_PASSTHROUGH_RESET(fflush);
+    TEST_PASSTHROUGH_RESET(close);
     FFF_RESET_HISTORY();
 }
 
@@ -788,6 +794,18 @@ test_redirect_failure(void)
     /* dup2() に失敗 */
     TEST_INJECT(dup2, 0, 1, -1, EBADF);
     TEST_ASSERT_INT(EX_NG, redirect(fdnum, "/dev/null"));
+
+    /* fflush() と, 最後の close() に失敗しても, ログを出力するだけ */
+    fdnum = open("/dev/null", O_RDWR);
+    if (fdnum < 0) {
+        TEST_FAIL("open(%d)", errno);
+    }
+    TEST_INJECT(fflush, 0, 1, EOF, EIO);
+    TEST_INJECT(close, 1, 1, -1, EIO); /* 1 回目は, 元のファイルディスクリプタ */
+    TEST_ASSERT_INT(EX_OK, redirect(fdnum, "/dev/null"));
+    TEST_ASSERT_INJECTED(fflush);
+    TEST_ASSERT_INJECTED(close);
+    (void)close(fdnum);
     PASS();
 }
 

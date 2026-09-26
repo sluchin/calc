@@ -24,6 +24,7 @@
  */
 
 #include <math.h>   /* sqrt log */
+#include <fenv.h>   /* feclearexcept */
 
 #include "test_helper.h"
 
@@ -38,6 +39,10 @@ DEFINE_FFF_GLOBALS;
 /* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(char *, strdup, const char *);
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+
+/* feclearexcept() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(int, feclearexcept, int);
+TEST_PASSTHROUGH(int, feclearexcept, (int excepts), (excepts))
 
 /* プロトタイプ */
 /* get_errormsg() 関数テスト */
@@ -273,6 +278,7 @@ setup(void *data)
 {
     (void)data;
     TEST_PASSTHROUGH_RESET(strdup);
+    TEST_PASSTHROUGH_RESET(feclearexcept);
 }
 
 /**
@@ -315,6 +321,21 @@ test_get_errormsg_failure(void)
     PASS();
 }
 
+/**
+ * clear_math_feexcept() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_clear_math_feexcept_failure(void)
+{
+    /* 失敗しても, ログを出力するだけ */
+    TEST_INJECT(feclearexcept, 0, 1, -1, EINVAL);
+    clear_math_feexcept();
+    TEST_ASSERT_INJECTED(feclearexcept);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -332,5 +353,6 @@ main(int argc, char **argv)
     RUN_TEST(test_check_validate);
     RUN_TEST(test_check_math_feexcept);
     RUN_TEST(test_clear_math_feexcept);
+    RUN_TEST(test_clear_math_feexcept_failure);
     TEST_MAIN_END();
 }
