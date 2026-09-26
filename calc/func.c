@@ -149,8 +149,8 @@ exec_func(calcinfo *calc, const char *func)
         if (!strcmp(fstring[i].funcname, func)) {
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);
+            dbglog("type=%d", (int)finfo[ftype].type);
             switch (finfo[ftype].type) {
-                dbglog("type=%d", (int)finfo[ftype].type);
             case FUNC0:
                 result = finfo[ftype].func.func0(calc);
                 break;
