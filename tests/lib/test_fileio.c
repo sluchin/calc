@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>    /* tmpnam */
+#include <stdio.h>    /* snprintf */
 #include <unistd.h>   /* dup2 unlink pipe fork */
 #include <fcntl.h>    /* open creat */
 #include <sys/stat.h> /* chmod */
@@ -39,6 +39,23 @@
 
 #define BUF_SIZE 4100 /**< バッファサイズ */
 
+DEFINE_FFF_GLOBALS;
+
+/* システムコールは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t);
+TEST_PASSTHROUGH(ssize_t, read, (int fd, void *buf, size_t n), (fd, buf, n))
+FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t);
+TEST_PASSTHROUGH(ssize_t, write, (int fd, const void *buf, size_t n),
+                 (fd, buf, n))
+/* pipe() は, 引数が配列 (int[2]) と宣言されているので, ポインタとの違いを警告される */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-parameter"
+FAKE_VALUE_FUNC(int, pipe, int *);
+TEST_PASSTHROUGH(int, pipe, (int *pipefd), (pipefd))
+#pragma GCC diagnostic pop
+FAKE_VALUE_FUNC(int, dup2, int, int);
+TEST_PASSTHROUGH(int, dup2, (int oldfd, int newfd), (oldfd, newfd))
+
 /* プロトタイプ */
 /** readn() 関数テスト */
 TEST test_readn(void);
@@ -50,9 +67,25 @@ TEST test_pipe_fd(void);
 TEST test_redirect(void);
 /** close_fd() 関数テスト */
 TEST test_close_fd(void);
+/** readn() 関数テスト (失敗) */
+TEST test_readn_failure(void);
+/** readn() 関数テスト (EINTR) */
+TEST test_readn_interrupted(void);
+/** writen() 関数テスト (失敗) */
+TEST test_writen_failure(void);
+/** writen() 関数テスト (EINTR) */
+TEST test_writen_interrupted(void);
+/** pipe_fd() 関数テスト (失敗) */
+TEST test_pipe_fd_failure(void);
+/** pipe_fd2() 関数テスト (失敗) */
+TEST test_pipe_fd2_failure(void);
+/** redirect() 関数テスト (失敗) */
+TEST test_redirect_failure(void);
+/** close_fd() 関数テスト (失敗) */
+TEST test_close_fd_failure(void);
 
 /* 内部変数 */
-static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
+static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
 static int fd = -1;                   /**< ファイルディスクリプタ */
 static int pfd[] = { -1, -1 };        /**< パイプ */
 static char sendbuf[BUF_SIZE];        /**< 送信バッファ */
@@ -76,6 +109,22 @@ startup(void)
     set_sig_handler();
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
     sendbuf[sizeof(sendbuf) - 1] = '\0';
+}
+
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    TEST_PASSTHROUGH_RESET(read);
+    TEST_PASSTHROUGH_RESET(write);
+    TEST_PASSTHROUGH_RESET(pipe);
+    TEST_PASSTHROUGH_RESET(dup2);
+    FFF_RESET_HISTORY();
 }
 
 /**
@@ -376,8 +425,8 @@ test_redirect(void)
     TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: path=null");
 
     /* 書込権限なし */
-    if (!tmpnam(testfile)) {
-        TEST_FAIL("tmpnam(%d)", errno);
+    if (test_tmpname(testfile) < 0) {
+        TEST_FAIL("test_tmpname(%d)", errno);
     }
 
     retval = creat(testfile, S_IRUSR|S_IRGRP);
@@ -549,6 +598,220 @@ set_sig_handler(void)
 }
 
 
+/**
+ * オープンしていない, 小さなファイルディスクリプタ番号を探す
+ * dup2() で作れるように, ファイルディスクリプタの上限 (ulimit -n) より小さくする.
+ *
+ * @return ファイルディスクリプタ番号
+ * @retval -1 見つからない
+ */
+static int
+unused_fd(void)
+{
+    int f;
+
+    for (f = 100; f < 1000; f++) {
+        if (fcntl(f, F_GETFD) < 0 && errno == EBADF)
+            return f;
+    }
+    return -1;
+}
+
+/**
+ * readn() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_readn_failure(void)
+{
+    int p[2] = { -1, -1 }; /* パイプ */
+    char readbuf[8] = {0}; /* 受信バッファ */
+
+    /* 不正なファイルディスクリプタ */
+    TEST_ASSERT_INT(EX_NG, readn(-1, readbuf, sizeof(readbuf)));
+
+    /* 途中で, 書込側が閉じられた (要求したバイト数より少ない) */
+    if (pipe(p) < 0) {
+        TEST_FAIL("pipe(%d)", errno);
+    }
+    TEST_ASSERT_INT(2, write(p[1], "ab", 2));
+    (void)close(p[1]);
+    TEST_ASSERT_INT(2, readn(p[0], readbuf, 4));
+    TEST_ASSERT_STR("ab", readbuf);
+    (void)close(p[0]);
+    PASS();
+}
+
+/**
+ * readn() 関数テスト (EINTR)
+ *
+ * @return なし
+ */
+TEST
+test_readn_interrupted(void)
+{
+    int p[2] = { -1, -1 }; /* パイプ */
+    char readbuf[8] = {0}; /* 受信バッファ */
+
+    if (pipe(p) < 0) {
+        TEST_FAIL("pipe(%d)", errno);
+    }
+    TEST_ASSERT_INT(3, write(p[1], "abc", 3));
+
+    /* 1 回目は割り込まれるが, やり直して, 受信できる */
+    TEST_INJECT(read, 0, 1, -1, EINTR);
+    TEST_ASSERT_INT(3, readn(p[0], readbuf, 3));
+    TEST_ASSERT_INT(2, read_fake.call_count);
+    TEST_ASSERT_STR("abc", readbuf);
+    (void)close(p[0]);
+    (void)close(p[1]);
+    PASS();
+}
+
+/**
+ * writen() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_writen_failure(void)
+{
+    /* 不正なファイルディスクリプタ */
+    TEST_ASSERT_INT(EX_NG, writen(-1, "abc", 3));
+    PASS();
+}
+
+/**
+ * writen() 関数テスト (EINTR)
+ *
+ * @return なし
+ */
+TEST
+test_writen_interrupted(void)
+{
+    int p[2] = { -1, -1 }; /* パイプ */
+    char readbuf[8] = {0}; /* 受信バッファ */
+
+    if (pipe(p) < 0) {
+        TEST_FAIL("pipe(%d)", errno);
+    }
+
+    /* 1 回目は割り込まれるが, やり直して, 送信できる */
+    TEST_INJECT(write, 0, 1, -1, EINTR);
+    TEST_ASSERT_INT(3, writen(p[1], "abc", 3));
+    TEST_ASSERT_INT(2, write_fake.call_count);
+    TEST_ASSERT_INT(3, read(p[0], readbuf, sizeof(readbuf)));
+    TEST_ASSERT_STR("abc", readbuf);
+    (void)close(p[0]);
+    (void)close(p[1]);
+    PASS();
+}
+
+/**
+ * pipe_fd() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_pipe_fd_failure(void)
+{
+    int newfd = -1; /* 置き換えるファイルディスクリプタ */
+
+    /* pipe() に失敗 (標準エラー出力には触れない) */
+    TEST_INJECT(pipe, 0, 1, -1, EMFILE);
+    TEST_ASSERT_INT(EX_NG, pipe_fd(STDERR_FILENO));
+
+    /* close() に失敗 (オープンしていない) */
+    TEST_ASSERT_INT(EX_NG, pipe_fd(9999));
+
+    /* dup2() に失敗 */
+    newfd = dup(STDOUT_FILENO);
+    if (newfd < 0) {
+        TEST_FAIL("dup(%d)", errno);
+    }
+    TEST_INJECT(dup2, 0, 1, -1, EBADF);
+    TEST_ASSERT_INT(EX_NG, pipe_fd(newfd));
+    (void)close(newfd);
+    PASS();
+}
+
+/**
+ * pipe_fd2() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_pipe_fd2_failure(void)
+{
+    int p[2] = { -1, -1 }; /* パイプ */
+    int oldfd = -1;        /* 退避用 */
+    int newfd = unused_fd(); /* オープンしていない */
+    int retval = 0;        /* 戻り値 */
+
+    if (newfd < 0) {
+        TEST_FAIL("unused_fd");
+    }
+    if (pipe(p) < 0) {
+        TEST_FAIL("pipe(%d)", errno);
+    }
+    oldfd = p[0];
+
+    /* close() に失敗しても, dup2() できる */
+    retval = pipe_fd2(&p[1], &oldfd, newfd);
+    TEST_ASSERT_INT(newfd, retval);
+    (void)close(newfd);
+    PASS();
+}
+
+/**
+ * redirect() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_redirect_failure(void)
+{
+    int fdnum = unused_fd(); /* オープンしていない */
+
+    if (fdnum < 0) {
+        TEST_FAIL("unused_fd");
+    }
+
+    /* ディレクトリは, 書込権限があっても, open() できない */
+    TEST_ASSERT_INT(EX_NG, redirect(STDERR_FILENO, "/tmp"));
+
+    /* オープンしていないファイルディスクリプタ (fdopen, close の失敗) */
+    TEST_ASSERT_INT(EX_OK, redirect(fdnum, "/dev/null"));
+    (void)close(fdnum);
+
+    /* dup2() に失敗 */
+    TEST_INJECT(dup2, 0, 1, -1, EBADF);
+    TEST_ASSERT_INT(EX_NG, redirect(fdnum, "/dev/null"));
+    PASS();
+}
+
+/**
+ * close_fd() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_close_fd_failure(void)
+{
+    int fds[] = { -1, 9999 }; /* 2 つ目は, オープンしていない */
+
+    fds[0] = open("/dev/null", O_WRONLY);
+    if (fds[0] < 0) {
+        TEST_FAIL("open(%d)", errno);
+    }
+    /* 可変引数の, 2 つ目の close() に失敗 */
+    TEST_ASSERT_INT(EX_NG, close_fd(&fds[0], &fds[1], NULL));
+    TEST_ASSERT_INT(-1, fds[0]);
+    TEST_ASSERT_INT(-1, fds[1]);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -556,6 +819,7 @@ main(int argc, char **argv)
 {
     TEST_MAIN_BEGIN();
     startup();
+    SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_readn);
     RUN_TEST(test_writen);
@@ -563,5 +827,13 @@ main(int argc, char **argv)
     RUN_TEST(test_pipe_fd2);
     RUN_TEST(test_redirect);
     RUN_TEST(test_close_fd);
+    RUN_TEST(test_readn_failure);
+    RUN_TEST(test_readn_interrupted);
+    RUN_TEST(test_writen_failure);
+    RUN_TEST(test_writen_interrupted);
+    RUN_TEST(test_pipe_fd_failure);
+    RUN_TEST(test_pipe_fd2_failure);
+    RUN_TEST(test_redirect_failure);
+    RUN_TEST(test_close_fd_failure);
     TEST_MAIN_END();
 }

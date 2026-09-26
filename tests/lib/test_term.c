@@ -41,6 +41,10 @@ DEFINE_FFF_GLOBALS;
 /* 端末が無くても実行できるように, tcgetattr() は FFF でモックにする */
 FAKE_VALUE_FUNC(int, tcgetattr, int, struct termios *);
 
+/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strdup, const char *);
+TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+
 /* プロトタイプ */
 /** sys_print_termattr() 関数テスト */
 TEST test_sys_print_termattr(void);
@@ -48,6 +52,10 @@ TEST test_sys_print_termattr(void);
 TEST test_get_termattr(void);
 /** mode_type_flag() 関数テスト */
 TEST test_mode_type_flag(void);
+/** sys_print_termattr() 関数テスト (失敗) */
+TEST test_sys_print_termattr_failure(void);
+/** get_termattr() 関数テスト (失敗) */
+TEST test_get_termattr_failure(void);
 
 /* 内部変数 */
 static testterm term; /**< 関数構造体 */
@@ -95,6 +103,7 @@ setup(void *data)
     RESET_FAKE(tcgetattr);
     FFF_RESET_HISTORY();
     tcgetattr_fake.custom_fake = fake_tcgetattr;
+    TEST_PASSTHROUGH_RESET(strdup);
 }
 
 /**
@@ -205,6 +214,52 @@ test_mode_type_flag(void)
 }
 
 
+/**
+ * sys_print_termattr() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_sys_print_termattr_failure(void)
+{
+    /* 端末の情報を取得できないときは, 何も出力しない */
+    tcgetattr_fake.custom_fake = NULL;
+    tcgetattr_fake.return_val = -1;
+    sys_print_termattr(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                       "filename", 15, "function", STDIN_FILENO);
+    TEST_ASSERT_INT(1, tcgetattr_fake.call_count);
+    PASS();
+}
+
+/**
+ * get_termattr() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_get_termattr_failure(void)
+{
+    struct termios mode; /* termios構造体 */
+
+    (void)memset(&mode, 0, sizeof(struct termios));
+
+    /* 不正なファイルディスクリプタ */
+    TEST_ASSERT_NULL(term.get_termattr(-1, &mode));
+    TEST_ASSERT_INT(0, tcgetattr_fake.call_count);
+
+    /* tcgetattr() に失敗 */
+    tcgetattr_fake.custom_fake = NULL;
+    tcgetattr_fake.return_val = -1;
+    TEST_ASSERT_NULL(term.get_termattr(STDIN_FILENO, &mode));
+    TEST_ASSERT_INT(1, tcgetattr_fake.call_count);
+
+    /* strdup() に失敗 */
+    tcgetattr_fake.custom_fake = fake_tcgetattr;
+    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_ASSERT_NULL(term.get_termattr(STDIN_FILENO, &mode));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -217,5 +272,7 @@ main(int argc, char **argv)
     RUN_TEST(test_sys_print_termattr);
     RUN_TEST(test_get_termattr);
     RUN_TEST(test_mode_type_flag);
+    RUN_TEST(test_sys_print_termattr_failure);
+    RUN_TEST(test_get_termattr_failure);
     TEST_MAIN_END();
 }

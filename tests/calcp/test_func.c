@@ -37,6 +37,8 @@
 /* プロトタイプ */
 /** exec_func() 関数テスト */
 TEST test_exec_func(void);
+/** 全ての関数テスト (エラー状態) */
+TEST test_func_error_state(void);
 /** get_pi() 関数テスト */
 TEST test_get_pi(void);
 /** get_e() 関数テスト */
@@ -539,6 +541,35 @@ teardown(void *data)
     free_strings();
 }
 
+/**
+ * 全ての関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
+ *
+ * @return なし
+ */
+TEST
+test_func_error_state(void)
+{
+    calcinfo calc;              /* calcinfo構造体 */
+    const double EX_ERROR = 0.0; /* エラー戻り値 (func.c の内部定数と同じ) */
+
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
+    set_errorcode(&calc, E_SYNTAX);
+
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, get_pow(&calc, 2, 3));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_pi(&calc));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_e(&calc));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_rad(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_deg(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_sqrt(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_ln(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_log(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_factorial(&calc, 1));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_func.get_permutation(&calc, 2, 1));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -549,6 +580,7 @@ main(int argc, char **argv)
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_exec_func);
     RUN_TEST(test_get_pow);
+    RUN_TEST(test_func_error_state);
     RUN_TEST(test_get_pi);
     RUN_TEST(test_get_e);
     RUN_TEST(test_get_rad);
