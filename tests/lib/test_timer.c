@@ -52,6 +52,8 @@ TEST test_stop_timer(void);
 TEST test_get_time(void);
 /** get_time() 関数テスト (失敗) */
 TEST test_get_time_failure(void);
+/** stop_timer() 関数テスト (時刻が一周する) */
+TEST test_stop_timer_wrap(void);
 
 /**
  * print_timer() 関数テスト
@@ -169,6 +171,49 @@ test_get_time_failure(void)
     PASS();
 }
 
+static long long fake_time = 0; /**< gettimeofday() のモックが返す時刻 (マイクロ秒) */
+
+/**
+ * gettimeofday() のモック動作 (fake_time を返す)
+ *
+ * @param[out] tv timeval構造体
+ * @param[in] tz 使用しない
+ * @return 0
+ */
+static int
+fake_gettimeofday(struct timeval *tv, void *tz)
+{
+    (void)tz;
+    tv->tv_sec = (time_t)(fake_time / 1000000);
+    tv->tv_usec = (suseconds_t)(fake_time % 1000000);
+    return 0;
+}
+
+/**
+ * stop_timer() 関数テスト (32 ビットの時刻が一周する)
+ *
+ * @return なし
+ */
+TEST
+test_stop_timer_wrap(void)
+{
+    unsigned int t = 0; /* タイマ用変数 */
+
+    gettimeofday_fake.custom_fake = fake_gettimeofday;
+
+    /* 通常 */
+    fake_time = 5000000000LL + 1000;
+    start_timer(&t);
+    fake_time += 500;
+    TEST_ASSERT_INT(500, stop_timer(&t));
+
+    /* 開始が, 一周する直前 (0xFFFFFF00) で, 終了が, 一周したあと (0x100) */
+    t = 0xFFFFFF00U;
+    fake_time = 0x100000100LL;
+    TEST_ASSERT_INT(0x200, stop_timer(&t));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -181,5 +226,6 @@ main(int argc, char **argv)
     RUN_TEST(test_stop_timer);
     RUN_TEST(test_get_time);
     RUN_TEST(test_get_time_failure);
+    RUN_TEST(test_stop_timer_wrap);
     TEST_MAIN_END();
 }
