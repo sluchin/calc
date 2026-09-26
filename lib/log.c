@@ -69,7 +69,6 @@ static char progname[MAX_PROGNAME] = {0}; /**< プログラム名 */
  * プログラム名設定
  *
  * @param[in] name プログラム名
- * @return なし
  */
 void
 set_progname(const char *name)
@@ -108,7 +107,6 @@ get_progname(void)
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
- * @return なし
  */
 void
 system_log(const int level,
@@ -163,7 +161,6 @@ system_log(const int level,
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
- * @return なし
  */
 void
 system_dbg_log(const int level,
@@ -232,7 +229,6 @@ system_dbg_log(const int level,
  * @param[in] func 関数名
  * @param[in] format フォーマット
  * @param[in] ... 可変引数
- * @return なし
  */
 void
 stderr_log(const char *pname,
@@ -521,7 +517,6 @@ dump_file(const char *pname,
  * @param[in] fname ファイル名
  * @param[in] line 行番号
  * @param[in] func 関数名
- * @return なし
  */
 #ifdef HAVE_EXECINFO
 void
@@ -567,8 +562,6 @@ systrace(const int level,
 
 /**
  * バックトレース出力
- *
- * @return なし
  */
 #ifdef HAVE_EXECINFO
 void

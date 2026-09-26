@@ -201,7 +201,6 @@ test_shared_alloc(size_t size)
  *
  * @param[in] ptr 共有メモリ
  * @param[in] size バイト数
- * @return なし
  */
 static inline void
 test_shared_free(void *ptr, size_t size)

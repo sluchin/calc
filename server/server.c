@@ -149,7 +149,6 @@ error_handler:
  * 接続受付
  *
  * @param[in] sock ソケット
- * @return なし
  */
 void
 server_loop(int sock)
@@ -357,7 +356,6 @@ server_proc(void *arg)
  * スレッドクリーンアップハンドラ
  *
  * @param[in] arg ポインタ
- * @return なし
  */
 static void
 thread_cleanup(void *arg)
@@ -371,7 +369,6 @@ thread_cleanup(void *arg)
  * スレッドメモリ解放ハンドラ
  *
  * @param[in] arg ポインタ
- * @return なし
  * @attention 引数にvoid **型を渡さなければ不正アクセスになる.
  */
 static void
@@ -413,7 +410,6 @@ get_sigmask(void)
  * スレッドシグナルマスク設定
  *
  * @param[in] sigmask シグナルマスク
- * @return なし
  */
 static void
 set_thread_sigmask(sigset_t sigmask)
@@ -440,7 +436,6 @@ set_thread_sigmask(sigset_t sigmask)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] server 関数構造体
- * @return なし
  */
 void
 test_init_server(testserver *server)

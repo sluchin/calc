@@ -185,7 +185,6 @@ static const struct _mode_info mode_info[] = {
  * @param[in] line 行番号
  * @param[in] func 関数名
  * @param[in] fd ファイルディスクリプタ
- * @return なし
  */
 void
 sys_print_termattr(const int level, const int option,
@@ -307,7 +306,6 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] term 関数構造体
- * @return なし
  */
 void
 test_init_term(testterm *term)

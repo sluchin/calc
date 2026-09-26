@@ -180,8 +180,6 @@ static const struct test_data combination_data[] = {
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -194,8 +192,6 @@ startup(void)
 
 /**
  * exec_func() 関数テスト
- *
- * @return なし
  */
 TEST
 test_exec_func(void)
@@ -235,8 +231,6 @@ test_exec_func(void)
 
 /**
  * get_pow() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_pow(void)
@@ -264,8 +258,6 @@ test_get_pow(void)
 
 /**
  * get_pi() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_pi(void)
@@ -288,8 +280,6 @@ test_get_pi(void)
 
 /**
  * get_e() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_e(void)
@@ -312,8 +302,6 @@ test_get_e(void)
 
 /**
  * get_rad() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_rad(void)
@@ -338,8 +326,6 @@ test_get_rad(void)
 
 /**
  * get_deg() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_deg(void)
@@ -364,8 +350,6 @@ test_get_deg(void)
 
 /**
  * get_sqrt() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_sqrt(void)
@@ -393,8 +377,6 @@ test_get_sqrt(void)
 
 /**
  * get_ln() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_ln(void)
@@ -422,8 +404,6 @@ test_get_ln(void)
 
 /**
  * get_log() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_log(void)
@@ -451,8 +431,6 @@ test_get_log(void)
 
 /**
  * get_factorial() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_factorial(void)
@@ -480,8 +458,6 @@ test_get_factorial(void)
 
 /**
  * get_permutation() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_permutation(void)
@@ -511,8 +487,6 @@ test_get_permutation(void)
 
 /**
  * get_combination() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_combination(void)
@@ -545,7 +519,6 @@ test_get_combination(void)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -556,8 +529,6 @@ teardown(void *data)
 
 /**
  * 全ての関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
- *
- * @return なし
  */
 TEST
 test_func_error_state(void)

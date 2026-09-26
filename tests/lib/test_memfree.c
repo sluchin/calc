@@ -37,8 +37,6 @@ TEST test_memfree(void);
 
 /**
  * set_memfree() 関数テスト
- *
- * @return なし
  */
 TEST
 test_memfree(void)

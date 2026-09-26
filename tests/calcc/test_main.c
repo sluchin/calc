@@ -111,7 +111,6 @@ static int raise_signo = 0;       /**< parse_args() で発生させるシグナ�
  *
  * @param[in] argc 引数の数
  * @param[in] argv 引数
- * @return なし
  */
 static void
 fake_parse_args(int argc, char **argv)
@@ -160,7 +159,6 @@ fake_close_sock(int *sock)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -192,7 +190,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -206,7 +203,6 @@ teardown(void *data)
  * main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main(void *arg)
@@ -219,8 +215,6 @@ run_main(void *arg)
 
 /**
  * main() 関数テスト (正常)
- *
- * @return なし
  */
 TEST
 test_main_success(void)
@@ -239,8 +233,6 @@ test_main_success(void)
 
 /**
  * main() 関数テスト (client_loop() のステータスで終了する)
- *
- * @return なし
  */
 TEST
 test_main_status(void)
@@ -255,8 +247,6 @@ test_main_status(void)
 
 /**
  * main() 関数テスト (接続できない)
- *
- * @return なし
  */
 TEST
 test_main_connect_failure(void)
@@ -275,8 +265,6 @@ test_main_connect_failure(void)
 
 /**
  * main() 関数テスト (シグナル)
- *
- * @return なし
  */
 TEST
 test_main_signal(void)
@@ -293,7 +281,6 @@ test_main_signal(void)
  * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_failure(void *arg)
@@ -311,7 +298,6 @@ run_main_failure(void *arg)
  * atexit() に失敗する main() を, 子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_atexit_failure(void *arg)
@@ -324,8 +310,6 @@ run_main_atexit_failure(void *arg)
 
 /**
  * main() 関数テスト (システムコールなどの失敗)
- *
- * @return なし
  */
 TEST
 test_main_failure(void)

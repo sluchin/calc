@@ -94,8 +94,6 @@ main(int argc, char *argv[])
 
 /**
  * ループ処理
- *
- * @return なし
  */
 static void
 main_loop(void)
@@ -189,8 +187,6 @@ static int check_state(void) {
 
 /**
  * シグナルハンドラ設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -233,7 +229,6 @@ set_sig_handler(void)
  * シグナルハンドラ
  *
  * @param[in] signo シグナル
- * @return なし
  */
 static void sig_handler(int signo)
 {
