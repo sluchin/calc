@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CALC_H_
-#define _CALC_H_
+#ifndef CALC_H
+#define CALC_H
 
 #include <stdbool.h> /* bool */
 
@@ -145,5 +145,5 @@ void test_init_calc(testcalc *calc);
  *
  * @endmsc
  */
-#endif /* _CALC_H_ */
+#endif /* CALC_H */
 

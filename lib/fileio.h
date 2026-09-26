@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FILEIO_H_
-#define _FILEIO_H_
+#ifndef FILEIO_H
+#define FILEIO_H
 
 /** パイプ */
 enum {
@@ -45,5 +45,5 @@ int redirect(int fd, const char *path);
 /** クローズ */
 int close_fd(int *fd, ...);
 
-#endif /* _FILEIO_H_ */
+#endif /* FILEIO_H */
 

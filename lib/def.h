@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _DEF_H_
-#define _DEF_H_
+#ifndef DEF_H
+#define DEF_H
 
 /** 配列要素数 */
 #define NELEMS(array) (sizeof(array) / sizeof(array[0]))
@@ -35,5 +35,5 @@ enum {
     EX_OK =  0  /**< 正常時 */
 };
 
-#endif /* _DEF_H_ */
+#endif /* DEF_H */
 

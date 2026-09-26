@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _OUTPUTLOG_H_
-#define _OUTPUTLOG_H_
+#ifndef OUTPUTLOG_H
+#define OUTPUTLOG_H
 
 #include <stddef.h> /* size_t */
 #include <syslog.h> /* syslog LOG_INFO LOG_PID */
@@ -100,5 +100,5 @@ void systrace(const int level, const int option, const char *pname,
 /** バックトレース出力 */
 void print_trace(void);
 
-#endif /* _OUTPUTLOG_H_ */
+#endif /* OUTPUTLOG_H */
 

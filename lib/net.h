@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _NET_H_
-#define _NET_H_
+#ifndef NET_H
+#define NET_H
 
 #include <netdb.h>   /* sockaddr_in */
 
@@ -58,5 +58,5 @@ void *recv_data_new(const int sock, size_t *length);
 /** ソケットクローズ */
 int close_sock(int *sock);
 
-#endif /* _NET_H_ */
+#endif /* NET_H */
 
