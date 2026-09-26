@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_term.c
+ * @file tests/lib/test_term.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -26,7 +26,8 @@
 #include <unistd.h>  /* STDIN_FILENO */
 #include <termios.h> /* termios */
 #include <errno.h>   /* errno */
-#include <cutter.h>  /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -35,13 +36,18 @@
 
 #define BUF_SIZE 2048 /**< バッファサイズ */
 
+DEFINE_FFF_GLOBALS;
+
+/* 端末が無くても実行できるように, tcgetattr() は FFF でモックにする */
+FAKE_VALUE_FUNC(int, tcgetattr, int, struct termios *);
+
 /* プロトタイプ */
 /** sys_print_termattr() 関数テスト */
-void test_sys_print_termattr(void);
+TEST test_sys_print_termattr(void);
 /** get_termattr() 関数テスト */
-void test_get_termattr(void);
+TEST test_get_termattr(void);
 /** mode_type_flag() 関数テスト */
-void test_mode_type_flag(void);
+TEST test_mode_type_flag(void);
 
 /* 内部変数 */
 static testterm term; /**< 関数構造体 */
@@ -52,11 +58,43 @@ static int fd = -1;   /**< ファイルディスクリプタ */
  *
  * @return なし
  */
-void
-cut_startup(void)
+static void
+startup(void)
 {
     (void)memset(&term, 0, sizeof(testterm));
     test_init_term(&term);
+}
+
+/**
+ * tcgetattr() のモック動作 (8bit, 受信有効の端末状態を返す)
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @param[out] mode termios構造体
+ * @return 0
+ */
+static int
+fake_tcgetattr(int fd, struct termios *mode)
+{
+    (void)fd;
+    mode->c_cflag = CS8 | CREAD | CLOCAL;
+    mode->c_iflag = ICRNL | IXON;
+    mode->c_oflag = OPOST | ONLCR;
+    mode->c_lflag = ISIG | ICANON | ECHO;
+    return 0;
+}
+
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    RESET_FAKE(tcgetattr);
+    FFF_RESET_HISTORY();
+    tcgetattr_fake.custom_fake = fake_tcgetattr;
 }
 
 /**
@@ -64,12 +102,12 @@ cut_startup(void)
  *
  * @return なし
  */
-void
-cut_teardown(void)
+static void
+teardown(void *data)
 {
     if (fd != -1) {
         if (close(fd) < 0)
-            cut_notify("close: fd=%d(%d)", fd, errno);
+            TEST_NOTIFY("close: fd=%d(%d)", fd, errno);
         fd = -1;
     }
 }
@@ -79,7 +117,7 @@ cut_teardown(void)
  *
  * @return なし
  */
-void
+TEST
 test_sys_print_termattr(void)
 {
     int rlen = 0;                /* 戻り値 */
@@ -91,8 +129,7 @@ test_sys_print_termattr(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
+        TEST_FAIL("pipe_fd(%d)", errno);
     }
 
     sys_print_termattr(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
@@ -100,13 +137,12 @@ test_sys_print_termattr(void)
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 
 /**
@@ -114,7 +150,7 @@ test_sys_print_termattr(void)
  *
  * @return なし
  */
-void
+TEST
 test_get_termattr(void)
 {
     char *ptr = NULL;    /* テスト関数戻り値 */
@@ -123,11 +159,16 @@ test_get_termattr(void)
     (void)memset(&mode, 0, sizeof(struct termios));
     ptr = term.get_termattr(STDIN_FILENO, &mode);
 
-    cut_assert_match("tcgetattr(.*)", ptr);
+    TEST_ASSERT_MATCH("tcgetattr(.*)", ptr);
+    /* tcgetattr() が, 指定したファイルディスクリプタで 1 回呼ばれた */
+    ASSERT_EQ(1, (int)tcgetattr_fake.call_count);
+    ASSERT_EQ(STDIN_FILENO, tcgetattr_fake.arg0_val);
+    ASSERT_EQ(&mode, tcgetattr_fake.arg1_val);
 
     if (ptr)
         free(ptr);
     ptr = NULL;
+    PASS();
 }
 
 /**
@@ -135,7 +176,7 @@ test_get_termattr(void)
  *
  * @return なし
  */
-void
+TEST
 test_mode_type_flag(void)
 {
     tcflag_t *flag = NULL; /* テスト関数戻り値 */
@@ -145,21 +186,36 @@ test_mode_type_flag(void)
     (void)memset(&mode, 0, sizeof(struct termios));
     retval = tcgetattr(STDIN_FILENO, &mode);
     if (retval < 0) {
-        cut_fail("tcgetattr: mode=%p(%d)", &mode, errno);
-        return;
+        TEST_FAIL("tcgetattr: mode=%p(%d)", &mode, errno);
     }
 
     /* 正常系 */
     flag = term.mode_type_flag(control, &mode);
-    cut_assert_not_null(flag);
+    TEST_ASSERT_NOT_NULL(flag);
     flag = term.mode_type_flag(input, &mode);
-    cut_assert_not_null(flag);
+    TEST_ASSERT_NOT_NULL(flag);
     flag = term.mode_type_flag(output, &mode);
-    cut_assert_not_null(flag);
+    TEST_ASSERT_NOT_NULL(flag);
     flag = term.mode_type_flag(local, &mode);
-    cut_assert_not_null(flag);
+    TEST_ASSERT_NOT_NULL(flag);
     /* 異常系 */
     flag = term.mode_type_flag((enum mode_type)4, &mode);
-    cut_assert_null(flag);
+    TEST_ASSERT_NULL(flag);
+    PASS();
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_SETUP(setup, NULL);
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_sys_print_termattr);
+    RUN_TEST(test_get_termattr);
+    RUN_TEST(test_mode_type_flag);
+    TEST_MAIN_END();
+}

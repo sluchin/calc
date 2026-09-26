@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_readline.c
+ * @file tests/lib/test_readline.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -27,7 +27,8 @@
 #include <sys/wait.h> /* wait waitpid */
 #include <errno.h>    /* errno */
 #include <signal.h>   /* signal */
-#include <cutter.h>   /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -40,7 +41,7 @@
 
 /* プロトタイプ */
 /** readline() 関数テスト */
-void test_readline(void);
+TEST test_readline(void);
 
 /* 内部変数 */
 static int pfd[] = { -1, -1 };       /* パイプ */
@@ -58,8 +59,8 @@ static void set_sig_handler(void);
  *
  * @return なし
  */
-void
-cut_startup(void)
+static void
+startup(void)
 {
     set_sig_handler();
 }
@@ -69,8 +70,8 @@ cut_startup(void)
  *
  * @return なし
  */
-void
-cut_setup(void)
+static void
+setup(void *data)
 {
     (void)memset(test_data, 0x31, sizeof(test_data));
     test_data[sizeof(test_data) - 1] = '\0';
@@ -82,8 +83,8 @@ cut_setup(void)
  *
  * @return なし
  */
-void
-cut_teardown(void)
+static void
+teardown(void *data)
 {
     close_fd(&pfd[PIPE_R], &pfd[PIPE_W], NULL);
     memfree((void **)&result, NULL);
@@ -94,7 +95,7 @@ cut_teardown(void)
  *
  * @return なし
  */
-void
+TEST
 test_readline(void)
 {
     char nolf_data[] = "test"; /* 改行なし文字列 */
@@ -106,7 +107,7 @@ test_readline(void)
     if (test_data[strlen(test_data) - 1] == '\n')
         test_data[strlen(test_data) - 1] = '\0';
 
-    cut_assert_equal_string(test_data, (char *)result);
+    TEST_ASSERT_STR(test_data, (char *)result);
 
     memfree((void **)&result, NULL);
 
@@ -114,11 +115,12 @@ test_readline(void)
     /* 改行ない場合 */
     result = exec_readline(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
-    cut_assert_null((char *)result);
+    TEST_ASSERT_NULL((char *)result);
 
     /* ファイルポインタがNULLの場合 */
     result = _readline((FILE *)NULL);
-    cut_assert_null((char *)result);
+    TEST_ASSERT_NULL((char *)result);
+    PASS();
 }
 
 /**
@@ -140,19 +142,19 @@ exec_readline(char *data, size_t length)
 
     retval = pipe(pfd);
     if (retval < 0) {
-        cut_error("pipe=%d", retval);
+        TEST_ERROR("pipe=%d", retval);
         return NULL;
     }
 
     fp = fdopen(pfd[PIPE_R], "r");
     if (!fp) {
-        cut_error("fdopen=%p", fp);
+        TEST_ERROR("fdopen=%p", fp);
         return NULL;
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
+        TEST_ERROR("fork(%d)", errno);
         return NULL;
     }
 
@@ -184,10 +186,10 @@ exec_readline(char *data, size_t length)
         close_fd(&pfd[PIPE_R], NULL);
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait: status=%d(%d)", status, errno);
+            TEST_NOTIFY("wait: status=%d(%d)", status, errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status)) {
-            cut_notify("child error");
+            TEST_NOTIFY("child error");
             return NULL;
         }
     }
@@ -204,14 +206,27 @@ set_sig_handler(void)
 {
     /* シグナル無視 */
     if (signal(SIGINT, SIG_IGN) < 0)
-        cut_notify("SIGINT");
+        TEST_NOTIFY("SIGINT");
     if (signal(SIGTERM, SIG_IGN) < 0)
-        cut_notify("SIGTERM");
+        TEST_NOTIFY("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)
-        cut_notify("SIGQUIT");
+        TEST_NOTIFY("SIGQUIT");
     if (signal(SIGHUP, SIG_IGN) < 0)
-        cut_notify("SIGHUP");
+        TEST_NOTIFY("SIGHUP");
     if (signal(SIGALRM, SIG_IGN) < 0)
-        cut_notify("SIGALRM");
+        TEST_NOTIFY("SIGALRM");
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_SETUP(setup, NULL);
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_readline);
+    TEST_MAIN_END();
+}

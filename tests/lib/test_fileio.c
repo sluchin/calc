@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_fileio.c
+ * @file tests/lib/test_fileio.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -30,7 +30,8 @@
 #include <sys/wait.h> /* wait waitpid */
 #include <signal.h>   /* signal */
 #include <errno.h>    /* errno */
-#include <cutter.h>   /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -40,17 +41,15 @@
 
 /* プロトタイプ */
 /** readn() 関数テスト */
-void test_readn(void);
+TEST test_readn(void);
 /** writen() 関数テスト */
-void test_writen(void);
+TEST test_writen(void);
 /** pipe_fd() 関数テスト */
-void test_pipe_fd(void);
-/** dup_fd() 関数テスト */
-void test_dup_fd(void);
+TEST test_pipe_fd(void);
 /** redirect() 関数テスト */
-void test_redirect(void);
+TEST test_redirect(void);
 /** close_fd() 関数テスト */
-void test_close_fd(void);
+TEST test_close_fd(void);
 
 /* 内部変数 */
 static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
@@ -71,8 +70,8 @@ static void set_sig_handler(void);
  *
  * @return なし
  */
-void
-cut_startup(void)
+static void
+startup(void)
 {
     set_sig_handler();
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
@@ -84,24 +83,24 @@ cut_startup(void)
  *
  * @return なし
  */
-void
-cut_teardown(void)
+static void
+teardown(void *data)
 {
     int retval = 0; /* 戻り値 */
 
     if (fd != -1) {
         if (close(fd) < 0)
-            cut_notify("close: fd=%d(%d)", fd, errno);
+            TEST_NOTIFY("close: fd=%d(%d)", fd, errno);
         fd = -1;
     }
     if (pfd[PIPE_R] != -1) {
         if (close(pfd[PIPE_R]) < 0)
-            cut_notify("close: fd=%d(%d)", pfd[PIPE_R], errno);
+            TEST_NOTIFY("close: fd=%d(%d)", pfd[PIPE_R], errno);
         pfd[PIPE_R] = -1;
     }
     if (pfd[PIPE_W] != -1) {
         if (close(pfd[PIPE_W]) < 0)
-            cut_notify("close: fd=%d(%d)", pfd[PIPE_W], errno);
+            TEST_NOTIFY("close: fd=%d(%d)", pfd[PIPE_W], errno);
         pfd[PIPE_W] = -1;
     }
 
@@ -109,10 +108,10 @@ cut_teardown(void)
         if (!access(testfile, W_OK)) { /* ファイルが存在する */
             retval = chmod(testfile, S_IWUSR|S_IWGRP);
             if (retval < 0)
-                cut_notify("chmod: %s(%d)", testfile, errno);
+                TEST_NOTIFY("chmod: %s(%d)", testfile, errno);
             retval = unlink(testfile);
             if (retval < 0)
-                cut_notify("unlink: %s(%d)", testfile, errno);
+                TEST_NOTIFY("unlink: %s(%d)", testfile, errno);
         }
         (void)memset(testfile, 0, sizeof(testfile));
     }
@@ -123,7 +122,7 @@ cut_teardown(void)
  *
  * @return なし
  */
-void
+TEST
 test_readn(void)
 {
 
@@ -137,22 +136,21 @@ test_readn(void)
     /* 正常系 */
     fd = read_child_process(readbuf, sendbuf, sizeof(sendbuf));
     if (fd < 0) {
-        cut_error("write_child_process(%d)", errno);
-        return;
+        TEST_FAIL("write_child_process(%d)", errno);
     }
 
     dbglog("parent");
     rlen = writen(STDERR_FILENO, sendbuf, sizeof(sendbuf));
     if (rlen < 0) {
-        cut_error("writen(%d)", errno);
-        return;
+        TEST_FAIL("writen(%d)", errno);
     }
 
     w = waitpid(-1, &status, WNOHANG);
     if (w < 0)
-        cut_notify("wait(%d)", errno);
+        TEST_NOTIFY("wait(%d)", errno);
     dbglog("w=%d", (int)w);
-    cut_assert_equal_int(EXIT_SUCCESS, WEXITSTATUS(status));
+    TEST_ASSERT_INT(EXIT_SUCCESS, WEXITSTATUS(status));
+    PASS();
 }
 
 /**
@@ -160,7 +158,7 @@ test_readn(void)
  *
  * @return なし
  */
-void
+TEST
 test_writen(void)
 {
     ssize_t rlen = 0;              /* 受信バイト数 */
@@ -173,24 +171,23 @@ test_writen(void)
     /* 正常系 */
     fd = write_child_process(sendbuf, sizeof(sendbuf));
     if (fd < 0) {
-        cut_error("write_child_process(%d)", errno);
-        return;
+        TEST_FAIL("write_child_process(%d)", errno);
     }
 
     dbglog("parent");
     (void)memset(readbuf, 0, sizeof(readbuf));
     rlen = readn(fd, readbuf, sizeof(sendbuf));
     if (rlen < 0) {
-        cut_error("readn(%d)", errno);
-        return;
+        TEST_FAIL("readn(%d)", errno);
     }
-    cut_assert_equal_string(sendbuf, readbuf);
+    TEST_ASSERT_STR(sendbuf, readbuf);
 
     w = waitpid(-1, &status, WNOHANG);
     if (w < 0)
-        cut_notify("wait(%d)", errno);
+        TEST_NOTIFY("wait(%d)", errno);
     dbglog("w=%d", (int)w);
-    cut_assert_equal_int(EXIT_SUCCESS, WEXITSTATUS(status));
+    TEST_ASSERT_INT(EXIT_SUCCESS, WEXITSTATUS(status));
+    PASS();
 }
 
 /**
@@ -198,7 +195,7 @@ test_writen(void)
  *
  * @return なし
  */
-void
+TEST
 test_pipe_fd(void)
 {
     ssize_t rlen = 0;              /* 受信バイト数 */
@@ -212,12 +209,11 @@ test_pipe_fd(void)
 
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
-    cut_assert_operator(fd, >=, 0, cut_message("return value"));
+    TEST_ASSERT_MSG((fd) >= (0), "return value");
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) {
@@ -236,26 +232,26 @@ test_pipe_fd(void)
         (void)memset(readbuf, 0, sizeof(readbuf));
         rlen = readn(fd, readbuf, sizeof(sendbuf));
         if (rlen < 0) {
-            cut_error("read(%d)", errno);
-            return;
+            TEST_FAIL("read(%d)", errno);
         }
-        cut_assert_equal_string(sendbuf, readbuf);
+        TEST_ASSERT_STR(sendbuf, readbuf);
 
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d(%d)", WEXITSTATUS(status), errno);
+            TEST_FAIL("status=%d(%d)", WEXITSTATUS(status), errno);
     }
 
     /* 異常系 */
     /* -1の場合 */
     fd = pipe_fd(-1);
-    cut_assert_equal_int(EX_NG, fd, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, fd, "return value");
     /* 不正なファイルディスクリプタ */
     fd = pipe_fd(65535);
-    cut_assert_equal_int(EX_NG, fd, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, fd, "return value");
+    PASS();
 }
 
 /**
@@ -263,7 +259,7 @@ test_pipe_fd(void)
  *
  * @return なし
  */
-void
+TEST
 test_pipe_fd2(void)
 {
     int retval = 0;                /* 戻り値 */
@@ -280,14 +276,12 @@ test_pipe_fd2(void)
     /* 正常系 */
     retval = pipe(pfd);
     if (retval < 0) {
-        cut_error("pipe(%d)", errno);
-        return;
+        TEST_FAIL("pipe(%d)", errno);
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) {
@@ -295,7 +289,7 @@ test_pipe_fd2(void)
 
         oldfd = dup(STDIN_FILENO);
         if (oldfd < 0)
-            cut_notify("dup(%d)", errno);
+            TEST_NOTIFY("dup(%d)", errno);
         retval = pipe_fd2(&pfd[PIPE_R], &pfd[PIPE_W], STDIN_FILENO);
         if (retval < 0) {
             outlog("dup_fd");
@@ -309,7 +303,7 @@ test_pipe_fd2(void)
         dbglog("writen=%d, %s", wlen, sendbuf);
 
         if (dup2(oldfd, STDIN_FILENO) < 0)
-            cut_notify("dup2(%d)", errno);
+            TEST_NOTIFY("dup2(%d)", errno);
 
         exit(EXIT_SUCCESS);
 
@@ -318,38 +312,37 @@ test_pipe_fd2(void)
 
         oldfd = dup(STDIN_FILENO);
         if (oldfd < 0)
-            cut_notify("dup(%d)", errno);
+            TEST_NOTIFY("dup(%d)", errno);
         retval = pipe_fd2(&pfd[PIPE_W], &pfd[PIPE_R], STDIN_FILENO);
         if (retval < 0) {
-            cut_error("dup_fd(%d)", errno);
-            return;
+            TEST_FAIL("dup_fd(%d)", errno);
         }
 
         (void)memset(readbuf, 0, sizeof(readbuf));
         rlen = readn(STDIN_FILENO, readbuf, sizeof(sendbuf));
         if (rlen < 0) {
-            cut_error("readn(%d)", errno);
-            return;
+            TEST_FAIL("readn(%d)", errno);
         }
         dbglog("readn=%d, %s", rlen, readbuf);
 
-        cut_assert_equal_int(EX_OK, retval, cut_message("return value"));
-        cut_assert_equal_string(sendbuf, readbuf);
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
+        TEST_ASSERT_STR(sendbuf, readbuf);
 
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d(%d)", WEXITSTATUS(status), errno);
+            TEST_FAIL("status=%d(%d)", WEXITSTATUS(status), errno);
     }
 
     /* 異常系 */
     retval = pipe_fd2(&pfd[PIPE_W], &pfd[PIPE_R], STDIN_FILENO);
-    cut_assert_equal_int(EX_NG, retval, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "return value");
 
     if (dup2(oldfd, STDIN_FILENO) < 0)
-        cut_notify("dup2(%d)", errno);
+        TEST_NOTIFY("dup2(%d)", errno);
+    PASS();
 }
 
 /**
@@ -357,7 +350,7 @@ test_pipe_fd2(void)
  *
  * @return なし
  */
-void
+TEST
 test_redirect(void)
 {
     int retval = 0; /* 戻り値 */
@@ -366,39 +359,35 @@ test_redirect(void)
     /* 正常系 */
     oldfd = dup(STDERR_FILENO);
     if (oldfd < 0)
-        cut_notify("dup(%d)", errno);
+        TEST_NOTIFY("dup(%d)", errno);
     retval = redirect(STDERR_FILENO, "/dev/null");
-    cut_assert_equal_int(EX_OK, retval, cut_message("redirect"));
+    TEST_ASSERT_INT_MSG(EX_OK, retval, "redirect");
 
     if (dup2(oldfd, STDERR_FILENO) < 0)
-        cut_notify("dup2(%d)", errno);
+        TEST_NOTIFY("dup2(%d)", errno);
 
     /* 異常系 */
     /* ファイルディスクリプタが-1 */
     retval = redirect(-1, "/dev/null");
-    cut_assert_equal_int(EX_NG, retval,
-                         cut_message("redirect: fd=-1"));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: fd=-1");
 
     /* ファイルパスがNULL */
     retval = redirect(STDERR_FILENO, NULL);
-    cut_assert_equal_int(EX_NG, retval,
-                         cut_message("redirect: path=null"));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: path=null");
 
     /* 書込権限なし */
     if (!tmpnam(testfile)) {
-        cut_error("tmpnam(%d)", errno);
-        return;
+        TEST_FAIL("tmpnam(%d)", errno);
     }
 
     retval = creat(testfile, S_IRUSR|S_IRGRP);
     if (retval < 0) {
-        cut_error("create: %s(%d)", testfile, errno);
-        return;
+        TEST_FAIL("create: %s(%d)", testfile, errno);
     }
 
     retval = redirect(STDERR_FILENO, testfile);
-    cut_assert_equal_int(EX_NG, retval,
-                         cut_message("redirect: %s", testfile));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: %s", testfile);
+    PASS();
 }
 
 /**
@@ -406,7 +395,7 @@ test_redirect(void)
  *
  * @return なし
  */
-void
+TEST
 test_close_fd(void)
 {
     int retval = 0;              /* 戻り値 */
@@ -418,37 +407,35 @@ test_close_fd(void)
     for (i = 0; i < MAX; i++) {
         fd[i] = open("/dev/null", O_WRONLY|O_APPEND);
         if (fd[i] < 0) {
-            cut_error("open=%d(%d)", fd[i], errno);
-            return;
+            TEST_FAIL("open=%d(%d)", fd[i], errno);
         }
     }
     retval = close_fd(&fd[FD1], &fd[FD2], &fd[FD3], NULL);
-    cut_assert_equal_int(-1, fd[FD1]);
-    cut_assert_equal_int(-1, fd[FD2]);
-    cut_assert_equal_int(-1, fd[FD3]);
-    cut_assert_equal_int(EX_OK, retval, cut_message("retrun value"));
+    TEST_ASSERT_INT(-1, fd[FD1]);
+    TEST_ASSERT_INT(-1, fd[FD2]);
+    TEST_ASSERT_INT(-1, fd[FD3]);
+    TEST_ASSERT_INT_MSG(EX_OK, retval, "retrun value");
 
     /* 第二引数が-1の場合 */
     fd[FD1] = open("/dev/null", O_WRONLY|O_APPEND);
     if (fd[FD1] < 0) {
-        cut_error("open=%d(%d)", fd[FD1], errno);
-        return;
+        TEST_FAIL("open=%d(%d)", fd[FD1], errno);
     }
     fd[FD3] = open("/dev/null", O_WRONLY|O_APPEND);
     if (fd[FD3] < 0) {
-        cut_error("open=%d(%d)", fd[FD3], errno);
-        return;
+        TEST_FAIL("open=%d(%d)", fd[FD3], errno);
     }
     retval = close_fd(&fd[FD1], &fd[FD2], &fd[FD3], NULL);
-    cut_assert_equal_int(-1, fd[FD1]);
-    cut_assert_equal_int(-1, fd[FD3]);
-    cut_assert_equal_int(EX_OK, retval, cut_message("retrun value"));
+    TEST_ASSERT_INT(-1, fd[FD1]);
+    TEST_ASSERT_INT(-1, fd[FD3]);
+    TEST_ASSERT_INT_MSG(EX_OK, retval, "retrun value");
 
     /* 異常系 */
     fd[FD1] = 65535; /* オープンしていない */
     retval = close_fd(&fd[FD1], NULL);
-    cut_assert_equal_int(-1, fd[FD1]);
-    cut_assert_equal_int(EX_NG, retval, cut_message("retrun value"));
+    TEST_ASSERT_INT(-1, fd[FD1]);
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "retrun value");
+    PASS();
 }
 
 /**
@@ -467,13 +454,13 @@ read_child_process(char *readbuf, char *senddata, size_t len)
 
     f = pipe_fd(STDERR_FILENO);
     if (f < 0) {
-        cut_error("pipe_fd: fd=%d", STDERR_FILENO);
+        TEST_ERROR("pipe_fd: fd=%d", STDERR_FILENO);
         return EX_NG;
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
+        TEST_ERROR("fork(%d)", errno);
         return EX_NG;
     }
 
@@ -514,13 +501,13 @@ write_child_process(char *buf, size_t len)
 
     f = pipe_fd(STDERR_FILENO);
     if (f < 0) {
-        cut_error("pipe_fd: fd=%d", STDERR_FILENO);
+        TEST_ERROR("pipe_fd: fd=%d", STDERR_FILENO);
         return EX_NG;
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
+        TEST_ERROR("fork(%d)", errno);
         return EX_NG;
     }
 
@@ -550,14 +537,31 @@ set_sig_handler(void)
 {
     /* シグナル無視 */
     if (signal(SIGINT, SIG_IGN) < 0)
-        cut_notify("SIGINT");
+        TEST_NOTIFY("SIGINT");
     if (signal(SIGTERM, SIG_IGN) < 0)
-        cut_notify("SIGTERM");
+        TEST_NOTIFY("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)
-        cut_notify("SIGQUIT");
+        TEST_NOTIFY("SIGQUIT");
     if (signal(SIGHUP, SIG_IGN) < 0)
-        cut_notify("SIGHUP");
+        TEST_NOTIFY("SIGHUP");
     if (signal(SIGALRM, SIG_IGN) < 0)
-        cut_notify("SIGALRM");
+        TEST_NOTIFY("SIGALRM");
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_readn);
+    RUN_TEST(test_writen);
+    RUN_TEST(test_pipe_fd);
+    RUN_TEST(test_pipe_fd2);
+    RUN_TEST(test_redirect);
+    RUN_TEST(test_close_fd);
+    TEST_MAIN_END();
+}

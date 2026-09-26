@@ -3,7 +3,7 @@
 # 使い方:
 #   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release   (Debug も可)
 #   cmake --build build
-#   ctest --test-dir build --output-on-failure       (cutter がある場合)
+#   ctest --test-dir build --output-on-failure       (Debug, または -DBUILD_TESTS=ON)
 #
 # Debug では、Makefile の debug ターゲットと同じく -DUNITTEST -D_DEBUG を付ける.
 
@@ -17,9 +17,24 @@ endif()
 set(CMAKE_C_FLAGS_DEBUG "-g -O2")
 set(CMAKE_C_FLAGS_RELEASE "-g -O2")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# カバレッジ (gcov). 正確に測るため, 最適化とインライン展開はしない.
+option(ENABLE_COVERAGE "カバレッジを計測する (gcov)" OFF)
+if(ENABLE_COVERAGE)
+  add_compile_options(--coverage -O0 -fno-inline)
+  add_link_options(--coverage)
+endif()
 add_compile_options(-Wall)
+# 単体テストは, UNITTEST で公開される内部関数を使うので, UNITTEST を有効にする.
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(BUILD_TESTS_DEFAULT ON)
+else()
+  set(BUILD_TESTS_DEFAULT OFF)
+endif()
+option(BUILD_TESTS "単体テストをビルドする (UNITTEST を有効にする)"
+       ${BUILD_TESTS_DEFAULT})
 add_compile_definitions(
-  $<$<CONFIG:Debug>:UNITTEST>
+  $<$<OR:$<CONFIG:Debug>,$<BOOL:${BUILD_TESTS}>>:UNITTEST>
   $<$<CONFIG:Debug>:_DEBUG>
   $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
@@ -100,37 +115,26 @@ install(TARGETS calcutil_static calcutil_shared calcp_static calcp_shared
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-# 単体テスト (cutter)
-find_program(CUTTER_COMMAND cutter)
-find_path(CUTTER_INCLUDE_DIR cutter.h PATH_SUFFIXES cutter)
-find_library(CUTTER_LIBRARY cutter)
-if(CUTTER_COMMAND AND CUTTER_INCLUDE_DIR AND CUTTER_LIBRARY)
+# 単体テスト (greatest + FFF): tests/ 配下
+if(BUILD_TESTS)
   enable_testing()
-  # cutter は, テストを共有ライブラリとして読み込んで実行する.
-  function(add_cutter_test dir name)
-    add_library(${name} MODULE ${dir}/tests/${name}.c ${ARGN})
-    set_target_properties(${name} PROPERTIES PREFIX ""
-      LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests/${dir})
-    target_include_directories(${name} PRIVATE
-      ${dir}/tests ${dir} ${CUTTER_INCLUDE_DIR})
-    target_compile_definitions(${name} PRIVATE HAVE_EXECINFO UNITTEST)
-    target_link_libraries(${name} PRIVATE ${CUTTER_LIBRARY}
-      calcutil_shared calcp_shared calcd_shared calcc_shared)
-  endfunction()
-  foreach(n log net data readline memfree timer fileio term)
-    if(EXISTS ${CMAKE_SOURCE_DIR}/lib/tests/test_${n}.c)
-      add_cutter_test(lib test_${n})
-    endif()
-  endforeach()
-  foreach(n calc func error)
-    add_cutter_test(calc test_${n} calc/tests/test_common.c)
-  endforeach()
-  add_cutter_test(server test_server)
-  add_cutter_test(client test_client)
-  foreach(d lib calc server client)
-    add_test(NAME ${d}
-      COMMAND ${CUTTER_COMMAND} -v v ${CMAKE_BINARY_DIR}/tests/${d})
-  endforeach()
-else()
-  message(STATUS "cutter が見つからないため, 単体テストは無効")
+  add_subdirectory(tests)
+
+  # make coverage: テストを実行して, カバレッジレポートを作る (gcovr が必要)
+  find_program(GCOVR_COMMAND gcovr)
+  if(ENABLE_COVERAGE AND GCOVR_COMMAND)
+    add_custom_target(coverage
+      COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/coverage
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
+      COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+      COMMAND ${GCOVR_COMMAND} -r ${CMAKE_SOURCE_DIR}
+              --filter ${CMAKE_SOURCE_DIR}/lib/
+              --filter ${CMAKE_SOURCE_DIR}/calc/
+              --filter ${CMAKE_SOURCE_DIR}/server/
+              --filter ${CMAKE_SOURCE_DIR}/client/
+              --html-details ${CMAKE_BINARY_DIR}/coverage/index.html
+              --print-summary --txt
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      COMMENT "カバレッジレポート: ${CMAKE_BINARY_DIR}/coverage/index.html")
+  endif()
 endif()

@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_memfree.c
+ * @file tests/lib/test_memfree.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -24,7 +24,8 @@
  */
 
 #include <stdlib.h> /* malloc */
-#include <cutter.h> /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -32,14 +33,14 @@
 
 /* プロトタイプ */
 /** memfree() 関数テスト */
-void test_memfree(void);
+TEST test_memfree(void);
 
 /**
  * set_memfree() 関数テスト
  *
  * @return なし
  */
-void
+TEST
 test_memfree(void)
 {
     char *mem[] = { NULL, NULL, NULL }; /* ポインタ値 */
@@ -49,30 +50,38 @@ test_memfree(void)
     for (i = 0; i < MAX; i++) {
         mem[i] = (char *)malloc(5 * sizeof(char));
         if (!mem[i]) {
-            cut_error("malloc");
-            return;
+            TEST_FAIL("malloc");
         }
     }
     memfree((void **)&mem[MEM1],
             (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
-    cut_assert_null(mem[MEM1]);
-    cut_assert_null(mem[MEM2]);
-    cut_assert_null(mem[MEM3]);
+    TEST_ASSERT_NULL(mem[MEM1]);
+    TEST_ASSERT_NULL(mem[MEM2]);
+    TEST_ASSERT_NULL(mem[MEM3]);
 
     /* 第二引数がNULLの場合 */
     mem[MEM1] = (char *)malloc(5 * sizeof(char));
     if (!mem[MEM1]) {
-        cut_error("malloc");
-        return;
+        TEST_FAIL("malloc");
     }
     mem[MEM3] = (char *)malloc(5 * sizeof(char));
     if (!mem[MEM3]) {
-        cut_error("malloc");
-        return;
+        TEST_FAIL("malloc");
     }
     memfree((void **)&mem[MEM1],
             (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
-    cut_assert_null(mem[MEM1]);
-    cut_assert_null(mem[MEM3]);
+    TEST_ASSERT_NULL(mem[MEM1]);
+    TEST_ASSERT_NULL(mem[MEM3]);
+    PASS();
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    RUN_TEST(test_memfree);
+    TEST_MAIN_END();
+}

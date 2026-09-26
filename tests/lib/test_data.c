@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_data.c
+ * @file tests/lib/test_data.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -23,7 +23,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <cutter.h> /* cutter library */
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -45,17 +45,17 @@ const char *test_data[] = {
 
 /* プロトタイプ */
 /** set_client_data() 関数テスト */
-void test_set_client_data(void);
+TEST test_set_client_data(void);
 /** set_server_data() 関数テスト */
-void test_set_server_data(void);
+TEST test_set_server_data(void);
 
 /**
  * 初期化処理
  *
  * @return なし
  */
-void
-cut_startup(void)
+static void
+startup(void)
 {
     dbglog("char=%zu", ALIGNOF(char));
     dbglog("short=%zu", ALIGNOF(short));
@@ -69,7 +69,7 @@ cut_startup(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_client_data(void)
 {
     size_t length = 0;
@@ -82,13 +82,14 @@ test_set_client_data(void)
         dbglog("length=%zu", length);
         len = set_client_data(&dt, (unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
-        cut_assert_equal_int(0, len % ALIGN);
+        TEST_ASSERT_INT(0, len % ALIGN);
         dbglog("dt=%p", dt);
-        cut_assert_not_null(dt);
+        TEST_ASSERT_NOT_NULL(dt);
         if (dt)
             free(dt);
         dt = NULL;
     }
+    PASS();
 }
 
 /**
@@ -96,7 +97,7 @@ test_set_client_data(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_server_data(void)
 {
     size_t length = 0;
@@ -109,12 +110,25 @@ test_set_server_data(void)
         dbglog("length=%zu", length);
         len = set_server_data(&dt, (unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
-        cut_assert_equal_int(0, len % ALIGN);
+        TEST_ASSERT_INT(0, len % ALIGN);
         dbglog("dt=%p", dt);
-        cut_assert_not_null(dt);
+        TEST_ASSERT_NOT_NULL(dt);
         if (dt)
             free(dt);
         dt = NULL;
     }
+    PASS();
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    RUN_TEST(test_set_client_data);
+    RUN_TEST(test_set_server_data);
+    TEST_MAIN_END();
+}

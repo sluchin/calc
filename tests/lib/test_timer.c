@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_timer.c
+ * @file tests/lib/test_timer.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -25,7 +25,8 @@
 
 #include <unistd.h> /* read STDERR_FILENO */
 #include <errno.h>  /* errno */
-#include <cutter.h> /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -36,20 +37,20 @@
 
 /* プロトタイプ */
 /** print_timer() 関数テスト */
-void test_print_timer(void);
+TEST test_print_timer(void);
 /** start_timer() 関数テスト */
-void test_start_timer(void);
+TEST test_start_timer(void);
 /** stop_timer() 関数テスト */
-void test_stop_timer(void);
+TEST test_stop_timer(void);
 /** get_time() 関数テスト */
-void test_get_time(void);
+TEST test_get_time(void);
 
 /**
  * print_timer() 関数テスト
  *
  * @return なし
  */
-void
+TEST
 test_print_timer(void)
 {
     unsigned int t = 0, time = 0; /* タイマ用変数 */
@@ -63,25 +64,24 @@ test_print_timer(void)
     time = stop_timer(&t);
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
     print_timer(time);
 
     retval = read(fd, actual, sizeof(actual));
     if (retval < 0) {
-        cut_fail("read=%d(%d)", fd, errno);
+        TEST_FAIL("read=%d(%d)", fd, errno);
         goto error_handler;
     }
     dbglog("actual=%s", actual);
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
 
 error_handler:
     close_fd(&fd, NULL);
+    PASS();
 }
 
 /**
@@ -89,13 +89,14 @@ error_handler:
  *
  * @return なし
  */
-void
+TEST
 test_start_timer(void)
 {
     unsigned int t = 0; /* タイマ用変数 */
 
     start_timer(&t);
-    cut_assert_not_equal_uint(0, t);
+    TEST_ASSERT_NOT_INT(0, t);
+    PASS();
 }
 
 /**
@@ -103,16 +104,18 @@ test_start_timer(void)
  *
  * @return なし
  */
-void
+TEST
 test_stop_timer(void)
 {
     unsigned int t = 0, time = 0; /* タイマ用変数 */
 
     start_timer(&t);
     dbglog("t=%u", t);
+    (void)usleep(1000); /* 最適化されると, 経過時間が 0 になることがあるので待つ */
     time = stop_timer(&t);
     dbglog("time=%u", time);
-    cut_assert_operator(time, >, 0);
+    ASSERT((time) > (0));
+    PASS();
 }
 
 /**
@@ -120,12 +123,26 @@ test_stop_timer(void)
  *
  * @return なし
  */
-void
+TEST
 test_get_time(void)
 {
     unsigned long long t = 0; /* 戻り値 */
 
     t = get_time();
-    cut_assert_not_equal_uint(0, (unsigned int)t);
+    TEST_ASSERT_NOT_INT(0, (unsigned int)t);
+    PASS();
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    RUN_TEST(test_print_timer);
+    RUN_TEST(test_start_timer);
+    RUN_TEST(test_stop_timer);
+    RUN_TEST(test_get_time);
+    TEST_MAIN_END();
+}
