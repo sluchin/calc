@@ -140,6 +140,7 @@ fake_daemon(int nochdir, int noclose)
     (void)nochdir;
     (void)noclose;
     shm->daemon_count++;
+    (void)chdir("/"); /* 本物の daemon(0, 0) と同じく, カレントディレクトリを変える */
     return 0;
 }
 #endif
@@ -337,6 +338,54 @@ test_main_failure(void)
     PASS();
 }
 
+/**
+ * カレントディレクトリを変えて, main() を子プロセスで実行するための関数
+ * 再起動 (SIGHUP) するとき, 相対パスの argv[0] を, daemon() (カレントディレクトリを
+ * / にする) のあとでも, 実行できる必要がある.
+ *
+ * @param[in] arg argv (NULL終端)
+ * @return なし
+ */
+static void
+run_main_relative(void *arg)
+{
+    (void)chdir("/bin");
+    run_main(arg);
+}
+
+/**
+ * main() 関数テスト (相対パスで起動して, SIGHUP で再起動する)
+ * (デバッグビルドは daemon() を呼ばないので, 修正前でも通る)
+ *
+ * @return なし
+ */
+TEST
+test_main_sighup_relative(void)
+{
+    /* /bin/sh を, 相対パスで再実行し, sh に 42 で終了させる */
+    char *argv[] = { "./sh", "-c", "exit 42", NULL };
+
+    raise_signo = SIGHUP;
+    TEST_ASSERT_INT(42, test_run_child(run_main_relative, argv, NULL, NULL, 0));
+    PASS();
+}
+
+/**
+ * main() 関数テスト (再起動できない)
+ *
+ * @return なし
+ */
+TEST
+test_main_sighup_failure(void)
+{
+    char *argv[] = { "/nonexistent/calcd", NULL };
+
+    /* 再実行できなければ, 異常終了する (以前は, ログもなく, 正常終了した) */
+    raise_signo = SIGHUP;
+    TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -352,6 +401,8 @@ main(int argc, char **argv)
 #endif
     RUN_TEST(test_main_signal);
     RUN_TEST(test_main_sighup);
+    RUN_TEST(test_main_sighup_relative);
+    RUN_TEST(test_main_sighup_failure);
     RUN_TEST(test_main_failure);
     TEST_MAIN_END();
 }
