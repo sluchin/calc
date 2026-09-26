@@ -3,7 +3,7 @@
 *.so
 *.swp
 
-calcp
-calcc
-calcd
+/calc/calcp
+/client/calcc
+/server/calcd
 build*/
