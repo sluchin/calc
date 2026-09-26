@@ -89,6 +89,36 @@ TEST_PASSTHROUGH(ssize_t, set_client_data,
                   size_t len),
                  (dt, buf, len))
 
+/*
+ * atexit() は, glibc の静的ライブラリ (libc_nonshared.a) の, 小さな関数 (スタブ) で,
+ * 共有ライブラリ (libcalcc.so) の中に取り込まれるので, 置き換えられない. スタブは,
+ * __cxa_atexit() を呼ぶだけで, これは libc.so の関数なので, 置き換えられる.
+ * 通常は, 本物の __cxa_atexit() を呼び, 注入したときだけ失敗させる.
+ */
+extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
+static struct test_inject inject_cxa_atexit; /**< __cxa_atexit() に注入する失敗 */
+static int (*real_cxa_atexit)(void (*)(void *), void *, void *) = NULL;
+/**
+ * __cxa_atexit() の置き換え (atexit() が呼ぶ)
+ *
+ * @param[in] func 終了時に呼ぶ関数
+ * @param[in] arg 関数の引数
+ * @param[in] dso 共有ライブラリのハンドル
+ * @return 0, または注入した失敗
+ */
+int
+__cxa_atexit(void (*func)(void *), void *arg, void *dso)
+{
+    if (inject_cxa_atexit.count > 0) {
+        inject_cxa_atexit.count--;
+        errno = inject_cxa_atexit.err;
+        return (int)inject_cxa_atexit.value;
+    }
+    if (!real_cxa_atexit)
+        *(void **)(&real_cxa_atexit) = dlsym(RTLD_NEXT, "__cxa_atexit");
+    return real_cxa_atexit ? real_cxa_atexit(func, arg, dso) : -1;
+}
+
 /* プロトタイプ */
 /** set_port_string() 関数テスト */
 TEST test_set_port_string(void);
@@ -108,6 +138,7 @@ TEST test_send_sock_failure(void);
 TEST test_send_sock_timer(void);
 TEST test_read_sock_failure(void);
 TEST test_client_loop_signal_mask_failure(void);
+TEST test_client_loop_atexit_failure(void);
 TEST test_client_loop_read_failure(void);
 TEST test_send_sock_alloc_failure(void);
 
@@ -158,6 +189,7 @@ setup(void *data)
 {
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(pselect);
+    (void)memset(&inject_cxa_atexit, 0, sizeof(inject_cxa_atexit));
     TEST_PASSTHROUGH_RESET(sigemptyset);
     TEST_PASSTHROUGH_RESET(sigfillset);
     TEST_PASSTHROUGH_RESET(sigdelset);
@@ -1240,6 +1272,37 @@ test_send_sock_alloc_failure(void)
     PASS();
 }
 
+/**
+ * atexit() に失敗する client_loop() を, 子プロセスで実行するための関数
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+child_client_loop_atexit_failure(void *arg)
+{
+    (void)arg;
+    inject_cxa_atexit.count = 1;
+    inject_cxa_atexit.value = -1;
+    inject_cxa_atexit.err = ENOMEM;
+    exit(client_loop(child_sock));
+}
+
+/**
+ * client_loop() 関数テスト (atexit() の失敗)
+ *
+ * @return なし
+ */
+TEST
+test_client_loop_atexit_failure(void)
+{
+    child_sock = -1;
+    TEST_ASSERT_INT(EX_FAILURE,
+                    test_run_child(child_client_loop_atexit_failure, NULL, NULL,
+                                   NULL, 0));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -1262,6 +1325,7 @@ main(int argc, char **argv)
     RUN_TEST(test_read_sock_failure);
     RUN_TEST(test_client_loop_signal_mask_failure);
     RUN_TEST(test_client_loop_read_failure);
+    RUN_TEST(test_client_loop_atexit_failure);
     RUN_TEST(test_send_sock_alloc_failure);
     TEST_MAIN_END();
 }
