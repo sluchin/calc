@@ -206,6 +206,7 @@ test_exec_func(void)
     int pos = 0;                    /* 配列位置 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, func_data[i].expr);
@@ -244,6 +245,7 @@ test_get_pow(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(pow_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, pow_data[i].expr);
@@ -272,6 +274,7 @@ test_get_pi(void)
     calcinfo calc;                   /* calcinfo構造体 */
     const double pi = 3.14159265359; /* pi */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "pi");
     st_calc.readch(&calc);
@@ -295,6 +298,7 @@ test_get_e(void)
     calcinfo calc;                  /* calcinfo構造体 */
     const double e = 2.71828182846; /* e */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "e");
     st_calc.readch(&calc);
@@ -318,6 +322,7 @@ test_get_rad(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(rad_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, rad_data[i].expr);
@@ -343,6 +348,7 @@ test_get_deg(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(deg_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, deg_data[i].expr);
@@ -368,6 +374,7 @@ test_get_sqrt(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(sqrt_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, sqrt_data[i].expr);
@@ -396,6 +403,7 @@ test_get_ln(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(ln_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, ln_data[i].expr);
@@ -424,6 +432,7 @@ test_get_log(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(log_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, log_data[i].expr);
@@ -452,6 +461,7 @@ test_get_factorial(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(factorial_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factorial_data[i].expr);
@@ -480,6 +490,7 @@ test_get_permutation(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(permutation_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, permutation_data[i].expr);
@@ -510,6 +521,7 @@ test_get_combination(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
+    /* テストデータごとに, 実行して, 結果を確認する */
     for (i = 0; i < NELEMS(combination_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, combination_data[i].expr);
@@ -532,6 +544,7 @@ test_get_combination(void)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -552,6 +565,7 @@ test_func_error_state(void)
     calcinfo calc;              /* calcinfo構造体 */
     const double EX_ERROR = 0.0; /* エラー戻り値 (func.c の内部定数と同じ) */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
@@ -570,14 +584,26 @@ test_func_error_state(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_exec_func);
     RUN_TEST(test_get_pow);
     RUN_TEST(test_func_error_state);
@@ -591,5 +617,6 @@ main(int argc, char **argv)
     RUN_TEST(test_get_factorial);
     RUN_TEST(test_get_permutation);
     RUN_TEST(test_get_combination);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

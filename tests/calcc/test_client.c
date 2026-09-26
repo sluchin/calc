@@ -184,11 +184,13 @@ startup(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
 setup(void *data)
 {
+    /* モックと状態を, 初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(pselect);
     (void)memset(&inject_cxa_atexit, 0, sizeof(inject_cxa_atexit));
@@ -210,6 +212,7 @@ setup(void *data)
 /**
  * 終了処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -217,6 +220,7 @@ teardown(void *data)
 {
     int retval = 0; /* 戻り値 */
 
+    /* 後始末 (開いたファイルディスクリプタなどを閉じる) */
     close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W],
              &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
 
@@ -280,6 +284,7 @@ test_set_host_string(void)
 TEST
 test_connect_sock(void)
 {
+    /* 準備をして, 関数を実行し, 結果を確認する */
     dbglog("start");
 
     ssock = inet_sock_server();
@@ -472,6 +477,7 @@ test_send_sock(void)
     unsigned char estr[] = "exit\n"; /* exit文字列 */
     unsigned char qstr[] = "quit\n"; /* quit文字列 */
 
+    /* 準備をして, 関数を実行し, 結果を確認する */
     dbglog("start");
 
     retval = exec_send_sock(sendbuf, sizeof(sendbuf));
@@ -589,6 +595,8 @@ test_read_sock(void)
 /**
  * send_sock() 関数実行
  *
+ * @param[in] sbuf 送信データ
+ * @param[in] length バイト数
  * @return なし
  */
 static int
@@ -1389,15 +1397,27 @@ test_client_loop_socket_only(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 全てのテストの前に, 1 回だけ行う初期化 */
     startup();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
+    /* テストの実行 */
     RUN_TEST(test_set_port_string);
     RUN_TEST(test_set_host_string);
     RUN_TEST(test_connect_sock);
@@ -1414,5 +1434,6 @@ main(int argc, char **argv)
     RUN_TEST(test_client_loop_atexit_failure);
     RUN_TEST(test_client_loop_socket_only);
     RUN_TEST(test_send_sock_alloc_failure);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

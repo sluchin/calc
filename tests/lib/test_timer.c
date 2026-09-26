@@ -147,6 +147,7 @@ test_get_time(void)
 /**
  * 初期化処理
  *
+ * @param[in] data 使用しない
  * @return なし
  */
 static void
@@ -214,18 +215,30 @@ test_stop_timer_wrap(void)
     PASS();
 }
 
+/* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
+/**
+ * テストの実行
+ *
+ * @param[in] argc 引数の数
+ * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
+ */
 int
 main(int argc, char **argv)
 {
+    /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
+    /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
+    /* テストの実行 */
     RUN_TEST(test_print_timer);
     RUN_TEST(test_start_timer);
     RUN_TEST(test_stop_timer);
     RUN_TEST(test_get_time);
     RUN_TEST(test_get_time_failure);
     RUN_TEST(test_stop_timer_wrap);
+    /* 結果の表示と終了 */
     TEST_MAIN_END();
 }
