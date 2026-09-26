@@ -371,9 +371,7 @@ power(calcinfo *calc)
 
     dbglog("start");
 
-    if (is_error(calc))
-        return EX_ERROR;
-
+    /* unary() が, エラー状態を確認してから呼ぶので, ここでは確認しない */
     x = factor(calc);
     dbglog(calc->fmt, x);
 
