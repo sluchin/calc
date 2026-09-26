@@ -231,7 +231,8 @@ static const struct test_data_char func_data [] = {
     { "rad(2)",    "0.0349065850399" },
     { "n(10)",     "3628800"         },
     { "nPr(5,2)",  "20"              },
-    { "nCr(5,2)",  "10"              }
+    { "nCr(5,2)",  "10"              },
+    { "n(170)",    "7.25741561531e+306" }
 };
 
 /** 四則演算と関数の組み合わせテスト用データ */
@@ -290,7 +291,11 @@ static const struct test_data_char error_data [] = {
     { "sqrt(-5)",   "NaN."                  },
     { "10^1000000", "Infinity."             },
     { "n(5000)",    "Infinity."             },
-    { "n(-5000)",   "Infinity."             }
+    { "n(-5000)",   "Infinity."             },
+    { "n(171)",     "Infinity."             },
+    { "n(99999999999999999999)", "Infinity." },
+    { "nPr(99999999999999999999,1)", "Infinity." },
+    { "nCr(99999999999999999999,1)", "Infinity." }
 };
 
 /** expression() 関数テスト用データ */
