@@ -192,11 +192,12 @@ sys_print_termattr(const int level, const int option,
                    const char *pname, const char *fname,
                    const int line, const char *func, int fd)
 {
-    struct termios mode;
-    char *result = NULL;
+    struct termios mode; /* termios構造体 */
+    char *result = NULL; /* 端末情報文字列 */
 
     (void)memset(&mode, 0, sizeof(struct termios));
 
+    /* 端末情報を取得できなければ (端末ではない), 何も出力しない */
     result = get_termattr(fd, &mode);
     if (!result)
         return;
@@ -278,11 +279,15 @@ get_termattr(const int fd, struct termios *mode)
 /**
  * モード種別からフラグ取得
  *
+ * @param[in] type モード種別
+ * @param[in] mode termios構造体
  * @return フラグ
+ * @retval NULL 不正なモード種別
  */
 static tcflag_t *
 mode_type_flag(const enum mode_type type, struct termios *mode)
 {
+    /* 種別に対応するフラグを返す */
     switch (type) {
     case control:
         return &mode->c_cflag;
@@ -298,6 +303,12 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] term 関数構造体
+ * @return なし
+ */
 void
 test_init_term(testterm *term)
 {

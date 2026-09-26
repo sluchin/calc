@@ -195,10 +195,12 @@ send_data(const int sock, const void *sdata, size_t *length)
 
     ptr = (unsigned char *)sdata;
     left = *length;
+    /* 全て送信するまで繰り返す (send は, 少ないバイト数を返すことがある) */
     while (left > 0) {
         len = send(sock, ptr, left, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0) {
+            /* 割り込みや, 一時的に送信できないときは, やり直す */
             if ((errno == EINTR) ||
                 (errno == EAGAIN) || (errno == EWOULDBLOCK))
                 len = 0;
@@ -243,6 +245,7 @@ recv_data(const int sock, void *rdata, size_t *length)
         len = recv(sock, ptr, left, 0);
         dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0) { /* エラー */
+            /* 割り込みや, 一時的に受信できないときは, やり直す */
             if ((errno == EINTR) ||
                 (errno == EAGAIN) || (errno == EWOULDBLOCK))
                 len = 0;

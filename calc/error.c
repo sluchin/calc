@@ -59,6 +59,7 @@ get_errormsg(calcinfo *calc)
     dbglog("start: errorcode=%d", (int)calc->errorcode);
     assert(MAXERROR == NELEMS(errormsg));
 
+    /* エラーコードが範囲外なら, メッセージはない */
     if (calc->errorcode <= E_NONE ||
         MAXERROR <= calc->errorcode)
         return NULL;
@@ -66,6 +67,7 @@ get_errormsg(calcinfo *calc)
     dbglog("errormsg=%s, errorcode=%d",
            errormsg[calc->errorcode], (int)calc->errorcode);
 
+    /* 呼び出し元が解放できるように, 複製する */
     msg = (unsigned char *)strdup(errormsg[calc->errorcode]);
     if (!msg) {
         outlog("strdup");
@@ -186,6 +188,12 @@ clear_math_feexcept(void)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] error 関数構造体
+ * @return なし
+ */
 void
 test_init_error(testerror *error)
 {

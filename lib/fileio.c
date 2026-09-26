@@ -52,14 +52,15 @@ readn(int fd, void *vptr, size_t n)
 
     ptr = (char *)vptr;
     nleft = n;
+    /* n バイトを受信するまで繰り返す (read は, 少ないバイト数を返すことがある) */
     while (nleft > 0) {
         nread = read(fd, ptr, nleft);
         if (nread < 0) {
-            if (errno == EINTR)
+            if (errno == EINTR) /* 割り込まれたので, やり直す */
                 nread = 0;
             else
                 return EX_NG;
-        } else if (nread == 0) {
+        } else if (nread == 0) { /* 入力の終わり */
             break;
         }
         nleft -= nread;
@@ -86,10 +87,11 @@ writen(int fd, const void *vptr, size_t n)
 
     ptr = (char *)vptr;
     nleft = n;
+    /* n バイトを送信するまで繰り返す (write は, 少ないバイト数を返すことがある) */
     while (nleft > 0) {
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0) {
-            if (errno == EINTR)
+            if (errno == EINTR) /* 割り込まれたので, やり直す */
                 nwritten = 0;
             else
                 return EX_NG;
@@ -117,12 +119,14 @@ pipe_fd(const int fd)
     if (fd < 0)
         return EX_NG;
 
+    /* パイプを作る */
     retval = pipe(pfd);
     if (retval < 0) {
         outlog("pipe: pfd=%p", pfd);
         return EX_NG;
     }
 
+    /* fd を閉じて, 書込側を fd に複製する (fd への書込が, パイプに送られる) */
     retval = close(fd);
     if (retval < 0) {
         outlog("close: fd=%d", fd);
@@ -148,6 +152,8 @@ pipe_fd(const int fd)
  * @param[in] pipefd パイプ
  * @param[in] oldfd コピー元
  * @param[in] newfd コピー先
+ * @retval EX_NG エラー
+ * @return 複製されたファイルディスクリプタ
  */
 int
 pipe_fd2(int *pipefd, int *oldfd, const int newfd)
@@ -155,8 +161,10 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
     int retval = 0; /* 戻り値 */
     int fd = 0;     /* dup戻り値 */
 
+    /* 使わない側を閉じる */
     close_fd(pipefd, NULL);
 
+    /* newfd を閉じて, oldfd を newfd に複製する (newfd が, oldfd の指すパイプになる) */
     retval = close(newfd);
     if (retval < 0)
         outlog("close=%d", retval);
@@ -241,6 +249,7 @@ close_fd(int *fd, ...)
 
     dbglog("start");
 
+    /* 最初のファイルディスクリプタ */
     if (fd && *fd >= 0) {
         dbglog("%p fd=%d", fd, *fd);
         if (close(*fd) < 0) {
@@ -252,6 +261,7 @@ close_fd(int *fd, ...)
 
     va_start(ap, fd);
 
+    /* 続くファイルディスクリプタ (最後は NULL). 閉じたら -1 を代入する */
     while ((ptr = va_arg(ap, int *)) != NULL) {
         dbglog("%p ptr=%d", ptr, *ptr);
         if (*ptr >= 0) {

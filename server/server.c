@@ -377,7 +377,7 @@ thread_cleanup(void *arg)
 static void
 thread_memfree(void *arg)
 {
-    void **ptr = (void **)arg;
+    void **ptr = (void **)arg; /* 解放するポインタ */
     dbglog("start: *ptr=%p, ptr=%p", *ptr, ptr);
     memfree(ptr, NULL);
 }
@@ -426,7 +426,7 @@ set_thread_sigmask(sigset_t sigmask)
 
 #ifdef _DEBUG
     /* シグナル設定確認 */
-    sigset_t newmask;
+    sigset_t newmask; /* 設定後のシグナルマスク */
     if (sigemptyset(&newmask) < 0) /* 初期化 */
         dbglog("sigemptyset=0x%x", newmask);
     if (pthread_sigmask(SIG_SETMASK, NULL, &newmask))
@@ -436,6 +436,12 @@ set_thread_sigmask(sigset_t sigmask)
 }
 
 #ifdef UNITTEST
+/**
+ * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ *
+ * @param[out] server 関数構造体
+ * @return なし
+ */
 void
 test_init_server(testserver *server)
 {

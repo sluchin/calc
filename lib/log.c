@@ -322,6 +322,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 
     p = (unsigned char *)buf;
 
+    /* メッセージ作成 */
     va_start(ap, format);
     retval = vsnprintf(message, sizeof(message), format, ap);
     va_end(ap);
@@ -330,6 +331,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
         return EX_NG;
     }
 
+    /* メッセージと, ダンプのヘッダを出力 */
     (void)fprintf(fp, "%s\n", message);
     (void)fprintf(fp, "%s%s",
                   "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F ",
@@ -338,11 +340,12 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
                   "--------   ---- ---- ---- ---- ---- ---- ---- ---- ",
                   "----------------\n");
 
+    /* 16 バイトごとに, アドレス, 16 進数 (2 バイトごとに空白), 文字を出力 */
     unsigned int i, j;
     for (i = 0; i < len; ) {
         (void)fprintf(fp, "%08X : ", pt);
         for (j = 0; j < 16; j++) {
-            if ((i + j) >= len)
+            if ((i + j) >= len) /* 16 バイトに満たない分は, 空白で埋める */
                 (void)fprintf(fp, "  %s", (j % 2 == 1 ? " " : ""));
             else
                 (void)fprintf(fp, "%02x%s",
@@ -575,6 +578,7 @@ print_trace(void)
     size_t size = 0;                /* サイズ */
     char **strings = NULL;          /* 文字列 */
 
+    /* 呼び出し履歴を取得して, 標準エラー出力に出力する */
     size = backtrace(buffer, STACK_SIZE);
     strings = backtrace_symbols(buffer, size);
 
