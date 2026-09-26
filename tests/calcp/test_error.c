@@ -240,6 +240,18 @@ test_check_math_feexcept(void)
     check_math_feexcept(&calc);
     TEST_ASSERT_INT_MSG((int)E_INFINITY, (int)calc.errorcode, "Infinity: log(0)=%g", result);
     clear_error(&calc);
+
+    /* アンダーフローは, エラーではない */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
+
+    clear_math_feexcept();
+    result = exp(-1000);
+    dbglog("result=%g", result);
+    check_math_feexcept(&calc);
+    TEST_ASSERT_INT_MSG((int)E_NONE, (int)calc.errorcode, "None: exp(-1000)=%g", result);
+    clear_error(&calc);
     PASS();
 }
 

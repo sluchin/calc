@@ -153,9 +153,9 @@ check_math_feexcept(calcinfo *calc)
 {
     dbglog("start");
 
+    /* アンダーフロー (exp(-1000) など) は, 結果が 0 に近いだけで, エラーではない */
     if (fetestexcept(FE_DIVBYZERO |
-                     FE_OVERFLOW  |
-                     FE_UNDERFLOW)) {
+                     FE_OVERFLOW)) {
         set_errorcode(calc, E_INFINITY);
     } else {
         if (fetestexcept(FE_INVALID))
