@@ -133,8 +133,6 @@ int main(int argc, char *argv[])
 
 /**
  * スレッド生成
- *
- * @return なし
  */
 static void
 create_threads(void)
@@ -198,7 +196,6 @@ create_threads(void)
  * スレッド処理
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void *
 client_thread(void *arg)
@@ -276,7 +273,6 @@ client_thread(void *arg)
  * スレッドクリーンアップハンドラ
  *
  * @param[in] arg ポインタ
- * @return なし
  * @attention 引数にthread_data **型を渡さなければ不正アクセスになる.
  */
 static void
@@ -292,7 +288,6 @@ thread_cleanup(void *arg)
  * スレッドメモリ解放ハンドラ
  *
  * @param[in] arg ポインタ
- * @return なし
  * @attention 引数にvoid **型を渡さなければ不正アクセスになる.
  */
 static void
@@ -309,7 +304,6 @@ thread_memfree(void *arg)
  * オプション引数ごとに処理を分岐する.
  * @param[in] argc 引数の数
  * @param[in] argv コマンド引数・オプション引数
- * @return なし
  */
 static void
 parse_args(int argc, char *argv[])
@@ -376,7 +370,6 @@ parse_args(int argc, char *argv[])
  *
  * ヘルプを表示する.
  * @param[in] progname プログラム名
- * @return なし
  */
 static void
 print_help(const char *progname)
@@ -403,7 +396,6 @@ print_help(const char *progname)
  *
  * バージョン情報を表示する.
  * @param[in] progname プログラム名
- * @return なし
  */
 static void
 print_version(const char *progname)
@@ -417,7 +409,6 @@ print_version(const char *progname)
  * getopt が異常な動作をした場合, エラーを表示する.
  * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
- * @return なし
  */
 static void
 parse_error(const int c, const char *msg)
@@ -429,8 +420,6 @@ parse_error(const int c, const char *msg)
 
 /**
  * シグナルハンドラ設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)

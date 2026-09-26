@@ -66,8 +66,6 @@ static testerror st_error; /**< error関数構造体 */
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -80,8 +78,6 @@ startup(void)
 
 /**
  * get_errormsg() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_errormsg(void)
@@ -107,8 +103,6 @@ test_get_errormsg(void)
 
 /**
  * set_errorcode() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_errorcode(void)
@@ -133,8 +127,6 @@ test_set_errorcode(void)
 
 /**
  * clear_error() 関数テスト
- *
- * @return なし
  */
 TEST
 test_clear_error(void)
@@ -156,8 +148,6 @@ test_clear_error(void)
 
 /**
  * is_error() 関数テスト
- *
- * @return なし
  */
 TEST
 test_is_error(void)
@@ -180,8 +170,6 @@ test_is_error(void)
 
 /**
  * check_validate() 関数テスト
- *
- * @return なし
  */
 TEST
 test_check_validate(void)
@@ -214,8 +202,6 @@ test_check_validate(void)
 
 /**
  * get_check_math_feexcept() 関数テスト
- *
- * @return なし
  */
 TEST
 test_check_math_feexcept(void)
@@ -261,8 +247,6 @@ test_check_math_feexcept(void)
 
 /**
  * get_clear_math_feexcept() 関数テスト
- *
- * @return なし
  */
 TEST
 test_clear_math_feexcept(void)
@@ -289,7 +273,6 @@ test_clear_math_feexcept(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -303,7 +286,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -314,8 +296,6 @@ teardown(void *data)
 
 /**
  * get_errormsg() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_get_errormsg_failure(void)
@@ -342,8 +322,6 @@ test_get_errormsg_failure(void)
 
 /**
  * clear_math_feexcept() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_clear_math_feexcept_failure(void)

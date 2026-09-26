@@ -160,8 +160,6 @@ static void set_sig_handler(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -185,7 +183,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -213,7 +210,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -237,8 +233,6 @@ teardown(void *data)
 
 /**
  * test_set_port_string() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_port_string(void)
@@ -257,8 +251,6 @@ test_set_port_string(void)
 
 /**
  * test_set_host_string() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_host_string(void)
@@ -278,8 +270,6 @@ test_set_host_string(void)
 
 /**
  * test_connect_sock() 関数テスト
- *
- * @return なし
  */
 TEST
 test_connect_sock(void)
@@ -305,8 +295,6 @@ test_connect_sock(void)
 
 /**
  * test_client_loop() 関数テスト
- *
- * @return なし
  */
 TEST
 test_client_loop(void)
@@ -467,8 +455,6 @@ test_client_loop(void)
 
 /**
  * test_send_sock() 関数テスト
- *
- * @return なし
  */
 TEST
 test_send_sock(void)
@@ -496,8 +482,6 @@ test_send_sock(void)
 
 /**
  * test_read_sock() 関数テスト
- *
- * @return なし
  */
 TEST
 test_read_sock(void)
@@ -597,7 +581,6 @@ test_read_sock(void)
  *
  * @param[in] sbuf 送信データ
  * @param[in] length バイト数
- * @return なし
  */
 static int
 exec_send_sock(unsigned char *sbuf, size_t length)
@@ -922,8 +905,6 @@ inet_sock_server(void)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -950,7 +931,6 @@ static int child_sock = -1;  /**< 使用するソケット */
  * client_loop() を子プロセスで実行する
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop(void *arg)
@@ -964,7 +944,6 @@ child_client_loop(void *arg)
  * send_sock() を子プロセスで実行する
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_send_sock(void *arg)
@@ -979,7 +958,6 @@ child_send_sock(void *arg)
  * 接続先から, child_mode に応じたデータを送って, 受信する.
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_read_sock(void *arg)
@@ -1024,8 +1002,6 @@ child_read_sock(void *arg)
 
 /**
  * connect_sock() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_connect_sock_failure(void)
@@ -1054,8 +1030,6 @@ test_connect_sock_failure(void)
 
 /**
  * client_loop() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_client_loop_failure(void)
@@ -1112,8 +1086,6 @@ test_client_loop_failure(void)
 
 /**
  * send_sock() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_send_sock_failure(void)
@@ -1139,8 +1111,6 @@ test_send_sock_failure(void)
 
 /**
  * send_sock() と read_sock() 関数テスト (処理時間の表示とデバッグ出力)
- *
- * @return なし
  */
 TEST
 test_send_sock_timer(void)
@@ -1174,8 +1144,6 @@ test_send_sock_timer(void)
 
 /**
  * read_sock() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_read_sock_failure(void)
@@ -1214,7 +1182,6 @@ test_read_sock_failure(void)
  * シグナルマスクの取得に失敗する client_loop() を, 子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop_mask_failure(void *arg)
@@ -1232,7 +1199,6 @@ child_client_loop_mask_failure(void *arg)
  * 接続先は, ヘッダだけ送って, 書込側をシャットダウンする.
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop_read_failure(void *arg)
@@ -1254,8 +1220,6 @@ child_client_loop_read_failure(void *arg)
 
 /**
  * client_loop() 関数テスト (シグナルマスクの取得に失敗)
- *
- * @return なし
  */
 TEST
 test_client_loop_signal_mask_failure(void)
@@ -1270,8 +1234,6 @@ test_client_loop_signal_mask_failure(void)
 
 /**
  * client_loop() 関数テスト (受信に失敗すると, そのステータスで終了)
- *
- * @return なし
  */
 TEST
 test_client_loop_read_failure(void)
@@ -1285,8 +1247,6 @@ test_client_loop_read_failure(void)
 
 /**
  * send_sock() 関数テスト (送信データを作れない)
- *
- * @return なし
  */
 TEST
 test_send_sock_alloc_failure(void)
@@ -1302,7 +1262,6 @@ test_send_sock_alloc_failure(void)
  * atexit() に失敗する client_loop() を, 子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop_atexit_failure(void *arg)
@@ -1316,8 +1275,6 @@ child_client_loop_atexit_failure(void *arg)
 
 /**
  * client_loop() 関数テスト (atexit() の失敗)
- *
- * @return なし
  */
 TEST
 test_client_loop_atexit_failure(void)
@@ -1333,7 +1290,6 @@ test_client_loop_atexit_failure(void)
  * SIGINT のハンドラ (client/main.c と同じ動作)
  *
  * @param[in] signo シグナル
- * @return なし
  */
 static void
 on_sigint(int signo)
@@ -1348,7 +1304,6 @@ on_sigint(int signo)
  * 接続先は, 答えを送っておく. 一定時間後に, SIGINT で, ループを終了する.
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 child_client_loop_socket_only(void *arg)
@@ -1381,8 +1336,6 @@ child_client_loop_socket_only(void *arg)
 /**
  * client_loop() 関数テスト (ソケットだけが読める)
  * 標準入力が読めない間は, 標準入力を待たずに, ソケットから受信する.
- *
- * @return なし
  */
 TEST
 test_client_loop_socket_only(void)

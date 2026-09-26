@@ -45,7 +45,6 @@ static size_t nstrings = 0;        /**< 確保した文字列数 */
  *
  * @param[in] calc calcinfo構造体
  * @param[in] str 文字列
- * @return なし
  */
 void
 set_string(calcinfo *calc, const char *str)
@@ -83,8 +82,6 @@ set_string(calcinfo *calc, const char *str)
 
 /**
  * set_string() で確保した文字列の解放
- *
- * @return なし
  */
 void
 free_strings(void)

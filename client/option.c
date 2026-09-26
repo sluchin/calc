@@ -69,7 +69,6 @@ static void parse_error(const int c, const char *msg);
  * オプション引数ごとに処理を分岐する.
  * @param[in] argc 引数の数
  * @param[in] argv コマンド引数・オプション引数
- * @return なし
  */
 void
 parse_args(int argc, char *argv[])
@@ -135,7 +134,6 @@ parse_args(int argc, char *argv[])
  *
  * ヘルプを表示する.
  * @param[in] progname プログラム名
- * @return なし
  */
 static void
 print_help(const char *progname)
@@ -162,7 +160,6 @@ print_help(const char *progname)
  *
  * バージョン情報を表示する.
  * @param[in] progname プログラム名
- * @return なし
  */
 static void
 print_version(const char *progname)
@@ -176,7 +173,6 @@ print_version(const char *progname)
  * getopt が異常な動作をした場合, エラーを表示する.
  * @param[in] c オプション引数
  * @param[in] msg メッセージ文字列
- * @return なし
  */
 static void
 parse_error(const int c, const char *msg)

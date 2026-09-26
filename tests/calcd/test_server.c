@@ -129,7 +129,6 @@ static volatile int watch_count = 0; /**< watch_size で確保された回数 */
  *
  * @param[in] ptr 確保したメモリ
  * @param[in] size サイズ
- * @return なし
  */
 static void
 record_alloc(void *ptr, size_t size)
@@ -191,7 +190,6 @@ calloc(size_t nmemb, size_t size)
  * free() の置き換え (追跡しているメモリが解放されたか記録する)
  *
  * @param[in] ptr 解放するメモリ
- * @return なし
  */
 void
 free(void *ptr)
@@ -254,8 +252,6 @@ static void set_sig_handler(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -280,7 +276,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -316,7 +311,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -327,8 +321,6 @@ teardown(void *data)
 
 /**
  * test_set_port_string() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_port_string(void)
@@ -347,8 +339,6 @@ test_set_port_string(void)
 
 /**
  * test_server_sock() 関数テスト
- *
- * @return なし
  */
 TEST
 test_server_sock(void)
@@ -372,8 +362,6 @@ test_server_sock(void)
 
 /**
  * test_server_loop() 関数テスト
- *
- * @return なし
  */
 TEST
 test_server_loop(void)
@@ -434,8 +422,6 @@ test_server_loop(void)
 
 /**
  * test_server_proc() 関数テスト
- *
- * @return なし
  */
 #if 0
 TEST
@@ -591,8 +577,6 @@ recv_client(int sockfd, unsigned char *rbuf)
 
 /**
  * ソケット作成
- *
- * @return なし
  */
 static int
 inet_sock_client(void)
@@ -633,8 +617,6 @@ inet_sock_client(void)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -653,8 +635,6 @@ set_sig_handler(void)
 
 /**
  * server_sock() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_server_sock_failure(void)
@@ -692,8 +672,6 @@ test_server_sock_failure(void)
 
 /**
  * server_loop() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_server_loop_failure(void)
@@ -752,8 +730,6 @@ test_server_loop_failure(void)
 /**
  * server_proc() 関数テスト (失敗と, デバッグ出力)
  * server_proc() は, スレッドで実行されるので, 接続の受付後に, 終了を待つ.
- *
- * @return なし
  */
 TEST
 test_server_proc_failure(void)
@@ -808,8 +784,6 @@ test_server_proc_failure(void)
 
 /**
  * server_loop() 関数テスト (メモリを確保できない)
- *
- * @return なし
  */
 TEST
 test_server_loop_alloc_failure(void)
@@ -831,8 +805,6 @@ test_server_loop_alloc_failure(void)
 
 /**
  * server_loop() 関数テスト (シグナルマスクの取得に失敗)
- *
- * @return なし
  */
 TEST
 test_server_loop_signal_mask_failure(void)
@@ -856,8 +828,6 @@ test_server_loop_signal_mask_failure(void)
 /**
  * server_proc() 関数テスト (内部の関数の失敗)
  * 有効なリクエストを送って, スレッドの中の失敗を注入する.
- *
- * @return なし
  */
 TEST
 test_server_proc_internal_failure(void)
@@ -897,8 +867,6 @@ test_server_proc_internal_failure(void)
 
 /**
  * server_proc() 関数テスト (引数として渡されたスレッドデータを解放する)
- *
- * @return なし
  */
 TEST
 test_server_proc_free_arg(void)
@@ -923,8 +891,6 @@ test_server_proc_free_arg(void)
 /**
  * server_proc() 関数テスト (データ長の上限)
  * 上限を超えるデータ長のヘッダを受け取っても, そのサイズのメモリを確保しない.
- *
- * @return なし
  */
 TEST
 test_server_proc_length_limit(void)
@@ -953,8 +919,6 @@ test_server_proc_length_limit(void)
 /**
  * server_proc() 関数テスト (終端の NUL がない式)
  * 終端のない式を受け取っても, 確保した領域の外を読まずに, 計算できる.
- *
- * @return なし
  */
 TEST
 test_server_proc_no_nul(void)

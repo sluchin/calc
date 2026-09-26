@@ -147,8 +147,6 @@ static void set_sig_handler(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -172,7 +170,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -189,7 +186,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -229,8 +225,6 @@ teardown(void *data)
 
 /**
  * set_hostname() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_hostname(void)
@@ -267,8 +261,6 @@ test_set_hostname(void)
 
 /**
  * set_port() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_port(void)
@@ -304,8 +296,6 @@ test_set_port(void)
 
 /**
  * set_block() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_block(void)
@@ -355,8 +345,6 @@ test_set_block(void)
 
 /**
  * send_data() 関数テスト
- *
- * @return なし
  */
 TEST
 test_send_data(void)
@@ -416,8 +404,6 @@ test_send_data(void)
 
 /**
  * recv_data() 関数テスト
- *
- * @return なし
  */
 TEST
 test_recv_data(void)
@@ -485,8 +471,6 @@ test_recv_data(void)
 
 /**
  * recv_data_new() 関数テスト
- *
- * @return なし
  */
 TEST
 test_recv_data_new(void)
@@ -552,8 +536,6 @@ test_recv_data_new(void)
 
 /**
  * close_sock() 関数テスト
- *
- * @return なし
  */
 TEST
 test_close_sock(void)
@@ -748,8 +730,6 @@ unix_sock_client(void)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -770,8 +750,6 @@ set_sig_handler(void)
 
 /**
  * set_hostname() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_set_hostname_failure(void)
@@ -789,8 +767,6 @@ test_set_hostname_failure(void)
 
 /**
  * set_port() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_set_port_failure(void)
@@ -821,8 +797,6 @@ test_set_port_failure(void)
 
 /**
  * set_block() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_set_block_failure(void)
@@ -854,8 +828,6 @@ test_set_block_failure(void)
 
 /**
  * send_data() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_send_data_failure(void)
@@ -880,8 +852,6 @@ test_send_data_failure(void)
 
 /**
  * send_data() 関数テスト (EINTR, EAGAIN)
- *
- * @return なし
  */
 TEST
 test_send_data_interrupted(void)
@@ -922,8 +892,6 @@ test_send_data_interrupted(void)
 
 /**
  * recv_data() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_recv_data_failure(void)
@@ -950,8 +918,6 @@ test_recv_data_failure(void)
 
 /**
  * recv_data() 関数テスト (EINTR, EAGAIN)
- *
- * @return なし
  */
 TEST
 test_recv_data_interrupted(void)
@@ -994,8 +960,6 @@ test_recv_data_interrupted(void)
 
 /**
  * recv_data_new() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_recv_data_new_failure(void)
@@ -1025,8 +989,6 @@ test_recv_data_new_failure(void)
 
 /**
  * close_sock() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_close_sock_failure(void)

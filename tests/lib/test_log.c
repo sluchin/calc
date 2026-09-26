@@ -147,8 +147,6 @@ const char *print_hex[] = {
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -170,7 +168,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -193,7 +190,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -215,8 +211,6 @@ teardown(void *data)
 
 /**
  * set_progname() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_progname(void)
@@ -232,8 +226,6 @@ test_set_progname(void)
 
 /**
  * get_progname() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_progname(void)
@@ -249,8 +241,6 @@ test_get_progname(void)
 
 /**
  * system_log() 関数テスト
- *
- * @return なし
  */
 TEST
 test_system_log(void)
@@ -281,8 +271,6 @@ test_system_log(void)
 
 /**
  * system_dbg_log() 関数テスト
- *
- * @return なし
  */
 TEST
 test_system_dbg_log(void)
@@ -315,8 +303,6 @@ test_system_dbg_log(void)
 
 /**
  * stderr_log() 関数テスト
- *
- * @return なし
  */
 TEST
 test_stderr_log(void)
@@ -349,8 +335,6 @@ test_stderr_log(void)
 
 /**
  * dump_log() 関数テスト
- *
- * @return なし
  */
 TEST
 test_dump_log(void)
@@ -396,8 +380,6 @@ test_dump_log(void)
 
 /**
  * dump_sys() 関数テスト
- *
- * @return なし
  */
 TEST
 test_dump_sys(void)
@@ -439,8 +421,6 @@ test_dump_sys(void)
 
 /**
  * dump_file() 関数テスト
- *
- * @return なし
  */
 TEST
 test_dump_file(void)
@@ -481,8 +461,6 @@ test_dump_file(void)
 #ifdef HAVE_EXECINFO
 /**
  * systrace() 関数テスト
- *
- * @return なし
  */
 TEST
 test_systrace(void)
@@ -514,8 +492,6 @@ test_systrace(void)
 
 /**
  * print_trace() 関数テスト
- *
- * @return なし
  */
 TEST
 test_print_trace(void)
@@ -549,7 +525,6 @@ test_print_trace(void)
  *
  * @param[in,out] buf バッファ
  * @param[in] len バッファサイズ
- * @return なし
  */
 static void
 set_print_hex(char *buf, size_t len)
@@ -611,8 +586,6 @@ match_print_hex_sys(const char *actual, const char *prefix)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -634,8 +607,6 @@ set_sig_handler(void)
 /**
  * 失敗のログが標準エラー出力 (前のテストで閉じたパイプ) に出ないように,
  * /dev/null に向ける
- *
- * @return なし
  */
 static void
 quiet_stderr(void)
@@ -645,8 +616,6 @@ quiet_stderr(void)
 
 /**
  * system_log() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_system_log_failure(void)
@@ -663,8 +632,6 @@ test_system_log_failure(void)
 
 /**
  * system_dbg_log() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_system_dbg_log_failure(void)
@@ -693,8 +660,6 @@ test_system_dbg_log_failure(void)
 
 /**
  * stderr_log() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_stderr_log_failure(void)
@@ -725,8 +690,6 @@ test_stderr_log_failure(void)
 
 /**
  * dump_log() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_dump_log_failure(void)
@@ -745,8 +708,6 @@ test_dump_log_failure(void)
 
 /**
  * dump_sys() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_dump_sys_failure(void)
@@ -791,8 +752,6 @@ count_open_fds(void)
 
 /**
  * dump_file() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_dump_file_failure(void)
@@ -823,8 +782,6 @@ test_dump_file_failure(void)
 #ifdef HAVE_EXECINFO
 /**
  * systrace() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_systrace_failure(void)
