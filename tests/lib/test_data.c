@@ -48,6 +48,10 @@ const char *test_data[] = {
 TEST test_set_client_data(void);
 /** set_server_data() 関数テスト */
 TEST test_set_server_data(void);
+/** set_client_data() 関数テスト (失敗) */
+TEST test_set_client_data_failure(void);
+/** set_server_data() 関数テスト (失敗) */
+TEST test_set_server_data_failure(void);
 
 /**
  * 初期化処理
@@ -121,6 +125,48 @@ test_set_server_data(void)
 }
 
 
+/**
+ * set_client_data() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_set_client_data_failure(void)
+{
+    struct client_data *dt = NULL; /* 送受信データ構造体 */
+    unsigned char buf[] = "a";     /* 送受信バッファ */
+
+    /* バッファがNULL */
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1));
+    TEST_ASSERT_NULL(dt);
+
+    /* メモリを確保できない (巨大なサイズ) */
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, buf, (size_t)-1 / 2));
+    TEST_ASSERT_NULL(dt);
+    PASS();
+}
+
+/**
+ * set_server_data() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_set_server_data_failure(void)
+{
+    struct server_data *dt = NULL; /* 送受信データ構造体 */
+    unsigned char buf[] = "a";     /* 送受信バッファ */
+
+    /* バッファがNULL */
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1));
+    TEST_ASSERT_NULL(dt);
+
+    /* メモリを確保できない (巨大なサイズ) */
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, buf, (size_t)-1 / 2));
+    TEST_ASSERT_NULL(dt);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -130,5 +176,7 @@ main(int argc, char **argv)
     startup();
     RUN_TEST(test_set_client_data);
     RUN_TEST(test_set_server_data);
+    RUN_TEST(test_set_client_data_failure);
+    RUN_TEST(test_set_server_data_failure);
     TEST_MAIN_END();
 }

@@ -3,7 +3,7 @@
 # 使い方:
 #   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release   (Debug も可)
 #   cmake --build build
-#   ctest --test-dir build --output-on-failure       (Debug, または -DBUILD_TESTS=ON)
+#   cd build && make test    (単体テストをビルドしてから, 実行する. make ではビルドしない)
 #
 # Debug では、Makefile の debug ターゲットと同じく -DUNITTEST -D_DEBUG を付ける.
 
@@ -25,14 +25,15 @@ if(ENABLE_COVERAGE)
   add_link_options(--coverage)
 endif()
 add_compile_options(-Wall)
-# 単体テストは, UNITTEST で公開される内部関数を使うので, UNITTEST を有効にする.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(BUILD_TESTS_DEFAULT ON)
-else()
-  set(BUILD_TESTS_DEFAULT OFF)
+# 単体テスト (tests/) をビルドして, make test (ctest) で実行できるようにする.
+# 単体テストは, UNITTEST で公開される内部関数を使うので, 有効なときは全体に
+# -DUNITTEST を付ける. 配布用のビルドでは -DBUILD_TESTS=OFF にする.
+option(BUILD_TESTS "単体テストをビルドする (UNITTEST を有効にする)" ON)
+# 単体テストは, 標準ライブラリの関数 (vsnprintf など) を, モックに置き換える.
+# _FORTIFY_SOURCE が有効だと, __vsnprintf_chk などに置き換わって, モックにできない.
+if(BUILD_TESTS)
+  add_compile_options(-U_FORTIFY_SOURCE)
 endif()
-option(BUILD_TESTS "単体テストをビルドする (UNITTEST を有効にする)"
-       ${BUILD_TESTS_DEFAULT})
 add_compile_definitions(
   $<$<OR:$<CONFIG:Debug>,$<BOOL:${BUILD_TESTS}>>:UNITTEST>
   $<$<CONFIG:Debug>:_DEBUG>
@@ -117,17 +118,29 @@ install(TARGETS calcutil_static calcutil_shared calcp_static calcp_shared
 
 # 単体テスト (greatest + FFF): tests/ 配下
 if(BUILD_TESTS)
+  # make test (ctest) の出力: ビルド (build_tests) の詳細と, 各テストの出力を表示する.
+  # 失敗したときの出力も含まれる. (CMake 3.17 以降)
+  set(CMAKE_CTEST_ARGUMENTS --verbose)
   enable_testing()
   add_subdirectory(tests)
 
-  # make coverage: テストを実行して, カバレッジレポートを作る (gcovr が必要)
+  get_property(unit_test_targets GLOBAL PROPERTY UNIT_TEST_TARGETS)
+
+  # make coverage: テストを実行して, カバレッジレポートを作る.
+  # gcovr が必要.
   find_program(GCOVR_COMMAND gcovr)
   if(ENABLE_COVERAGE AND GCOVR_COMMAND)
     add_custom_target(coverage
       COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/coverage
       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
+      COMMAND find ${CMAKE_BINARY_DIR} -name "*.gcda" -delete
+      # 実行ファイル (calcp calcd calcc) の main.c は, テストでは実行されない.
+      # テストは main.c を別の名前 (xxx_main) でリンクするので, 同じ行が別の関数と
+      # 見なされて, 集計が 0 になる. そのオブジェクトの計測情報は, 消しておく.
+      COMMAND find ${CMAKE_BINARY_DIR}/CMakeFiles -path "*/calc[pdc].dir/*"
+              -name "*.gcno" -delete
       COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-      COMMAND ${GCOVR_COMMAND} -r ${CMAKE_SOURCE_DIR}
+      COMMAND ${GCOVR_COMMAND} -r ${CMAKE_SOURCE_DIR} --object-directory ${CMAKE_BINARY_DIR}
               --filter ${CMAKE_SOURCE_DIR}/lib/
               --filter ${CMAKE_SOURCE_DIR}/calc/
               --filter ${CMAKE_SOURCE_DIR}/server/
@@ -135,6 +148,26 @@ if(BUILD_TESTS)
               --html-details ${CMAKE_BINARY_DIR}/coverage/index.html
               --print-summary --txt
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      COMMENT "カバレッジレポート: ${CMAKE_BINARY_DIR}/coverage/index.html")
+      COMMENT "カバレッジレポート: ${CMAKE_BINARY_DIR}/coverage/index.html"
+      VERBATIM)
+    add_dependencies(coverage ${unit_test_targets})
+  elseif(GCOVR_COMMAND)
+    # カバレッジ用の構成 (-DENABLE_COVERAGE=ON) でなくても, make coverage で使えるように,
+    # 別のビルドディレクトリ (coverage-build) に, カバレッジ用にビルドして実行する.
+    # Release にするのは, Debug の dbglog() (デバッグ用のログ) を, 集計に含めないため.
+    set(cov_dir ${CMAKE_BINARY_DIR}/coverage-build)
+    add_custom_target(coverage
+      COMMAND ${CMAKE_COMMAND} -S ${CMAKE_SOURCE_DIR} -B ${cov_dir}
+              -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DENABLE_COVERAGE=ON
+      COMMAND ${CMAKE_COMMAND} --build ${cov_dir}
+      COMMAND ${CMAKE_COMMAND} --build ${cov_dir} --target coverage
+      COMMENT "カバレッジレポート: ${cov_dir}/coverage/index.html"
+      VERBATIM)
+  else()
+    add_custom_target(coverage
+      COMMAND ${CMAKE_COMMAND} -E echo
+              "coverage は使えません: gcovr をインストールしてください (sudo apt install gcovr)"
+      COMMAND ${CMAKE_COMMAND} -E false
+      VERBATIM)
   endif()
 endif()
