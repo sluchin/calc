@@ -18,6 +18,11 @@ all:
 	echo "*******************************"; \
 	echo "";
 
+.PHONY: cmake-build
+cmake-build:
+	@mkdir -p build
+	@cd build && cmake .. && $(MAKE)
+
 .PHONY: static
 static:
 	cd $(top_srcdir)/lib && $(MAKE)
