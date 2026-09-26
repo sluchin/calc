@@ -5,6 +5,26 @@
  * exit() を呼ぶ関数 (parse_args() や main()) を, 子プロセスで実行して,
  * 終了ステータスと出力を確認するための関数群.
  * 子プロセスは exit() で終了する (_exit() だとカバレッジが出力されない).
+ *
+ * @author higashi
+ * @date 2026-09-27 higashi 新規作成
+ * @version \$Id$
+ *
+ * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
+ */
+/* This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #ifndef TEST_PROCESS_H

@@ -4,8 +4,28 @@
  *
  * greatest がテストの実行とアサーション, FFF (fff.h) がモック関数を担当する.
  * メッセージは標準出力に出す (テストが標準エラー出力をパイプに繋ぐため).
- * TEST_FAIL 系のマクロは, TEST 関数 (enum greatest_test_res を返す関数)
- * の中でのみ使用できる.
+ * TEST_FAIL 系のマクロは, TEST 関数 (enum greatest_test_res を返す関数) の中で
+ * のみ使用できる.
+ *
+ * @author higashi
+ * @date 2026-09-27 higashi 新規作成
+ * @version \$Id$
+ *
+ * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
+ */
+/* This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #ifndef TEST_HELPER_H
@@ -122,14 +142,26 @@ test_tmpname(char *buf)
                         __VA_ARGS__);                           \
     } while (0)
 
-/** NULL なら "(null)" にする (メッセージ出力用) */
+/**
+ * NULL なら "(null)" にする (メッセージ出力用)
+ *
+ * @param[in] str 文字列
+ * @return 文字列 (NULL のときは "(null)")
+ */
 static inline const char *
 test_str(const char *str)
 {
     return str ? str : "(null)";
 }
 
-/** 文字列の一致 (NULL 同士は一致) */
+/**
+ * 文字列の一致 (NULL 同士は一致)
+ *
+ * @param[in] a 文字列
+ * @param[in] b 文字列
+ * @retval 1 一致
+ * @retval 0 不一致
+ */
 static inline int
 test_streq(const char *a, const char *b)
 {
@@ -160,7 +192,14 @@ test_streq(const char *a, const char *b)
                     memcmp((exp), (act), (elen)) == 0,          \
                     __VA_ARGS__)
 
-/** 正規表現 (POSIX 拡張) に一致するか */
+/**
+ * 正規表現 (POSIX 拡張) に一致するか
+ *
+ * @param[in] pattern 正規表現 (POSIX 拡張)
+ * @param[in] str 文字列
+ * @retval 1 一致
+ * @retval 0 不一致 (正規表現が不正な場合も含む)
+ */
 static inline int
 test_match(const char *pattern, const char *str)
 {
