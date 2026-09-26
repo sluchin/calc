@@ -39,9 +39,17 @@
 /* 端末の入力可能なバイト数(4096)より大きいサイズに設定 */
 #define BUF_SIZE 1100 /**< バッファサイズ */
 
+DEFINE_FFF_GLOBALS;
+
+/* realloc() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(void *, realloc, void *, size_t);
+TEST_PASSTHROUGH(void *, realloc, (void *ptr, size_t size), (ptr, size))
+
 /* プロトタイプ */
 /** readline() 関数テスト */
 TEST test_readline(void);
+/** readline() 関数テスト (失敗) */
+TEST test_readline_failure(void);
 
 /* 内部変数 */
 static int pfd[] = { -1, -1 };       /* パイプ */
@@ -73,6 +81,8 @@ startup(void)
 static void
 setup(void *data)
 {
+    (void)data;
+    TEST_PASSTHROUGH_RESET(realloc);
     (void)memset(test_data, 0x31, sizeof(test_data));
     test_data[sizeof(test_data) - 1] = '\0';
     test_data[sizeof(test_data) - 2] = '\n';
@@ -218,6 +228,45 @@ set_sig_handler(void)
 }
 
 
+/**
+ * readline() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_readline_failure(void)
+{
+    int p[2] = { -1, -1 }; /* パイプ */
+    FILE *fp = NULL;       /* ファイルポインタ */
+
+    /* 読み込みエラー (ディレクトリは, オープンできるが, 読み込めない) */
+    fp = fopen("/tmp", "r");
+    if (!fp) {
+        TEST_FAIL("fopen(%d)", errno);
+    }
+    result = _readline(fp);
+    TEST_ASSERT_NULL((char *)result);
+    (void)fclose(fp);
+
+    /* メモリを確保できない */
+    if (pipe(p) < 0) {
+        TEST_FAIL("pipe(%d)", errno);
+    }
+    if (write(p[1], "abc\n", 4) != 4) {
+        TEST_FAIL("write(%d)", errno);
+    }
+    (void)close(p[1]);
+    fp = fdopen(p[0], "r");
+    if (!fp) {
+        TEST_FAIL("fdopen(%d)", errno);
+    }
+    TEST_INJECT(realloc, 0, 1, NULL, ENOMEM);
+    result = _readline(fp);
+    TEST_ASSERT_NULL((char *)result);
+    (void)fclose(fp);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -228,5 +277,6 @@ main(int argc, char **argv)
     SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_readline);
+    RUN_TEST(test_readline_failure);
     TEST_MAIN_END();
 }

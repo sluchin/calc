@@ -13,7 +13,8 @@
 function(add_unit_test dir name)
   cmake_parse_arguments(T "" "RENAME_MAIN" "LIBS;INCLUDES;SOURCES" ${ARGN})
   set(target ${dir}_${name})
-  add_executable(${target} ${dir}/${name}.c ${T_SOURCES})
+  # make (引数なし) ではビルドしない. make test (ctest) のときに, ビルドする
+  add_executable(${target} EXCLUDE_FROM_ALL ${dir}/${name}.c ${T_SOURCES})
   target_include_directories(${target} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
@@ -24,11 +25,15 @@ function(add_unit_test dir name)
     set_source_files_properties(${main_source} PROPERTIES
       COMPILE_DEFINITIONS main=${T_RENAME_MAIN})
   endif()
-  target_link_libraries(${target} PRIVATE ${T_LIBS} m)
+  # dlsym() (test_helper.h の TEST_PASSTHROUGH) のため, _GNU_SOURCE と dl が必要
+  target_compile_definitions(${target} PRIVATE _GNU_SOURCE)
+  target_link_libraries(${target} PRIVATE ${T_LIBS} m ${CMAKE_DL_LIBS})
   set_target_properties(${target} PROPERTIES OUTPUT_NAME ${name}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir})
+  set_property(GLOBAL APPEND PROPERTY UNIT_TEST_TARGETS ${target})
   add_test(NAME ${dir}/${name} COMMAND ${target})
-  set_tests_properties(${dir}/${name} PROPERTIES TIMEOUT 60)
+  set_tests_properties(${dir}/${name} PROPERTIES TIMEOUT 60
+                       FIXTURES_REQUIRED tests_built)
 endfunction()
 
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/lib)
@@ -50,6 +55,11 @@ add_unit_test(calcd test_server
   INCLUDES ${SERVER_DIR} ${CALC_DIR} ${LIB_DIR})
 add_unit_test(calcc test_client
   LIBS calcc_shared calcutil_shared INCLUDES ${CLIENT_DIR} ${LIB_DIR})
+
+# calcd/test_server と calcc/test_client は, 同じポート番号 (12345) を使うので,
+# ctest -j で並列に実行しても, 同時には実行されないようにする.
+set_tests_properties(calcd/test_server calcc/test_client
+                     PROPERTIES RESOURCE_LOCK port12345)
 
 # option.c, main.c は, テストの実行ファイルにソースごとリンクして, 依存する関数
 # を FFF でモックにする. main() は, 名前を変えて (xxx_main), 子プロセスから呼ぶ.
@@ -76,9 +86,20 @@ add_unit_test(calcc test_main
   SOURCES ${CLIENT_DIR}/main.c RENAME_MAIN calcc_main)
 
 # 負荷確認用のクライアント (テストではない)
-add_executable(thcalcc calcc/thread_client.c)
+add_executable(thcalcc EXCLUDE_FROM_ALL calcc/thread_client.c)
 target_include_directories(thcalcc PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/third_party
   ${CLIENT_DIR} ${LIB_DIR})
 target_link_libraries(thcalcc PRIVATE calcc_shared calcutil_shared
                       Threads::Threads)
+
+# make test は, テストの実行ファイルをビルドしてから, テストを実行する.
+# CMake 組み込みの test ターゲットは, ビルドに依存させられないので, ビルドを,
+# 全てのテストが必要とする ctest のテスト (fixture) にする.
+get_property(unit_test_targets GLOBAL PROPERTY UNIT_TEST_TARGETS)
+add_custom_target(unit_tests DEPENDS thcalcc)
+add_dependencies(unit_tests ${unit_test_targets})
+add_test(NAME build_tests
+         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+                 --config $<CONFIG> --target unit_tests)
+set_tests_properties(build_tests PROPERTIES FIXTURES_SETUP tests_built)

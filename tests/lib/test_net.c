@@ -23,12 +23,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>     /* tmpnam */
+#include <stdio.h>     /* snprintf */
 #include <stdlib.h>    /* exit */
 #include <unistd.h>    /* access fork */
 #include <fcntl.h>     /* open fcntl */
 #include <arpa/inet.h> /* inet_ntoa */
 #include <sys/stat.h>  /* chmod */
+#include <sys/socket.h> /* socketpair send recv */
 #include <sys/un.h>    /* sockaddr_un */
 #include <sys/wait.h>  /* wait waitpid */
 #include <errno.h>     /* errno */
@@ -42,6 +43,16 @@
 #include "net.h"
 
 #define BUF_SIZE 2048
+
+DEFINE_FFF_GLOBALS;
+
+/* send() と recv() は, モックにして, 通常は本物を呼ぶ (EINTR などを注入する) */
+FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int);
+TEST_PASSTHROUGH(ssize_t, send, (int fd, const void *buf, size_t n, int flags),
+                 (fd, buf, n, flags))
+FAKE_VALUE_FUNC(ssize_t, recv, int, void *, size_t, int);
+TEST_PASSTHROUGH(ssize_t, recv, (int fd, void *buf, size_t n, int flags),
+                 (fd, buf, n, flags))
 
 /* プロトタイプ */
 /** set_hostname() 関数テスト */
@@ -58,9 +69,27 @@ TEST test_recv_data(void);
 TEST test_recv_data_new(void);
 /** close_sock() 関数テスト */
 TEST test_close_sock(void);
+/** set_hostname() 関数テスト (失敗) */
+TEST test_set_hostname_failure(void);
+/** set_port() 関数テスト (失敗) */
+TEST test_set_port_failure(void);
+/** set_block() 関数テスト (失敗) */
+TEST test_set_block_failure(void);
+/** send_data() 関数テスト (失敗) */
+TEST test_send_data_failure(void);
+/** send_data() 関数テスト (EINTR, EAGAIN) */
+TEST test_send_data_interrupted(void);
+/** recv_data() 関数テスト (失敗) */
+TEST test_recv_data_failure(void);
+/** recv_data() 関数テスト (EINTR, EAGAIN) */
+TEST test_recv_data_interrupted(void);
+/** recv_data_new() 関数テスト (失敗) */
+TEST test_recv_data_new_failure(void);
+/** close_sock() 関数テスト (失敗) */
+TEST test_close_sock_failure(void);
 
 /* 内部変数 */
-static char sockfile[L_tmpnam] = {0}; /**< ソケットファイル */
+static char sockfile[TEST_TMPNAME_SIZE] = {0}; /**< ソケットファイル */
 static struct sockaddr_un addr;       /**< sockaddr_un構造体 */
 static socklen_t addrlen = 0;         /**< addr構造体の長さ */
 static char command[] = "do send";    /**< コマンド */
@@ -92,8 +121,8 @@ startup(void)
     set_sig_handler();
 
     /* ソケットファイル文字列設定 */
-    if (!tmpnam(sockfile)) {
-        TEST_ERROR("tmpnam(%d)", errno);
+    if (test_tmpname(sockfile) < 0) {
+        TEST_ERROR("test_tmpname(%d)", errno);
         exit(EXIT_FAILURE);
     }
 
@@ -112,6 +141,8 @@ startup(void)
 static void
 setup(void *data)
 {
+    TEST_PASSTHROUGH_RESET(send);
+    TEST_PASSTHROUGH_RESET(recv);
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
     sendbuf[sizeof(sendbuf) - 1] = '\0';
     sendbuf[sizeof(sendbuf) - 2] = '\n';
@@ -699,6 +730,253 @@ set_sig_handler(void)
 }
 
 
+/**
+ * set_hostname() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_set_hostname_failure(void)
+{
+    struct sockaddr_in addr; /* sockaddr_in構造体 */
+
+    (void)memset(&addr, 0, sizeof(addr));
+
+    TEST_ASSERT_INT(EX_NG, set_hostname(NULL, "127.0.0.1"));
+    TEST_ASSERT_INT(EX_NG, set_hostname(&addr, NULL));
+    /* IPアドレスでも, ホスト名でもない */
+    TEST_ASSERT_INT(EX_NG, set_hostname(&addr, ""));
+    PASS();
+}
+
+/**
+ * set_port() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_set_port_failure(void)
+{
+    struct sockaddr_in addr; /* sockaddr_in構造体 */
+
+    (void)memset(&addr, 0, sizeof(addr));
+
+    TEST_ASSERT_INT(EX_NG, set_port(NULL, "12345"));
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, NULL));
+    /* 存在しないサービス名 */
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "no-such-service"));
+    PASS();
+}
+
+/**
+ * set_block() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_set_block_failure(void)
+{
+    int devnull = -1; /* ファイルディスクリプタ */
+
+    /* 不正なファイルディスクリプタ */
+    TEST_ASSERT_INT(EX_NG, set_block(-1, NONBLOCK));
+
+    /* 不正なモード */
+    devnull = open("/dev/null", O_RDWR, 0);
+    if (devnull < 0) {
+        TEST_FAIL("open(%d)", errno);
+    }
+    TEST_ASSERT_INT(EX_NG, set_block(devnull, (blockmode)99));
+    (void)close(devnull);
+    PASS();
+}
+
+/**
+ * send_data() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_send_data_failure(void)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    size_t length = 4;      /* 送信バイト数 */
+    void (*oldsig)(int);    /* 元のシグナルハンドラ */
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        TEST_FAIL("socketpair(%d)", errno);
+    }
+
+    /* 接続先が閉じている (EPIPE) */
+    oldsig = signal(SIGPIPE, SIG_IGN);
+    (void)close(sv[1]);
+    TEST_ASSERT_INT(EX_NG, send_data(sv[0], "abcd", &length));
+    TEST_ASSERT_INT(0, length);
+    (void)signal(SIGPIPE, oldsig);
+    (void)close(sv[0]);
+    PASS();
+}
+
+/**
+ * send_data() 関数テスト (EINTR, EAGAIN)
+ *
+ * @return なし
+ */
+TEST
+test_send_data_interrupted(void)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    size_t length = 0;      /* 送信バイト数 */
+    char readbuf[8] = {0};  /* 受信バッファ */
+    const int errnos[] = { EINTR, EAGAIN };
+
+#ifdef _DEBUG
+    /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
+     * send() の直後の errno の判定 (EINTR, EAGAIN) が, 働かない */
+    SKIPm("dbglog() clears errno in debug builds");
+#endif
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        TEST_FAIL("socketpair(%d)", errno);
+    }
+
+    /* 1 回目は失敗するが, やり直して, 送信できる */
+    unsigned int i;
+    for (i = 0; i < NELEMS(errnos); i++) {
+        length = 3;
+        (void)memset(readbuf, 0, sizeof(readbuf));
+        RESET_FAKE(send);
+        send_fake.custom_fake = pass_send;
+        TEST_INJECT(send, 0, 1, -1, errnos[i]);
+        TEST_ASSERT_INT(EX_OK, send_data(sv[0], "abc", &length));
+        TEST_ASSERT_INT(3, length);
+        TEST_ASSERT_INT(2, send_fake.call_count);
+        TEST_ASSERT_INT(3, read(sv[1], readbuf, sizeof(readbuf)));
+        TEST_ASSERT_STR("abc", readbuf);
+    }
+    (void)close(sv[0]);
+    (void)close(sv[1]);
+    PASS();
+}
+
+/**
+ * recv_data() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_recv_data_failure(void)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    size_t length = 4;      /* 受信バイト数 */
+    char readbuf[8] = {0};  /* 受信バッファ */
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        TEST_FAIL("socketpair(%d)", errno);
+    }
+
+    /* 接続先がシャットダウンした */
+    (void)close(sv[1]);
+    TEST_ASSERT_INT(EX_NG, recv_data(sv[0], readbuf, &length));
+    TEST_ASSERT_INT(0, length);
+    (void)close(sv[0]);
+
+    /* 不正なソケット */
+    length = 4;
+    TEST_ASSERT_INT(EX_NG, recv_data(-1, readbuf, &length));
+    PASS();
+}
+
+/**
+ * recv_data() 関数テスト (EINTR, EAGAIN)
+ *
+ * @return なし
+ */
+TEST
+test_recv_data_interrupted(void)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    size_t length = 0;      /* 受信バイト数 */
+    char readbuf[8] = {0};  /* 受信バッファ */
+    const int errnos[] = { EINTR, EAGAIN };
+
+#ifdef _DEBUG
+    /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
+     * send() の直後の errno の判定 (EINTR, EAGAIN) が, 働かない */
+    SKIPm("dbglog() clears errno in debug builds");
+#endif
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        TEST_FAIL("socketpair(%d)", errno);
+    }
+
+    /* 1 回目は失敗するが, やり直して, 受信できる */
+    unsigned int i;
+    for (i = 0; i < NELEMS(errnos); i++) {
+        length = 3;
+        (void)memset(readbuf, 0, sizeof(readbuf));
+        if (write(sv[1], "abc", 3) != 3) {
+            TEST_FAIL("write(%d)", errno);
+        }
+        RESET_FAKE(recv);
+        recv_fake.custom_fake = pass_recv;
+        TEST_INJECT(recv, 0, 1, -1, errnos[i]);
+        TEST_ASSERT_INT(EX_OK, recv_data(sv[0], readbuf, &length));
+        TEST_ASSERT_INT(3, length);
+        TEST_ASSERT_INT(2, recv_fake.call_count);
+        TEST_ASSERT_STR("abc", readbuf);
+    }
+    (void)close(sv[0]);
+    (void)close(sv[1]);
+    PASS();
+}
+
+/**
+ * recv_data_new() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_recv_data_new_failure(void)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    size_t length = 0;      /* 受信バイト数 */
+    void *data = NULL;      /* 受信データ */
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
+        TEST_FAIL("socketpair(%d)", errno);
+    }
+
+    /* メモリを確保できない */
+    length = (size_t)-1 / 2;
+    data = recv_data_new(sv[0], &length);
+    TEST_ASSERT_NULL(data);
+
+    /* 受信に失敗 (接続先がシャットダウンした) */
+    (void)close(sv[1]);
+    length = 4;
+    data = recv_data_new(sv[0], &length);
+    TEST_ASSERT_NULL(data);
+    TEST_ASSERT_INT(0, length);
+    (void)close(sv[0]);
+    PASS();
+}
+
+/**
+ * close_sock() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_close_sock_failure(void)
+{
+    int sock = 9999; /* オープンしていない */
+
+    TEST_ASSERT_INT(EX_NG, close_sock(&sock));
+    TEST_ASSERT_INT(9999, sock);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -715,5 +993,14 @@ main(int argc, char **argv)
     RUN_TEST(test_recv_data);
     RUN_TEST(test_recv_data_new);
     RUN_TEST(test_close_sock);
+    RUN_TEST(test_set_hostname_failure);
+    RUN_TEST(test_set_port_failure);
+    RUN_TEST(test_set_block_failure);
+    RUN_TEST(test_send_data_failure);
+    RUN_TEST(test_send_data_interrupted);
+    RUN_TEST(test_recv_data_failure);
+    RUN_TEST(test_recv_data_interrupted);
+    RUN_TEST(test_recv_data_new_failure);
+    RUN_TEST(test_close_sock_failure);
     TEST_MAIN_END();
 }

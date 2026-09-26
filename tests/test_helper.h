@@ -15,9 +15,37 @@
 #include <stdlib.h>   /* malloc free */
 #include <string.h>   /* strcmp memcmp */
 #include <regex.h>    /* regcomp regexec */
+#include <errno.h>    /* errno */
+#include <dlfcn.h>    /* dlsym RTLD_NEXT */
+#include <unistd.h>   /* close unlink */
 
 #include "greatest.h"
 #include "fff.h"
+
+/** test_tmpname() に必要なバッファサイズ */
+#define TEST_TMPNAME_SIZE 64
+
+/**
+ * 一意な一時ファイル名を作る (tmpnam() の代わり. tmpnam() は, リンク時に警告される)
+ * mkstemp() でファイルを作って, 名前だけ残して, ファイルは削除する.
+ *
+ * @param[out] buf 一時ファイル名 (TEST_TMPNAME_SIZE バイト以上)
+ * @retval 0 成功
+ * @retval -1 失敗
+ */
+static inline int
+test_tmpname(char *buf)
+{
+    int tmpfd = -1; /* mkstemp戻り値 */
+
+    (void)snprintf(buf, TEST_TMPNAME_SIZE, "/tmp/calc_test_XXXXXX");
+    tmpfd = mkstemp(buf);
+    if (tmpfd < 0)
+        return -1;
+    (void)close(tmpfd);
+    (void)unlink(buf);
+    return 0;
+}
 
 /** 通知 (テストは失敗させない) */
 #define TEST_NOTIFY(...)                                        \
@@ -180,6 +208,69 @@ test_match(const char *pattern, const char *str)
 
 #define TEST_ASSERT_NULL(ptr)      ASSERT_EQ(NULL, (ptr))
 #define TEST_ASSERT_NOT_NULL(ptr)  ASSERT_NEQ(NULL, (ptr))
+
+/** 障害を注入する設定 */
+struct test_inject {
+    int skip;      /**< 呼び出しを, 何回見送るか (その間は本物を呼ぶ) */
+    int count;     /**< 見送ったあとで, 何回, 失敗させるか */
+    long long value; /**< 失敗のときの戻り値 */
+    int err;       /**< 失敗のときの errno */
+};
+
+/**
+ * libc の関数を FFF のモックにして, 通常は本物の関数を呼ぶ (素通し).
+ * 必要なテストだけが, TEST_INJECT() で, 失敗を返させる.
+ * テストの実行ファイルに同名の関数を定義するので, 共有ライブラリの中の呼び出し
+ * も, このモックになる. 本物の関数は dlsym(RTLD_NEXT) で探す.
+ *
+ * FAKE_VALUE_FUNC(ret, name, ...) の直後に書く.
+ * 例: TEST_PASSTHROUGH(ssize_t, send,
+ *                      (int fd, const void *buf, size_t n, int flags),
+ *                      (fd, buf, n, flags))
+ *
+ * rettype: 戻り値の型, name: 関数名, params: 仮引数 (括弧付き),
+ * args: 実引数 (括弧付き)
+ */
+#define TEST_PASSTHROUGH(rettype, name, params, args)                       \
+    static struct test_inject inject_##name;                            \
+    static rettype (*real_##name) params;                                   \
+    static rettype pass_##name params                                       \
+    {                                                                   \
+        if (!real_##name)                                               \
+            *(void **)(&real_##name) = dlsym(RTLD_NEXT, #name);         \
+        if (inject_##name.skip > 0) {                                   \
+            inject_##name.skip--;                                       \
+        } else if (inject_##name.count > 0) {                           \
+            inject_##name.count--;                                      \
+            errno = inject_##name.err;                                  \
+            return (rettype)inject_##name.value;                              \
+        }                                                               \
+        return real_##name args;                                        \
+    }
+
+/** TEST_PASSTHROUGH() のモックを, 初期状態 (素通し) に戻す. setup で呼ぶ */
+#define TEST_PASSTHROUGH_RESET(name)                                    \
+    do {                                                                \
+        RESET_FAKE(name);                                               \
+        (void)memset(&inject_##name, 0, sizeof(inject_##name));         \
+        name##_fake.custom_fake = pass_##name;                          \
+    } while (0)
+
+/**
+ * 関数を失敗させる. skipn 回は本物を呼び, 次の countn 回を, retval と errnum
+ * で失敗させる. それ以降は, また本物を呼ぶ.
+ */
+#define TEST_INJECT(name, skipn, countn, retval, errnum)                \
+    do {                                                                \
+        inject_##name.skip = (skipn);                                   \
+        inject_##name.count = (countn);                                 \
+        inject_##name.value = (long long)(retval);                        \
+        inject_##name.err = (errnum);                                   \
+    } while (0)
+
+/** TEST_INJECT() で仕込んだ失敗が, 全て使われた (関数が呼ばれた) ことを確認 */
+#define TEST_ASSERT_INJECTED(name)                                      \
+    TEST_ASSERT_MSG(inject_##name.count == 0, "%s() was not called", #name)
 
 /**
  * 実行 (greatest)

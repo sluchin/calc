@@ -47,12 +47,11 @@ debug:
 .PHONY: test
 test:
 	@cmake -S . -B build-test -DCMAKE_BUILD_TYPE=Debug
-	@cmake --build build-test build-coverage
-	@cd build-test && ctest --output-on-failure
+	@cd build-test && ctest --verbose
 
 .PHONY: coverage
 coverage:
-	@cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+	@cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Release -DENABLE_COVERAGE=ON
 	@cmake --build build-coverage
 	@cmake --build build-coverage --target coverage
 

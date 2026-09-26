@@ -33,6 +33,12 @@
 #include "error.h"
 #include "helper.h"
 
+DEFINE_FFF_GLOBALS;
+
+/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strdup, const char *);
+TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+
 /* プロトタイプ */
 /* get_errormsg() 関数テスト */
 TEST test_get_errormsg(void);
@@ -258,6 +264,18 @@ test_clear_math_feexcept(void)
 
 
 /**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    TEST_PASSTHROUGH_RESET(strdup);
+}
+
+/**
  * 終了処理
  *
  * @return なし
@@ -269,6 +287,34 @@ teardown(void *data)
     free_strings();
 }
 
+/**
+ * get_errormsg() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_get_errormsg_failure(void)
+{
+    calcinfo calc; /* calcinfo構造体 */
+
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "dammy");
+    st_calc.readch(&calc);
+
+    /* エラーコードが範囲外 */
+    calc.errorcode = E_NONE;
+    TEST_ASSERT_NULL(get_errormsg(&calc));
+    calc.errorcode = (ER)MAXERROR;
+    TEST_ASSERT_NULL(get_errormsg(&calc));
+
+    /* strdup() に失敗 */
+    calc.errorcode = E_SYNTAX;
+    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_ASSERT_NULL(get_errormsg(&calc));
+    TEST_ASSERT_INJECTED(strdup);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -276,8 +322,10 @@ main(int argc, char **argv)
 {
     TEST_MAIN_BEGIN();
     startup();
+    SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_get_errormsg);
+    RUN_TEST(test_get_errormsg_failure);
     RUN_TEST(test_set_errorcode);
     RUN_TEST(test_clear_error);
     RUN_TEST(test_is_error);

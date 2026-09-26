@@ -143,18 +143,14 @@ create_threads(void)
     thread_data *dt = NULL;         /* 送信データ構造体 */
     pthread_t tid[threads];         /* スレッドID */
     void *thread_ret = NULL;        /* スレッド戻り値 */
-    char tmp[48];                   /* 一時バッファ */
     char expr[threads][BUF_SIZE];   /* 式 */
     char answer[threads][BUF_SIZE]; /* 答え */
 
     /* データ作成 */
     int i;
     for (i = 0; i < threads; i++) {
-        (void)memset(tmp, 0, sizeof(tmp));
         (void)memset(expr[i], 0, sizeof(expr[i]));
-        (void)snprintf(tmp, sizeof(tmp), "%d", i);
-        (void)strncpy(expr[i], "1+", sizeof(expr[i]) - 1);
-        (void)strncat(expr[i], tmp, sizeof(expr[i]) - strlen(expr[i]) - 1);
+        (void)snprintf(expr[i], sizeof(expr[i]), "1+%d", i);
         (void)memset(answer[i], 0, sizeof(answer[i]));
         (void)snprintf(answer[i], sizeof(answer[i]), "%d", (1 + i));
     }

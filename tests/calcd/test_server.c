@@ -30,6 +30,8 @@
 #include <sys/types.h>  /* sockopt etc... */
 #include <arpa/inet.h>  /* ntohl */
 #include <sys/wait.h>   /* wait */
+#include <sys/select.h> /* pselect */
+#include <pthread.h>    /* pthread_create pthread_detach */
 #include <signal.h>     /* signal */
 #include <errno.h>      /* errno */
 
@@ -44,6 +46,42 @@
 #include "server.h"
 
 #define BUF_SIZE    30  /**< バッファサイズ */
+
+DEFINE_FFF_GLOBALS;
+
+/* システムコールなどは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(int, socket, int, int, int);
+TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol),
+                 (domain, type, protocol))
+FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t);
+TEST_PASSTHROUGH(int, setsockopt,
+                 (int fd, int level, int name, const void *val, socklen_t len),
+                 (fd, level, name, val, len))
+FAKE_VALUE_FUNC(int, listen, int, int);
+TEST_PASSTHROUGH(int, listen, (int fd, int backlog), (fd, backlog))
+FAKE_VALUE_FUNC(int, pselect, int, fd_set *, fd_set *, fd_set *,
+                const struct timespec *, const sigset_t *);
+TEST_PASSTHROUGH(int, pselect,
+                 (int nfds, fd_set *readfds, fd_set *writefds,
+                  fd_set *exceptfds, const struct timespec *timeout,
+                  const sigset_t *sigmask),
+                 (nfds, readfds, writefds, exceptfds, timeout, sigmask))
+FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *);
+TEST_PASSTHROUGH(int, accept,
+                 (int fd, struct sockaddr *addr, socklen_t *len),
+                 (fd, addr, len))
+/* FFF は, 関数ポインタの型を直接書けないので, typedef する */
+typedef void *(*thread_func_t)(void *);
+FAKE_VALUE_FUNC(int, pthread_create, pthread_t *, const pthread_attr_t *,
+                thread_func_t, void *);
+TEST_PASSTHROUGH(int, pthread_create,
+                 (pthread_t *tid, const pthread_attr_t *attr,
+                  void *(*func)(void *), void *arg),
+                 (tid, attr, func, arg))
+FAKE_VALUE_FUNC(int, pthread_detach, pthread_t);
+TEST_PASSTHROUGH(int, pthread_detach, (pthread_t tid), (tid))
+
+#define THREAD_WAIT 200000 /**< スレッドの終了を待つ時間 (マイクロ秒) */
 #define MAX_THREADS  5  /**< スレッド数 */
 /* MAX_THREADS 1013 まで
  * 1014 からテストエラー
@@ -64,6 +102,9 @@ TEST test_set_port_string(void);
 TEST test_server_sock(void);
 /** server_loop() 関数テスト */
 TEST test_server_loop(void);
+TEST test_server_sock_failure(void);
+TEST test_server_loop_failure(void);
+TEST test_server_proc_failure(void);
 
 /* 内部変数 */
 static testserver server;                  /**< 関数構造体 */
@@ -93,6 +134,7 @@ static void set_sig_handler(void);
 static void
 startup(void)
 {
+    (void)signal(SIGPIPE, SIG_IGN);
     set_sig_handler();
 
     /* バッファリングしない */
@@ -116,6 +158,16 @@ startup(void)
 static void
 setup(void *data)
 {
+    TEST_PASSTHROUGH_RESET(socket);
+    TEST_PASSTHROUGH_RESET(setsockopt);
+    TEST_PASSTHROUGH_RESET(listen);
+    TEST_PASSTHROUGH_RESET(pselect);
+    TEST_PASSTHROUGH_RESET(accept);
+    TEST_PASSTHROUGH_RESET(pthread_create);
+    TEST_PASSTHROUGH_RESET(pthread_detach);
+    FFF_RESET_HISTORY();
+    g_gflag = false;
+    g_sig_handled = 0;
     (void)memset(readbuf, 0, sizeof(readbuf));
 }
 
@@ -456,6 +508,161 @@ set_sig_handler(void)
 }
 
 
+/**
+ * server_sock() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_server_sock_failure(void)
+{
+    int sock = -1; /* ソケット */
+
+    /* ポート番号を解決できない (存在しないサービス名. 5文字まで) */
+    TEST_ASSERT_INT(EX_OK, set_port_string("nosvc"));
+    TEST_ASSERT_INT(EX_NG, server_sock());
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+
+    /* socket() に失敗 */
+    TEST_INJECT(socket, 0, 1, -1, EMFILE);
+    TEST_ASSERT_INT(EX_NG, server_sock());
+    TEST_ASSERT_INJECTED(socket);
+
+    /* setsockopt() に失敗 */
+    TEST_INJECT(setsockopt, 0, 1, -1, EINVAL);
+    TEST_ASSERT_INT(EX_NG, server_sock());
+    TEST_ASSERT_INJECTED(setsockopt);
+
+    /* listen() に失敗 */
+    TEST_INJECT(listen, 0, 1, -1, EOPNOTSUPP);
+    TEST_ASSERT_INT(EX_NG, server_sock());
+    TEST_ASSERT_INJECTED(listen);
+
+    /* bind() に失敗 (同じポート番号は, 使用中) */
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    sock = server_sock();
+    TEST_ASSERT_INT(EX_NG, sock);
+    PASS();
+}
+
+/**
+ * server_loop() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_server_loop_failure(void)
+{
+    int closed = -1; /* 閉じたファイルディスクリプタ */
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+
+    /* ノンブロッキングに設定できない (閉じたファイルディスクリプタ) */
+    closed = dup(STDOUT_FILENO);
+    if (closed < 0) {
+        TEST_FAIL("dup(%d)", errno);
+    }
+    (void)close(closed);
+    server_loop(closed);
+    TEST_ASSERT_INT(0, pselect_fake.call_count);
+
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+
+    /* pselect() が割り込まれた */
+    TEST_INJECT(pselect, 0, 1, -1, EINTR);
+    server_loop(ssock);
+    TEST_ASSERT_INJECTED(pselect);
+
+    /* pselect() に失敗 */
+    TEST_INJECT(pselect, 0, 1, -1, EBADF);
+    server_loop(ssock);
+    TEST_ASSERT_INJECTED(pselect);
+
+    /* accept() に失敗 (接続待ちがないのに, 受付可能と見なす) */
+    g_sig_handled = 1; /* 1 回で, ループを終了する */
+    TEST_INJECT(pselect, 0, 1, 1, 0);
+    server_loop(ssock);
+    TEST_ASSERT_INT(1, accept_fake.call_count);
+
+    /* pthread_create() に失敗 */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    TEST_INJECT(pthread_create, 0, 1, EAGAIN, 0);
+    server_loop(ssock);
+    TEST_ASSERT_INJECTED(pthread_create);
+    close_sock(&csock);
+
+    /* pthread_detach() に失敗 */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    TEST_INJECT(pthread_detach, 0, 1, ESRCH, 0);
+    server_loop(ssock);
+    TEST_ASSERT_INJECTED(pthread_detach);
+    close_sock(&csock);
+    (void)usleep(THREAD_WAIT); /* スレッドが終了するのを待つ */
+    PASS();
+}
+
+/**
+ * server_proc() 関数テスト (失敗と, デバッグ出力)
+ * server_proc() は, スレッドで実行されるので, 接続の受付後に, 終了を待つ.
+ *
+ * @return なし
+ */
+TEST
+test_server_proc_failure(void)
+{
+    struct header hd;               /* ヘッダ */
+    unsigned char rbuf[BUF_SIZE];   /* 受信バッファ */
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+
+    /* ヘッダを受信できない (何も送らずに閉じる) */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    server_loop(ssock);
+    close_sock(&csock);
+    (void)usleep(THREAD_WAIT);
+
+    /* データを受信できない (ヘッダだけ送って閉じる) */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    (void)memset(&hd, 0, sizeof(hd));
+    hd.length = htonl(4);
+    TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
+    server_loop(ssock);
+    close_sock(&csock);
+    (void)usleep(THREAD_WAIT);
+
+    /* データ長が 0 */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    hd.length = htonl(0);
+    TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
+    server_loop(ssock);
+    close_sock(&csock);
+    (void)usleep(THREAD_WAIT);
+
+    /* 正常なリクエストで, デバッグ出力 (-g) */
+    g_gflag = true;
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
+    server_loop(ssock);
+    (void)memset(rbuf, 0, sizeof(rbuf));
+    TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
+    TEST_ASSERT_STR((char *)expected, (char *)rbuf);
+    close_sock(&csock);
+    (void)usleep(THREAD_WAIT);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -468,5 +675,8 @@ main(int argc, char **argv)
     RUN_TEST(test_set_port_string);
     RUN_TEST(test_server_sock);
     RUN_TEST(test_server_loop);
+    RUN_TEST(test_server_sock_failure);
+    RUN_TEST(test_server_loop_failure);
+    RUN_TEST(test_server_proc_failure);
     TEST_MAIN_END();
 }

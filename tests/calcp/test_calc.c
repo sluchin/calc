@@ -35,6 +35,8 @@
 #include "helper.h"
 
 /* プロトタイプ */
+/** create_answer() 関数テスト (処理時間の表示) */
+TEST test_answer_timer(void);
 /** 四則演算テスト */
 TEST test_answer_four(void);
 /** 関数テスト */
@@ -599,6 +601,26 @@ teardown(void *data)
     free_strings();
 }
 
+/**
+ * create_answer() 関数テスト (処理時間の表示)
+ *
+ * @return なし
+ */
+TEST
+test_answer_timer(void)
+{
+    calcinfo calc; /* calcinfo構造体 */
+
+    g_tflag = true;
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    exec_calc(&calc, "(105+312)+2*(5-3)");
+    g_tflag = false;
+
+    TEST_ASSERT_STR("421", (char *)calc.answer);
+    destroy_answer(&calc);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -608,6 +630,7 @@ main(int argc, char **argv)
     startup();
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_answer_four);
+    RUN_TEST(test_answer_timer);
     RUN_TEST(test_answer_func);
     RUN_TEST(test_answer_four_func);
     RUN_TEST(test_answer_error);

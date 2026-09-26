@@ -23,7 +23,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdio.h>  /* snprintf tmpnam */
+#include <stdio.h>  /* snprintf */
+#include <stdlib.h> /* free */
+#include <execinfo.h> /* backtrace_symbols */
+#include <sys/time.h> /* gettimeofday */
+#include <time.h>   /* localtime_r */
+#include <stdarg.h> /* va_list */
 #include <unistd.h> /* STDERR_FILENO */
 #include <fcntl.h>  /* open */
 #include <errno.h>  /* errno */
@@ -36,6 +41,35 @@
 #include "log.h"
 
 #define BUF_SIZE 2048
+
+DEFINE_FFF_GLOBALS;
+
+/* 標準ライブラリの関数は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* va_list の引数は, FFF が引数を保存するとき, 配列と見なされて警告される */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsizeof-array-argument"
+FAKE_VALUE_FUNC(int, vsnprintf, char *, size_t, const char *, va_list);
+TEST_PASSTHROUGH(int, vsnprintf,
+                 (char *str, size_t size, const char *format, va_list ap),
+                 (str, size, format, ap))
+FAKE_VALUE_FUNC(int, vfprintf, FILE *, const char *, va_list);
+TEST_PASSTHROUGH(int, vfprintf, (FILE *fp, const char *format, va_list ap),
+                 (fp, format, ap))
+FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *);
+TEST_PASSTHROUGH(int, gettimeofday, (struct timeval *tv, void *tz), (tv, tz))
+FAKE_VALUE_FUNC(struct tm *, localtime_r, const time_t *, struct tm *);
+TEST_PASSTHROUGH(struct tm *, localtime_r,
+                 (const time_t *timep, struct tm *result), (timep, result))
+FAKE_VALUE_FUNC(int, fclose, FILE *);
+TEST_PASSTHROUGH(int, fclose, (FILE *fp), (fp))
+FAKE_VALUE_FUNC(int, gethostname, char *, size_t);
+TEST_PASSTHROUGH(int, gethostname, (char *name, size_t len), (name, len))
+#pragma GCC diagnostic pop
+#ifdef HAVE_EXECINFO
+FAKE_VALUE_FUNC(char **, backtrace_symbols, void *const *, int);
+TEST_PASSTHROUGH(char **, backtrace_symbols, (void *const *buffer, int size),
+                 (buffer, size))
+#endif
 
 /* プロトタイプ */
 /** set_progname() 関数テスト */
@@ -54,6 +88,22 @@ TEST test_dump_log(void);
 TEST test_dump_sys(void);
 /** dump_file() 関数テスト */
 TEST test_dump_file(void);
+/** system_log() 関数テスト (失敗) */
+TEST test_system_log_failure(void);
+/** system_dbg_log() 関数テスト (失敗) */
+TEST test_system_dbg_log_failure(void);
+/** stderr_log() 関数テスト (失敗) */
+TEST test_stderr_log_failure(void);
+/** dump_log() 関数テスト (失敗) */
+TEST test_dump_log_failure(void);
+/** dump_sys() 関数テスト (失敗) */
+TEST test_dump_sys_failure(void);
+/** dump_file() 関数テスト (失敗) */
+TEST test_dump_file_failure(void);
+#ifdef HAVE_EXECINFO
+/** systrace() 関数テスト (失敗) */
+TEST test_systrace_failure(void);
+#endif
 #ifdef HAVE_EXECINFO
 /** systrace() 関数テスト */
 TEST test_systrace(void);
@@ -64,7 +114,7 @@ TEST test_print_trace(void);
 /* 内部変数 */
 static char dump[0xFF + 1];           /**< ダンプデータ */
 static int fd = -1;                   /**< ファイルディスクリプタ */
-static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
+static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
 
 /* 内部関数 */
 /** 標準エラー出力用文字列設定 */
@@ -102,6 +152,7 @@ const char *print_hex[] = {
 static void
 startup(void)
 {
+    (void)signal(SIGPIPE, SIG_IGN);
     set_sig_handler();
 
     char hex = 0x00; /* 16進数 */
@@ -111,6 +162,27 @@ startup(void)
     for (i = 0; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
+}
+
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    TEST_PASSTHROUGH_RESET(vsnprintf);
+    TEST_PASSTHROUGH_RESET(vfprintf);
+    TEST_PASSTHROUGH_RESET(gettimeofday);
+    TEST_PASSTHROUGH_RESET(localtime_r);
+    TEST_PASSTHROUGH_RESET(gethostname);
+    TEST_PASSTHROUGH_RESET(fclose);
+#ifdef HAVE_EXECINFO
+    TEST_PASSTHROUGH_RESET(backtrace_symbols);
+#endif
+    FFF_RESET_HISTORY();
 }
 
 /**
@@ -280,9 +352,9 @@ test_dump_log(void)
 {
     int rlen = 0;                  /* read戻り値 */
     int result_ok = 0;             /* テスト関数戻り値 */
-    char expected[BUF_SIZE] = {0}; /* 期待する文字列 */
-    char actual[BUF_SIZE] = {0};   /* 実際の文字列 */
-    char tmp[BUF_SIZE] = {0};      /* 一時バッファ */
+    char expected[BUF_SIZE * 2] = {0}; /* 期待する文字列 (tmp + ヘッダより大きく) */
+    char actual[BUF_SIZE] = {0};       /* 実際の文字列 */
+    char tmp[BUF_SIZE] = {0};          /* 一時バッファ */
 
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
@@ -373,8 +445,8 @@ test_dump_file(void)
     int result_ok = 0;            /* テスト関数戻り値 */
 
     /* 正常系 */
-    if (!tmpnam(testfile)) {
-        TEST_FAIL("tmpnam(%d)", errno);
+    if (test_tmpname(testfile) < 0) {
+        TEST_FAIL("test_tmpname(%d)", errno);
     }
 
     result_ok = dump_file("program", testfile, dump, sizeof(dump));
@@ -488,7 +560,7 @@ set_print_hex(char *buf, size_t len)
         strncat(buf, "\n", len - total - 1);
         total += strlen("\n");
     }
-    strncat(buf, "\n", strlen("\n"));
+    (void)strcat(buf, "\n");
 }
 
 /**
@@ -554,6 +626,192 @@ set_sig_handler(void)
 }
 
 
+/**
+ * 失敗のログが標準エラー出力 (前のテストで閉じたパイプ) に出ないように,
+ * /dev/null に向ける
+ *
+ * @return なし
+ */
+static void
+quiet_stderr(void)
+{
+    (void)redirect(STDERR_FILENO, "/dev/null");
+}
+
+/**
+ * system_log() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_system_log_failure(void)
+{
+    quiet_stderr();
+
+    /* vsnprintf() に失敗 */
+    TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
+    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+               "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(vsnprintf);
+    PASS();
+}
+
+/**
+ * system_dbg_log() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_system_dbg_log_failure(void)
+{
+    quiet_stderr();
+
+    /* gettimeofday() に失敗 */
+    TEST_INJECT(gettimeofday, 0, 1, -1, EFAULT);
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                   "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(gettimeofday);
+
+    /* localtime_r() に失敗 */
+    TEST_INJECT(localtime_r, 0, 1, NULL, EOVERFLOW);
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                   "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(localtime_r);
+
+    /* vsnprintf() に失敗 */
+    TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                   "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(vsnprintf);
+    PASS();
+}
+
+/**
+ * stderr_log() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_stderr_log_failure(void)
+{
+    quiet_stderr();
+
+    /* gettimeofday() に失敗 */
+    TEST_INJECT(gettimeofday, 0, 1, -1, EFAULT);
+    stderr_log("programname", "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(gettimeofday);
+
+    /* localtime_r() に失敗 */
+    TEST_INJECT(localtime_r, 0, 1, NULL, EOVERFLOW);
+    stderr_log("programname", "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(localtime_r);
+
+    /* gethostname() に失敗 */
+    TEST_INJECT(gethostname, 0, 1, -1, EFAULT);
+    stderr_log("programname", "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(gethostname);
+
+    /* vfprintf() に失敗 */
+    TEST_INJECT(vfprintf, 0, 1, -1, EILSEQ);
+    stderr_log("programname", "filename", 15, "function", "%s", "test");
+    TEST_ASSERT_INJECTED(vfprintf);
+    PASS();
+}
+
+/**
+ * dump_log() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_dump_log_failure(void)
+{
+    quiet_stderr();
+
+    /* vsnprintf() に失敗 */
+    TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
+    TEST_ASSERT_INT(EX_NG, dump_log(dump, sizeof(dump), "%s", "test"));
+    TEST_ASSERT_INJECTED(vsnprintf);
+
+    /* 16 バイトに満たない行を, 空白で埋める */
+    TEST_ASSERT_INT(EX_OK, dump_log(dump, 3, "%s", "test"));
+    PASS();
+}
+
+/**
+ * dump_sys() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_dump_sys_failure(void)
+{
+    quiet_stderr();
+
+    /* vsnprintf() に失敗 */
+    TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
+    TEST_ASSERT_INT(EX_NG,
+                    dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                             "filename", 15, "function",
+                             dump, sizeof(dump), "%s", "test"));
+    TEST_ASSERT_INJECTED(vsnprintf);
+
+    /* 16 バイトに満たない行を, 空白で埋める */
+    TEST_ASSERT_INT(EX_OK,
+                    dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+                             "filename", 15, "function",
+                             dump, 3, "%s", "test"));
+    PASS();
+}
+
+/**
+ * dump_file() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_dump_file_failure(void)
+{
+    char big[BUF_SIZE * 4]; /* stdio のバッファより大きいデータ */
+
+    quiet_stderr();
+    (void)memset(big, 'a', sizeof(big));
+
+    /* オープンできない */
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file",
+                                     "abc", 3));
+    /* 書込に失敗 (/dev/full は, 常に ENOSPC になる) */
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/full", big, sizeof(big)));
+    /* バッファに収まるデータは, fwrite では失敗せず, fflush で失敗する
+     * (ログを出力するだけで, 戻り値は変わらない) */
+    TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3));
+    /* fclose() に失敗 */
+    TEST_INJECT(fclose, 0, 1, EOF, EIO);
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/null", "abc", 3));
+    TEST_ASSERT_INJECTED(fclose);
+    PASS();
+}
+
+#ifdef HAVE_EXECINFO
+/**
+ * systrace() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_systrace_failure(void)
+{
+    quiet_stderr();
+
+    /* backtrace_symbols() に失敗 */
+    TEST_INJECT(backtrace_symbols, 0, 1, NULL, ENOMEM);
+    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
+             "filename", 15, "function");
+    TEST_ASSERT_INJECTED(backtrace_symbols);
+    PASS();
+}
+#endif
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -561,6 +819,7 @@ main(int argc, char **argv)
 {
     TEST_MAIN_BEGIN();
     startup();
+    SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_set_progname);
     RUN_TEST(test_get_progname);
@@ -570,7 +829,14 @@ main(int argc, char **argv)
     RUN_TEST(test_dump_log);
     RUN_TEST(test_dump_sys);
     RUN_TEST(test_dump_file);
+    RUN_TEST(test_system_log_failure);
+    RUN_TEST(test_system_dbg_log_failure);
+    RUN_TEST(test_stderr_log_failure);
+    RUN_TEST(test_dump_log_failure);
+    RUN_TEST(test_dump_sys_failure);
+    RUN_TEST(test_dump_file_failure);
     RUN_TEST(test_systrace);
     RUN_TEST(test_print_trace);
+    RUN_TEST(test_systrace_failure);
     TEST_MAIN_END();
 }
