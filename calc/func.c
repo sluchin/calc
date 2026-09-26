@@ -34,6 +34,7 @@
 /* 内部変数 */
 /** エラー戻り値 */
 static const double EX_ERROR = 0.0;
+static const double MAX_FACTORIAL = 170.0; /**< 階乗が, 倍精度で表せる最大の数 */
 /** pi(4*atan(1)) */
 static const double DEF_PI = 3.14159265358979323846264338327950288;
 /** ネイピア数(オイラー数) */
@@ -477,6 +478,13 @@ get_factorial(calcinfo *calc, double n)
     if (isless(n, 0)) { /* マイナス */
         n *= -1;
         minus = true;
+    }
+
+    /* 170! (約 7.3e306) を超えると, 結果は無限大になる.
+     * n が 2^53 以上だと, n-- で値が変わらず, ループが終わらないので, 先に判定する. */
+    if (isgreater(n, MAX_FACTORIAL)) {
+        set_errorcode(calc, E_INFINITY);
+        return EX_ERROR;
     }
 
     while (n > 0)
