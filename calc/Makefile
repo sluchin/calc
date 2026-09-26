@@ -5,7 +5,6 @@ top_srcdir = ..
 prefix = /usr/local
 libdir = $(prefix)/lib
 bindir = $(prefix)/bin
-testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
 AR = ar rcs
@@ -27,7 +26,6 @@ OBJECTS = main.o \
           option.o
 SHAREDOBJ = libcalcp.so
 PROGRAM = calcp
-CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
@@ -61,11 +59,6 @@ $(OBJECTS) $(OBJCALC): option.h calc.h func.h error.h Makefile
 debug:
 	@$(MAKE) CFLAGS="$(DFLAGS)"
 
-.PHONY: test
-test:
-	$(MAKE) -C $(testdir)
-	$(CUTTER) $(testdir)
-
 .PHONY: install
 install: all
 	@test -z $(bindir) || mkdir -p $(bindir) || exit 1;
@@ -83,7 +76,6 @@ strip:
 .PHONY: clean
 clean:
 	@$(RM) $(PROGRAM) $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ)
-	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:
@@ -92,7 +84,6 @@ help:
 	@echo "... clean"
 	@echo "... debug"
 	@echo "... static"
-	@echo "... test"
 	@echo "... install"
 	@echo "... strip"
 	@echo "... help"

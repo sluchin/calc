@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_net.c
+ * @file tests/lib/test_net.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -24,14 +24,17 @@
  */
 
 #include <stdio.h>     /* tmpnam */
+#include <stdlib.h>    /* exit */
 #include <unistd.h>    /* access fork */
 #include <fcntl.h>     /* open fcntl */
 #include <arpa/inet.h> /* inet_ntoa */
 #include <sys/stat.h>  /* chmod */
+#include <sys/un.h>    /* sockaddr_un */
 #include <sys/wait.h>  /* wait waitpid */
 #include <errno.h>     /* errno */
 #include <signal.h>    /* signal */
-#include <cutter.h>    /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "log.h"
@@ -42,19 +45,19 @@
 
 /* プロトタイプ */
 /** set_hostname() 関数テスト */
-void test_set_hostname(void);
+TEST test_set_hostname(void);
 /** set_port() 関数テスト */
-void test_set_port(void);
+TEST test_set_port(void);
 /** set_block() 関数テスト */
-void test_set_block(void);
+TEST test_set_block(void);
 /** send_data() 関数テスト */
-void test_send_data(void);
+TEST test_send_data(void);
 /** recv_data() 関数テスト */
-void test_recv_data(void);
+TEST test_recv_data(void);
 /** recv_data_new() 関数テスト */
-void test_recv_data_new(void);
+TEST test_recv_data_new(void);
 /** close_sock() 関数テスト */
-void test_close_sock(void);
+TEST test_close_sock(void);
 
 /* 内部変数 */
 static char sockfile[L_tmpnam] = {0}; /**< ソケットファイル */
@@ -83,14 +86,16 @@ static void set_sig_handler(void);
  *
  * @return なし
  */
-void
-cut_startup(void)
+static void
+startup(void)
 {
     set_sig_handler();
 
     /* ソケットファイル文字列設定 */
-    if (!tmpnam(sockfile))
-        cut_error("tmpnam(%d)", errno);
+    if (!tmpnam(sockfile)) {
+        TEST_ERROR("tmpnam(%d)", errno);
+        exit(EXIT_FAILURE);
+    }
 
     /* sockaddr_un構造体の設定 */
     (void)memset(&addr, 0, sizeof(addr));
@@ -104,8 +109,8 @@ cut_startup(void)
  *
  * @return なし
  */
-void
-cut_setup(void)
+static void
+setup(void *data)
 {
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
     sendbuf[sizeof(sendbuf) - 1] = '\0';
@@ -117,34 +122,34 @@ cut_setup(void)
  *
  * @return なし
  */
-void
-cut_teardown(void)
+static void
+teardown(void *data)
 {
     if (acc != -1) {
         if (close(acc) < 0)
-            cut_notify("close: acc=%d(%d)", acc, errno);
+            TEST_NOTIFY("close: acc=%d(%d)", acc, errno);
         acc = -1;
     }
     if (ssock != -1) {
         if (close(ssock) < 0)
-            cut_notify("close: ssock=%d(%d)", ssock, errno);
+            TEST_NOTIFY("close: ssock=%d(%d)", ssock, errno);
         ssock = -1;
     }
     if (csock != -1) {
         if (close(csock) < 0)
-            cut_notify("close: csock=%d(%d)", csock, errno);
+            TEST_NOTIFY("close: csock=%d(%d)", csock, errno);
         csock = -1;
     }
     if (fd != -1) {
         if (close(fd) < 0)
-            cut_notify("close: fd=%d(%d)", fd, errno);
+            TEST_NOTIFY("close: fd=%d(%d)", fd, errno);
         fd = -1;
     }
 
     if (sockfile[0] != '\0') {
         if (!access(sockfile, W_OK)) { /* ファイルが存在する */
             if (unlink(sockfile) < 0)
-                cut_notify("unlink: %s(%d)", sockfile, errno);
+                TEST_NOTIFY("unlink: %s(%d)", sockfile, errno);
         }
     }
 
@@ -158,7 +163,7 @@ cut_teardown(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_hostname(void)
 {
     struct sockaddr_in server; /* ソケットアドレス情報構造体 */
@@ -176,12 +181,10 @@ test_set_hostname(void)
 
         retval = set_hostname(&server, host[i]);
 
-        cut_assert_equal_string(ipaddr, inet_ntoa(server.sin_addr),
-                                cut_message("expected=%s, actual=%s",
+        TEST_ASSERT_STR_MSG(ipaddr, inet_ntoa(server.sin_addr), "expected=%s, actual=%s",
                                             ipaddr,
-                                            inet_ntoa(server.sin_addr)));
-        cut_assert_equal_int(EX_OK, retval,
-                             cut_message("return value"));
+                                            inet_ntoa(server.sin_addr));
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
     }
 
     /* 異常系 */
@@ -189,8 +192,8 @@ test_set_hostname(void)
 
     retval = set_hostname(&server, nohost);
 
-    cut_assert_equal_int(EX_NG, retval,
-                         cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "return value");
+    PASS();
 }
 
 /**
@@ -198,7 +201,7 @@ test_set_hostname(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_port(void)
 {
     struct sockaddr_in server; /* ソケットアドレス情報構造体 */
@@ -215,12 +218,9 @@ test_set_port(void)
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, port[i]);
-        cut_assert_equal_uint((unsigned int)portno[i],
-                              (unsigned int)ntohs((uint16_t)server.sin_port),
-                              cut_message("expected=%u, actual=%u",
-                                          portno[i], ntohs(server.sin_port)));
-        cut_assert_equal_int(EX_OK, retval,
-                             cut_message("return value"));
+        TEST_ASSERT_INT_MSG((unsigned int)portno[i], (unsigned int)ntohs((uint16_t)server.sin_port), "expected=%u, actual=%u",
+                                          portno[i], ntohs(server.sin_port));
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
     }
 
     /* 異常系 */
@@ -228,9 +228,9 @@ test_set_port(void)
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, err_port[i]);
-        cut_assert_equal_int(EX_NG, retval,
-                             cut_message("return value"));
+        TEST_ASSERT_INT_MSG(EX_NG, retval, "return value");
     }
+    PASS();
 }
 
 /**
@@ -238,7 +238,7 @@ test_set_port(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_block(void)
 {
     int retval = 0; /* テスト関数戻り値 */
@@ -246,14 +246,12 @@ test_set_block(void)
 
     fd = open("/dev/null", O_RDWR, 0);
     if (fd < 0) {
-        cut_notify("open=%d", fd);
-        return;
+        TEST_FAIL("open=%d", fd);
     }
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        cut_notify("fcntl=%d", flags);
-        return;
+        TEST_FAIL("fcntl=%d", flags);
     }
     dbglog("flags=%d", flags);
 
@@ -263,31 +261,27 @@ test_set_block(void)
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        cut_notify("fcntl=%d", flags);
-        return;
+        TEST_FAIL("fcntl=%d", flags);
     }
 
-    cut_assert_equal_int(O_NONBLOCK, flags & O_NONBLOCK);
-    cut_assert_equal_int(EX_OK, retval,
-                         cut_message("return value"));
+    TEST_ASSERT_INT(O_NONBLOCK, flags & O_NONBLOCK);
+    TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
 
     /* ブロッキング */
     retval = set_block(fd, BLOCKING);
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        cut_notify("fcntl=%d", flags);
-        return;
+        TEST_FAIL("fcntl=%d", flags);
     }
 
-    cut_assert_equal_int(0, flags & O_NONBLOCK);
-    cut_assert_equal_int(EX_OK, retval,
-                         cut_message("return value"));
+    TEST_ASSERT_INT(0, flags & O_NONBLOCK);
+    TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
 
     /* 異常系 */
     retval = set_block(fd, (blockmode)2);
-    cut_assert_equal_int(EX_NG, retval,
-                         cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, retval, "return value");
+    PASS();
 }
 
 /**
@@ -295,7 +289,7 @@ test_set_block(void)
  *
  * @return なし
  */
-void
+TEST
 test_send_data(void)
 {
     int retval = 0;    /* 戻り値 */
@@ -309,14 +303,12 @@ test_send_data(void)
 
     ssock = unix_sock_server();
     if (ssock < 0) {
-        cut_error("unix_sock_server");
-        return;
+        TEST_FAIL("unix_sock_server");
     }
 
     cpid = fork();
     if (cpid < 0) { /* エラー */
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) { /* 子プロセス */
@@ -334,24 +326,23 @@ test_send_data(void)
 
         csock = unix_sock_client();
         if (csock < 0) {
-            cut_error("unix_sock_client");
-            return;
+            TEST_FAIL("unix_sock_client");
         }
 
         /* テスト関数の実行 */
         length = sizeof(sendbuf);
         retval = send_data(csock, sendbuf, &length);
         dbglog("send_data=%d, %s", retval, sendbuf);
-        cut_assert_equal_int(EX_OK, retval,
-                             cut_message("return value"));
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d", WEXITSTATUS(status));
+            TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
 
+    PASS();
 }
 
 /**
@@ -359,7 +350,7 @@ test_send_data(void)
  *
  * @return なし
  */
-void
+TEST
 test_recv_data(void)
 {
     int retval = 0;    /* 戻り値 */
@@ -376,14 +367,12 @@ test_recv_data(void)
 
     ssock = unix_sock_server();
     if (ssock < 0) {
-        cut_error("unix_sock_server");
-        return;
+        TEST_FAIL("unix_sock_server");
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) { /* 子プロセス */
@@ -401,32 +390,28 @@ test_recv_data(void)
 
         csock = unix_sock_client();
         if (csock < 0) {
-            cut_error("unix_sock_client");
-            return;
+            TEST_FAIL("unix_sock_client");
         }
 
         len = writen(csock, command, sizeof(command));
         if (len < 0) {
-            cut_error("writen=%zd(%d)", len, errno);
-            return;
+            TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
         /* テスト関数の実行 */
         length = sizeof(readbuf);
         retval = recv_data(csock, readbuf, &length);
 
-        cut_assert_equal_memory(sendbuf, sizeof(sendbuf),
-                                readbuf, sizeof(readbuf),
-                                cut_message("%s==%s", sendbuf, readbuf));
-        cut_assert_equal_int(EX_OK, retval,
-                             cut_message("return value"));
+        TEST_ASSERT_MEM_MSG(sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf), "%s==%s", sendbuf, readbuf);
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d", WEXITSTATUS(status));
+            TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
+    PASS();
 }
 
 /**
@@ -434,7 +419,7 @@ test_recv_data(void)
  *
  * @return なし
  */
-void
+TEST
 test_recv_data_new(void)
 {
     int retval = 0;    /* 戻り値 */
@@ -449,14 +434,12 @@ test_recv_data_new(void)
 
     ssock = unix_sock_server();
     if (ssock < 0) {
-        cut_error("unix_sock_server");
-        return;
+        TEST_FAIL("unix_sock_server");
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) { /* 子プロセス */
@@ -474,32 +457,28 @@ test_recv_data_new(void)
 
         csock = unix_sock_client();
         if (csock < 0) {
-            cut_error("unix_sock_client");
-            return;
+            TEST_FAIL("unix_sock_client");
         }
 
         len = writen(csock, command, sizeof(command));
         if (len < 0) {
-            cut_error("writen=%zd(%d)", len, errno);
-            return;
+            TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
         /* テスト関数の実行 */
         length = sizeof(sendbuf);
         readnew = (char *)recv_data_new(csock, &length);
 
-        cut_assert_equal_memory(sendbuf, sizeof(sendbuf),
-                                readnew, length,
-                                cut_message("%s==%s", sendbuf, readnew));
-        cut_assert_equal_int(EX_OK, retval,
-                             cut_message("return value"));
+        TEST_ASSERT_MEM_MSG(sendbuf, sizeof(sendbuf), readnew, length, "%s==%s", sendbuf, readnew);
+        TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d", WEXITSTATUS(status));
+            TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
+    PASS();
 }
 
 /**
@@ -507,7 +486,7 @@ test_recv_data_new(void)
  *
  * @return なし
  */
-void
+TEST
 test_close_sock(void)
 {
 
@@ -522,14 +501,12 @@ test_close_sock(void)
 
     ssock = unix_sock_server();
     if (ssock < 0) {
-        cut_error("unix_sock_server");
-        return;
+        TEST_FAIL("unix_sock_server");
     }
 
     cpid = fork();
     if (cpid < 0) {
-        cut_error("fork(%d)", errno);
-        return;
+        TEST_FAIL("fork(%d)", errno);
     }
 
     if (cpid == 0) { /* 子プロセス */
@@ -547,33 +524,32 @@ test_close_sock(void)
 
         csock = unix_sock_client();
         if (csock < 0) {
-            cut_error("unix_sock_client");
-            return;
+            TEST_FAIL("unix_sock_client");
         }
 
         len = writen(csock, sendbuf, sizeof(sendbuf));
         if (len < 0) {
-            cut_error("writen=%zd(%d)", len, errno);
-            return;
+            TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
         /* テスト関数の実行 */
         /* 正常系 */
         retval = close_sock(&csock);
-        cut_assert_equal_int(-1, csock);
-        cut_assert_equal_int(EX_OK, retval);
+        TEST_ASSERT_INT(-1, csock);
+        TEST_ASSERT_INT(EX_OK, retval);
         /* -1のときはなにもしない */
         retval = close_sock(&csock);
 
-        cut_assert_equal_int(EX_OK, retval);
+        TEST_ASSERT_INT(EX_OK, retval);
 
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
-            cut_notify("wait(%d)", errno);
+            TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
         if (WEXITSTATUS(status))
-            cut_error("status=%d", WEXITSTATUS(status));
+            TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
+    PASS();
 }
 
 /**
@@ -646,27 +622,27 @@ unix_sock_server(void)
 
     sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
-        cut_notify("socket(%d)", errno);
+        TEST_NOTIFY("socket(%d)", errno);
         return EX_NG;
     }
 
     retval = bind(sockfd, (struct sockaddr *)&addr, addrlen);
     if (retval < 0) {
         if (errno == EADDRINUSE)
-            cut_notify("Address already in use");
-        cut_notify("bind: sockfd=%d(%d)", sockfd, errno);
+            TEST_NOTIFY("Address already in use");
+        TEST_NOTIFY("bind: sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
     }
 
     retval = listen(sockfd, SOMAXCONN);
     if (retval < 0) {
-        cut_notify("listen sockfd=%d(%d)", sockfd, errno);
+        TEST_NOTIFY("listen sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
     }
 
     retval = chmod(sockfile, mode);
     if (retval < 0) {
-        cut_notify("chmod: sockfd=%d(%d)", sockfd, errno);
+        TEST_NOTIFY("chmod: sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
     }
 
@@ -689,13 +665,13 @@ unix_sock_client(void)
 
     sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd < 0) {
-        cut_notify("socket(%d)", errno);
+        TEST_NOTIFY("socket(%d)", errno);
         return EX_NG;
     }
 
     retval = connect(sockfd, (struct sockaddr *)&addr, addrlen);
     if (retval < 0) {
-        cut_notify("connect=%d(%d)", sockfd, errno);
+        TEST_NOTIFY("connect=%d(%d)", sockfd, errno);
         return EX_NG;
     }
     return sockfd;
@@ -711,14 +687,33 @@ set_sig_handler(void)
 {
     /* シグナル無視 */
     if (signal(SIGINT, SIG_IGN) < 0)
-        cut_notify("SIGINT");
+        TEST_NOTIFY("SIGINT");
     if (signal(SIGTERM, SIG_IGN) < 0)
-        cut_notify("SIGTERM");
+        TEST_NOTIFY("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)
-        cut_notify("SIGQUIT");
+        TEST_NOTIFY("SIGQUIT");
     if (signal(SIGHUP, SIG_IGN) < 0)
-        cut_notify("SIGHUP");
+        TEST_NOTIFY("SIGHUP");
     if (signal(SIGALRM, SIG_IGN) < 0)
-        cut_notify("SIGALRM");
+        TEST_NOTIFY("SIGALRM");
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_SETUP(setup, NULL);
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_set_hostname);
+    RUN_TEST(test_set_port);
+    RUN_TEST(test_set_block);
+    RUN_TEST(test_send_data);
+    RUN_TEST(test_recv_data);
+    RUN_TEST(test_recv_data_new);
+    RUN_TEST(test_close_sock);
+    TEST_MAIN_END();
+}

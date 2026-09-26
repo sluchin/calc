@@ -6,7 +6,6 @@ top_srcdir = ..
 prefix = /usr/local
 libdir = $(prefix)/lib
 bindir = $(prefix)/bin
-testdir = $(srcdir)/tests
 CC = gcc
 RM = rm -rf
 AR = ar rcs
@@ -27,7 +26,6 @@ OBJCLIENT = client.o
 OBJECTS = main.o option.o
 SHAREDOBJ = libcalcc.so
 PROGRAM = calcc
-CUTTER = /usr/bin/cutter -v v
 
 .SUFFIXES: .c .o
 
@@ -61,11 +59,6 @@ $(OBJECTS) $(OBJCLIENT): option.h client.h Makefile
 debug:
 	@$(MAKE) CFLAGS="$(DFLAGS)"
 
-.PHONY: test
-test:
-	$(MAKE) -C $(testdir)
-	$(CUTTER) $(testdir)
-
 .PHONY: install
 install: all
 	@test -z $(bindir) || mkdir -p $(bindir) || exit 1;
@@ -83,7 +76,6 @@ strip:
 .PHONY: clean
 clean:
 	@$(RM) $(PROGRAM) $(OBJECTS) $(OBJCLIENT) $(LIBCLIENT) $(SHAREDOBJ)
-	@$(MAKE) -C $(testdir) clean
 
 .PHONY: help
 help:
@@ -91,7 +83,6 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... debug"
-	@echo "... test"
 	@echo "... static"
 	@echo "... install"
 	@echo "... strip"
