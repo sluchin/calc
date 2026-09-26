@@ -151,12 +151,16 @@ set_block(int fd, blockmode mode)
 
     if (mode == NONBLOCK) { /* ノンブロッキング */
         retval = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-        if (retval < 0)
+        if (retval < 0) {
             outlog("fcntl=%d", retval);
+            return EX_NG;
+        }
     } else if (mode == BLOCKING) { /* ブロッキング */
         retval = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
-        if (retval < 0)
+        if (retval < 0) {
             outlog("fcntl=%d", retval);
+            return EX_NG;
+        }
     } else { /* no mode */
         outlog("mode=%d", mode);
         return EX_NG;

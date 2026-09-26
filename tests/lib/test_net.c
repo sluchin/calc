@@ -835,14 +835,14 @@ test_set_block_failure(void)
     }
     TEST_ASSERT_INT(EX_NG, set_block(devnull, (blockmode)99));
 
-    /* F_SETFL に失敗しても, ログを出力するだけで, 戻り値は変わらない */
+    /* F_SETFL に失敗すると, エラーを返す */
     inject_fcntl.count = 1;
     inject_fcntl.value = -1;
     inject_fcntl.err = EBADF;
-    TEST_ASSERT_INT(EX_OK, set_block(devnull, NONBLOCK));
+    TEST_ASSERT_INT(EX_NG, set_block(devnull, NONBLOCK));
     TEST_ASSERT_INT(0, inject_fcntl.count);
     inject_fcntl.count = 1;
-    TEST_ASSERT_INT(EX_OK, set_block(devnull, BLOCKING));
+    TEST_ASSERT_INT(EX_NG, set_block(devnull, BLOCKING));
     TEST_ASSERT_INT(0, inject_fcntl.count);
     (void)close(devnull);
     PASS();
