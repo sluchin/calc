@@ -31,12 +31,11 @@
 #ifdef HAVE_READLINE
 #  include <readline/readline.h>
 #  include <readline/history.h>
-#else
-#  include "readline.h"
 #endif /* HAVE_READLINE */
 
 #include "def.h"
 #include "memfree.h"
+#include "readline.h"
 #include "option.h"
 #include "log.h"
 #include "term.h"
@@ -45,8 +44,7 @@
 /* 内部変数 */
 static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 #ifdef HAVE_READLINE
-static HIST_ENTRY *history = NULL;            /**< 履歴 */
-static const unsigned int MAX_HISTORY = 100;  /**< 最大履歴数 */
+static const int MAX_HISTORY = 100;           /**< 最大履歴数 */
 #endif /* HAVE_READLINE */
 
 /* 内部関数 */
@@ -55,8 +53,6 @@ static void main_loop(void);
 #ifdef HAVE_READLINE
 /* イベントフック */
 static int check_state(void);
-/* history クリア */
-static void freehistory(HIST_ENTRY **hist);
 #endif /* HAVE_READLINE */
 /** シグナルハンドラ設定 */
 static void set_sig_handler(void);
@@ -92,10 +88,6 @@ main(int argc, char *argv[])
     /* メインループ */
     main_loop();
 
-#ifdef HAVE_READLINE
-    freehistory(&history);
-#endif /* HAVE_READLINE */
-
     exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 }
@@ -111,11 +103,17 @@ main_loop(void)
     int retval = 0;              /* 戻り値 */
     calcinfo calc;               /* calcinfo構造体 */
     unsigned char *expr = NULL;  /* 式 */
+    bool interactive = false;    /* 標準入力が端末か */
 #ifdef HAVE_READLINE
-    unsigned int hist_no = 0;    /* 履歴数 */
     char *prompt = NULL;         /* プロンプト */
 
-    rl_event_hook = &check_state;
+    /* readline は, 端末のときだけ使う. 端末でない (パイプやファイル) とき, イベントフック
+     * (rl_event_hook) があると, 入力の終わり (EOF) で終了せずに, CPU を使い続ける. */
+    interactive = isatty(STDIN_FILENO);
+    if (interactive) {
+        rl_event_hook = &check_state;
+        stifle_history(MAX_HISTORY); /* 履歴が上限を超えると, 古いものから削除する */
+    }
 #endif /* HAVE_READLINE */
 
     dbglog("start");
@@ -127,10 +125,11 @@ main_loop(void)
     do {
         dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
-        expr = (unsigned char *)readline(prompt);
-#else
-        expr = _readline(stdin);
+        if (interactive)
+            expr = (unsigned char *)readline(prompt);
+        else
 #endif /* HAVE_READLINE */
+            expr = _readline(stdin);
         if (!expr)
             break;
 
@@ -158,9 +157,8 @@ main_loop(void)
                 outlog("fprintf=%d", retval);
         }
 #ifdef HAVE_READLINE
-        if (MAX_HISTORY <= ++hist_no)
-            freehistory(&history);
-        add_history((char *)expr);
+        if (interactive)
+            add_history((char *)expr);
 #endif /* HAVE_READLINE */
 
         destroy_answer(&calc);
@@ -187,20 +185,6 @@ static int check_state(void) {
     return EX_OK;
 }
 
-/**
- * history クリア
- *
- * @return なし
- */
-static void
-freehistory(HIST_ENTRY **hist)
-{
-    if (*hist) {
-        *hist = remove_history(0);
-        free(*hist);
-    }
-    *hist = NULL;
-}
 #endif /* HAVE_READLINE */
 
 /**
