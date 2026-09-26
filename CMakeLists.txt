@@ -171,3 +171,31 @@ if(BUILD_TESTS)
       VERBATIM)
   endif()
 endif()
+
+# make doc: Doxygen でドキュメントを生成する. 出力は, <ビルドディレクトリ>/doc/html/
+# (doxygen が必要. グラフを出力するには, graphviz の dot も必要)
+find_package(Doxygen OPTIONAL_COMPONENTS dot)
+if(DOXYGEN_FOUND)
+  if(TARGET Doxygen::dot)
+    set(doxygen_have_dot YES)
+  else()
+    set(doxygen_have_dot NO)
+  endif()
+  add_custom_target(doc
+    COMMAND ${CMAKE_COMMAND}
+            -DDOXYGEN=${DOXYGEN_EXECUTABLE}
+            -DDOXYFILE=${CMAKE_SOURCE_DIR}/Doxyfile
+            -DSRC=${CMAKE_SOURCE_DIR}
+            -DOUT=${CMAKE_BINARY_DIR}/doc
+            -DHAVE_DOT=${doxygen_have_dot}
+            -P ${CMAKE_SOURCE_DIR}/cmake/doxygen.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Doxygen: ${CMAKE_BINARY_DIR}/doc/html/index.html"
+    VERBATIM)
+else()
+  add_custom_target(doc
+    COMMAND ${CMAKE_COMMAND} -E echo
+            "doc は使えません: doxygen をインストールしてください (sudo apt install doxygen graphviz)"
+    COMMAND ${CMAKE_COMMAND} -E false
+    VERBATIM)
+endif()

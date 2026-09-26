@@ -691,7 +691,6 @@ test_get_strlen(void)
  *
  * @param[in] calc calcinfo構造体
  * @param[in] str 文字列
- * @return calcinfo構造体
  */
 static void
 exec_calc(calcinfo *calc, const char *str)
@@ -843,7 +842,7 @@ GREATEST_MAIN_DEFS();
  * テストの実行
  *
  * @param[in] argc 引数の数
- * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @param[in] argv 引数 (greatest のオプション. -t の後にテスト名を指定すると, 1 つのテストだけ実行できる)
  * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
  */
 int
