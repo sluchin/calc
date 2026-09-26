@@ -65,7 +65,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - 外部の関数 (システムコールなど) を置き換えるときは、FFF の `FAKE_VALUE_FUNC` / `FAKE_VOID_FUNC` を使う (例: `tests/lib/test_term.c` の `tcgetattr`)。`DEFINE_FFF_GLOBALS` は、1 つの実行ファイルに 1 か所だけ書く。`SET_SETUP` で `RESET_FAKE` を呼び、テスト間でモックの状態を持ち越さない。
 - libc の関数の失敗 (`send` `recv` `close` `socket` `malloc` など) を通すときは、`tests/test_helper.h` の `TEST_PASSTHROUGH` を使う。FFF のモックにして、通常は `dlsym(RTLD_NEXT)` で本物を呼び (素通し)、`TEST_INJECT(名前, 見送る回数, 失敗させる回数, 戻り値, errno)` で、その回数だけ失敗させる。`setup` で `TEST_PASSTHROUGH_RESET(名前)` を呼ぶ。`TEST_ASSERT_INJECTED(名前)` で、失敗が使われたこと (関数が呼ばれたこと) を確認する。実際に失敗させられる場合 (不正なファイルディスクリプタ、閉じた接続先、巨大な `malloc` など) は、モックにしない。
   - `snprintf` `fcntl` (可変引数) や `malloc` `calloc` のように、ほとんどの関数が使うものは、FFF のモックにしない (FFF のモックは、`main()` より前の呼び出しにも使われる)。テストのファイルに、同名の関数を直接定義して、指定した条件のときだけ失敗させる (`tests/calcp/test_calc.c` `tests/calcd/test_server.c` `tests/lib/test_net.c`)。本物は、`__libc_malloc` `dlsym(RTLD_NEXT)` `vsnprintf` で呼ぶ。`malloc` のあとに `memset(0)` するコードは、最適化で `calloc` になるので、`calloc` も置き換える。デバッグビルドの `dbglog()` も、`snprintf` や `malloc` を呼ぶので、呼び出しの回数ではなく、書式やサイズで、失敗させる呼び出しを選ぶ。
-  - `atexit` は、テストの実行ファイルにリンクした `main.c` の呼び出しだけ置き換えられる (`tests/calcc/test_main.c`。共有ライブラリの中の呼び出しは、置き換えられない)。本物は `__cxa_atexit` で呼ぶ。
+  - `atexit` は、glibc の静的ライブラリ (`libc_nonshared.a`) の小さな関数 (スタブ) で、共有ライブラリの中に取り込まれるので、直接は置き換えられない。スタブが呼ぶ `__cxa_atexit` (libc.so の関数) を置き換える (`tests/calcc/test_client.c`)。テストの実行ファイルにリンクした `main.c` の `atexit` は、直接置き換えられる (`tests/calcc/test_main.c`)。本物は `__cxa_atexit` で呼ぶ。
   - `exit()` や `fork` を伴う処理 (`main()` など) の失敗は、注入も、子プロセスの中で行う。親の `test_run_child()` が、`fflush` などを先に呼んで、注入を消費するため。
   - `_FORTIFY_SOURCE` が有効だと、`vsnprintf` などが `__vsnprintf_chk` に置き換わり、モックにできない。`BUILD_TESTS` が ON のときは、`-U_FORTIFY_SOURCE` を付けている (`CMakeLists.txt`)。
   - `pipe` (配列引数) や `va_list` を取る関数のモックは、`#pragma GCC diagnostic ignored` で警告を抑える (`tests/lib/test_fileio.c` `tests/lib/test_log.c`)。
@@ -73,7 +73,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
   - 標準エラー出力が、前のテストで閉じたパイプのままだと、`SIGPIPE` で終了する。ログを出すテストの前に、`redirect(STDERR_FILENO, "/dev/null")` する。
 - 端末や環境に依存させない。端末が無くても (`ctest` の標準入力は端末ではない) 実行できること。
 - テストを追加したら、`tests/CMakeLists.txt` にも追加する。実行ファイルの名前は `<ディレクトリ>_<名前>` (例: `calcp_test_option`) で、`tests/<ディレクトリ>/<名前>` に出力される。
-- `calcp` は、標準入力が端末以外でも、入力の終わり (EOF) で終了しない (readline のイベントフックのため)。`main()` のテストの入力は、必ず `quit` で終わらせる。
+- `calcp` は、標準入力が端末のときだけ readline を使う。端末でない入力 (パイプやファイル) の `main()` は、`test_run_child()` (`tests/test_process.h`)、端末のとき (readline、履歴、イベントフック) は、疑似端末の `test_run_child_pty()` で確認する。
 - `tests/third_party/` のファイルは、外部のソースなので、修正しない。
 
 ## 開発ルール
