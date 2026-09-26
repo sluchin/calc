@@ -383,6 +383,11 @@ test_main_sighup_failure(void)
     /* 再実行できなければ, 異常終了する (以前は, ログもなく, 正常終了した) */
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
+
+    /* 存在するが, 実行できないファイル (絶対パスに解決される) も, 同じ.
+     * 再実行に成功すると, カバレッジの記録が失われるので, 失敗する場合でも確認する */
+    argv[0] = "/etc/passwd";
+    TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
     PASS();
 }
 

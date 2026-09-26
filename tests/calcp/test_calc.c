@@ -295,6 +295,8 @@ static const struct test_data_char error_data [] = {
     { "n(5000)",    "Infinity."             },
     { "n(-5000)",   "Infinity."             },
     { "n(171)",     "Infinity."             },
+    { "sqrt(-1)*2", "NaN."                  },
+    { "sqrt(-1)*2^3", "NaN."                },
     { "n(99999999999999999999)", "Infinity." },
     { "nPr(99999999999999999999,1)", "Infinity." },
     { "nCr(99999999999999999999,1)", "Infinity." }
