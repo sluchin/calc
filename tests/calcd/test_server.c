@@ -114,8 +114,32 @@ TEST_PASSTHROUGH(int, pthread_sigmask,
  * 本物は __libc_malloc() で呼ぶ.
  */
 extern void *__libc_malloc(size_t size);
+extern void *__libc_calloc(size_t nmemb, size_t size);
+extern void __libc_free(void *ptr);
 static size_t fail_malloc_size = 0; /**< 失敗させる malloc() のサイズ (0 は無効) */
 static int fail_malloc_count = 0;   /**< 失敗させる回数 */
+static size_t track_size = 0;       /**< 確保と解放を追跡するサイズ (0 は無効) */
+static void *volatile tracked_ptr = NULL; /**< 追跡している, 確保したメモリ */
+static volatile int tracked_freed = 0;    /**< 追跡しているメモリが解放された */
+static size_t watch_size = 0;       /**< 確保されたかを数えるサイズ (0 は無効) */
+static volatile int watch_count = 0; /**< watch_size で確保された回数 */
+
+/**
+ * 確保したメモリの記録 (malloc() と calloc() の共通処理)
+ *
+ * @param[in] ptr 確保したメモリ
+ * @param[in] size サイズ
+ * @return なし
+ */
+static void
+record_alloc(void *ptr, size_t size)
+{
+    if (track_size && size == track_size)
+        tracked_ptr = ptr;
+    if (watch_size && size == watch_size)
+        watch_count++;
+}
+
 /**
  * malloc() の置き換え
  *
@@ -125,19 +149,22 @@ static int fail_malloc_count = 0;   /**< 失敗させる回数 */
 void *
 malloc(size_t size)
 {
+    void *ptr = NULL;
+
     if (fail_malloc_count > 0 && size == fail_malloc_size) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;
     }
-    return __libc_malloc(size);
+    ptr = __libc_malloc(size);
+    record_alloc(ptr, size);
+    return ptr;
 }
 
 /*
  * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
  * 同じように置き換える.
  */
-extern void *__libc_calloc(size_t nmemb, size_t size);
 /**
  * calloc() の置き換え
  *
@@ -148,12 +175,30 @@ extern void *__libc_calloc(size_t nmemb, size_t size);
 void *
 calloc(size_t nmemb, size_t size)
 {
+    void *ptr = NULL;
+
     if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;
     }
-    return __libc_calloc(nmemb, size);
+    ptr = __libc_calloc(nmemb, size);
+    record_alloc(ptr, nmemb * size);
+    return ptr;
+}
+
+/**
+ * free() の置き換え (追跡しているメモリが解放されたか記録する)
+ *
+ * @param[in] ptr 解放するメモリ
+ * @return なし
+ */
+void
+free(void *ptr)
+{
+    if (ptr && ptr == tracked_ptr)
+        tracked_freed = 1;
+    __libc_free(ptr);
 }
 
 #define THREAD_WAIT 200000 /**< スレッドの終了を待つ時間 (マイクロ秒) */
@@ -183,6 +228,9 @@ TEST test_server_proc_failure(void);
 TEST test_server_loop_alloc_failure(void);
 TEST test_server_loop_signal_mask_failure(void);
 TEST test_server_proc_internal_failure(void);
+TEST test_server_proc_free_arg(void);
+TEST test_server_proc_length_limit(void);
+TEST test_server_proc_no_nul(void);
 
 /* 内部変数 */
 static testserver server;                  /**< 関数構造体 */
@@ -251,6 +299,11 @@ setup(void *data)
     TEST_PASSTHROUGH_RESET(sigdelset);
     TEST_PASSTHROUGH_RESET(pthread_sigmask);
     fail_malloc_count = 0;
+    track_size = 0;
+    tracked_ptr = NULL;
+    tracked_freed = 0;
+    watch_size = 0;
+    watch_count = 0;
     FFF_RESET_HISTORY();
     g_gflag = false;
     g_sig_handled = 0;
@@ -838,6 +891,94 @@ test_server_proc_internal_failure(void)
     PASS();
 }
 
+/**
+ * server_proc() 関数テスト (引数として渡されたスレッドデータを解放する)
+ *
+ * @return なし
+ */
+TEST
+test_server_proc_free_arg(void)
+{
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    track_size = sizeof(thread_data);
+    server_loop(ssock);
+    close_sock(&csock); /* スレッドは, ヘッダを受信できずに終了する */
+    (void)usleep(THREAD_WAIT);
+
+    TEST_ASSERT_MSG(tracked_ptr != NULL, "thread_data was not allocated");
+    TEST_ASSERT_MSG(tracked_freed, "thread_data was not freed");
+    PASS();
+}
+
+/**
+ * server_proc() 関数テスト (データ長の上限)
+ * 上限を超えるデータ長のヘッダを受け取っても, そのサイズのメモリを確保しない.
+ *
+ * @return なし
+ */
+TEST
+test_server_proc_length_limit(void)
+{
+    struct header hd; /* ヘッダ */
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    (void)memset(&hd, 0, sizeof(hd));
+    hd.length = htonl(MAX_DATA_LENGTH + 1);
+    TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
+    watch_size = MAX_DATA_LENGTH + 1;
+    server_loop(ssock);
+    (void)usleep(THREAD_WAIT);
+    close_sock(&csock);
+
+    TEST_ASSERT_INT(0, watch_count);
+    PASS();
+}
+
+/**
+ * server_proc() 関数テスト (終端の NUL がない式)
+ * 終端のない式を受け取っても, 確保した領域の外を読まずに, 計算できる.
+ *
+ * @return なし
+ */
+TEST
+test_server_proc_no_nul(void)
+{
+    struct header hd;              /* ヘッダ */
+    unsigned char noterm[] = { '1', '+', '1', '+', '1', '+', '1', '+' };
+    unsigned char rbuf[BUF_SIZE];  /* 受信バッファ */
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    (void)memset(&hd, 0, sizeof(hd));
+    hd.length = htonl(sizeof(noterm));
+    TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
+    TEST_ASSERT_INT(sizeof(noterm), writen(csock, noterm, sizeof(noterm)));
+    server_loop(ssock);
+
+    /* 最後の 1 バイトが NUL に置き換えられて, "1+1+1+1" として計算される */
+    (void)memset(rbuf, 0, sizeof(rbuf));
+    TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
+    TEST_ASSERT_STR("4", (char *)rbuf);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -856,5 +997,8 @@ main(int argc, char **argv)
     RUN_TEST(test_server_loop_alloc_failure);
     RUN_TEST(test_server_loop_signal_mask_failure);
     RUN_TEST(test_server_proc_internal_failure);
+    RUN_TEST(test_server_proc_free_arg);
+    RUN_TEST(test_server_proc_length_limit);
+    RUN_TEST(test_server_proc_no_nul);
     TEST_MAIN_END();
 }
