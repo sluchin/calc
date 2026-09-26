@@ -44,6 +44,7 @@
 #include "fileio.h"
 #include "memfree.h"
 #include "server.h"
+#include "calc.h"
 
 #define BUF_SIZE    30  /**< バッファサイズ */
 
@@ -81,6 +82,80 @@ TEST_PASSTHROUGH(int, pthread_create,
 FAKE_VALUE_FUNC(int, pthread_detach, pthread_t);
 TEST_PASSTHROUGH(int, pthread_detach, (pthread_t tid), (tid))
 
+/* 計算やデータ作成, 送信と, シグナルマスクの関数は, モックにして, 通常は本物を呼ぶ */
+FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *,
+                const unsigned char *);
+TEST_PASSTHROUGH(unsigned char *, create_answer,
+                 (calcinfo *calc, const unsigned char *expr), (calc, expr))
+FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **,
+                const unsigned char *, size_t);
+TEST_PASSTHROUGH(ssize_t, set_server_data,
+                 (struct server_data **dt, const unsigned char *buf,
+                  size_t len),
+                 (dt, buf, len))
+FAKE_VALUE_FUNC(int, send_data, const int, const void *, size_t *);
+TEST_PASSTHROUGH(int, send_data,
+                 (const int sock, const void *data, size_t *length),
+                 (sock, data, length))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int);
+TEST_PASSTHROUGH(int, sigdelset, (sigset_t *set, int signo), (set, signo))
+FAKE_VALUE_FUNC(int, pthread_sigmask, int, const sigset_t *, sigset_t *);
+TEST_PASSTHROUGH(int, pthread_sigmask,
+                 (int how, const sigset_t *set, sigset_t *oldset),
+                 (how, set, oldset))
+
+/*
+ * malloc() は, ほとんどの関数が使うので, FFF のモックにはせず, 指定したサイズの
+ * ときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
+ * 本物は __libc_malloc() で呼ぶ.
+ */
+extern void *__libc_malloc(size_t size);
+static size_t fail_malloc_size = 0; /**< 失敗させる malloc() のサイズ (0 は無効) */
+static int fail_malloc_count = 0;   /**< 失敗させる回数 */
+/**
+ * malloc() の置き換え
+ *
+ * @param[in] size サイズ
+ * @return 確保したメモリ. 指定したサイズのときは, 失敗 (NULL)
+ */
+void *
+malloc(size_t size)
+{
+    if (fail_malloc_count > 0 && size == fail_malloc_size) {
+        fail_malloc_count--;
+        errno = ENOMEM;
+        return NULL;
+    }
+    return __libc_malloc(size);
+}
+
+/*
+ * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
+ * 同じように置き換える.
+ */
+extern void *__libc_calloc(size_t nmemb, size_t size);
+/**
+ * calloc() の置き換え
+ *
+ * @param[in] nmemb 要素数
+ * @param[in] size 要素のサイズ
+ * @return 確保したメモリ. 指定したサイズのときは, 失敗 (NULL)
+ */
+void *
+calloc(size_t nmemb, size_t size)
+{
+    if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
+        fail_malloc_count--;
+        errno = ENOMEM;
+        return NULL;
+    }
+    return __libc_calloc(nmemb, size);
+}
+
 #define THREAD_WAIT 200000 /**< スレッドの終了を待つ時間 (マイクロ秒) */
 #define MAX_THREADS  5  /**< スレッド数 */
 /* MAX_THREADS 1013 まで
@@ -105,6 +180,9 @@ TEST test_server_loop(void);
 TEST test_server_sock_failure(void);
 TEST test_server_loop_failure(void);
 TEST test_server_proc_failure(void);
+TEST test_server_loop_alloc_failure(void);
+TEST test_server_loop_signal_mask_failure(void);
+TEST test_server_proc_internal_failure(void);
 
 /* 内部変数 */
 static testserver server;                  /**< 関数構造体 */
@@ -165,6 +243,14 @@ setup(void *data)
     TEST_PASSTHROUGH_RESET(accept);
     TEST_PASSTHROUGH_RESET(pthread_create);
     TEST_PASSTHROUGH_RESET(pthread_detach);
+    TEST_PASSTHROUGH_RESET(create_answer);
+    TEST_PASSTHROUGH_RESET(set_server_data);
+    TEST_PASSTHROUGH_RESET(send_data);
+    TEST_PASSTHROUGH_RESET(sigemptyset);
+    TEST_PASSTHROUGH_RESET(sigfillset);
+    TEST_PASSTHROUGH_RESET(sigdelset);
+    TEST_PASSTHROUGH_RESET(pthread_sigmask);
+    fail_malloc_count = 0;
     FFF_RESET_HISTORY();
     g_gflag = false;
     g_sig_handled = 0;
@@ -663,6 +749,95 @@ test_server_proc_failure(void)
     PASS();
 }
 
+/**
+ * server_loop() 関数テスト (メモリを確保できない)
+ *
+ * @return なし
+ */
+TEST
+test_server_loop_alloc_failure(void)
+{
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+
+    /* 接続待ちがあるので, 受付可能になるが, スレッドデータを作れない */
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+    g_sig_handled = 1; /* 1 回で, ループを終了する */
+    fail_malloc_size = sizeof(thread_data);
+    fail_malloc_count = 1;
+    server_loop(ssock);
+    TEST_ASSERT_INT(0, fail_malloc_count);
+    PASS();
+}
+
+/**
+ * server_loop() 関数テスト (シグナルマスクの取得に失敗)
+ *
+ * @return なし
+ */
+TEST
+test_server_loop_signal_mask_failure(void)
+{
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+
+    /* 失敗しても, 続行する (sigdelset() は, 2 回呼ばれる) */
+    TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigdelset, 0, 2, -1, EINVAL);
+    TEST_INJECT(pselect, 0, 1, -1, EINTR);
+    server_loop(ssock);
+    TEST_ASSERT_INJECTED(sigemptyset);
+    TEST_ASSERT_INJECTED(sigfillset);
+    TEST_ASSERT_INJECTED(sigdelset);
+    PASS();
+}
+
+/**
+ * server_proc() 関数テスト (内部の関数の失敗)
+ * 有効なリクエストを送って, スレッドの中の失敗を注入する.
+ *
+ * @return なし
+ */
+TEST
+test_server_proc_internal_failure(void)
+{
+    unsigned int i;
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+
+    for (i = 0; i < 4; i++) {
+        csock = inet_sock_client();
+        TEST_ASSERT_NOT_INT(EX_NG, csock);
+        TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
+        switch (i) {
+        case 0: /* シグナルマスクの設定に失敗しても, 続行する */
+            TEST_INJECT(pthread_sigmask, 0, 1, EINVAL, 0);
+            break;
+        case 1: /* 計算に失敗 */
+            TEST_INJECT(create_answer, 0, 1, NULL, ENOMEM);
+            break;
+        case 2: /* 送信データを作れない */
+            TEST_INJECT(set_server_data, 0, 1, EX_NG, ENOMEM);
+            break;
+        default: /* 送信に失敗 */
+            TEST_INJECT(send_data, 0, 1, EX_NG, EPIPE);
+            break;
+        }
+        server_loop(ssock);
+        (void)usleep(THREAD_WAIT);
+        close_sock(&csock);
+    }
+    TEST_ASSERT_INJECTED(send_data);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -678,5 +853,8 @@ main(int argc, char **argv)
     RUN_TEST(test_server_sock_failure);
     RUN_TEST(test_server_loop_failure);
     RUN_TEST(test_server_proc_failure);
+    RUN_TEST(test_server_loop_alloc_failure);
+    RUN_TEST(test_server_loop_signal_mask_failure);
+    RUN_TEST(test_server_proc_internal_failure);
     TEST_MAIN_END();
 }

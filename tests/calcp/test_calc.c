@@ -24,6 +24,9 @@
  */
 
 #include <stdlib.h> /* exit */
+#include <stdarg.h> /* va_list */
+#include <stdbool.h> /* bool */
+#include <string.h> /* strcmp strncmp */
 
 #include "test_helper.h"
 
@@ -34,7 +37,115 @@
 #include "calc.h"
 #include "helper.h"
 
+DEFINE_FFF_GLOBALS;
+
+/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strdup, const char *);
+TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+
+/*
+ * snprintf() と malloc() は, ほとんどの関数が使うので, FFF のモックにはせず,
+ * 必要なときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
+ */
+/** snprintf() を失敗させる呼び出しの種類 */
+enum snprintf_target {
+    SNPRINTF_NONE,   /**< 失敗させない */
+    SNPRINTF_FORMAT, /**< 書式の設定 ("%s%ld%s") */
+    SNPRINTF_STRLEN, /**< 文字数の取得 (get_strlen: 出力先が NULL) */
+    SNPRINTF_ANSWER  /**< 値の文字列への変換 ("%.<桁数>g") */
+};
+static enum snprintf_target fail_snprintf = SNPRINTF_NONE; /**< 失敗させる種類 */
+/**
+ * snprintf() の置き換え
+ * デバッグビルドでは, dbglog() (ログ出力) も snprintf() を呼ぶので, 呼び出しの回数ではなく,
+ * 呼び出しの種類で, 失敗させる.
+ *
+ * @param[out] str 出力先
+ * @param[in] size サイズ
+ * @param[in] format 書式
+ * @return 出力した文字数. 注入した失敗のときは, -1
+ */
+int
+snprintf(char *str, size_t size, const char *format, ...)
+{
+    va_list ap;
+    int retval = 0;
+    bool fail = false; /* 失敗させるか */
+
+    switch (fail_snprintf) {
+    case SNPRINTF_FORMAT:
+        fail = !strcmp(format, "%s%ld%s");
+        break;
+    case SNPRINTF_STRLEN:
+        fail = (str == NULL && size == 0);
+        break;
+    case SNPRINTF_ANSWER:
+        fail = (str != NULL && !strncmp(format, "%.", 2));
+        break;
+    default:
+        break;
+    }
+    if (fail) {
+        fail_snprintf = SNPRINTF_NONE;
+        errno = EIO;
+        return -1;
+    }
+    va_start(ap, format);
+    retval = vsnprintf(str, size, format, ap);
+    va_end(ap);
+    return retval;
+}
+
+extern void *__libc_malloc(size_t size);
+static size_t fail_malloc_size = 0; /**< 失敗させる malloc() のサイズ (0 は無効) */
+static int fail_malloc_count = 0;   /**< 失敗させる回数 */
+/**
+ * malloc() の置き換え
+ *
+ * @param[in] size サイズ
+ * @return 確保したメモリ. 指定したサイズのときは, 失敗 (NULL)
+ */
+void *
+malloc(size_t size)
+{
+    if (fail_malloc_count > 0 && size == fail_malloc_size) {
+        fail_malloc_count--;
+        errno = ENOMEM;
+        return NULL;
+    }
+    return __libc_malloc(size);
+}
+
+/*
+ * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
+ * 同じように置き換える.
+ */
+extern void *__libc_calloc(size_t nmemb, size_t size);
+/**
+ * calloc() の置き換え
+ *
+ * @param[in] nmemb 要素数
+ * @param[in] size 要素のサイズ
+ * @return 確保したメモリ. 指定したサイズのときは, 失敗 (NULL)
+ */
+void *
+calloc(size_t nmemb, size_t size)
+{
+    if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
+        fail_malloc_count--;
+        errno = ENOMEM;
+        return NULL;
+    }
+    return __libc_calloc(nmemb, size);
+}
+
 /* プロトタイプ */
+/** create_answer() 関数テスト (失敗) */
+TEST test_answer_failure(void);
+/** 式を解析する関数テスト (エラー状態) */
+TEST test_calc_error_state(void);
+/** parse_func_args() 関数テスト (失敗) */
+TEST test_parse_func_args_failure(void);
 /** create_answer() 関数テスト (処理時間の表示) */
 TEST test_answer_timer(void);
 /** 四則演算テスト */
@@ -590,6 +701,21 @@ exec_calc(calcinfo *calc, const char *str)
 
 
 /**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    TEST_PASSTHROUGH_RESET(strdup);
+    fail_snprintf = SNPRINTF_NONE;
+    fail_malloc_count = 0;
+    FFF_RESET_HISTORY();
+}
+
+/**
  * 終了処理
  *
  * @return なし
@@ -621,6 +747,97 @@ test_answer_timer(void)
     PASS();
 }
 
+/**
+ * create_answer() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_answer_failure(void)
+{
+    calcinfo calc;                       /* calcinfo構造体 */
+    unsigned char expr[] = "1+2";        /* 式 (答えは "3") */
+    unsigned char third[] = "1/3";       /* 式 (答えは "0.333333333333") */
+    unsigned char zero[] = "1/0";        /* 式 (0 で割る) */
+
+    /* 書式の設定に失敗 */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    fail_snprintf = SNPRINTF_FORMAT;
+    TEST_ASSERT_NULL(create_answer(&calc, expr));
+    TEST_ASSERT_INT(SNPRINTF_NONE, fail_snprintf);
+
+    /* 文字数の取得に失敗 (get_strlen) */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    fail_snprintf = SNPRINTF_STRLEN;
+    TEST_ASSERT_NULL(create_answer(&calc, expr));
+    TEST_ASSERT_INT(SNPRINTF_NONE, fail_snprintf);
+
+    /* 値の文字列への変換に失敗 */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    fail_snprintf = SNPRINTF_ANSWER;
+    TEST_ASSERT_NULL(create_answer(&calc, expr));
+    TEST_ASSERT_INT(SNPRINTF_NONE, fail_snprintf);
+    destroy_answer(&calc);
+
+    /* メモリを確保できない ("0.333333333333" の 14 文字 + 終端で 15 バイト.
+     * デバッグビルドの dbglog() などが確保するサイズと, 重ならない長さにする) */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    fail_malloc_size = 15;
+    fail_malloc_count = 1;
+    TEST_ASSERT_NULL(create_answer(&calc, third));
+    TEST_ASSERT_INT(0, fail_malloc_count);
+
+    /* エラーメッセージを作れない */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_ASSERT_NULL(create_answer(&calc, zero));
+    TEST_ASSERT_INJECTED(strdup);
+    PASS();
+}
+
+/**
+ * 式を解析する関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
+ *
+ * @return なし
+ */
+TEST
+test_calc_error_state(void)
+{
+    calcinfo calc;               /* calcinfo構造体 */
+    const double EX_ERROR = 0.0; /* エラー戻り値 (calc.c の内部定数と同じ) */
+
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "1+2");
+    st_calc.readch(&calc);
+    set_errorcode(&calc, E_SYNTAX);
+
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_calc.expression(&calc));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_calc.term(&calc));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_calc.factor(&calc));
+    TEST_ASSERT_DOUBLE(EX_ERROR, 0.0, st_calc.token(&calc));
+    PASS();
+}
+
+/**
+ * parse_func_args() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_parse_func_args_failure(void)
+{
+    calcinfo calc; /* calcinfo構造体 */
+    double x = 0.0; /* 値 */
+
+    /* 引数の始まりが '(' ではない */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "abc");
+    st_calc.readch(&calc);
+    parse_func_args(&calc, &x, NULL);
+    ASSERT(is_error(&calc));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -628,9 +845,13 @@ main(int argc, char **argv)
 {
     TEST_MAIN_BEGIN();
     startup();
+    SET_SETUP(setup, NULL);
     SET_TEARDOWN(teardown, NULL);
     RUN_TEST(test_answer_four);
     RUN_TEST(test_answer_timer);
+    RUN_TEST(test_answer_failure);
+    RUN_TEST(test_calc_error_state);
+    RUN_TEST(test_parse_func_args_failure);
     RUN_TEST(test_answer_func);
     RUN_TEST(test_answer_four_func);
     RUN_TEST(test_answer_error);

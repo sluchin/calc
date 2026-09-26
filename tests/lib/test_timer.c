@@ -35,6 +35,12 @@
 
 #define BUF_SIZE 256
 
+DEFINE_FFF_GLOBALS;
+
+/* gettimeofday() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *);
+TEST_PASSTHROUGH(int, gettimeofday, (struct timeval *tv, void *tz), (tv, tz))
+
 /* プロトタイプ */
 /** print_timer() 関数テスト */
 TEST test_print_timer(void);
@@ -44,6 +50,8 @@ TEST test_start_timer(void);
 TEST test_stop_timer(void);
 /** get_time() 関数テスト */
 TEST test_get_time(void);
+/** get_time() 関数テスト (失敗) */
+TEST test_get_time_failure(void);
 
 /**
  * print_timer() 関数テスト
@@ -134,15 +142,44 @@ test_get_time(void)
 }
 
 
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+setup(void *data)
+{
+    (void)data;
+    TEST_PASSTHROUGH_RESET(gettimeofday);
+}
+
+/**
+ * get_time() 関数テスト (失敗)
+ *
+ * @return なし
+ */
+TEST
+test_get_time_failure(void)
+{
+    /* gettimeofday() に失敗すると, 0 を返す */
+    TEST_INJECT(gettimeofday, 0, 1, -1, EFAULT);
+    TEST_ASSERT_INT(0, get_time());
+    TEST_ASSERT_INJECTED(gettimeofday);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
 main(int argc, char **argv)
 {
     TEST_MAIN_BEGIN();
+    SET_SETUP(setup, NULL);
     RUN_TEST(test_print_timer);
     RUN_TEST(test_start_timer);
     RUN_TEST(test_stop_timer);
     RUN_TEST(test_get_time);
+    RUN_TEST(test_get_time_failure);
     TEST_MAIN_END();
 }

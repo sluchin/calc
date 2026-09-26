@@ -29,6 +29,7 @@
 #include <fcntl.h>     /* open fcntl */
 #include <arpa/inet.h> /* inet_ntoa */
 #include <sys/stat.h>  /* chmod */
+#include <stdarg.h>    /* va_list */
 #include <sys/socket.h> /* socketpair send recv */
 #include <sys/un.h>    /* sockaddr_un */
 #include <sys/wait.h>  /* wait waitpid */
@@ -53,6 +54,38 @@ TEST_PASSTHROUGH(ssize_t, send, (int fd, const void *buf, size_t n, int flags),
 FAKE_VALUE_FUNC(ssize_t, recv, int, void *, size_t, int);
 TEST_PASSTHROUGH(ssize_t, recv, (int fd, void *buf, size_t n, int flags),
                  (fd, buf, n, flags))
+
+/*
+ * fcntl() は, 可変引数なので, FFF のモックにはせず, F_SETFL のときだけ失敗させる.
+ * 本物は dlsym(RTLD_NEXT) で探す.
+ */
+static struct test_inject inject_fcntl; /**< fcntl() (F_SETFL) に注入する失敗 */
+static int (*real_fcntl)(int, int, ...) = NULL; /**< 本物の fcntl() */
+/**
+ * fcntl() の置き換え
+ *
+ * @param[in] fd ファイルディスクリプタ
+ * @param[in] cmd コマンド
+ * @return fcntl() の戻り値. F_SETFL は, 注入した失敗のときは, その値
+ */
+int
+fcntl(int fd, int cmd, ...)
+{
+    va_list ap;
+    long arg = 0;
+
+    if (!real_fcntl)
+        *(void **)(&real_fcntl) = dlsym(RTLD_NEXT, "fcntl");
+    va_start(ap, cmd);
+    arg = va_arg(ap, long);
+    va_end(ap);
+    if (cmd == F_SETFL && inject_fcntl.count > 0) {
+        inject_fcntl.count--;
+        errno = inject_fcntl.err;
+        return (int)inject_fcntl.value;
+    }
+    return real_fcntl(fd, cmd, arg);
+}
 
 /* プロトタイプ */
 /** set_hostname() 関数テスト */
@@ -142,6 +175,7 @@ static void
 setup(void *data)
 {
     TEST_PASSTHROUGH_RESET(send);
+    (void)memset(&inject_fcntl, 0, sizeof(inject_fcntl));
     TEST_PASSTHROUGH_RESET(recv);
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
     sendbuf[sizeof(sendbuf) - 1] = '\0';
@@ -787,6 +821,16 @@ test_set_block_failure(void)
         TEST_FAIL("open(%d)", errno);
     }
     TEST_ASSERT_INT(EX_NG, set_block(devnull, (blockmode)99));
+
+    /* F_SETFL に失敗しても, ログを出力するだけで, 戻り値は変わらない */
+    inject_fcntl.count = 1;
+    inject_fcntl.value = -1;
+    inject_fcntl.err = EBADF;
+    TEST_ASSERT_INT(EX_OK, set_block(devnull, NONBLOCK));
+    TEST_ASSERT_INT(0, inject_fcntl.count);
+    inject_fcntl.count = 1;
+    TEST_ASSERT_INT(EX_OK, set_block(devnull, BLOCKING));
+    TEST_ASSERT_INT(0, inject_fcntl.count);
     (void)close(devnull);
     PASS();
 }

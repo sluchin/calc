@@ -75,6 +75,20 @@ static int pfd1[] = { -1, -1 };            /**< パイプ1 */
 static int pfd2[] = { -1, -1 };            /**< パイプ2 */
 static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
+/* sigemptyset() などと, set_client_data() は, モックにして, 通常は本物を呼ぶ */
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int);
+TEST_PASSTHROUGH(int, sigdelset, (sigset_t *set, int signo), (set, signo))
+FAKE_VALUE_FUNC(ssize_t, set_client_data, struct client_data **,
+                const unsigned char *, size_t);
+TEST_PASSTHROUGH(ssize_t, set_client_data,
+                 (struct client_data **dt, const unsigned char *buf,
+                  size_t len),
+                 (dt, buf, len))
+
 /* プロトタイプ */
 /** set_port_string() 関数テスト */
 TEST test_set_port_string(void);
@@ -93,6 +107,9 @@ TEST test_client_loop_failure(void);
 TEST test_send_sock_failure(void);
 TEST test_send_sock_timer(void);
 TEST test_read_sock_failure(void);
+TEST test_client_loop_signal_mask_failure(void);
+TEST test_client_loop_read_failure(void);
+TEST test_send_sock_alloc_failure(void);
 
 /* 内部関数 */
 /** send_sock() 関数実行 */
@@ -141,6 +158,10 @@ setup(void *data)
 {
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(pselect);
+    TEST_PASSTHROUGH_RESET(sigemptyset);
+    TEST_PASSTHROUGH_RESET(sigfillset);
+    TEST_PASSTHROUGH_RESET(sigdelset);
+    TEST_PASSTHROUGH_RESET(set_client_data);
     FFF_RESET_HISTORY();
     g_gflag = false;
     g_tflag = false;
@@ -935,7 +956,7 @@ child_read_sock(void *arg)
         hd.length = htonl(0);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
-    default: /* 正常なデータ */
+    default: /* 正常なデータ (4 は, 標準出力を閉じて, 出力に失敗する) */
         len = set_server_data(&dt, (const unsigned char *)"42", 3);
         if (len < 0)
             exit(CHILD_FAILED);
@@ -943,6 +964,8 @@ child_read_sock(void *arg)
         break;
     }
     (void)close(sv[1]);
+    if (child_mode == 4)
+        (void)close(STDOUT_FILENO);
     exit(client.read_sock(sv[0]));
 }
 
@@ -1121,6 +1144,99 @@ test_read_sock_failure(void)
     TEST_ASSERT_INT(EX_RECV_ERR,
                     test_run_child(child_read_sock, NULL, NULL, out,
                                    sizeof(out)));
+    /* 標準出力に書き込めなくても, 続行する */
+    child_mode = 4;
+    TEST_ASSERT_INT(EX_SUCCESS,
+                    test_run_child(child_read_sock, NULL, NULL, out,
+                                   sizeof(out)));
+    PASS();
+}
+
+/**
+ * シグナルマスクの取得に失敗する client_loop() を, 子プロセスで実行するための関数
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+child_client_loop_mask_failure(void *arg)
+{
+    (void)arg;
+    TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigdelset, 0, 1, -1, EINVAL);
+    TEST_INJECT(pselect, 0, 1, -1, EINTR);
+    exit(client_loop(child_sock));
+}
+
+/**
+ * 送信のあとの受信に失敗する client_loop() を, 子プロセスで実行するための関数
+ * 接続先は, ヘッダだけ送って, 書込側をシャットダウンする.
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+child_client_loop_read_failure(void *arg)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+    struct header hd;       /* ヘッダ */
+
+    (void)arg;
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+        exit(CHILD_FAILED);
+    (void)memset(&hd, 0, sizeof(hd));
+    hd.length = htonl(4);
+    (void)writen(sv[1], &hd, sizeof(hd));
+    (void)shutdown(sv[1], SHUT_WR); /* 読込側は開いているので, 送信は成功する */
+
+    TEST_INJECT(pselect, 0, 1, 1, 0);
+    exit(client_loop(sv[0]));
+}
+
+/**
+ * client_loop() 関数テスト (シグナルマスクの取得に失敗)
+ *
+ * @return なし
+ */
+TEST
+test_client_loop_signal_mask_failure(void)
+{
+    child_sock = -1;
+    /* 失敗しても, 続行する */
+    TEST_ASSERT_INT(EX_SIGNAL,
+                    test_run_child(child_client_loop_mask_failure, NULL, NULL,
+                                   NULL, 0));
+    PASS();
+}
+
+/**
+ * client_loop() 関数テスト (受信に失敗すると, そのステータスで終了)
+ *
+ * @return なし
+ */
+TEST
+test_client_loop_read_failure(void)
+{
+    /* 送信のあとの受信で, データを受信できない (EX_ALLOC_ERR) */
+    TEST_ASSERT_INT(EX_ALLOC_ERR,
+                    test_run_child(child_client_loop_read_failure, NULL,
+                                   "1+1\n", NULL, 0));
+    PASS();
+}
+
+/**
+ * send_sock() 関数テスト (送信データを作れない)
+ *
+ * @return なし
+ */
+TEST
+test_send_sock_alloc_failure(void)
+{
+    child_sock = -1;
+    TEST_INJECT(set_client_data, 0, 1, EX_NG, ENOMEM);
+    TEST_ASSERT_INT(EX_ALLOC_ERR,
+                    test_run_child(child_send_sock, NULL, "1+1\n", NULL, 0));
     PASS();
 }
 
@@ -1144,5 +1260,8 @@ main(int argc, char **argv)
     RUN_TEST(test_send_sock_failure);
     RUN_TEST(test_send_sock_timer);
     RUN_TEST(test_read_sock_failure);
+    RUN_TEST(test_client_loop_signal_mask_failure);
+    RUN_TEST(test_client_loop_read_failure);
+    RUN_TEST(test_send_sock_alloc_failure);
     TEST_MAIN_END();
 }

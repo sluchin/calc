@@ -40,6 +40,18 @@ DEFINE_FFF_GLOBALS;
 
 /* main.c が呼び出す, option.c と server.c と net.c の関数は, モックにする */
 FAKE_VOID_FUNC(parse_args, int, char **);
+
+/* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
+                struct sigaction *);
+TEST_PASSTHROUGH(int, sigaction,
+                 (int signo, const struct sigaction *act,
+                  struct sigaction *oldact),
+                 (signo, act, oldact))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
 FAKE_VALUE_FUNC(int, server_sock);
 FAKE_VOID_FUNC(server_loop, int);
 FAKE_VALUE_FUNC(int, close_sock, int *);
@@ -142,6 +154,9 @@ setup(void *data)
 {
     (void)data;
     RESET_FAKE(parse_args);
+    TEST_PASSTHROUGH_RESET(sigaction);
+    TEST_PASSTHROUGH_RESET(sigemptyset);
+    TEST_PASSTHROUGH_RESET(sigfillset);
     RESET_FAKE(server_sock);
     RESET_FAKE(server_loop);
     RESET_FAKE(close_sock);
@@ -288,6 +303,40 @@ test_main_sighup(void)
     PASS();
 }
 
+/**
+ * 失敗を注入して, main() を子プロセスで実行するための関数
+ * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ *
+ * @param[in] arg argv (NULL終端)
+ * @return なし
+ */
+static void
+run_main_failure(void *arg)
+{
+    /* シグナルハンドラの設定 (get 側と set 側で, 11 のシグナル分) */
+    TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
+    TEST_INJECT(sigaction, 0, 22, -1, EINVAL);
+    run_main(arg);
+}
+
+/**
+ * main() 関数テスト (シグナルハンドラの設定に失敗)
+ *
+ * @return なし
+ */
+TEST
+test_main_failure(void)
+{
+    char *argv[] = { "calcd", NULL };
+
+    /* 失敗しても, 続行する */
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_failure, argv, NULL, NULL, 0));
+    TEST_ASSERT_INT(1, shm->loop_count);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -303,5 +352,6 @@ main(int argc, char **argv)
 #endif
     RUN_TEST(test_main_signal);
     RUN_TEST(test_main_sighup);
+    RUN_TEST(test_main_failure);
     TEST_MAIN_END();
 }
