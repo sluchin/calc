@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _HELPER_H_
-#define _HELPER_H_
+#ifndef HELPER_H
+#define HELPER_H
 
 #include "calc.h"
 
@@ -35,5 +35,5 @@ void set_string(calcinfo *calc, const char *str);
 /** set_string() で確保した文字列の解放 */
 void free_strings(void);
 
-#endif /* _HELPER_H_ */
+#endif /* HELPER_H */
 

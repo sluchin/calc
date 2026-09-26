@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CALCUTIL_READLINE_H_
-#define _CALCUTIL_READLINE_H_
+#ifndef CALCUTIL_READLINE_H
+#define CALCUTIL_READLINE_H
 
 #include <stdio.h> /* FILE */
 
@@ -35,5 +35,5 @@
 /** 一行読込 */
 unsigned char *_readline(FILE *fp);
 
-#endif /* _CALCUTIL_READLINE_H_ */
+#endif /* CALCUTIL_READLINE_H */
 

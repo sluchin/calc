@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _FUNCTION_H_
-#define _FUNCTION_H_
+#ifndef FUNCTION_H
+#define FUNCTION_H
 
 #include "def.h"
 #include "calc.h"
@@ -56,5 +56,5 @@ typedef struct _testfunc testfunc;
 void test_init_func(testfunc *func);
 #endif /* UNITTEST */
 
-#endif /* _FUNCTION_H_ */
+#endif /* FUNCTION_H */
 

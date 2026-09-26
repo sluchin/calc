@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TERM_H_
-#define _TERM_H_
+#ifndef TERM_H
+#define TERM_H
 
 #include <termios.h> /* termios */
 
@@ -53,5 +53,5 @@ void test_init_term(testterm *term);
 
 #endif /* UNITTEST */
 
-#endif /* _TERM_H_ */
+#endif /* TERM_H */
 

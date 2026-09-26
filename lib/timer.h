@@ -32,8 +32,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _TIMER_H_
-#define _TIMER_H_
+#ifndef TIMER_H
+#define TIMER_H
 
 #include <stdio.h>    /* fprintf stderr */
 #include <sys/time.h> /* timeval */
@@ -97,5 +97,5 @@ get_time(void)
     return ((unsigned long long)tv.tv_sec) * 1000000 + tv.tv_usec;
 }
 
-#endif /* _TIMER_H_ */
+#endif /* TIMER_H */
 

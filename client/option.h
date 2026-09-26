@@ -23,11 +23,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _OPTION_H_
-#define _OPTION_H_
+#ifndef OPTION_H
+#define OPTION_H
 
 /** オプション引数 */
 void parse_args(int argc, char *argv[]);
 
-#endif /* _OPTION_H_ */
+#endif /* OPTION_H */
 
