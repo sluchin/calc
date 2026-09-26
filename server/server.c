@@ -224,7 +224,8 @@ server_loop(int sock)
                     memfree((void **)&dt, NULL);
                     continue;
                 }
-                dbglog("pthread_create=%lu, accept=%d", (unsigned long)tid, dt->sock);
+                /* スレッドが dt を解放するので, これ以降は, dt を使わない */
+                dbglog("pthread_create=%lu", (unsigned long)tid);
 
                 retval = pthread_detach(tid);
                 if (retval) /* エラー(非0) */
@@ -254,7 +255,10 @@ server_proc(void *arg)
     calcinfo calc;                    /* calc情報構造体 */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
 
+    /* 引数は, server_loop() が malloc したものなので, 複製してすぐに解放する */
     (void)memcpy(&dt, arg, sizeof(thread_data));
+    free(arg);
+    arg = NULL;
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%d",
            dt.sock, inet_ntoa(dt.addr.sin_addr),
@@ -281,6 +285,10 @@ server_proc(void *arg)
 
         /* データ受信 */
         length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
+        if (length > MAX_DATA_LENGTH) { /* 巨大なメモリを確保させない */
+            outlog("data length=%zu, max=%d", length, MAX_DATA_LENGTH);
+            pthread_exit((void *)EXIT_FAILURE);
+        }
         expr = (unsigned char *)recv_data_new(dt.sock, &length);
         if (!expr) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);
@@ -289,6 +297,10 @@ server_proc(void *arg)
 
         if (!length) /* 受信エラー */
             pthread_exit((void *)EXIT_FAILURE);
+
+        /* 式は文字列として解析されるので, 終端の NUL を保証する.
+         * (終端のないデータは, 確保した領域の外を読んでしまう) */
+        expr[length - 1] = '\0';
 
         dbglog("expr=%p, length=%zu", expr, length);
 

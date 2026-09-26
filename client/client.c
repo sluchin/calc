@@ -336,6 +336,10 @@ read_sock(int sock)
     stddump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
 
     length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
+    if (length > MAX_DATA_LENGTH) { /* 巨大なメモリを確保させない */
+        outlog("data length=%zu, max=%d", length, MAX_DATA_LENGTH);
+        return EX_RECV_ERR;
+    }
 
     /* データ受信 */
     answer = (unsigned char *)recv_data_new(sock, &length);
