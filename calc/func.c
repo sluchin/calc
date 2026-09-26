@@ -166,9 +166,11 @@ exec_func(calcinfo *calc, const char *func)
                 parse_func_args(calc, &x, NULL);
                 result = finfo[ftype].func.math(x);
                 break;
+            /* GCOVR_EXCL_START: 全ての種別を case で処理しているので, 到達しない */
             default:
                 outlog("no functype");
                 break;
+            /* GCOVR_EXCL_STOP */
             }
             exec = true;
         }
