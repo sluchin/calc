@@ -48,18 +48,18 @@
     }
 
 /** タイマースタート */
-inline void start_timer(unsigned int *start_time);
+static inline void start_timer(unsigned int *start_time);
 /** タイマーストップ */
-inline unsigned int stop_timer(unsigned int *start_time);
+static inline unsigned int stop_timer(unsigned int *start_time);
 /** 時刻取得 */
-inline unsigned long long get_time(void);
+static inline unsigned long long get_time(void);
 
 /**
  * タイマースタート
  *
  * @return なし
  */
-inline void
+static inline void
 start_timer(unsigned int *start_time)
 {
     *start_time = (unsigned int)get_time();
@@ -72,7 +72,7 @@ start_timer(unsigned int *start_time)
  * @param[in] start_time タイマー開始の時刻
  * @return 時間
  */
-inline unsigned int
+static inline unsigned int
 stop_timer(unsigned int *start_time)
 {
     unsigned int stop_time = (unsigned int)get_time();
@@ -84,7 +84,7 @@ stop_timer(unsigned int *start_time)
  *
  * @return 時刻
  */
-inline unsigned long long
+static inline unsigned long long
 get_time(void)
 {
     struct timeval tv;
