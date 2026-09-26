@@ -488,6 +488,7 @@ dump_file(const char *pname,
     wret = fwrite(buf, len, 1, fp);
     if (wret != 1) {
         SYSMSG(LOG_INFO, "fwrite");
+        (void)fclose(fp); /* ファイルを閉じないと, ファイルポインタがリークする */
         return EX_NG;
     }
 
