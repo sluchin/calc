@@ -74,6 +74,8 @@ static unsigned char *answer = NULL;     /**< 受信データ */
 static st_client send_sock(int sock);
 /** ソケット受信 */
 static st_client read_sock(int sock);
+/** 送信済みで, 未受信の答えを受信 */
+static st_client drain_replies(int sock, int *pending, st_client status);
 /** シグナルマスク取得 */
 static sigset_t get_sigmask(void);
 /** atexit登録関数 */
@@ -169,6 +171,7 @@ client_loop(int sock)
     struct timespec timeout;         /* タイムアウト値 */
     sigset_t sigmask;                /* シグナルマスク */
     st_client status = EX_SUCCESS;   /* ステータス */
+    int pending = 0;                 /* 送信済みで, 未受信の答えの数 */
 #ifdef _USE_SELECT
     fd_set fds, rfds;                /* selectマスク */
 #else
@@ -222,14 +225,18 @@ client_loop(int sock)
                 status = send_sock(sock);
                 if (status == EX_EMPTY)
                     continue;
-                if (status)
-                    return status;
+                if (status == EX_SUCCESS)
+                    pending++;
+                else
+                    return drain_replies(sock, &pending, status);
             }
             if (FD_ISSET(sock, &rfds)) {
                 /* ソケットレディ */
                 status = read_sock(sock);
                 if (status)
                     return status;
+                if (pending > 0)
+                    pending--;
             }
 #else
             if (targets[STDIN_POLL].revents & POLLIN) {
@@ -237,14 +244,18 @@ client_loop(int sock)
                 status = send_sock(sock);
                 if (status == EX_EMPTY)
                     continue;
-                if (status)
-                    return status;
+                if (status == EX_SUCCESS)
+                    pending++;
+                else
+                    return drain_replies(sock, &pending, status);
             }
             if (targets[SOCK_POLL].revents & POLLIN) {
                 /* ソケットレディ */
                 status = read_sock(sock);
                 if (status)
                     return status;
+                if (pending > 0)
+                    pending--;
             }
 #endif /* _USE_SELECT */
         } else { /* タイムアウト */
@@ -253,6 +264,35 @@ client_loop(int sock)
     } while (!g_sig_handled);
 
     return EX_SIGNAL;
+}
+
+/**
+ * 送信済みで, 未受信の答えを受信
+ * 標準入力から続けて入力する (パイプやファイル) と, 答えを受信する前に, quit や入力の
+ * 終わりになるので, 終了する前に, 未受信の答えを全て受信して, 出力する.
+ * 送信に失敗して終了する場合は, サーバとの通信ができないので, 受信しない.
+ *
+ * @param[in] sock ソケット
+ * @param[in,out] pending 送信済みで, 未受信の答えの数
+ * @param[in] status 終了する理由のステータス
+ * @return status, または, 受信に失敗したときは, そのステータス
+ */
+static st_client
+drain_replies(int sock, int *pending, st_client status)
+{
+    st_client st = EX_SUCCESS; /* 受信のステータス */
+
+    /* quit と, 入力の終わり (EX_ALLOC_ERR) のときだけ, 受信する */
+    if (status != EX_QUIT && status != EX_ALLOC_ERR)
+        return status;
+
+    while (*pending > 0) {
+        st = read_sock(sock);
+        if (st)
+            return st;
+        (*pending)--;
+    }
+    return status;
 }
 
 /**

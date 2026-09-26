@@ -140,6 +140,7 @@ TEST test_read_sock_failure(void);
 TEST test_client_loop_signal_mask_failure(void);
 TEST test_client_loop_atexit_failure(void);
 TEST test_client_loop_socket_only(void);
+TEST test_client_loop_drain(void);
 TEST test_client_loop_read_failure(void);
 TEST test_send_sock_alloc_failure(void);
 
@@ -1351,13 +1352,133 @@ test_client_loop_socket_only(void)
 }
 
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
+/**
+ * 出力に, 指定した行が, 何回出力されたか数える
+ * (デバッグビルドは, ダンプも標準エラー出力に出す (子プロセスの出力に含まれる) ので,
+ * 出力全体ではなく, 行を数える)
+ *
+ * @param[in] out 出力
+ * @param[in] line 行 (改行を含めない)
+ * @return 行の数
+ */
+static int
+count_line(const char *out, const char *line)
+{
+    int count = 0;                    /* 行の数 */
+    size_t len = strlen(line);        /* 行の長さ */
+    const char *p = out;              /* 検索位置 */
+
+    while (*p) {
+        if (!strncmp(p, line, len) && (p[len] == '\n' || p[len] == '\0'))
+            count++;
+        p = strchr(p, '\n');
+        if (!p)
+            break;
+        p++;
+    }
+    return count;
+}
+
+/**
+ * 要求を受け取って, "ok" を返し続ける接続先 (子プロセスで実行する)
+ *
+ * @param[in] sock ソケット
+ * @return なし
+ */
+static void
+responder(int sock)
+{
+    struct header hd;              /* ヘッダ */
+    size_t length = 0;             /* バイト数 */
+    void *data = NULL;             /* 受信データ */
+    struct server_data *dt = NULL; /* 送信データ */
+    ssize_t len = 0;               /* 送信データ長 */
+
+    /* 接続先が閉じるまで, 要求を受信して, 答えを送信する */
+    for (;;) {
+        length = sizeof(hd);
+        if (recv_data(sock, &hd, &length) < 0)
+            exit(EXIT_SUCCESS);
+        length = (size_t)ntohl((uint32_t)hd.length);
+        data = recv_data_new(sock, &length);
+        if (!data)
+            exit(EXIT_SUCCESS);
+        free(data);
+        if (child_mode == 6) /* 答えを返さずに, 終了する */
+            exit(EXIT_SUCCESS);
+        len = set_server_data(&dt, (const unsigned char *)"ok", 3);
+        if (len < 0 || writen(sock, dt, (size_t)len) < 0)
+            exit(EXIT_FAILURE);
+        free(dt);
+        dt = NULL;
+    }
+}
+
+/**
+ * 続けて入力される要求の途中で, quit になる client_loop() を, 子プロセスで実行するための関数
+ * 標準入力は, 全ての行が, 最初から読める (パイプ) ので, 答えを受信する前に, quit になる.
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+child_client_loop_drain(void *arg)
+{
+    int sv[2] = { -1, -1 }; /* ソケットペア */
+
+    (void)arg;
+    (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
+    (void)alarm(10);                /* 終了しなかったときの保険 */
+    (void)signal(SIGPIPE, SIG_IGN);
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+        exit(CHILD_FAILED);
+    if (fork() == 0) {
+        (void)close(sv[0]);
+        responder(sv[1]);
+    }
+    (void)close(sv[1]);
+    exit(client_loop(sv[0]));
+}
+
+/**
+ * client_loop() 関数テスト (quit や入力の終わりの前に, 未受信の答えを受信する)
+ *
+ * @return なし
+ */
+TEST
+test_client_loop_drain(void)
+{
+    char out[BUF_SIZE] = {0}; /* 出力 */
+
+    child_mode = 0;
+
+    /* quit で終わる */
+    TEST_ASSERT_INT(EX_QUIT,
+                    test_run_child(child_client_loop_drain, NULL,
+                                   "1+1\n2+2\n3+3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_INT(3, count_line(out, "ok"));
+
+    /* 入力の終わりで終わる (改行のない最後の行も, 送信される) */
+    TEST_ASSERT_INT(EX_ALLOC_ERR,
+                    test_run_child(child_client_loop_drain, NULL,
+                                   "1+1\n2+2", out, sizeof(out)));
+    TEST_ASSERT_INT(2, count_line(out, "ok"));
+
+    /* 答えを受信できない (接続先が, 答えを返さずに, 閉じる) 場合は, その受信エラー */
+    child_mode = 6;
+    TEST_ASSERT_INT(EX_RECV_ERR,
+                    test_run_child(child_client_loop_drain, NULL,
+                                   "1+1\nquit\n", out, sizeof(out)));
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 /**
  * テストの実行
  *
  * @param[in] argc 引数の数
- * @param[in] argv 引数 (greatest のオプション. -t <名前> で 1 つのテストだけ実行できる)
+ * @param[in] argv 引数 (greatest のオプション. -t の後にテスト名を指定すると, 1 つのテストだけ実行できる)
  * @return 全てのテストが成功なら EXIT_SUCCESS, 失敗があれば EXIT_FAILURE
  */
 int
@@ -1386,6 +1507,7 @@ main(int argc, char **argv)
     RUN_TEST(test_client_loop_read_failure);
     RUN_TEST(test_client_loop_atexit_failure);
     RUN_TEST(test_client_loop_socket_only);
+    RUN_TEST(test_client_loop_drain);
     RUN_TEST(test_send_sock_alloc_failure);
     /* 結果の表示と終了 */
     TEST_MAIN_END();
