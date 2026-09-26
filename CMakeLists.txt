@@ -174,6 +174,12 @@ endif()
 
 # make doc: Doxygen でドキュメントを生成する. 出力は, <ビルドディレクトリ>/doc/html/
 # (doxygen が必要. グラフを出力するには, graphviz の dot も必要)
+# make clean で, ドキュメントとカバレッジのレポートも削除する (CMake 3.15 以降)
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+             ${CMAKE_BINARY_DIR}/doc
+             ${CMAKE_BINARY_DIR}/coverage
+             ${CMAKE_BINARY_DIR}/coverage-build)
+
 find_package(Doxygen OPTIONAL_COMPONENTS dot)
 if(DOXYGEN_FOUND)
   if(TARGET Doxygen::dot)
