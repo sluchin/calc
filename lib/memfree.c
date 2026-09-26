@@ -36,7 +36,6 @@
  *
  * @param[in,out] ptr freeするポインタ
  * @param[in,out] ... 可変引数
- * @return なし
  * @attention 最後の引数はNULLにすること.
  */
 void

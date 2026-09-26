@@ -64,8 +64,6 @@ static void set_sig_handler(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -77,7 +75,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -93,7 +90,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -104,8 +100,6 @@ teardown(void *data)
 
 /**
  * readline() 関数テスト
- *
- * @return なし
  */
 TEST
 test_readline(void)
@@ -221,8 +215,6 @@ exec_readline(char *data, size_t length)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -243,8 +235,6 @@ set_sig_handler(void)
 
 /**
  * readline() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_readline_failure(void)

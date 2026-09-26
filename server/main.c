@@ -115,8 +115,6 @@ int main(int argc, char *argv[], char *envp[])
 
 /**
  * シグナルハンドラ設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -218,7 +216,6 @@ set_sig_handler(void)
  * シグナルハンドラ
  *
  * @param[in] signo シグナル
- * @return なし
  */
 static void sig_handler(int signo)
 {

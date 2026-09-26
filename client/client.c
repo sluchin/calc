@@ -161,7 +161,6 @@ connect_sock(void)
  * ソケット送受信
  *
  * @param[in] sock ソケット
- * @return なし
  */
 st_client
 client_loop(int sock)
@@ -394,8 +393,6 @@ get_sigmask(void)
 
 /**
  * atexit登録関数
- *
- * @return なし
  */
 static void
 exit_memfree(void)
@@ -410,7 +407,6 @@ exit_memfree(void)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] client 関数構造体
- * @return なし
  */
 void
 test_init_client(testclient *client)

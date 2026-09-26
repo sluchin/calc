@@ -65,8 +65,6 @@ static int fd = -1;   /**< ファイルディスクリプタ */
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -97,7 +95,6 @@ fake_tcgetattr(int fd, struct termios *mode)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -113,7 +110,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -127,8 +123,6 @@ teardown(void *data)
 
 /**
  * print_termattr() 関数テスト
- *
- * @return なし
  */
 TEST
 test_sys_print_termattr(void)
@@ -160,8 +154,6 @@ test_sys_print_termattr(void)
 
 /**
  * get_termattr() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_termattr(void)
@@ -186,8 +178,6 @@ test_get_termattr(void)
 
 /**
  * mode_type_flag() 関数テスト
- *
- * @return なし
  */
 TEST
 test_mode_type_flag(void)
@@ -220,8 +210,6 @@ test_mode_type_flag(void)
 
 /**
  * sys_print_termattr() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_sys_print_termattr_failure(void)
@@ -237,8 +225,6 @@ test_sys_print_termattr_failure(void)
 
 /**
  * get_termattr() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_get_termattr_failure(void)
@@ -266,8 +252,6 @@ test_get_termattr_failure(void)
 
 /**
  * sys_print_termattr() 関数テスト (指定したファイルディスクリプタの端末情報を取得する)
- *
- * @return なし
  */
 TEST
 test_sys_print_termattr_fd(void)

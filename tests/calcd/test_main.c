@@ -86,7 +86,6 @@ static int raise_signo = 0;       /**< server_loop() で発生させるシグナ
  *
  * @param[in] argc 引数の数
  * @param[in] argv 引数
- * @return なし
  */
 static void
 fake_parse_args(int argc, char **argv)
@@ -100,7 +99,6 @@ fake_parse_args(int argc, char **argv)
  * server_loop() のモック動作
  *
  * @param[in] sock ソケット
- * @return なし
  */
 static void
 fake_server_loop(int sock)
@@ -149,7 +147,6 @@ fake_daemon(int nochdir, int noclose)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -183,7 +180,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -197,7 +193,6 @@ teardown(void *data)
  * main() を子プロセスで実行するための関数
  *
  * @param[in] arg argv (NULL終端)
- * @return なし
  */
 static void
 run_main(void *arg)
@@ -212,8 +207,6 @@ run_main(void *arg)
 
 /**
  * main() 関数テスト (正常)
- *
- * @return なし
  */
 TEST
 test_main_success(void)
@@ -235,8 +228,6 @@ test_main_success(void)
 
 /**
  * main() 関数テスト (ソケットを作れない)
- *
- * @return なし
  */
 TEST
 test_main_server_sock_failure(void)
@@ -254,8 +245,6 @@ test_main_server_sock_failure(void)
 #ifndef _DEBUG
 /**
  * main() 関数テスト (デーモン化できない)
- *
- * @return なし
  */
 TEST
 test_main_daemon_failure(void)
@@ -273,8 +262,6 @@ test_main_daemon_failure(void)
 
 /**
  * main() 関数テスト (シグナル)
- *
- * @return なし
  */
 TEST
 test_main_signal(void)
@@ -291,8 +278,6 @@ test_main_signal(void)
 
 /**
  * main() 関数テスト (SIGHUP で再起動)
- *
- * @return なし
  */
 TEST
 test_main_sighup(void)
@@ -312,7 +297,6 @@ test_main_sighup(void)
  * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
  *
  * @param[in] arg argv (NULL終端)
- * @return なし
  */
 static void
 run_main_failure(void *arg)
@@ -326,8 +310,6 @@ run_main_failure(void *arg)
 
 /**
  * main() 関数テスト (シグナルハンドラの設定に失敗)
- *
- * @return なし
  */
 TEST
 test_main_failure(void)
@@ -347,7 +329,6 @@ test_main_failure(void)
  * / にする) のあとでも, 実行できる必要がある.
  *
  * @param[in] arg argv (NULL終端)
- * @return なし
  */
 static void
 run_main_relative(void *arg)
@@ -359,8 +340,6 @@ run_main_relative(void *arg)
 /**
  * main() 関数テスト (相対パスで起動して, SIGHUP で再起動する)
  * (デバッグビルドは daemon() を呼ばないので, 修正前でも通る)
- *
- * @return なし
  */
 TEST
 test_main_sighup_relative(void)
@@ -375,8 +354,6 @@ test_main_sighup_relative(void)
 
 /**
  * main() 関数テスト (再起動できない)
- *
- * @return なし
  */
 TEST
 test_main_sighup_failure(void)

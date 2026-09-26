@@ -55,8 +55,6 @@ TEST test_set_server_data_failure(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -70,8 +68,6 @@ startup(void)
 
 /**
  * set_client_data() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_client_data(void)
@@ -99,8 +95,6 @@ test_set_client_data(void)
 
 /**
  * set_server_data() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_server_data(void)
@@ -129,8 +123,6 @@ test_set_server_data(void)
 
 /**
  * set_client_data() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_set_client_data_failure(void)
@@ -150,8 +142,6 @@ test_set_client_data_failure(void)
 
 /**
  * set_server_data() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_set_server_data_failure(void)

@@ -60,8 +60,6 @@ struct args {
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -73,7 +71,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -91,7 +88,6 @@ setup(void *data)
  * parse_args() を子プロセスで実行するための関数
  *
  * @param[in] arg args構造体
- * @return なし
  */
 static void
 run_parse_args(void *arg)
@@ -121,8 +117,6 @@ exec_parse_args(char *out, size_t size, int argc, char **argv)
 
 /**
  * parse_args() 関数テスト (-d, --digit)
- *
- * @return なし
  */
 TEST
 test_parse_args_digit(void)
@@ -145,8 +139,6 @@ test_parse_args_digit(void)
 
 /**
  * parse_args() 関数テスト (-d, 範囲外の値)
- *
- * @return なし
  */
 TEST
 test_parse_args_digit_failure(void)
@@ -181,8 +173,6 @@ test_parse_args_digit_failure(void)
 
 /**
  * parse_args() 関数テスト (オプション以外の引数)
- *
- * @return なし
  */
 TEST
 test_parse_args_non_option(void)
@@ -197,8 +187,6 @@ test_parse_args_non_option(void)
 
 /**
  * print_help() 関数テスト (-h, --help)
- *
- * @return なし
  */
 TEST
 test_print_help(void)
@@ -218,8 +206,6 @@ test_print_help(void)
 
 /**
  * print_version() 関数テスト (-V, --version)
- *
- * @return なし
  */
 TEST
 test_print_version(void)
@@ -238,8 +224,6 @@ test_print_version(void)
 
 /**
  * parse_error() 関数テスト (不正なオプション)
- *
- * @return なし
  */
 TEST
 test_parse_error(void)
@@ -254,8 +238,6 @@ test_parse_error(void)
 
 /**
  * parse_args() 関数テスト (-p, --port)
- *
- * @return なし
  */
 TEST
 test_parse_args_port(void)
@@ -286,8 +268,6 @@ test_parse_args_port(void)
 
 /**
  * parse_args() 関数テスト (-p, ポート番号の設定に失敗)
- *
- * @return なし
  */
 TEST
 test_parse_args_port_failure(void)
@@ -309,8 +289,6 @@ test_parse_args_port_failure(void)
 
 /**
  * parse_args() 関数テスト (-g, --debug)
- *
- * @return なし
  */
 TEST
 test_parse_args_debug(void)
@@ -332,8 +310,6 @@ test_parse_args_debug(void)
 
 /**
  * parse_args() 関数テスト (getopt_long() が想定外の値を返す)
- *
- * @return なし
  */
 TEST
 test_parse_args_internal_error(void)

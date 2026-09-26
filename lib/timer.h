@@ -58,7 +58,6 @@ static inline unsigned long long get_time(void);
  * タイマースタート
  *
  * @param[out] start_time 開始時刻を保持する変数
- * @return なし
  */
 static inline void
 start_timer(unsigned int *start_time)

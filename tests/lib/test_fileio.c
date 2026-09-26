@@ -104,8 +104,6 @@ static void set_sig_handler(void);
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -119,7 +117,6 @@ startup(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -139,7 +136,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -177,8 +173,6 @@ teardown(void *data)
 
 /**
  * readn() 関数テスト
- *
- * @return なし
  */
 TEST
 test_readn(void)
@@ -213,8 +207,6 @@ test_readn(void)
 
 /**
  * writen() 関数テスト
- *
- * @return なし
  */
 TEST
 test_writen(void)
@@ -250,8 +242,6 @@ test_writen(void)
 
 /**
  * pipe_fd() 関数テスト
- *
- * @return なし
  */
 TEST
 test_pipe_fd(void)
@@ -314,8 +304,6 @@ test_pipe_fd(void)
 
 /**
  * dup_fd() 関数テスト
- *
- * @return なし
  */
 TEST
 test_pipe_fd2(void)
@@ -405,8 +393,6 @@ test_pipe_fd2(void)
 
 /**
  * redirect() 関数テスト
- *
- * @return なし
  */
 TEST
 test_redirect(void)
@@ -450,8 +436,6 @@ test_redirect(void)
 
 /**
  * close_fd() 関数テスト
- *
- * @return なし
  */
 TEST
 test_close_fd(void)
@@ -592,8 +576,6 @@ write_child_process(char *buf, size_t len)
 
 /**
  * シグナル設定
- *
- * @return なし
  */
 static void
 set_sig_handler(void)
@@ -633,8 +615,6 @@ unused_fd(void)
 
 /**
  * readn() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_readn_failure(void)
@@ -659,8 +639,6 @@ test_readn_failure(void)
 
 /**
  * readn() 関数テスト (EINTR)
- *
- * @return なし
  */
 TEST
 test_readn_interrupted(void)
@@ -685,8 +663,6 @@ test_readn_interrupted(void)
 
 /**
  * writen() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_writen_failure(void)
@@ -698,8 +674,6 @@ test_writen_failure(void)
 
 /**
  * writen() 関数テスト (EINTR)
- *
- * @return なし
  */
 TEST
 test_writen_interrupted(void)
@@ -724,8 +698,6 @@ test_writen_interrupted(void)
 
 /**
  * pipe_fd() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_pipe_fd_failure(void)
@@ -752,8 +724,6 @@ test_pipe_fd_failure(void)
 
 /**
  * pipe_fd2() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_pipe_fd2_failure(void)
@@ -780,8 +750,6 @@ test_pipe_fd2_failure(void)
 
 /**
  * redirect() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_redirect_failure(void)
@@ -819,8 +787,6 @@ test_redirect_failure(void)
 
 /**
  * close_fd() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_close_fd_failure(void)

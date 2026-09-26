@@ -162,7 +162,6 @@ create_answer(calcinfo *calc, const unsigned char *expr)
  * メモリ解放
  *
  * @param[in] calc calcinfo構造体ポインタ
- * @return なし
  */
 void
 destroy_answer(void *calc)
@@ -178,7 +177,6 @@ destroy_answer(void *calc)
  * @param[in] calc calcinfo構造体
  * @param[out] x 値
  * @param[out] ... 可変引数
- * @return なし
  * @attention 最後の引数はNULLにすること.
  */
 void
@@ -231,7 +229,6 @@ parse_func_args(calcinfo *calc, double *x, ...)
  * 桁数設定
  *
  * @param[in] dgt 有効桁数
- * @return なし
  */
 void
 set_digit(long dgt)
@@ -246,7 +243,6 @@ set_digit(long dgt)
  * 空白, タブは読み飛ばす.
  *
  * @param[in] calc calcinfo構造体
- * @return なし
  */
 static void
 readch(calcinfo *calc)
@@ -520,7 +516,6 @@ get_strlen(const double val, const char *fmt)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] calc 関数構造体
- * @return なし
  */
 void
 test_init_calc(testcalc *calc)

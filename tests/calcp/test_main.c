@@ -83,7 +83,6 @@ static int raise_signo = 0;       /**< parse_args() で発生させるシグナ�
  *
  * @param[in] argc 引数の数
  * @param[in] argv 引数
- * @return なし
  */
 static void
 fake_parse_args(int argc, char **argv)
@@ -99,7 +98,6 @@ fake_parse_args(int argc, char **argv)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -123,7 +121,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -137,7 +134,6 @@ teardown(void *data)
  * main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main(void *arg)
@@ -150,8 +146,6 @@ run_main(void *arg)
 
 /**
  * main() 関数テスト (計算)
- *
- * @return なし
  */
 TEST
 test_main_calc(void)
@@ -175,8 +169,6 @@ test_main_calc(void)
 
 /**
  * main() 関数テスト (exit, 空行)
- *
- * @return なし
  */
 TEST
 test_main_exit(void)
@@ -200,8 +192,6 @@ test_main_exit(void)
 
 /**
  * main() 関数テスト (計算できない式)
- *
- * @return なし
  */
 TEST
 test_main_error(void)
@@ -219,8 +209,6 @@ test_main_error(void)
 
 /**
  * main() 関数テスト (シグナル)
- *
- * @return なし
  */
 TEST
 test_main_signal(void)
@@ -241,7 +229,6 @@ test_main_signal(void)
  * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_failure(void *arg)
@@ -263,7 +250,6 @@ run_main_failure(void *arg)
  * 標準出力を閉じて, main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_closed_stdout(void *arg)
@@ -276,7 +262,6 @@ run_main_closed_stdout(void *arg)
  * 一定時間後に SIGINT を受け取る, main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_sigint(void *arg)
@@ -294,8 +279,6 @@ run_main_sigint(void *arg)
 
 /**
  * main() 関数テスト (システムコールなどの失敗)
- *
- * @return なし
  */
 TEST
 test_main_failure(void)
@@ -319,7 +302,6 @@ test_main_failure(void)
  * 標準入力が端末のとき (readline) の main() を, 子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
- * @return なし
  */
 static void
 run_main_tty(void *arg)
@@ -330,8 +312,6 @@ run_main_tty(void *arg)
 
 /**
  * main() 関数テスト (標準入力が端末のとき, readline を使う)
- *
- * @return なし
  */
 TEST
 test_main_readline(void)
@@ -348,8 +328,6 @@ test_main_readline(void)
 /**
  * main() 関数テスト (標準入力の終わり)
  * 端末でなければ, 入力の終わり (EOF) で終了する.
- *
- * @return なし
  */
 TEST
 test_main_eof(void)
@@ -370,8 +348,6 @@ test_main_eof(void)
 
 /**
  * main() 関数テスト (履歴が上限に達する)
- *
- * @return なし
  */
 TEST
 test_main_history(void)
@@ -394,8 +370,6 @@ test_main_history(void)
  * main() 関数テスト (入力待ちのときに, シグナルを受け取る)
  * 端末の入力を待つ readline は, イベントフックを呼び続けるので, SIGINT で,
  * フックが readline を終了させる.
- *
- * @return なし
  */
 TEST
 test_main_event_hook(void)

@@ -341,8 +341,6 @@ static const struct test_data_double number_data [] = {
 
 /**
  * 初期化処理
- *
- * @return なし
  */
 static void
 startup(void)
@@ -353,8 +351,6 @@ startup(void)
 
 /**
  * 四則演算テスト
- *
- * @return なし
  */
 TEST
 test_answer_four(void)
@@ -378,8 +374,6 @@ test_answer_four(void)
 
 /**
  * 関数テスト
- *
- * @return なし
  */
 TEST
 test_answer_func(void)
@@ -402,8 +396,6 @@ test_answer_func(void)
 
 /**
  * 四則演算と関数の組み合わせテスト
- *
- * @return なし
  */
 TEST
 test_answer_four_func(void)
@@ -426,8 +418,6 @@ test_answer_four_func(void)
 
 /**
  * 関数エラー時テスト
- *
- * @return なし
  */
 TEST
 test_answer_error(void)
@@ -450,8 +440,6 @@ test_answer_error(void)
 
 /**
  * parse_func_args() 関数テスト
- *
- * @return なし
  */
 TEST
 test_parse_func_args(void)
@@ -481,8 +469,6 @@ test_parse_func_args(void)
 
 /**
  * set_digit() 関数テスト
- *
- * @return なし
  */
 TEST
 test_set_digit(void)
@@ -502,8 +488,6 @@ test_set_digit(void)
 
 /**
  * readch() 関数テスト
- *
- * @return なし
  */
 TEST
 test_readch(void)
@@ -536,8 +520,6 @@ test_readch(void)
 
 /**
  * expression() 関数テスト
- *
- * @return なし
  */
 TEST
 test_expression(void)
@@ -562,8 +544,6 @@ test_expression(void)
 
 /**
  * term() 関数テスト
- *
- * @return なし
  */
 TEST
 test_term(void)
@@ -591,8 +571,6 @@ test_term(void)
 
 /**
  * factor() 関数テスト
- *
- * @return なし
  */
 TEST
 test_factor(void)
@@ -620,8 +598,6 @@ test_factor(void)
 
 /**
  * factor() 関数テスト
- *
- * @return なし
  */
 TEST
 test_token(void)
@@ -649,8 +625,6 @@ test_token(void)
 
 /**
  * number() 関数テスト
- *
- * @return なし
  */
 TEST
 test_number(void)
@@ -675,8 +649,6 @@ test_number(void)
 
 /**
  * get_strlen() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_strlen(void)
@@ -736,7 +708,6 @@ exec_calc(calcinfo *calc, const char *str)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -752,7 +723,6 @@ setup(void *data)
  * 終了処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 teardown(void *data)
@@ -763,8 +733,6 @@ teardown(void *data)
 
 /**
  * create_answer() 関数テスト (処理時間の表示)
- *
- * @return なし
  */
 TEST
 test_answer_timer(void)
@@ -784,8 +752,6 @@ test_answer_timer(void)
 
 /**
  * create_answer() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_answer_failure(void)
@@ -832,8 +798,6 @@ test_answer_failure(void)
 
 /**
  * 式を解析する関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
- *
- * @return なし
  */
 TEST
 test_calc_error_state(void)
@@ -856,8 +820,6 @@ test_calc_error_state(void)
 
 /**
  * parse_func_args() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_parse_func_args_failure(void)

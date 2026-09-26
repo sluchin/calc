@@ -57,8 +57,6 @@ TEST test_stop_timer_wrap(void);
 
 /**
  * print_timer() 関数テスト
- *
- * @return なし
  */
 TEST
 test_print_timer(void)
@@ -96,8 +94,6 @@ error_handler:
 
 /**
  * start_timer() 関数テスト
- *
- * @return なし
  */
 TEST
 test_start_timer(void)
@@ -111,8 +107,6 @@ test_start_timer(void)
 
 /**
  * stop_timer() 関数テスト
- *
- * @return なし
  */
 TEST
 test_stop_timer(void)
@@ -130,8 +124,6 @@ test_stop_timer(void)
 
 /**
  * get_time() 関数テスト
- *
- * @return なし
  */
 TEST
 test_get_time(void)
@@ -148,7 +140,6 @@ test_get_time(void)
  * 初期化処理
  *
  * @param[in] data 使用しない
- * @return なし
  */
 static void
 setup(void *data)
@@ -159,8 +150,6 @@ setup(void *data)
 
 /**
  * get_time() 関数テスト (失敗)
- *
- * @return なし
  */
 TEST
 test_get_time_failure(void)
@@ -192,8 +181,6 @@ fake_gettimeofday(struct timeval *tv, void *tz)
 
 /**
  * stop_timer() 関数テスト (32 ビットの時刻が一周する)
- *
- * @return なし
  */
 TEST
 test_stop_timer_wrap(void)

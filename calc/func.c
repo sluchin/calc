@@ -221,8 +221,6 @@ get_pow(calcinfo *calc, double x, double y)
 
 /**
  * 関数情報構造体初期化
- *
- * @return なし
  */
 static void
 init_func(void)
@@ -586,7 +584,6 @@ get_combination(calcinfo *calc, double n, double r)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] func 関数構造体
- * @return なし
  */
 void
 test_init_func(testfunc *func)

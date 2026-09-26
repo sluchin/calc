@@ -82,7 +82,6 @@ get_errormsg(calcinfo *calc)
  *
  * @param[in] calc calcinfo構造体
  * @param[in] error エラー種別
- * @return なし
  */
 void
 set_errorcode(calcinfo *calc, ER error)
@@ -97,7 +96,6 @@ set_errorcode(calcinfo *calc, ER error)
  * エラークリア
  *
  * @param[in] calc calcinfo構造体
- * @return なし
  */
 void
 clear_error(calcinfo *calc)
@@ -128,7 +126,6 @@ is_error(calcinfo *calc)
  *
  * @param[in] calc calcinfo構造体
  * @param[in] val 値
- * @return なし
  */
 void
 check_validate(calcinfo *calc, double val)
@@ -148,7 +145,6 @@ check_validate(calcinfo *calc, double val)
  * 浮動小数点例外チェック
  *
  * @param[in] calc calcinfo構造体
- * @return なし
  */
 void
 check_math_feexcept(calcinfo *calc)
@@ -176,8 +172,6 @@ check_math_feexcept(calcinfo *calc)
  * 浮動小数点例外チェッククリア
  *
  * 浮動小数点例外をチェックする前に必ずクリアする.
- *
- * @return なし
  */
 void
 clear_math_feexcept(void)
@@ -192,7 +186,6 @@ clear_math_feexcept(void)
  * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] error 関数構造体
- * @return なし
  */
 void
 test_init_error(testerror *error)
