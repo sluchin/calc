@@ -1,0 +1,563 @@
+/**
+ * @file  tests/calcp/test_func.c
+ * @brief 単体テスト
+ *
+ * @author higashi
+ * @date 2011-11-14 higashi 新規作成
+ * @version \$Id$
+ *
+ * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
+ */
+/* This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <ctype.h>  /* isalpha */
+
+#include "test_helper.h"
+
+#include "def.h"
+#include "log.h"
+#include "error.h"
+#include "calc.h"
+#include "func.h"
+#include "helper.h"
+
+/* プロトタイプ */
+/** exec_func() 関数テスト */
+TEST test_exec_func(void);
+/** get_pi() 関数テスト */
+TEST test_get_pi(void);
+/** get_e() 関数テスト */
+TEST test_get_e(void);
+/** get_rad() 関数テスト */
+TEST test_get_rad(void);
+/** get_deg() 関数テスト */
+TEST test_get_deg(void);
+/** get_pow() 関数テスト */
+TEST test_get_pow(void);
+/** get_sqrt() 関数テスト */
+TEST test_get_sqrt(void);
+/** get_ln() 関数テスト */
+TEST test_get_ln(void);
+/** get_log() 関数テスト */
+TEST test_get_log(void);
+/** get_factorial() 関数テスト */
+TEST test_get_factorial(void);
+/** get_permutation() 関数テスト */
+TEST test_get_permutation(void);
+/** get_combination() 関数テスト */
+TEST test_get_combination(void);
+
+/* 内部変数 */
+static testcalc st_calc; /**< calc関数構造体 */
+static testfunc st_func; /**< func関数構造体 */
+
+/* 内部関数 */
+
+/** テストデータ構造体 */
+struct test_data {
+    char expr[MAX_STRING];
+    double answer;
+    double x;
+    double y;
+    ER errorcode;
+    double error;
+};
+
+/** exec_func() 関数テスト用データ */
+static const struct test_data func_data[] = {
+    { "pi",          3.14159265359,   0, 0, E_NONE,   0.00000000001   },
+    { "e",           2.71828182846,   0, 0, E_NONE,   0.00000000001   },
+    { "abs(-2)",     2,               0, 0, E_NONE,   0.0             },
+    { "sqrt(2)",     1.41421356237,   0, 0, E_NONE,   0.00000000001   },
+    { "sin(2)" ,     0.909297426826,  0, 0, E_NONE,   0.000000000001  },
+    { "sin(-2)" ,   -0.909297426826,  0, 0, E_NONE,   0.000000000001  },
+    { "cos(2)",     -0.416146836547,  0, 0, E_NONE,   0.000000000001  },
+    { "cos(-2)",    -0.416146836547,  0, 0, E_NONE,   0.000000000001  },
+    { "tan(2)",     -2.18503986326,   0, 0, E_NONE,   0.00000000001   },
+    { "tan(-2)",     2.18503986326,   0, 0, E_NONE,   0.00000000001   },
+    { "asin(0.5)",   0.523598775598,  0, 0, E_NONE,   0.000000000001  },
+    { "asin(-0.5)", -0.523598775598,  0, 0, E_NONE,   0.000000000001  },
+    { "acos(0.5)",   1.0471975512,    0, 0, E_NONE,   0.0000000001    },
+    { "acos(-0.5)",  2.09439510239,   0, 0, E_NONE,   0.0000000001    },
+    { "atan(0.5)",   0.463647609001,  0, 0, E_NONE,   0.000000000001  },
+    { "atan(-0.5)", -0.463647609001,  0, 0, E_NONE,   0.000000000001  },
+    { "exp(2)",      7.38905609893,   0, 0, E_NONE,   0.00000000001   },
+    { "exp(-2)",     0.135335283237,  0, 0, E_NONE,   0.00000000001   },
+    { "ln(2)",       0.69314718056,   0, 0, E_NONE,   0.00000000001   },
+    { "log(2)",      0.301029995664,  0, 0, E_NONE,   0.000000000001  },
+    { "deg(2)",    114.591559026,     0, 0, E_NONE,   0.000000001     },
+    { "deg(-2)",  -114.591559026,     0, 0, E_NONE,   0.000000001     },
+    { "rad(2)",      0.0349065850399, 0, 0, E_NONE,   0.0000000000001 },
+    { "rad(-2)",    -0.0349065850399, 0, 0, E_NONE,   0.0000000000001 },
+    { "n(10)",       3628800,         0, 0, E_NONE,   0.0             },
+    { "nPr(5,2)",    20,              0, 0, E_NONE,   0.0             },
+    { "nCr(5,2)",    10,              0, 0, E_NONE,   0.0             },
+    { "nofunc(5)",    0.0,            0, 0, E_NOFUNC, 0.0             }
+};
+
+/** get_pow() 関数テスト用データ */
+static const struct test_data pow_data[] = {
+    { "2^3",   8,        2,  3, E_NONE, 0 },
+    { "0^0",   1,        0,  0, E_NONE, 0 },
+    { "0^2",   0,        0,  2, E_NONE, 0 },
+    { "2^0",   1,        2,  0, E_NONE, 0 },
+    { "-1^3", -1,       -1,  3, E_NONE, 0 },
+    { "0^-1",  0.0,      0, -1, E_NAN,  0 },
+};
+
+/** get_rad() 関数テスト用データ */
+static const struct test_data rad_data[] = {
+    { "rad(2)",   0.0349065850399,  2, 0, E_NONE, 0.0000000000001 },
+    { "rad(-2)", -0.0349065850399, -2, 0, E_NONE, 0.0000000000001 }
+};
+
+/** get_deg() 関数テスト用データ */
+static const struct test_data deg_data[] = {
+    { "deg(2)",   114.591559026,  2, 0, E_NONE, 0.000000001 },
+    { "deg(-2)", -114.591559026, -2, 0, E_NONE, 0.000000001 }
+};
+
+/** get_sqrt() 関数テスト用データ */
+static const struct test_data sqrt_data[] = {
+    { "sqrt(2)",  1.41421356237,  2, 0, E_NONE, 0.00000000001 },
+    { "sqrt(-1)", 0.0,           -1, 0, E_NAN,  0             }
+};
+
+/** get_ln() 関数テスト用データ */
+static const struct test_data ln_data[] = {
+    { "ln(2)",  0.69314718056,  2, 0, E_NONE, 0.00000000001 },
+    { "ln(-1)", 0.0,           -1, 0, E_NAN,  0             }
+};
+
+/** get_sqrt() 関数テスト用データ */
+static const struct test_data log_data[] = {
+    { "log(2)",  0.301029995664,  2, 0, E_NONE, 0.00000000001 },
+    { "log(-1)", 0.0,            -1, 0, E_NAN,  0             }
+};
+
+/** get_factorial() 関数テスト用データ */
+static const struct test_data factorial_data[] = {
+    { "n(0)",         1,    0,   0, E_NONE, 0.0 },
+    { "n(1)",         1,    1,   0, E_NONE, 0.0 },
+    { "n(2)",         2,    2,   0, E_NONE, 0.0 },
+    { "n(3)",         6,    3,   0, E_NONE, 0.0 },
+    { "n(9)",    362880,    9,   0, E_NONE, 0.0 },
+    { "n(-3)",       -6,   -3,   0, E_NONE, 0.0 },
+    { "n(-9)",  -362880,   -9,   0, E_NONE, 0.0 },
+    { "n(0.5)",       0.0,  0.5, 0, E_NAN,  0.0 }
+};
+
+/** get_permutation() 関数テスト用データ */
+static const struct test_data permutation_data[] = {
+    { "nPr(5,2)",  20,    5,  2, E_NONE, 0.0 },
+    { "nPr(-5,2)",  0.0, -5,  2, E_NAN,  0.0 },
+    { "nPr(5,-2)",  0.0,  5, -2, E_NAN,  0.0 },
+    { "nPr(2,5)",   0.0,  2,  5, E_NAN,  0.0 }
+};
+
+/** get_combination() 関数テスト用データ */
+static const struct test_data combination_data[] = {
+    { "nCr(5,2)",  10,    5,  2, E_NONE, 0.0 },
+    { "nCr(-5,2)",  0.0, -5,  2, E_NAN,  0.0 },
+    { "nCr(5,-2)",  0.0,  5, -2, E_NAN,  0.0 },
+    { "nCr(2,5)",   0.0,  2,  5, E_NAN,  0.0 }
+};
+
+/**
+ * 初期化処理
+ *
+ * @return なし
+ */
+static void
+startup(void)
+{
+    (void)memset(&st_calc, 0, sizeof(testcalc));
+    (void)memset(&st_func, 0, sizeof(testfunc));
+    test_init_calc(&st_calc);
+    test_init_func(&st_func);
+}
+
+/**
+ * exec_func() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_exec_func(void)
+{
+    double result = 0.0;            /* 結果 */
+    calcinfo calc;                  /* calcinfo構造体 */
+    char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
+    int pos = 0;                    /* 配列位置 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(func_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, func_data[i].expr);
+        st_calc.readch(&calc);
+
+        pos = 0;
+        (void)memset(func, 0, sizeof(func));
+        while (isalpha(calc.ch) && calc.ch != '\0' &&
+               pos <= MAX_FUNC_STRING) {
+            func[pos++] = calc.ch;
+            st_calc.readch(&calc);
+        }
+        dbglog("func=%s", func);
+
+        result = exec_func(&calc, func);
+        dbglog(calc.fmt, result);
+        TEST_ASSERT_DOUBLE_MSG(func_data[i].answer, func_data[i].error, result, "%s=%.12g",
+                                            func_data[i].expr,
+                                            func_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)func_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         func_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_pow() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_pow(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(pow_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, pow_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = get_pow(&calc, pow_data[i].x, pow_data[i].y);
+        TEST_ASSERT_DOUBLE_MSG(pow_data[i].answer, pow_data[i].error, result, "%s=%.12g",
+                                            pow_data[i].expr,
+                                            pow_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)pow_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         pow_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_pi() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_pi(void)
+{
+    double result = 0.0;             /* 結果 */
+    calcinfo calc;                   /* calcinfo構造体 */
+    const double pi = 3.14159265359; /* pi */
+
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "pi");
+    st_calc.readch(&calc);
+
+    result = st_func.get_pi(&calc);
+    TEST_ASSERT_DOUBLE_MSG(pi, 0.00000000001, result, "%s=%.12g",
+                                        "pi",
+                                        pi);
+    PASS();
+}
+
+/**
+ * get_e() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_e(void)
+{
+    double result = 0.0;            /* 結果 */
+    calcinfo calc;                  /* calcinfo構造体 */
+    const double e = 2.71828182846; /* e */
+
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "e");
+    st_calc.readch(&calc);
+
+    result = st_func.get_e(&calc);
+    TEST_ASSERT_DOUBLE_MSG(e, 0.00000000001, result, "%s=%.12g",
+                                        "e",
+                                        e);
+    PASS();
+}
+
+/**
+ * get_rad() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_rad(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(rad_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, rad_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_rad(&calc, rad_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(rad_data[i].answer, rad_data[i].error, result, "%s=%.12g",
+                                            rad_data[i].expr,
+                                            rad_data[i].answer);
+    }
+    PASS();
+}
+
+/**
+ * get_deg() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_deg(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(deg_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, deg_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_deg(&calc, deg_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(deg_data[i].answer, deg_data[i].error, result, "%s=%.12g",
+                                            deg_data[i].expr,
+                                            deg_data[i].answer);
+    }
+    PASS();
+}
+
+/**
+ * get_sqrt() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_sqrt(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(sqrt_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, sqrt_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_sqrt(&calc, sqrt_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(sqrt_data[i].answer, sqrt_data[i].error, result, "%s=%.12g",
+                                            sqrt_data[i].expr,
+                                            sqrt_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)sqrt_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         sqrt_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_ln() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_ln(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(ln_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, ln_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_ln(&calc, ln_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(ln_data[i].answer, ln_data[i].error, result, "%s=%.12g",
+                                            ln_data[i].expr,
+                                            ln_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)ln_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         ln_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_log() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_log(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(log_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, log_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_log(&calc, log_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(log_data[i].answer, log_data[i].error, result, "%s=%.12g",
+                                            log_data[i].expr,
+                                            log_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)log_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         log_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_factorial() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_factorial(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(factorial_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, factorial_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_factorial(&calc, factorial_data[i].x);
+        TEST_ASSERT_DOUBLE_MSG(factorial_data[i].answer, factorial_data[i].error, result, "%s=%.12g",
+                                            factorial_data[i].expr,
+                                            factorial_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)factorial_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         factorial_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_permutation() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_permutation(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(permutation_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, permutation_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_permutation(&calc,
+                                         permutation_data[i].x,
+                                         permutation_data[i].y);
+        TEST_ASSERT_DOUBLE_MSG(permutation_data[i].answer, permutation_data[i].error, result, "%s=%.12g",
+                                            permutation_data[i].expr,
+                                            permutation_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)permutation_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         permutation_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+/**
+ * get_combination() 関数テスト
+ *
+ * @return なし
+ */
+TEST
+test_get_combination(void)
+{
+    double result = 0.0; /* 結果 */
+    calcinfo calc;       /* calcinfo構造体 */
+
+    unsigned int i;
+    for (i = 0; i < NELEMS(combination_data); i++) {
+        (void)memset(&calc, 0, sizeof(calcinfo));
+        set_string(&calc, combination_data[i].expr);
+        st_calc.readch(&calc);
+
+        result = st_func.get_combination(&calc,
+                                         combination_data[i].x,
+                                         combination_data[i].y);
+        TEST_ASSERT_DOUBLE_MSG(combination_data[i].answer, combination_data[i].error, result, "%s=%.12g",
+                                            combination_data[i].expr,
+                                            combination_data[i].answer);
+        TEST_ASSERT_INT_MSG((int)combination_data[i].errorcode, (int)calc.errorcode, "%s error",
+                                         combination_data[i].expr);
+        clear_error(&calc);
+    }
+    PASS();
+}
+
+
+/**
+ * 終了処理
+ *
+ * @return なし
+ */
+static void
+teardown(void *data)
+{
+    (void)data;
+    free_strings();
+}
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_exec_func);
+    RUN_TEST(test_get_pow);
+    RUN_TEST(test_get_pi);
+    RUN_TEST(test_get_e);
+    RUN_TEST(test_get_rad);
+    RUN_TEST(test_get_deg);
+    RUN_TEST(test_get_sqrt);
+    RUN_TEST(test_get_ln);
+    RUN_TEST(test_get_log);
+    RUN_TEST(test_get_factorial);
+    RUN_TEST(test_get_permutation);
+    RUN_TEST(test_get_combination);
+    TEST_MAIN_END();
+}
