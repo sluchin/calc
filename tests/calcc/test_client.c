@@ -139,10 +139,12 @@ TEST test_send_sock_timer(void);
 TEST test_read_sock_failure(void);
 TEST test_client_loop_signal_mask_failure(void);
 TEST test_client_loop_atexit_failure(void);
+TEST test_client_loop_socket_only(void);
 TEST test_client_loop_read_failure(void);
 TEST test_send_sock_alloc_failure(void);
 
 /* 内部関数 */
+static void on_sigint(int signo);
 /** send_sock() 関数実行 */
 static int exec_send_sock(unsigned char *sbuf, size_t length);
 /** アクセプト */
@@ -374,7 +376,13 @@ test_client_loop(void)
             exit(CHILD_FAILED);
         }
 
-        g_sig_handled = 1;
+        /* 送信と受信が終わるまでループを続け, 一定時間後に, SIGINT で終了する */
+        (void)signal(SIGINT, on_sigint);
+        if (fork() == 0) {
+            (void)usleep(800000);
+            (void)kill(getppid(), SIGINT);
+            _exit(EXIT_SUCCESS);
+        }
         st = client_loop(csock);
 
         close_sock(&csock);
@@ -391,7 +399,8 @@ test_client_loop(void)
 
         /* 標準入力に送信 */
         sendlen = sizeof(sendbuf);
-        wlen = write(STDIN_FILENO, (char *)sendbuf, sendlen);
+        /* 1 行だけ送る (終端の NUL まで送ると, 次のループで, 改行のない行を待ち続ける) */
+        wlen = write(STDIN_FILENO, (char *)sendbuf, strlen((char *)sendbuf));
         if (wlen < 0) {
             TEST_FAIL("write=%zd(%d)", wlen, errno);
         }
@@ -1303,6 +1312,73 @@ test_client_loop_atexit_failure(void)
     PASS();
 }
 
+/**
+ * SIGINT のハンドラ (client/main.c と同じ動作)
+ *
+ * @param[in] signo シグナル
+ * @return なし
+ */
+static void
+on_sigint(int signo)
+{
+    (void)signo;
+    g_sig_handled = 1;
+}
+
+/**
+ * ソケットだけが読める状態の client_loop() を, 子プロセスで実行するための関数
+ * 標準入力は, 何も入力されない (書込側を開いたままの) パイプにする.
+ * 接続先は, 答えを送っておく. 一定時間後に, SIGINT で, ループを終了する.
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+child_client_loop_socket_only(void *arg)
+{
+    int idle[2] = { -1, -1 };      /* 標準入力用のパイプ */
+    int sv[2] = { -1, -1 };        /* ソケットペア */
+    struct server_data *dt = NULL; /* 送信データ */
+    ssize_t len = 0;               /* 送信データ長 */
+    pid_t ppid = getpid();         /* client_loop() を実行するプロセス */
+
+    (void)arg;
+    (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
+    (void)alarm(10);                /* 終了しなかったときの保険 */
+    if (pipe(idle) < 0 || socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+        exit(CHILD_FAILED);
+    (void)dup2(idle[0], STDIN_FILENO);
+    len = set_server_data(&dt, (const unsigned char *)"42", 3);
+    if (len < 0 || writen(sv[1], dt, (size_t)len) < 0)
+        exit(CHILD_FAILED);
+
+    (void)signal(SIGINT, on_sigint);
+    if (fork() == 0) {
+        (void)usleep(500000);
+        (void)kill(ppid, SIGINT);
+        _exit(EXIT_SUCCESS);
+    }
+    exit(client_loop(sv[0]));
+}
+
+/**
+ * client_loop() 関数テスト (ソケットだけが読める)
+ * 標準入力が読めない間は, 標準入力を待たずに, ソケットから受信する.
+ *
+ * @return なし
+ */
+TEST
+test_client_loop_socket_only(void)
+{
+    char out[BUF_SIZE] = {0}; /* 出力 */
+
+    TEST_ASSERT_INT(EX_SIGNAL,
+                    test_run_child(child_client_loop_socket_only, NULL, NULL,
+                                   out, sizeof(out)));
+    TEST_ASSERT_STR("42\n", out);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -1326,6 +1402,7 @@ main(int argc, char **argv)
     RUN_TEST(test_client_loop_signal_mask_failure);
     RUN_TEST(test_client_loop_read_failure);
     RUN_TEST(test_client_loop_atexit_failure);
+    RUN_TEST(test_client_loop_socket_only);
     RUN_TEST(test_send_sock_alloc_failure);
     TEST_MAIN_END();
 }
