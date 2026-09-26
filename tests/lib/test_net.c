@@ -273,9 +273,9 @@ test_set_port(void)
     int retval = 0;            /* 戻り値 */
 
     /* テストデータ */
-    const char *port[] = { "1", "65534", "ftp" }; /* ポート文字列 */
-    const uint32_t portno[] = { 1, 65534, 21 };   /* ポート番号 */
-    const char *err_port[] = { "0", "65535", "noservice" }; /* エラー */
+    const char *port[] = { "1", "65534", "65535", "ftp" }; /* ポート文字列 */
+    const uint32_t portno[] = { 1, 65534, 65535, 21 };     /* ポート番号 */
+    const char *err_port[] = { "0", "65536", "noservice" }; /* エラー */
 
     /* 正常系 */
     unsigned int i;
@@ -799,6 +799,19 @@ test_set_port_failure(void)
     TEST_ASSERT_INT(EX_NG, set_port(&addr, NULL));
     /* 存在しないサービス名 */
     TEST_ASSERT_INT(EX_NG, set_port(&addr, "no-such-service"));
+
+    /* 範囲外 (65536 以上は, uint16_t に切り捨てられて, 別のポート番号にならない) */
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "0"));
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "65536"));
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "65616"));
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "70000"));
+    TEST_ASSERT_INT(EX_NG, set_port(&addr, "4294967376"));
+
+    /* 範囲内の最小と最大 */
+    TEST_ASSERT_INT(EX_OK, set_port(&addr, "1"));
+    TEST_ASSERT_INT(1, ntohs(addr.sin_port));
+    TEST_ASSERT_INT(EX_OK, set_port(&addr, "65535"));
+    TEST_ASSERT_INT(65535, ntohs(addr.sin_port));
     PASS();
 }
 

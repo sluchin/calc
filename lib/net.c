@@ -97,6 +97,7 @@ set_port(struct sockaddr_in *addr, const char *port)
 {
     struct servent *sp = NULL; /* サービス情報構造体 */
     uint16_t portno = 0;       /* ポート番号 */
+    long value = 0;            /* strtol戻り値 */
     const int base = 10;       /* 基数 */
 
     dbglog("start: addr=%p, port=%s", addr, port);
@@ -104,13 +105,16 @@ set_port(struct sockaddr_in *addr, const char *port)
     if (!addr || !port)
         return EX_NG;
 
-    if (isdigit(port[0])) { /* 先頭が数字 */
-        portno = (uint16_t)strtol(port, NULL, base);
-        dbglog("portno=%"PRIu16", 0x%"PRIx16"", portno, portno);
-        if (portno <= 0 || 65535 <= portno) {
-            outlog("portno=%d", portno);
+    if (isdigit((unsigned char)port[0])) { /* 先頭が数字 */
+        /* uint16_t にキャストすると, 65616 が 80 になるので, 範囲は long で確認する */
+        value = strtol(port, NULL, base);
+        dbglog("value=%ld", value);
+        if (value <= 0 || 65535 < value) {
+            outlog("portno=%ld", value);
             return EX_NG;
         }
+        portno = (uint16_t)value;
+        dbglog("portno=%"PRIu16", 0x%"PRIx16"", portno, portno);
         dbglog("portno=0x%"PRIx16"", htons(portno));
         addr->sin_port = (u_short)htons(portno);
     } else {
