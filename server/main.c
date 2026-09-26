@@ -23,7 +23,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <stdlib.h> /* exit EXIT_SUCCESS */
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE /* execvpe */
+#endif
+#include <stdlib.h> /* exit EXIT_SUCCESS realpath */
+#include <limits.h> /* PATH_MAX */
 #include <string.h> /* memset */
 #include <unistd.h> /* alarm execve */
 #include <signal.h> /* sigaction sigemptyset */
@@ -58,6 +62,9 @@ int main(int argc, char *argv[], char *envp[])
 #ifndef _DEBUG
     int retval = 0; /* 戻り値 */
 #endif
+    char exepath[PATH_MAX];       /* 実行ファイルの絶対パス */
+    const char *restart = argv[0]; /* 再起動する実行ファイル */
+
     dbglog("start");
 
     /* シグナルハンドラ */
@@ -68,6 +75,11 @@ int main(int argc, char *argv[], char *envp[])
 
     /* オプション引数 */
     parse_args(argc, argv);
+
+    /* daemon() は, カレントディレクトリを / に変えるので, 再起動 (SIGHUP) のために,
+     * 実行ファイルのパスを, 前もって絶対パスにする. (/ を含まないときは, PATH から探す) */
+    if (strchr(argv[0], '/') && realpath(argv[0], exepath))
+        restart = exepath;
 
     /* ソケット接続 */
     sockfd = server_sock();
@@ -92,7 +104,9 @@ int main(int argc, char *argv[], char *envp[])
     if (hupflag) { /* 再起動 */
         dbglog("SIGHUP");
         (void)alarm(0);
-        (void)execve(argv[0], argv, envp);
+        (void)execvpe(restart, argv, envp);
+        outlog("execvpe: %s", restart); /* 成功すると, ここには戻らない */
+        exit(EXIT_FAILURE);
     }
 
     exit(EXIT_SUCCESS);
