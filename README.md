@@ -83,18 +83,34 @@ cd calc
 CMake をインストールし, `make test` コマンドを実行する.
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake -S . -B build
+cd build
+make          # 単体テストは, ビルドされない
+make test     # 単体テストをビルドして, 実行する (ctest)
 ```
+
+`make test` は, 単体テストのビルドも, ctest のテスト (`build_tests`) として実行する. ビルドの出力と, 各テストの出力を, 全て表示する (`ctest --verbose`).
+`ctest --output-on-failure` でも, 同じように, ビルドしてから実行する.
+単体テストは, 内部関数を公開する `UNITTEST` を有効にしてビルドする. 配布用のビルドでは, `-DBUILD_TESTS=OFF` を指定する.
+
+トップレベルの `make test` (GNU make) は, Debug ビルドを `build-test/` に作って, ctest を実行する.
 
 テストは `tests/` 配下にある. テストランナーは [greatest](https://github.com/silentbicycle/greatest), モックは [FFF](https://github.com/meekrosoft/fff) (`fff.h`) を使用する.
 どちらもヘッダのみで, `tests/third_party/` に含まれるので, インストールは不要.
 
 ## カバレッジ
 
-gcovr をインストールし, `make coverage` コマンドを実行する.
+gcovr をインストールし (`sudo apt install gcovr`), `make coverage` コマンドを実行する.
 レポートは `build-coverage/coverage/index.html` に出力される.
+
+CMake のビルドディレクトリでも, `make coverage` で実行できる. カバレッジ用に, `build/coverage-build/` に別にビルドして, レポートを `build/coverage-build/coverage/index.html` に出力する.
+
+```sh
+cd build
+make coverage
+```
+
+`-DENABLE_COVERAGE=ON` で構成したディレクトリでは, そのディレクトリの中でテストを実行して, `build/coverage/index.html` に出力する.
 
 ## ドキュメント生成
 
