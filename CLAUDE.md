@@ -11,14 +11,15 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - CMake でのビルド: `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build` (`Release` も可。`make cmake-build` でも実行できる)
   - 最上位の `CMakeLists.txt` 1 つで全体を扱う。Debug は `-DUNITTEST -D_DEBUG`、それ以外は `-DNDEBUG` を付ける。
   - 最適化は `Makefile` に合わせて `-g -O2` にしている。
-  - Debug (または `-DBUILD_TESTS=ON`) では、単体テストも作られ、`ctest --test-dir build --output-on-failure` で実行できる。単体テストは、`UNITTEST` で公開される内部関数を使うので、`BUILD_TESTS` が有効なときは、全体に `-DUNITTEST` を付ける。
+  - 単体テストは、`make` (引数なし) ではビルドされない。`build/` で `make test` (`ctest`) を実行すると、ビルドしてから実行する (ビルドは、ctest のテスト `build_tests`。全てのテストが `FIXTURES_REQUIRED` で依存する)。`make test` は、ビルドの出力と各テストの出力を全て表示する (`CMAKE_CTEST_ARGUMENTS` に `--verbose`。CMake 3.17 以降)。`BUILD_TESTS` は既定で ON で、ON のときは全体に `-DUNITTEST` を付ける。配布用のビルドは `-DBUILD_TESTS=OFF`。
   - 生成物は `build/` に出る (`.gitignore` 済み)。ソースファイルを追加したら、`CMakeLists.txt` も更新する。
 - 警告: `-Wall` で警告を出さないこと。ビルド出力に警告が出たら修正する。
-- テスト: `make test` (CMake の Debug ビルドを `build-test/` に作り、`ctest` を実行する。CMake が必要)
-  - 1 つだけ実行するときは、`build-test/tests/<ディレクトリ>/<テスト名>` を直接実行する (例: `build-test/tests/lib/test_data`)。greatest のオプション (`-t <名前>` で名前を指定、`-l` で一覧) が使える。
+- テスト: `make test` (CMake の Debug ビルドを `build-test/` に作り、ビルドして `ctest` を実行する。CMake が必要)
+  - 1 つだけ実行するときは、`build-test/tests/<ディレクトリ>/<テスト名>` を直接実行する (先に `make test` でビルドしておく) (例: `build-test/tests/lib/test_data`)。greatest のオプション (`-t <名前>` で名前を指定、`-l` で一覧) が使える。
   - テストが実行できなかったときは、そのことを報告する (成功したとは書かない)。
 - カバレッジ: `make coverage` (gcov と gcovr が必要。`build-coverage/` に作り、端末に一覧を出す。詳細は `build-coverage/coverage/index.html`)
-  - CMake では `-DENABLE_COVERAGE=ON` (最適化なしで `--coverage` を付ける)。
+  - CMake のビルドディレクトリでも `make coverage` が使える。`-DENABLE_COVERAGE=ON` (最適化なしで `--coverage` を付ける) で構成していなければ、`<ビルドディレクトリ>/coverage-build/` に別にビルドする。`gcovr` が無いと、理由を表示して失敗する。
+  - `add_custom_target` には、必ず `VERBATIM` を付ける (付けないと、`(` などを含む引数でシェルの構文エラーになる)。
 - ドキュメント: `make doc` (doxygen, graphviz, mscgen が必要)
 
 ## プロジェクト構成
@@ -62,6 +63,11 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - `TEST_FAIL` `TEST_ASSERT_*` は、`TEST` 関数の中でしか使えない (失敗すると `return` するため)。`TEST` 以外の補助関数や、`fork` した子プロセスでは、`TEST_ERROR` で表示し、戻り値や `exit()` で伝える。
 - メッセージは標準出力に出す (テストが標準エラー出力をパイプに繋ぐため)。
 - 外部の関数 (システムコールなど) を置き換えるときは、FFF の `FAKE_VALUE_FUNC` / `FAKE_VOID_FUNC` を使う (例: `tests/lib/test_term.c` の `tcgetattr`)。`DEFINE_FFF_GLOBALS` は、1 つの実行ファイルに 1 か所だけ書く。`SET_SETUP` で `RESET_FAKE` を呼び、テスト間でモックの状態を持ち越さない。
+- libc の関数の失敗 (`send` `recv` `close` `socket` `malloc` など) を通すときは、`tests/test_helper.h` の `TEST_PASSTHROUGH` を使う。FFF のモックにして、通常は `dlsym(RTLD_NEXT)` で本物を呼び (素通し)、`TEST_INJECT(名前, 見送る回数, 失敗させる回数, 戻り値, errno)` で、その回数だけ失敗させる。`setup` で `TEST_PASSTHROUGH_RESET(名前)` を呼ぶ。`TEST_ASSERT_INJECTED(名前)` で、失敗が使われたこと (関数が呼ばれたこと) を確認する。実際に失敗させられる場合 (不正なファイルディスクリプタ、閉じた接続先、巨大な `malloc` など) は、モックにしない。
+  - `_FORTIFY_SOURCE` が有効だと、`vsnprintf` などが `__vsnprintf_chk` に置き換わり、モックにできない。`BUILD_TESTS` が ON のときは、`-U_FORTIFY_SOURCE` を付けている (`CMakeLists.txt`)。
+  - `pipe` (配列引数) や `va_list` を取る関数のモックは、`#pragma GCC diagnostic ignored` で警告を抑える (`tests/lib/test_fileio.c` `tests/lib/test_log.c`)。
+  - 関数ポインタの引数は、FFF が直接書けないので、`typedef` する (`tests/calcd/test_server.c` の `thread_func_t`)。
+  - 標準エラー出力が、前のテストで閉じたパイプのままだと、`SIGPIPE` で終了する。ログを出すテストの前に、`redirect(STDERR_FILENO, "/dev/null")` する。
 - 端末や環境に依存させない。端末が無くても (`ctest` の標準入力は端末ではない) 実行できること。
 - テストを追加したら、`tests/CMakeLists.txt` にも追加する。実行ファイルの名前は `<ディレクトリ>_<名前>` (例: `calcp_test_option`) で、`tests/<ディレクトリ>/<名前>` に出力される。
 - `calcp` は、標準入力が端末以外でも、入力の終わり (EOF) で終了しない (readline のイベントフックのため)。`main()` のテストの入力は、必ず `quit` で終わらせる。
