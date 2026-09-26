@@ -197,7 +197,7 @@ sys_print_termattr(const int level, const int option,
 
     (void)memset(&mode, 0, sizeof(struct termios));
 
-    result = get_termattr(STDIN_FILENO, &mode);
+    result = get_termattr(fd, &mode);
     if (!result)
         return;
 

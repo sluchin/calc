@@ -56,6 +56,8 @@ TEST test_mode_type_flag(void);
 TEST test_sys_print_termattr_failure(void);
 /** get_termattr() 関数テスト (失敗) */
 TEST test_get_termattr_failure(void);
+/** sys_print_termattr() 関数テスト (指定したファイルディスクリプタ) */
+TEST test_sys_print_termattr_fd(void);
 
 /* 内部変数 */
 static testterm term; /**< 関数構造体 */
@@ -260,6 +262,23 @@ test_get_termattr_failure(void)
     PASS();
 }
 
+/**
+ * sys_print_termattr() 関数テスト (指定したファイルディスクリプタの端末情報を取得する)
+ *
+ * @return なし
+ */
+TEST
+test_sys_print_termattr_fd(void)
+{
+    const int termfd = 7; /* 標準入力以外のファイルディスクリプタ */
+
+    sys_print_termattr(LOG_INFO, LOG_PID, "programname", "filename", 15,
+                       "function", termfd);
+    TEST_ASSERT_INT(1, tcgetattr_fake.call_count);
+    TEST_ASSERT_INT(termfd, tcgetattr_fake.arg0_val);
+    PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int
@@ -274,5 +293,6 @@ main(int argc, char **argv)
     RUN_TEST(test_mode_type_flag);
     RUN_TEST(test_sys_print_termattr_failure);
     RUN_TEST(test_get_termattr_failure);
+    RUN_TEST(test_sys_print_termattr_fd);
     TEST_MAIN_END();
 }
