@@ -1384,7 +1384,8 @@ test_client_loop_socket_only(void)
     TEST_ASSERT_INT(EX_SIGNAL,
                     test_run_child(child_client_loop_socket_only, NULL, NULL,
                                    out, sizeof(out)));
-    TEST_ASSERT_STR("42\n", out);
+    /* デバッグビルドは, ダンプも標準エラー出力に出す (子プロセスの出力に含まれる) */
+    TEST_ASSERT_MATCH("(^|\n)42\n", out);
     PASS();
 }
 
