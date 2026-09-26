@@ -993,6 +993,10 @@ child_read_sock(void *arg)
         hd.length = htonl(4);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
+    case 5: /* データ長が上限を超えるヘッダ */
+        hd.length = htonl(MAX_DATA_LENGTH + 1);
+        (void)writen(sv[1], &hd, sizeof(hd));
+        break;
     case 2: /* データ長が 0 のヘッダ */
         hd.length = htonl(0);
         (void)writen(sv[1], &hd, sizeof(hd));
@@ -1182,6 +1186,11 @@ test_read_sock_failure(void)
                                    sizeof(out)));
     /* データ長が 0 */
     child_mode = 2;
+    TEST_ASSERT_INT(EX_RECV_ERR,
+                    test_run_child(child_read_sock, NULL, NULL, out,
+                                   sizeof(out)));
+    /* データ長が上限を超える (巨大なメモリを確保しない) */
+    child_mode = 5;
     TEST_ASSERT_INT(EX_RECV_ERR,
                     test_run_child(child_read_sock, NULL, NULL, out,
                                    sizeof(out)));
