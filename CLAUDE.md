@@ -64,6 +64,9 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - メッセージは標準出力に出す (テストが標準エラー出力をパイプに繋ぐため)。
 - 外部の関数 (システムコールなど) を置き換えるときは、FFF の `FAKE_VALUE_FUNC` / `FAKE_VOID_FUNC` を使う (例: `tests/lib/test_term.c` の `tcgetattr`)。`DEFINE_FFF_GLOBALS` は、1 つの実行ファイルに 1 か所だけ書く。`SET_SETUP` で `RESET_FAKE` を呼び、テスト間でモックの状態を持ち越さない。
 - libc の関数の失敗 (`send` `recv` `close` `socket` `malloc` など) を通すときは、`tests/test_helper.h` の `TEST_PASSTHROUGH` を使う。FFF のモックにして、通常は `dlsym(RTLD_NEXT)` で本物を呼び (素通し)、`TEST_INJECT(名前, 見送る回数, 失敗させる回数, 戻り値, errno)` で、その回数だけ失敗させる。`setup` で `TEST_PASSTHROUGH_RESET(名前)` を呼ぶ。`TEST_ASSERT_INJECTED(名前)` で、失敗が使われたこと (関数が呼ばれたこと) を確認する。実際に失敗させられる場合 (不正なファイルディスクリプタ、閉じた接続先、巨大な `malloc` など) は、モックにしない。
+  - `snprintf` `fcntl` (可変引数) や `malloc` `calloc` のように、ほとんどの関数が使うものは、FFF のモックにしない (FFF のモックは、`main()` より前の呼び出しにも使われる)。テストのファイルに、同名の関数を直接定義して、指定した条件のときだけ失敗させる (`tests/calcp/test_calc.c` `tests/calcd/test_server.c` `tests/lib/test_net.c`)。本物は、`__libc_malloc` `dlsym(RTLD_NEXT)` `vsnprintf` で呼ぶ。`malloc` のあとに `memset(0)` するコードは、最適化で `calloc` になるので、`calloc` も置き換える。デバッグビルドの `dbglog()` も、`snprintf` や `malloc` を呼ぶので、呼び出しの回数ではなく、書式やサイズで、失敗させる呼び出しを選ぶ。
+  - `atexit` は、テストの実行ファイルにリンクした `main.c` の呼び出しだけ置き換えられる (`tests/calcc/test_main.c`。共有ライブラリの中の呼び出しは、置き換えられない)。本物は `__cxa_atexit` で呼ぶ。
+  - `exit()` や `fork` を伴う処理 (`main()` など) の失敗は、注入も、子プロセスの中で行う。親の `test_run_child()` が、`fflush` などを先に呼んで、注入を消費するため。
   - `_FORTIFY_SOURCE` が有効だと、`vsnprintf` などが `__vsnprintf_chk` に置き換わり、モックにできない。`BUILD_TESTS` が ON のときは、`-U_FORTIFY_SOURCE` を付けている (`CMakeLists.txt`)。
   - `pipe` (配列引数) や `va_list` を取る関数のモックは、`#pragma GCC diagnostic ignored` で警告を抑える (`tests/lib/test_fileio.c` `tests/lib/test_log.c`)。
   - 関数ポインタの引数は、FFF が直接書けないので、`typedef` する (`tests/calcd/test_server.c` の `thread_func_t`)。
