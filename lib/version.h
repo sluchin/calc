@@ -1,5 +1,5 @@
 /**
- * @file version.h
+ * @file lib/version.h
  * @brief バージョン情報
  *
  * @author higashi
