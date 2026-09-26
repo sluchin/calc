@@ -90,7 +90,7 @@ void test_init_calc(testcalc *calc);
 #endif /* UNITTEST */
 
 /**
- * @mainpage 処理詳細
+ * @page details 処理詳細
  *
  * @section server サーバ
  * -# ポート番号の設定\n
