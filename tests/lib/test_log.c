@@ -1,5 +1,5 @@
 /**
- * @file lib/tests/test_log.c
+ * @file tests/lib/test_log.c
  * @brief 単体テスト
  *
  * @author higashi
@@ -28,7 +28,8 @@
 #include <fcntl.h>  /* open */
 #include <errno.h>  /* errno */
 #include <signal.h> /* signal */
-#include <cutter.h> /* cutter library */
+
+#include "test_helper.h"
 
 #include "def.h"
 #include "fileio.h"
@@ -38,26 +39,26 @@
 
 /* プロトタイプ */
 /** set_progname() 関数テスト */
-void test_set_progname(void);
+TEST test_set_progname(void);
 /** get_progname() 関数テスト */
-void test_get_progname(void);
+TEST test_get_progname(void);
 /** system_log() 関数テスト */
-void test_system_log(void);
+TEST test_system_log(void);
 /** system_dbg_log() 関数テスト */
-void test_system_dbg_log(void);
+TEST test_system_dbg_log(void);
 /** stderr_log() 関数テスト */
-void test_stderr_log(void);
+TEST test_stderr_log(void);
 /** dump_log() 関数テスト */
-void test_dump_log(void);
+TEST test_dump_log(void);
 /** dump_sys() 関数テスト */
-void test_dump_sys(void);
+TEST test_dump_sys(void);
 /** dump_file() 関数テスト */
-void test_dump_file(void);
+TEST test_dump_file(void);
 #ifdef HAVE_EXECINFO
 /** systrace() 関数テスト */
-void test_systrace(void);
+TEST test_systrace(void);
 /** print_trace() 関数テスト */
-void test_print_trace(void);
+TEST test_print_trace(void);
 #endif
 
 /* 内部変数 */
@@ -68,8 +69,8 @@ static char testfile[L_tmpnam] = {0}; /**< 一意なファイル名 */
 /* 内部関数 */
 /** 標準エラー出力用文字列設定 */
 static void set_print_hex(char *data, size_t len);
-/** シスログ出力用文字列設定 */
-static void set_print_hex_sys(char *data, const char *prefix, size_t len);
+/** シスログ出力の確認 */
+static int match_print_hex_sys(const char *actual, const char *prefix);
 /** シグナル設定 */
 static void set_sig_handler(void);
 
@@ -98,7 +99,8 @@ const char *print_hex[] = {
  *
  * @return なし
  */
-void cut_startup(void)
+static void
+startup(void)
 {
     set_sig_handler();
 
@@ -116,19 +118,19 @@ void cut_startup(void)
  *
  * @return なし
  */
-void
-cut_teardown(void)
+static void
+teardown(void *data)
 {
     if (fd != -1) {
         if (close(fd) < 0)
-            cut_notify("close: fd=%d(%d)", fd, errno);
+            TEST_NOTIFY("close: fd=%d(%d)", fd, errno);
         fd = -1;
     }
 
     if (testfile[0] != '\0') {
         if (!access(testfile, W_OK)) { /* ファイルが存在する */
             if (unlink(testfile) < 0)
-                cut_notify("unlink: %s(%d)", testfile, errno);
+                TEST_NOTIFY("unlink: %s(%d)", testfile, errno);
         }
         (void)memset(testfile, 0, sizeof(testfile));
     }
@@ -139,7 +141,7 @@ cut_teardown(void)
  *
  * @return なし
  */
-void
+TEST
 test_set_progname(void)
 {
     char *ptr = NULL;                   /* テスト関数戻り値 */
@@ -147,7 +149,8 @@ test_set_progname(void)
 
     set_progname(prog);
     ptr = get_progname();
-    cut_assert_equal_string("testprog", ptr);
+    TEST_ASSERT_STR("testprog", ptr);
+    PASS();
 }
 
 /**
@@ -155,7 +158,7 @@ test_set_progname(void)
  *
  * @return なし
  */
-void
+TEST
 test_get_progname(void)
 {
     char *ptr = NULL;              /* テスト関数戻り値 */
@@ -163,7 +166,8 @@ test_get_progname(void)
 
     set_progname(prog);
     ptr = get_progname();
-    cut_assert_equal_string("testprog", ptr);
+    TEST_ASSERT_STR("testprog", ptr);
+    PASS();
 }
 
 /**
@@ -171,7 +175,7 @@ test_get_progname(void)
  *
  * @return なし
  */
-void
+TEST
 test_system_log(void)
 {
     int rlen = 0;                /* read戻り値 */
@@ -183,8 +187,7 @@ test_system_log(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
     system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
@@ -192,12 +195,11 @@ test_system_log(void)
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 
 /**
@@ -205,7 +207,7 @@ test_system_log(void)
  *
  * @return なし
  */
-void
+TEST
 test_system_dbg_log(void)
 {
     int rlen = 0;                /* read戻り値 */
@@ -218,8 +220,7 @@ test_system_dbg_log(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
     system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
@@ -227,13 +228,12 @@ test_system_dbg_log(void)
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 
 /**
@@ -241,7 +241,7 @@ test_system_dbg_log(void)
  *
  * @return なし
  */
-void
+TEST
 test_stderr_log(void)
 {
     int rlen = 0;                /* 戻り値 */
@@ -254,22 +254,20 @@ test_stderr_log(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
     stderr_log("programname", "filename", 15, "function", "%s", "test");
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
     dbglog("actual=%s", actual);
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 
 /**
@@ -277,7 +275,7 @@ test_stderr_log(void)
  *
  * @return なし
  */
-void
+TEST
 test_dump_log(void)
 {
     int rlen = 0;                  /* read戻り値 */
@@ -289,16 +287,14 @@ test_dump_log(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
+        TEST_FAIL("pipe_fd(%d)", errno);
     }
     result_ok = dump_log(dump, sizeof(dump), "%s[%d]: %s(%s)",
                          "filename", 15, "function", "test");
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
     set_print_hex(tmp, sizeof(tmp));
@@ -308,17 +304,17 @@ test_dump_log(void)
                    "0123456789ABCDEF\n" \
                    "--------   ---- ---- ---- ---- ---- ---- ---- ---- " \
                    "----------------\n", tmp);
-    cut_assert_equal_string(expected, actual,
-                            cut_message("expected=%s actual=%s",
-                                        expected, actual));
+    TEST_ASSERT_STR_MSG(expected, actual, "expected=%s actual=%s",
+                                        expected, actual);
 
-    cut_assert_equal_int(EX_OK, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
     result_ok = dump_log(NULL, 0, "%s[%d]: %s(%s)",
                          "filename", 15, "function", "test");
 
-    cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
+    PASS();
 }
 
 /**
@@ -326,12 +322,11 @@ test_dump_log(void)
  *
  * @return なし
  */
-void
+TEST
 test_dump_sys(void)
 {
     int rlen = 0;                  /* read戻り値 */
     int result_ok = 0;             /* テスト関数戻り値 */
-    char expected[BUF_SIZE] = {0}; /* 期待する文字列 */
     char actual[BUF_SIZE] = {0};   /* 実際の文字列 */
     const char prefix[] =          /* プレフィックス */
         "programname\\[[0-9]+\\]: filename\\[15\\]: " \
@@ -340,8 +335,7 @@ test_dump_sys(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
+        TEST_FAIL("pipe_fd(%d)", errno);
     }
 
     result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
@@ -350,23 +344,20 @@ test_dump_sys(void)
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    set_print_hex_sys(expected, prefix, sizeof(expected));
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MSG(match_print_hex_sys(actual, prefix), "actual=%s", actual);
 
-    cut_assert_equal_int(EX_OK, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
     result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
                          "programname", "filename", 15,
                          "function", NULL, 0, "%s", "test");
 
-    cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
+    PASS();
 }
 
 /**
@@ -374,7 +365,7 @@ test_dump_sys(void)
  *
  * @return なし
  */
-void
+TEST
 test_dump_file(void)
 {
     char readbuf[0xFF + 1] = {0}; /* readバッファ */
@@ -383,34 +374,31 @@ test_dump_file(void)
 
     /* 正常系 */
     if (!tmpnam(testfile)) {
-        cut_error("tmpnam(%d)", errno);
-        return;
+        TEST_FAIL("tmpnam(%d)", errno);
     }
 
     result_ok = dump_file("program", testfile, dump, sizeof(dump));
 
     fd = open(testfile, O_RDONLY);
     if (fd < 0) {
-        cut_fail("open(%d)", errno);
-        return;
+        TEST_FAIL("open(%d)", errno);
     }
 
     rlen = read(fd, readbuf, sizeof(readbuf));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    cut_assert_equal_memory(dump, sizeof(dump),
-                            readbuf, sizeof(readbuf));
+    TEST_ASSERT_MEM(dump, sizeof(dump), readbuf, sizeof(readbuf));
 
-    cut_assert_equal_int(EX_OK, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
     result_ok = dump_file("program", testfile, NULL, 0);
 
-    cut_assert_equal_int(EX_NG, result_ok, cut_message("return value"));
+    TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
 
+    PASS();
 }
 
 #ifdef HAVE_EXECINFO
@@ -419,7 +407,7 @@ test_dump_file(void)
  *
  * @return なし
  */
-void
+TEST
 test_systrace(void)
 {
     int rlen = 0;                /* 戻り値 */
@@ -431,8 +419,7 @@ test_systrace(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
+        TEST_FAIL("pipe_fd(%d)", errno);
     }
 
     systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
@@ -440,13 +427,12 @@ test_systrace(void)
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 
 /**
@@ -454,7 +440,7 @@ test_systrace(void)
  *
  * @return なし
  */
-void
+TEST
 test_print_trace(void)
 {
     int rlen = 0;                /* 戻り値 */
@@ -465,21 +451,19 @@ test_print_trace(void)
     /* 正常系 */
     fd = pipe_fd(STDERR_FILENO);
     if (fd < 0) {
-        cut_error("pipe_fd(%d)", errno);
-        return;
+        TEST_FAIL("pipe_fd(%d)", errno);
     }
 
     print_trace();
 
     rlen = read(fd, actual, sizeof(actual));
     if (rlen < 0) {
-        cut_fail("read: fd=%d(%d)", fd, errno);
-        return;
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    cut_assert_match(expected, actual,
-                     cut_message("expected=%s actual=%s",
-                                 expected, actual));
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
+                                 expected, actual);
+    PASS();
 }
 #endif
 
@@ -508,31 +492,44 @@ set_print_hex(char *buf, size_t len)
 }
 
 /**
- * シスログ出力用文字列設定
+ * シスログ出力の確認
+ * ダンプ表示は文字列として一致を確認し, 行頭のプレフィックスだけを正規表現で
+ * 確認する (ダンプ表示に正規表現の特殊文字が含まれるため).
  *
- * @param[in,out] buf バッファ
- * @param[in] prefix プレフィックス
- * @param[in] len バッファサイズ
- * @return なし
+ * @param[in] actual 実際の文字列
+ * @param[in] prefix プレフィックス (正規表現)
+ * @retval 1 一致
+ * @retval 0 不一致
  */
-static void
-set_print_hex_sys(char *buf, const char *prefix, size_t len)
+static int
+match_print_hex_sys(const char *actual, const char *prefix)
 {
-    size_t length = 0; /* 文字列長(一行) */
-    size_t total = 0;  /* 文字列長(全て) */
+    char pattern[BUF_SIZE] = {0}; /* プレフィックス用正規表現 */
+    char head[BUF_SIZE] = {0};    /* 実際のプレフィックス */
+    const char *line = actual;    /* 行頭 */
+    const char *pos = NULL;       /* ダンプ表示の位置 */
+    const char *lf = NULL;        /* 直前の改行 */
+
+    (void)snprintf(pattern, sizeof(pattern), "^%s$", prefix);
 
     unsigned int i;
-    const size_t prefix_len = strlen(prefix);
     for (i = 0; i < NELEMS(print_hex); i++) {
-        strncat(buf, prefix, len - total - 1);
-        total += prefix_len;
-        length = strlen(print_hex[i]);
-        strncat(buf, print_hex[i], len - total - 1);
-        total += length;
-        strncat(buf, "\\n", len - total - 1);
-        total += strlen("\\n");
+        pos = strstr(line, print_hex[i]);
+        if (!pos)
+            return 0;
+        /* 直前の改行の次から, ダンプ表示の前までがプレフィックス */
+        lf = pos;
+        while (lf > actual && *(lf - 1) != '\n')
+            lf--;
+        if ((size_t)(pos - lf) >= sizeof(head))
+            return 0;
+        (void)memcpy(head, lf, (size_t)(pos - lf));
+        head[pos - lf] = '\0';
+        if (!test_match(pattern, head))
+            return 0;
+        line = pos + strlen(print_hex[i]);
     }
-    *(buf + total - strlen("\\n")) = '\0'; /* 改行削除 */
+    return 1;
 }
 
 /**
@@ -545,14 +542,35 @@ set_sig_handler(void)
 {
     /* シグナル無視 */
     if (signal(SIGINT, SIG_IGN) < 0)
-        cut_notify("SIGINT");
+        TEST_NOTIFY("SIGINT");
     if (signal(SIGTERM, SIG_IGN) < 0)
-        cut_notify("SIGTERM");
+        TEST_NOTIFY("SIGTERM");
     if (signal(SIGQUIT, SIG_IGN) < 0)
-        cut_notify("SIGQUIT");
+        TEST_NOTIFY("SIGQUIT");
     if (signal(SIGHUP, SIG_IGN) < 0)
-        cut_notify("SIGHUP");
+        TEST_NOTIFY("SIGHUP");
     if (signal(SIGALRM, SIG_IGN) < 0)
-        cut_notify("SIGALRM");
+        TEST_NOTIFY("SIGALRM");
 }
 
+
+GREATEST_MAIN_DEFS();
+
+int
+main(int argc, char **argv)
+{
+    TEST_MAIN_BEGIN();
+    startup();
+    SET_TEARDOWN(teardown, NULL);
+    RUN_TEST(test_set_progname);
+    RUN_TEST(test_get_progname);
+    RUN_TEST(test_system_log);
+    RUN_TEST(test_system_dbg_log);
+    RUN_TEST(test_stderr_log);
+    RUN_TEST(test_dump_log);
+    RUN_TEST(test_dump_sys);
+    RUN_TEST(test_dump_file);
+    RUN_TEST(test_systrace);
+    RUN_TEST(test_print_trace);
+    TEST_MAIN_END();
+}

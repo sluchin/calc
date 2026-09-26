@@ -46,10 +46,15 @@ debug:
 
 .PHONY: test
 test:
-	cd $(top_srcdir)/lib && $(MAKE) test
-	cd $(top_srcdir)/calc && $(MAKE) test
-	cd $(top_srcdir)/server && $(MAKE) test
-	cd $(top_srcdir)/client && $(MAKE) test
+	@cmake -S . -B build-test -DCMAKE_BUILD_TYPE=Debug
+	@cmake --build build-test build-coverage
+	@cd build-test && ctest --output-on-failure
+
+.PHONY: coverage
+coverage:
+	@cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+	@cmake --build build-coverage
+	@cmake --build build-coverage --target coverage
 
 .PHONY: install
 install:
@@ -67,7 +72,7 @@ strip:
 
 .PHONY: clean
 clean:
-	@rm -rf doc
+	@rm -rf doc build build-test build-coverage
 	cd $(top_srcdir)/lib && $(MAKE) clean
 	cd $(top_srcdir)/calc && $(MAKE) clean
 	cd $(top_srcdir)/server && $(MAKE) clean
@@ -84,7 +89,8 @@ help:
 	@echo "... clean"
 	@echo "... debug"
 	@echo "... static"
-	@echo "... test"
+	@echo "... test (cmake, ctest)"
+	@echo "... coverage (cmake, gcovr)"
 	@echo "... doc"
 	@echo "... strip"
 
