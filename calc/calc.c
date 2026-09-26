@@ -60,6 +60,10 @@ static void readch(calcinfo *calc);
 static double expression(calcinfo *calc);
 /** 項 */
 static double term(calcinfo *calc);
+/** 単項 (符号つきのべき乗) */
+static double unary(calcinfo *calc);
+/** べき乗 */
+static double power(calcinfo *calc);
 /** 因子 */
 static double factor(calcinfo *calc);
 /** 数または関数 */
@@ -304,28 +308,79 @@ term(calcinfo *calc)
     if (is_error(calc))
         return EX_ERROR;
 
-    x = factor(calc);
+    x = unary(calc);
     dbglog(calc->fmt, x);
 
     while (true) {
         if (calc->ch == '*') {
             readch(calc);
-            x *= factor(calc);
+            x *= unary(calc);
         } else if (calc->ch == '/') {
             readch(calc);
-            y = factor(calc);
+            y = unary(calc);
             if (y == 0) { /* ゼロ除算エラー */
                 set_errorcode(calc, E_DIVBYZERO);
                 return EX_ERROR;
             }
             x /= y;
-        } else if (calc->ch == '^') {
-            readch(calc);
-            y = factor(calc);
-            x = get_pow(calc, x, y);
         } else {
             break;
         }
+    }
+    dbglog(calc->fmt, x);
+    return x;
+}
+
+/**
+ * 単項
+ * 符号は, べき乗より, 弱く結合する. (-2^2 は -(2^2))
+ *
+ * @param[in] calc calcinfo構造体
+ * @return 値
+ */
+static double
+unary(calcinfo *calc)
+{
+    double x = 0.0;  /* 値 */
+    int sign = '+';  /* 単項+- */
+
+    dbglog("start");
+
+    if (is_error(calc))
+        return EX_ERROR;
+
+    if (calc->ch == '+' || calc->ch == '-') {
+        sign = calc->ch;
+        readch(calc);
+    }
+    x = power(calc);
+    return (sign == '+') ? x : -x;
+}
+
+/**
+ * べき乗
+ * 乗除算より, 強く結合する. 左から右に結合する. (2^3^2 は (2^3)^2)
+ *
+ * @param[in] calc calcinfo構造体
+ * @return 値
+ */
+static double
+power(calcinfo *calc)
+{
+    double x = 0.0, y = 0.0; /* 値 */
+
+    dbglog("start");
+
+    if (is_error(calc))
+        return EX_ERROR;
+
+    x = factor(calc);
+    dbglog(calc->fmt, x);
+
+    while (calc->ch == '^') {
+        readch(calc);
+        y = factor(calc); /* 指数の符号は, token() が処理する (2^-1) */
+        x = get_pow(calc, x, y);
     }
     dbglog(calc->fmt, x);
     return x;
