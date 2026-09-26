@@ -271,8 +271,6 @@ run_main_closed_stdout(void *arg)
 
 /**
  * 一定時間後に SIGINT を受け取る, main() を子プロセスで実行するための関数
- * 標準入力が閉じていても, readline はイベントフックを呼び続けるので,
- * SIGINT で, フックが readline を終了させる.
  *
  * @param[in] arg 使用しない
  * @return なし
@@ -315,6 +313,59 @@ test_main_failure(void)
 }
 
 /**
+ * 標準入力が端末のとき (readline) の main() を, 子プロセスで実行するための関数
+ *
+ * @param[in] arg 使用しない
+ * @return なし
+ */
+static void
+run_main_tty(void *arg)
+{
+    (void)alarm(10); /* 終了しなかったときの保険 */
+    run_main(arg);
+}
+
+/**
+ * main() 関数テスト (標準入力が端末のとき, readline を使う)
+ *
+ * @return なし
+ */
+TEST
+test_main_readline(void)
+{
+    char out[BUF_SIZE * 4] = {0}; /* 出力 */
+
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child_pty(run_main_tty, NULL,
+                                       "100*3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
+    PASS();
+}
+
+/**
+ * main() 関数テスト (標準入力の終わり)
+ * 端末でなければ, 入力の終わり (EOF) で終了する.
+ *
+ * @return なし
+ */
+TEST
+test_main_eof(void)
+{
+    char out[BUF_SIZE] = {0}; /* 出力 */
+
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_tty, NULL, "100*3\n", out,
+                                   sizeof(out)));
+    TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
+
+    /* 何も入力しない */
+    TEST_ASSERT_INT(EXIT_SUCCESS,
+                    test_run_child(run_main_tty, NULL, NULL, out,
+                                   sizeof(out)));
+    PASS();
+}
+
+/**
  * main() 関数テスト (履歴が上限に達する)
  *
  * @return なし
@@ -322,20 +373,23 @@ test_main_failure(void)
 TEST
 test_main_history(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char input[1024] = {0};   /* 標準入力 (パイプに収まる長さ) */
+    char out[BUF_SIZE * 32] = {0}; /* 出力 (入力のエコーも含む) */
+    char input[1024] = {0};        /* 入力 */
     unsigned int i;
 
     for (i = 0; i < 101; i++)
         (void)strcat(input, "1+2\n");
     (void)strcat(input, "quit\n");
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main, NULL, input, out, sizeof(out)));
+                    test_run_child_pty(run_main_tty, NULL, input, out,
+                                       sizeof(out)));
     PASS();
 }
 
 /**
  * main() 関数テスト (入力待ちのときに, シグナルを受け取る)
+ * 端末の入力を待つ readline は, イベントフックを呼び続けるので, SIGINT で,
+ * フックが readline を終了させる.
  *
  * @return なし
  */
@@ -343,7 +397,7 @@ TEST
 test_main_event_hook(void)
 {
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_sigint, NULL, NULL, NULL, 0));
+                    test_run_child_pty(run_main_sigint, NULL, NULL, NULL, 0));
     PASS();
 }
 
@@ -360,6 +414,8 @@ main(int argc, char **argv)
     RUN_TEST(test_main_error);
     RUN_TEST(test_main_signal);
     RUN_TEST(test_main_failure);
+    RUN_TEST(test_main_readline);
+    RUN_TEST(test_main_eof);
     RUN_TEST(test_main_history);
     RUN_TEST(test_main_event_hook);
     TEST_MAIN_END();
