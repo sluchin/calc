@@ -60,7 +60,7 @@ _readline(FILE *fp)
             return NULL;
         }
         dbglog("fgets=%p, feof=%d", fgetsp, feof(fp));
-        if (!fgetsp || feof(fp))
+        if (!fgetsp) /* 入力の終わり (何も読めなかった) */
             break;
 
         length = strlen((char *)buf);
@@ -80,9 +80,10 @@ _readline(FILE *fp)
         dbglog("alloc=%p, length=%zu, total=%zu",
                alloc + total, length * sizeof(unsigned char), total);
 
-    } while (*(alloc + total - 1) != '\n');
+    } while (!(total > 0 && *(alloc + total - 1) == '\n') && !feof(fp));
 
-    if (alloc && (*(alloc + total - 1) == '\n'))
+    /* 改行なしで終わった最後の行も, 返す. 何も読めなかったときは, NULL */
+    if (alloc && total > 0 && (*(alloc + total - 1) == '\n'))
         *(alloc + total - 1) = '\0'; /* 改行削除 */
 
     return alloc;

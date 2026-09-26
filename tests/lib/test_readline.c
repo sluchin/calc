@@ -121,11 +121,22 @@ test_readline(void)
 
     memfree((void **)&result, NULL);
 
-    /* 異常系 */
-    /* 改行ない場合 */
+    /* 改行がなく, 入力の終わりで終わる最後の行も, 返す (終端の NUL も送る) */
     result = exec_readline(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
+    TEST_ASSERT_STR("test", (char *)result);
+    memfree((void **)&result, NULL);
+
+    /* 終端の NUL もない場合 */
+    result = exec_readline(nolf_data, strlen(nolf_data));
+    TEST_ASSERT_STR("test", (char *)result);
+    memfree((void **)&result, NULL);
+
+    /* 何も入力されない場合 (入力の終わり) */
+    result = exec_readline(nolf_data, 0);
     TEST_ASSERT_NULL((char *)result);
+
+    /* 異常系 */
 
     /* ファイルポインタがNULLの場合 */
     result = _readline((FILE *)NULL);
