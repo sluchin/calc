@@ -1,5 +1,0 @@
-2011-9-21
-    1. Gnu readline から editline を使用するよう変更する.
-    2. 多倍長整数に対応する. Gnu gmp, Gnu mpfr.
-    3. cutter でテスト書く.
-
