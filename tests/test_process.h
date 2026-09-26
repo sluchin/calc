@@ -16,6 +16,7 @@
 #include <unistd.h>   /* fork pipe dup2 read write close */
 #include <sys/mman.h> /* mmap munmap */
 #include <sys/wait.h> /* waitpid */
+#include <pty.h>      /* forkpty */
 
 /** 子プロセスで実行する関数 */
 typedef void (*test_child_func)(void *arg);
@@ -85,6 +86,69 @@ test_run_child(test_child_func func, void *arg, const char *input,
             ;
     }
     (void)close(outpipe[0]);
+
+    if (waitpid(cpid, &status, 0) < 0)
+        return -1;
+    if (WIFEXITED(status))
+        return WEXITSTATUS(status);
+    if (WIFSIGNALED(status))
+        return 128 + WTERMSIG(status);
+    return -1;
+}
+
+/**
+ * 疑似端末 (pty) つきの子プロセスで関数を実行する
+ * 子プロセスの標準入出力が端末になるので, readline などの端末用の処理を確認できる.
+ * input を端末に入力し, 端末の出力 (入力のエコーも含む) を out に取得する.
+ *
+ * @param[in] func 実行する関数
+ * @param[in] arg 関数の引数
+ * @param[in] input 端末に入力する文字列 (NULL可)
+ * @param[out] out 出力の取得先 (NULL可)
+ * @param[in] outsize out のサイズ
+ * @return 終了ステータス, シグナルで終了した場合は 128 + シグナル番号
+ * @retval -1 プロセス生成などに失敗
+ */
+static inline int
+test_run_child_pty(test_child_func func, void *arg, const char *input,
+                   char *out, size_t outsize)
+{
+    int master = -1;  /* 端末のマスタ側 */
+    pid_t cpid = 0;   /* 子プロセスID */
+    int status = 0;   /* ステータス */
+    size_t total = 0; /* 取得したバイト数 */
+    ssize_t len = 0;  /* read戻り値 */
+    char dummy[256];  /* 読み捨て用 */
+
+    (void)fflush(NULL);
+    cpid = forkpty(&master, NULL, NULL, NULL);
+    if (cpid < 0)
+        return -1;
+
+    if (cpid == 0) { /* 子プロセス */
+        (void)setenv("TERM", "dumb", 1); /* 制御文字を減らす */
+        func(arg);
+        exit(EXIT_SUCCESS);
+    }
+
+    /* 親プロセス */
+    if (input && write(master, input, strlen(input)) < 0) {
+        (void)close(master);
+        return -1;
+    }
+    if (out && outsize > 0)
+        out[0] = '\0';
+    /* 子プロセスが終了して, 端末を閉じるまで読む (Linux では, EIO が返る) */
+    while ((len = read(master, dummy, sizeof(dummy))) > 0) {
+        if (out && total < outsize - 1) {
+            size_t n = ((size_t)len < outsize - 1 - total) ?
+                (size_t)len : outsize - 1 - total;
+            (void)memcpy(out + total, dummy, n);
+            total += n;
+            out[total] = '\0';
+        }
+    }
+    (void)close(master);
 
     if (waitpid(cpid, &status, 0) < 0)
         return -1;

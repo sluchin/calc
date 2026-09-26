@@ -4,6 +4,9 @@
 # ソースと同じ構成で, lib/ calcp/ calcd/ calcc/ に置く.
 # テスト 1 ファイルが, 1 つの実行ファイルと 1 つの ctest テストになる.
 
+# forkpty() (tests/test_process.h) は, 古い glibc では libutil にある
+find_library(UTIL_LIBRARY util)
+
 # add_unit_test(<ディレクトリ> <名前>
 #               LIBS <ライブラリ...> INCLUDES <ディレクトリ...>
 #               [SOURCES <追加ソース...>] [RENAME_MAIN <名前>])
@@ -27,7 +30,8 @@ function(add_unit_test dir name)
   endif()
   # dlsym() (test_helper.h の TEST_PASSTHROUGH) のため, _GNU_SOURCE と dl が必要
   target_compile_definitions(${target} PRIVATE _GNU_SOURCE)
-  target_link_libraries(${target} PRIVATE ${T_LIBS} m ${CMAKE_DL_LIBS})
+  target_link_libraries(${target} PRIVATE ${T_LIBS} m ${CMAKE_DL_LIBS}
+                        ${UTIL_LIBRARY})
   set_target_properties(${target} PROPERTIES OUTPUT_NAME ${name}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir})
   set_property(GLOBAL APPEND PROPERTY UNIT_TEST_TARGETS ${target})
