@@ -94,6 +94,7 @@ struct shared {
     int loop_count;  /**< client_loop() の呼び出し回数 */
     int loop_sock;   /**< client_loop() のソケット */
     int loop_signal; /**< client_loop() で g_sig_handled */
+    int pipe_ignored; /**< client_loop() で SIGPIPE を無視している */
     int close_count; /**< close_sock() の呼び出し回数 */
     int close_sock;  /**< close_sock() のソケット */
 };
@@ -131,9 +132,13 @@ fake_parse_args(int argc, char **argv)
 static st_client
 fake_client_loop(int sock)
 {
+    struct sigaction old; /* 現在の SIGPIPE の設定 */
+
     shm->loop_count++;
     shm->loop_sock = sock;
     shm->loop_signal = g_sig_handled;
+    (void)sigaction(SIGPIPE, NULL, &old);
+    shm->pipe_ignored = (old.sa_handler == SIG_IGN);
     return EX_SUCCESS;
 }
 
@@ -224,6 +229,8 @@ test_main_success(void)
     /* 終了時に, ソケットをクローズしている (atexit) */
     TEST_ASSERT_INT(1, shm->close_count);
     TEST_ASSERT_INT(SOCKFD, shm->close_sock);
+    /* SIGPIPE を無視している (送信エラーとして処理できる) */
+    TEST_ASSERT_INT(1, shm->pipe_ignored);
     PASS();
 }
 
@@ -288,10 +295,10 @@ test_main_signal(void)
 static void
 run_main_failure(void *arg)
 {
-    /* シグナルハンドラの設定 (get 側と set 側で, 3 つのシグナル分) */
+    /* シグナルハンドラの設定 (get 側と set 側で, 4 つのシグナル分) */
     TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
-    TEST_INJECT(sigaction, 0, 6, -1, EINVAL);
+    TEST_INJECT(sigaction, 0, 8, -1, EINVAL);
     /* バッファリングの設定 (標準入力と標準出力) */
     TEST_INJECT(setvbuf, 0, 2, -1, EBADF);
     run_main(arg);

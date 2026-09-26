@@ -143,6 +143,14 @@ set_sig_handler(void)
     sa.sa_mask = sigmask;
     if (sigaction(SIGQUIT, &sa, (struct sigaction *)NULL) < 0)
         outlog("sigaction=%p, SIGQUIT", &sa);
+
+    /* 接続先が閉じたあとの send() で, プロセスが終了しないように, SIGPIPE を無視する.
+     * (send() が EPIPE を返して, 送信エラーとして処理される) */
+    if (sigaction(SIGPIPE, (struct sigaction *)NULL, &sa) < 0)
+        outlog("sigaction=%p, SIGPIPE", &sa);
+    sa.sa_handler = SIG_IGN;
+    if (sigaction(SIGPIPE, &sa, (struct sigaction *)NULL) < 0)
+        outlog("sigaction=%p, SIGPIPE", &sa);
 }
 
 /**
