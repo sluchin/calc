@@ -218,7 +218,7 @@ client_loop(int sock)
             return EX_FAILURE;
         } else if (ready) {
 #ifdef _USE_SELECT
-            if (FD_ISSET(STDIN_FILENO, &fds)) {
+            if (FD_ISSET(STDIN_FILENO, &rfds)) {
                 /* 標準入力レディ */
                 status = send_sock(sock);
                 if (status == EX_EMPTY)
@@ -226,7 +226,7 @@ client_loop(int sock)
                 if (status)
                     return status;
             }
-            if (FD_ISSET(sock, &fds)) {
+            if (FD_ISSET(sock, &rfds)) {
                 /* ソケットレディ */
                 status = read_sock(sock);
                 if (status)
