@@ -226,3 +226,38 @@ else()
     COMMAND ${CMAKE_COMMAND} -E false
     VERBATIM)
 endif()
+
+# カバレッジ (ENABLE_COVERAGE) の, 計測ファイル (.gcno と .gcda) も, make clean で削除する.
+# .o と同じ場所に, <ソース>.gcno と <ソース>.gcda ができるので, ソースから, パスを作る.
+# (ソースがターゲットのディレクトリの外にあると, パスの ../ は __/ になる)
+function(add_coverage_clean_files dir)
+  get_property(targets DIRECTORY ${dir} PROPERTY BUILDSYSTEM_TARGETS)
+  foreach(t ${targets})
+    get_target_property(type ${t} TYPE)
+    if(type STREQUAL "UTILITY" OR type STREQUAL "INTERFACE_LIBRARY")
+      continue()
+    endif()
+    get_target_property(srcs ${t} SOURCES)
+    get_target_property(srcdir ${t} SOURCE_DIR)
+    get_target_property(bindir ${t} BINARY_DIR)
+    foreach(src ${srcs})
+      if(NOT src MATCHES "\\.c$")
+        continue() # $<TARGET_OBJECTS:...> などは, 対象外
+      endif()
+      if(NOT IS_ABSOLUTE ${src})
+        set(src ${srcdir}/${src})
+      endif()
+      file(RELATIVE_PATH rel ${srcdir} ${src})
+      string(REPLACE "../" "__/" rel "${rel}")
+      set_property(TARGET ${t} APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+                   ${bindir}/CMakeFiles/${t}.dir/${rel}.gcno
+                   ${bindir}/CMakeFiles/${t}.dir/${rel}.gcda)
+    endforeach()
+  endforeach()
+endfunction()
+if(ENABLE_COVERAGE)
+  add_coverage_clean_files(${CMAKE_SOURCE_DIR})
+  if(BUILD_TESTS)
+    add_coverage_clean_files(${CMAKE_SOURCE_DIR}/tests)
+  endif()
+endif()
