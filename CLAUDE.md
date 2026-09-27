@@ -22,7 +22,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - カバレッジ: `make coverage` (gcov と gcovr が必要。`build-coverage/` に作り、端末に一覧を出す。詳細は `build-coverage/coverage/index.html`)
   - CMake のビルドディレクトリでも `make coverage` が使える。`-DENABLE_COVERAGE=ON` (最適化なしで `--coverage` を付ける) で構成していなければ、`<ビルドディレクトリ>/coverage-build/` に別にビルドする。`gcovr` が無いと、理由を表示して失敗する。
   - `add_custom_target` には、必ず `VERBATIM` を付ける (付けないと、`(` などを含む引数でシェルの構文エラーになる)。
-- ドキュメント: `build/` で `make doc` (doxygen が必要。`build/doc/html/index.html` に出力。`make clean` で削除される)。設定は `Doxyfile` (標準と異なる項目だけを書く。`cmake/doxygen.cmake` が、出力先と `HAVE_DOT` を追加して上書きする)
+- ドキュメント: `build/` で `make doc` (doxygen が必要。`build/docs/html/index.html` に出力。`make clean` で削除される)。`make clean` は、`docs` `coverage` `coverage-build` `Testing` と、`tests/` の実行ファイルのディレクトリを、ディレクトリごと削除する (CMake 3.15 以降。`tests/` 自体は、ビルドに必要な生成ファイルがあるので残す。実行ファイルのディレクトリは、リンカが作らないので、リンクの前に作る)。設定は `Doxyfile` (標準と異なる項目だけを書く。`cmake/doxygen.cmake` が、出力先と `HAVE_DOT` を追加して上書きする)
 
 ## プロジェクト構成
 
