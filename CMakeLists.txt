@@ -10,12 +10,15 @@
 cmake_minimum_required(VERSION 3.10)
 project(calc C)
 
+# ビルドタイプが指定されなければ, Release にする (-DCMAKE_BUILD_TYPE=Debug で明示できる).
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "ビルドタイプ" FORCE)
 endif()
 
+# 最適化は, Makefile (GNU make) に合わせて, Debug/Release とも -g -O2 にする.
 set(CMAKE_C_FLAGS_DEBUG "-g -O2")
 set(CMAKE_C_FLAGS_RELEASE "-g -O2")
+# 静的ライブラリも, 動的ライブラリにリンクできるように, PIC (-fPIC) を付ける.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # カバレッジ (gcov). 正確に測るため, 最適化とインライン展開はしない.
@@ -24,6 +27,7 @@ if(ENABLE_COVERAGE)
   add_compile_options(--coverage -O0 -fno-inline)
   add_link_options(--coverage)
 endif()
+# -Wall で警告を出さないこと (警告が出たら修正する).
 add_compile_options(-Wall)
 # 単体テスト (tests/) をビルドして, make test (ctest) で実行できるようにする.
 # 単体テストは, UNITTEST で公開される内部関数を使うので, 有効なときは全体に
@@ -39,6 +43,7 @@ add_compile_definitions(
   $<$<CONFIG:Debug>:_DEBUG>
   $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
+# 依存ライブラリ: pthread, libm (数学関数), GNU readline (calcp の入力補完に必要).
 find_package(Threads REQUIRED)
 find_library(MATH_LIBRARY m)
 find_library(READLINE_LIBRARY readline)
@@ -46,6 +51,7 @@ if(NOT READLINE_LIBRARY)
   message(FATAL_ERROR "GNU readline が見つかりません (libreadline-dev)")
 endif()
 
+# install 先の標準的なディレクトリ (CMAKE_INSTALL_BINDIR/LIBDIR など) を決める.
 include(GNUInstallDirs)
 
 # ライブラリの種類: 既定は, 静的ライブラリ (.a). -DDYNAMIC=ON で, 動的ライブラリ (.so).
@@ -106,7 +112,8 @@ target_link_libraries(calcc_lib PUBLIC calcutil_lib)
 add_executable(calcc client/main.c client/option.c)
 target_link_libraries(calcc PRIVATE calcc_lib)
 
-# install
+# install: 実行ファイルは bin へ, ライブラリは, 静的 (ARCHIVE) か動的 (LIBRARY) かに
+# 応じて lib へインストールする (/usr/local が既定. Makefile の make install に相当).
 install(TARGETS calcp calcd calcc RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(TARGETS calcutil_lib calcp_lib calcd_lib calcc_lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -201,6 +208,8 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
              ${CMAKE_BINARY_DIR}/tests/calcd
              ${CMAKE_BINARY_DIR}/tests/calcc)
 
+# doxygen (と, グラフ描画用の dot) が見つかれば, doc ターゲットを, ドキュメントを生成するように
+# 構成する. 見つからなければ, 実行時にエラーメッセージを表示するだけのターゲットにする.
 find_package(Doxygen OPTIONAL_COMPONENTS dot)
 if(DOXYGEN_FOUND)
   if(TARGET Doxygen::dot)
