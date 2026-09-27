@@ -34,6 +34,11 @@ function(add_unit_test dir name)
                         ${UTIL_LIBRARY})
   set_target_properties(${target} PROPERTIES OUTPUT_NAME ${name}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir})
+  # make clean は, 出力先のディレクトリも削除する (トップレベルの CMakeLists.txt) ので,
+  # リンクの前に作る (リンカは, ディレクトリを作らない)
+  add_custom_command(TARGET ${target} PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${dir}
+    VERBATIM)
   set_property(GLOBAL APPEND PROPERTY UNIT_TEST_TARGETS ${target})
   add_test(NAME ${dir}/${name} COMMAND ${target})
   set_tests_properties(${dir}/${name} PROPERTIES TIMEOUT 60
