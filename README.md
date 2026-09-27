@@ -137,10 +137,10 @@ doxygen と graphviz をインストールし (`sudo apt install doxygen graphvi
 
 ```sh
 cd build
-make doc     # build/doc/html/index.html
+make doc     # build/docs/html/index.html
 ```
 
-リポジトリ直下で `make doc` (GNU make) を実行すると, `doc/html/index.html` に出力される.
+リポジトリ直下で `make doc` (GNU make) を実行すると, `docs/html/index.html` に出力される.
 graphviz (dot) がなくても生成できる (グラフは出力されない).
 
 ## コーディングのコンセプト

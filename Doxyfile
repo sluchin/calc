@@ -5,7 +5,7 @@
 #   出力先や HAVE_DOT などは, make doc が, このファイルの後ろに追加して上書きする.
 
 PROJECT_NAME           = "CALC"
-OUTPUT_DIRECTORY       = ./doc
+OUTPUT_DIRECTORY       = ./docs
 OUTPUT_LANGUAGE        = Japanese
 INPUT_ENCODING         = UTF-8
 TAB_SIZE               = 4
