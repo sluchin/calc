@@ -20,6 +20,7 @@
 - 確認に使う道具: `pgrep` `pkill` `ss` (ポートの確認), `python3` (プロトコルの直接確認), `script` または端末 (readline の確認)
 - ドキュメント生成の確認には, doxygen (と, グラフ用の graphviz)
 - カバレッジの確認には, gcovr
+- ライブラリは, 静的 (既定) か動的 (`DYNAMIC`) の, どちらか一方だけをビルドする. 動的ライブラリの項目 (BD-A-01b, BD-A-05, BD-A-11b) は, `DYNAMIC` を指定して実施する
 
 ### 1.3 準備
 
@@ -289,17 +290,19 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| BD-A-01 | CMake でビルド (リリース) | `cmake -S . -B build -DBUILD_TESTS=OFF && cmake --build build` | 警告なしにビルドでき, `build/` に `calcp` `calcd` `calcc` と, `lib*.so` `lib*.a` ができる. 単体テストは, ビルドされない | |
+| BD-A-01 | CMake でビルド (リリース, 静的ライブラリ) | `cmake -S . -B build -DBUILD_TESTS=OFF && cmake --build build` | 警告なしにビルドでき, `build/` に `calcp` `calcd` `calcc` と, `lib*.a` だけができる (`lib*.so` は, できない). `ldd build/calcp` に `libcalc` が出ない. 単体テストは, ビルドされない | |
+| BD-A-01b | CMake でビルド (動的ライブラリ) | `cmake -S . -B build-dyn -DDYNAMIC=ON -DBUILD_TESTS=OFF && cmake --build build-dyn` | 警告なしにビルドでき, `lib*.so` だけができる. `ldd build-dyn/calcp` に `libcalcp.so` `libcalcutil.so` が出る | |
 | BD-A-02 | CMake でビルド (デバッグ) | `cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build-debug` | 警告なしにビルドできる | |
-| BD-A-03 | GNU make でビルド | `make clean all` | 警告なしにビルドでき, `Success!! Congratulations!!` が出る. `calc/calcp` `server/calcd` `client/calcc` ができる | |
+| BD-A-03 | GNU make でビルド (静的ライブラリ) | `make clean all` | 警告なしにビルドでき, `Success!! Congratulations!!` が出る. `calc/calcp` `server/calcd` `client/calcc` と, `.a` だけができる. `ldd calc/calcp` に `libcalc` が出ない | |
 | BD-A-04 | GNU make でビルド (デバッグ) | `make clean debug` | 警告なしにビルドできる | |
-| BD-A-05 | GNU make で静的リンク | `make clean static` | ビルドでき, `ldd calc/calcp` に, `libcalcutil` `libcalcp` が出ない | |
+| BD-A-05 | GNU make で動的ライブラリ | `make clean all DYNAMIC=1` | 警告なしにビルドでき, `lib/libcalcutil.so` `calc/libcalcp.so` などの `.so` だけができる (`.a` は, できない). `ldd calc/calcp` に `libcalcp.so` `libcalcutil.so` が出る | |
 | BD-A-06 | 単体テスト | `cd build && make test` (`BUILD_TESTS=ON` の設定で) | 単体テストをビルドしてから実行し, 全て成功 (20 テスト). `make` (引数なし) では, ビルドされない | |
 | BD-A-07 | リポジトリ直下の `make test` | `make test` | Debug ビルドを `build-test/` に作って, 全て成功 | |
 | BD-A-08 | カバレッジ | `make coverage` (gcovr が必要) | 行 100%, 分岐 95% 以上を表示し, `build-coverage/coverage/index.html` ができる | |
 | BD-A-09 | ドキュメント生成 | `cmake --build build --target doc` (doxygen が必要) | 警告なしに, `build/doc/html/index.html` ができる. 先頭のページに `README.md` の内容が出る | |
 | BD-A-10 | doxygen が無い場合 | doxygen が無い環境で, `make doc` | `doc は使えません: doxygen をインストールしてください` を出力して失敗する | |
-| BD-A-11 | インストール | `cmake --install build --prefix /tmp/inst` | `/tmp/inst/bin` に `calcp` `calcd` `calcc`, `/tmp/inst/lib` に `lib*.so` `lib*.a` が入る. 実行するには, `LD_LIBRARY_PATH=/tmp/inst/lib` が必要 (標準の `/usr/local` では `ldconfig` を実行する) | |
+| BD-A-11 | インストール (静的ライブラリ) | `make clean all && make install prefix=/tmp/inst` (または `cmake --install build --prefix /tmp/inst`) | `/tmp/inst/bin` に `calcp` `calcd` `calcc`, `/tmp/inst/lib` に `lib*.a` が入り, `/tmp/inst/bin/calcp -V` が, そのまま動く. 最後に, 「静的ライブラリを使ったので, 実行ファイルは, 単独で動きます. (ldconfig は不要)」と表示される | |
+| BD-A-11b | インストール (動的ライブラリ) | `make clean all DYNAMIC=1 && make install DYNAMIC=1 prefix=/tmp/inst` (または, `-DDYNAMIC=ON` で構成して `cmake --install`) | `/tmp/inst/lib` に `lib*.so` が入る. 最後に, 「動的ライブラリを ... にインストールしました」と, `sudo ldconfig` の案内が表示される. `/tmp/inst/bin/calcp -V` は, `ldconfig` を実行する (または `LD_LIBRARY_PATH=/tmp/inst/lib` を付ける) と動く | |
 | BD-A-12 | クリーン | `make clean` | ビルドで作ったファイル (`*.o` `*.a` `*.so` と, 実行ファイル, `doc`, `build`, `build-test`, `build-coverage`) が消える | |
 
 
