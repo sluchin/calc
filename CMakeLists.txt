@@ -48,6 +48,15 @@ endif()
 
 include(GNUInstallDirs)
 
+# ライブラリの種類: 既定は, 静的ライブラリ (.a). -DDYNAMIC=ON で, 動的ライブラリ (.so).
+# 静的と動的は, 両方は作らない (実行ファイルは, 選んだ方にリンクする).
+option(DYNAMIC "動的ライブラリ (.so) を作って, リンクする (OFF は, 静的ライブラリ (.a))" OFF)
+if(DYNAMIC)
+  set(LIB_TYPE SHARED)
+else()
+  set(LIB_TYPE STATIC)
+endif()
+
 # lib: libcalcutil
 set(UTIL_SOURCES
   lib/log.c lib/term.c lib/memfree.c lib/data.c
@@ -55,66 +64,70 @@ set(UTIL_SOURCES
 add_library(calcutil_obj OBJECT ${UTIL_SOURCES})
 target_include_directories(calcutil_obj PUBLIC lib)
 target_compile_definitions(calcutil_obj PUBLIC HAVE_EXECINFO)
-add_library(calcutil_static STATIC $<TARGET_OBJECTS:calcutil_obj>)
-add_library(calcutil_shared SHARED $<TARGET_OBJECTS:calcutil_obj>)
-foreach(t calcutil_static calcutil_shared)
-  set_target_properties(${t} PROPERTIES OUTPUT_NAME calcutil)
-  target_include_directories(${t} PUBLIC lib)
-  target_compile_definitions(${t} PUBLIC HAVE_EXECINFO)
-  target_link_libraries(${t} PUBLIC Threads::Threads)
-endforeach()
+add_library(calcutil_lib ${LIB_TYPE} $<TARGET_OBJECTS:calcutil_obj>)
+set_target_properties(calcutil_lib PROPERTIES OUTPUT_NAME calcutil)
+target_include_directories(calcutil_lib PUBLIC lib)
+target_compile_definitions(calcutil_lib PUBLIC HAVE_EXECINFO)
+target_link_libraries(calcutil_lib PUBLIC Threads::Threads)
 
 # calc: libcalcp, calcp
 set(CALC_SOURCES calc/error.c calc/func.c calc/calc.c)
 add_library(calcp_obj OBJECT ${CALC_SOURCES})
 target_include_directories(calcp_obj PUBLIC calc lib)
 target_compile_definitions(calcp_obj PUBLIC HAVE_READLINE)
-add_library(calcp_static STATIC $<TARGET_OBJECTS:calcp_obj>)
-add_library(calcp_shared SHARED $<TARGET_OBJECTS:calcp_obj>)
-foreach(t calcp_static calcp_shared)
-  set_target_properties(${t} PROPERTIES OUTPUT_NAME calcp)
-  target_include_directories(${t} PUBLIC calc lib)
-  target_compile_definitions(${t} PUBLIC HAVE_READLINE)
-  target_link_libraries(${t} PUBLIC calcutil_shared ${MATH_LIBRARY}
-                        ${READLINE_LIBRARY} Threads::Threads)
-endforeach()
+add_library(calcp_lib ${LIB_TYPE} $<TARGET_OBJECTS:calcp_obj>)
+set_target_properties(calcp_lib PROPERTIES OUTPUT_NAME calcp)
+target_include_directories(calcp_lib PUBLIC calc lib)
+target_compile_definitions(calcp_lib PUBLIC HAVE_READLINE)
+target_link_libraries(calcp_lib PUBLIC calcutil_lib ${MATH_LIBRARY}
+                      ${READLINE_LIBRARY} Threads::Threads)
 add_executable(calcp calc/main.c calc/option.c)
-target_link_libraries(calcp PRIVATE calcp_shared)
+target_link_libraries(calcp PRIVATE calcp_lib)
 
 # server: libcalcd, calcd
 add_library(calcd_obj OBJECT server/server.c)
 target_include_directories(calcd_obj PUBLIC server calc lib)
-add_library(calcd_static STATIC $<TARGET_OBJECTS:calcd_obj>)
-add_library(calcd_shared SHARED $<TARGET_OBJECTS:calcd_obj>)
-foreach(t calcd_static calcd_shared)
-  set_target_properties(${t} PROPERTIES OUTPUT_NAME calcd)
-  target_include_directories(${t} PUBLIC server calc lib)
-  target_link_libraries(${t} PUBLIC calcp_shared calcutil_shared)
-endforeach()
+add_library(calcd_lib ${LIB_TYPE} $<TARGET_OBJECTS:calcd_obj>)
+set_target_properties(calcd_lib PROPERTIES OUTPUT_NAME calcd)
+target_include_directories(calcd_lib PUBLIC server calc lib)
+target_link_libraries(calcd_lib PUBLIC calcp_lib calcutil_lib)
 add_executable(calcd server/main.c server/option.c)
-target_link_libraries(calcd PRIVATE calcd_shared)
+target_link_libraries(calcd PRIVATE calcd_lib)
 
 # client: libcalcc, calcc
 add_library(calcc_obj OBJECT client/client.c)
 target_include_directories(calcc_obj PUBLIC client lib)
 target_compile_definitions(calcc_obj PUBLIC _USE_SELECT)
-add_library(calcc_static STATIC $<TARGET_OBJECTS:calcc_obj>)
-add_library(calcc_shared SHARED $<TARGET_OBJECTS:calcc_obj>)
-foreach(t calcc_static calcc_shared)
-  set_target_properties(${t} PROPERTIES OUTPUT_NAME calcc)
-  target_include_directories(${t} PUBLIC client lib)
-  target_compile_definitions(${t} PUBLIC _USE_SELECT)
-  target_link_libraries(${t} PUBLIC calcutil_shared)
-endforeach()
+add_library(calcc_lib ${LIB_TYPE} $<TARGET_OBJECTS:calcc_obj>)
+set_target_properties(calcc_lib PROPERTIES OUTPUT_NAME calcc)
+target_include_directories(calcc_lib PUBLIC client lib)
+target_compile_definitions(calcc_lib PUBLIC _USE_SELECT)
+target_link_libraries(calcc_lib PUBLIC calcutil_lib)
 add_executable(calcc client/main.c client/option.c)
-target_link_libraries(calcc PRIVATE calcc_shared)
+target_link_libraries(calcc PRIVATE calcc_lib)
 
 # install
 install(TARGETS calcp calcd calcc RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(TARGETS calcutil_static calcutil_shared calcp_static calcp_shared
-                calcd_static calcd_shared calcc_static calcc_shared
+install(TARGETS calcutil_lib calcp_lib calcd_lib calcc_lib
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# make install のあとに, ライブラリの種類に応じたメッセージを表示する
+if(DYNAMIC)
+  install(CODE "
+    message(STATUS \"\")
+    message(STATUS \"動的ライブラリを \${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} にインストールしました.\")
+    message(STATUS \"実行するには, ライブラリの検索パスにそのディレクトリが含まれることを確認して,\")
+    message(STATUS \"ldconfig を実行してください: sudo ldconfig\")
+    message(STATUS \"(含まれない場合は, /etc/ld.so.conf.d/ にファイルを作って追加する)\")
+  ")
+else()
+  install(CODE "
+    message(STATUS \"\")
+    message(STATUS \"静的ライブラリを使ったので, 実行ファイルは, 単独で動きます. (ldconfig は不要)\")
+    message(STATUS \"動的ライブラリを使うには, cmake -DDYNAMIC=ON で構成し直してください.\")
+  ")
+endif()
 
 # 単体テスト (greatest + FFF): tests/ 配下
 if(BUILD_TESTS)
