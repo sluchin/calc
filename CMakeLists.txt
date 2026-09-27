@@ -185,13 +185,21 @@ if(BUILD_TESTS)
   endif()
 endif()
 
-# make doc: Doxygen でドキュメントを生成する. 出力は, <ビルドディレクトリ>/doc/html/
+# make doc: Doxygen でドキュメントを生成する. 出力は, <ビルドディレクトリ>/docs/html/
 # (doxygen が必要. グラフを出力するには, graphviz の dot も必要)
-# make clean で, ドキュメントとカバレッジのレポートも削除する (CMake 3.15 以降)
+# make clean で, ターゲットの出力 (実行ファイルやライブラリ) 以外の, 次のものも, ディレクトリごと
+# 削除する (CMake 3.15 以降): ドキュメント, カバレッジのレポート, ctest の出力 (Testing),
+# 単体テストの実行ファイルのディレクトリ (実行ファイルは, clean が消して, 空になる).
+# tests/ 自体は, ビルドに必要な生成ファイル (Makefile など) があるので, 削除しない.
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES
-             ${CMAKE_BINARY_DIR}/doc
+             ${CMAKE_BINARY_DIR}/docs
              ${CMAKE_BINARY_DIR}/coverage
-             ${CMAKE_BINARY_DIR}/coverage-build)
+             ${CMAKE_BINARY_DIR}/coverage-build
+             ${CMAKE_BINARY_DIR}/Testing
+             ${CMAKE_BINARY_DIR}/tests/lib
+             ${CMAKE_BINARY_DIR}/tests/calcp
+             ${CMAKE_BINARY_DIR}/tests/calcd
+             ${CMAKE_BINARY_DIR}/tests/calcc)
 
 find_package(Doxygen OPTIONAL_COMPONENTS dot)
 if(DOXYGEN_FOUND)
@@ -205,11 +213,11 @@ if(DOXYGEN_FOUND)
             -DDOXYGEN=${DOXYGEN_EXECUTABLE}
             -DDOXYFILE=${CMAKE_SOURCE_DIR}/Doxyfile
             -DSRC=${CMAKE_SOURCE_DIR}
-            -DOUT=${CMAKE_BINARY_DIR}/doc
+            -DOUT=${CMAKE_BINARY_DIR}/docs
             -DHAVE_DOT=${doxygen_have_dot}
             -P ${CMAKE_SOURCE_DIR}/cmake/doxygen.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Doxygen: ${CMAKE_BINARY_DIR}/doc/html/index.html"
+    COMMENT "Doxygen: ${CMAKE_BINARY_DIR}/docs/html/index.html"
     VERBATIM)
 else()
   add_custom_target(doc
