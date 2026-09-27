@@ -27,10 +27,20 @@ OBJECTS = main.o \
 SHAREDOBJ = libcalcp.so
 PROGRAM = calcp
 
+# DYNAMIC=1 (make DYNAMIC=1) のとき, 動的ライブラリ (.so) を作って, リンクする.
+# 既定は, 静的ライブラリ (.a) を作って, リンクする.
+ifdef DYNAMIC
+LIBTARGET = $(SHAREDOBJ)
+PROGLIBS = $(CALCLIBS) $(UTILLIBS)
+else
+LIBTARGET = $(LIBCALC)
+PROGLIBS = $(LIBCALC) $(LIBRARY)
+endif
+
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(OBJCALC) $(LIBCALC) $(SHAREDOBJ) $(PROGRAM)
+all: $(OBJECTS) $(OBJCALC) $(LIBTARGET) $(PROGRAM)
 
 $(LIBCALC): $(OBJCALC)
 	@$(RM) $@
@@ -40,15 +50,9 @@ $(SHAREDOBJ): $(OBJCALC)
 	@$(RM) $@
 	$(LINK) -shared -Wl,-soname,$@ -o $@ $^ $(UTILLIBS) $(LIBS)
 
-$(PROGRAM): $(OBJECTS)
+$(PROGRAM): $(OBJECTS) $(LIBTARGET)
 	@$(RM) $@
-	$(LINK) -o $@ $^ $(CALCLIBS) $(UTILLIBS) $(LIBS)
-	@#$(LINK) -o $@ $^ $(LIBCALC) $(UTILLIBS) $(LIBS)
-
-.PHONY: static
-static: $(OBJECTS) $(LIBCALC)
-	@$(RM) $(PROGRAM)
-	$(LINK) -o $(PROGRAM) $^ $(LIBRARY) $(LIBS)
+	$(LINK) -o $@ $(OBJECTS) $(PROGLIBS) $(LIBS)
 
 .c.o:
 	$(COMPILE) -c $<
@@ -64,14 +68,12 @@ install: all
 	@test -z $(bindir) || mkdir -p $(bindir) || exit 1;
 	$(INSTALL) $(PROGRAM) $(bindir)
 	@test -z $(libdir) || mkdir -p $(libdir) || exit 1;
-	$(INSTALL) $(LIBCALC) $(libdir)
-	$(INSTALL) $(SHAREDOBJ) $(libdir)
+	$(INSTALL) $(LIBTARGET) $(libdir)
 
 .PHONY: strip
 strip:
 	$(STRIP) $(PROGRAM)
-	$(STRIP) $(LIBCALC)
-	$(STRIP) $(SHAREDOBJ)
+	$(STRIP) $(LIBTARGET)
 
 .PHONY: clean
 clean:
@@ -83,7 +85,6 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... debug"
-	@echo "... static"
 	@echo "... install"
 	@echo "... strip"
 	@echo "... help"
