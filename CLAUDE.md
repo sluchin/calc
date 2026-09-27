@@ -6,7 +6,9 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 
 - ビルド: `make clean all` (リリース) または `make clean debug` (デバッグ。`-D_DEBUG -DUNITTEST` を付け、`dbglog` などのデバッグログを有効にする)
   - 最上位の `GNUmakefile` が `lib` → `calc` → `server` → `client` の順に各ディレクトリの `Makefile` を呼ぶ。`lib` を先にビルドしないと、他が `libcalcutil` をリンクできない。
-  - `make static`: 静的リンク版。`make strip`: strip。`make install`: `/usr/local` へインストール。
+  - ライブラリは、静的 (`.a`) と動的 (`.so`) の、どちらか一方だけを作る。既定は静的で、`make DYNAMIC=1` (CMake は `-DDYNAMIC=ON`) で動的。切り替えるときは `make clean` する。GNU make の `-D` は、変数の定義ではないので、`DYNAMIC=1` と書く。
+  - `make strip`: strip。`make install`: `/usr/local` へインストールして、ライブラリの種類に応じたメッセージ (動的のときは `ldconfig` の案内) を表示する。
+  - 単体テストは、ライブラリの種類に関係なく、テスト専用の共有ライブラリ (`*_testlib`、インストールしない) にリンクする。モック (同名の関数の定義) が、静的ライブラリでは多重定義になるため。
   - GNU readline (`libreadline-dev`) が必要。
 - CMake でのビルド: `cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build` (`Release` も可。`make cmake-build` でも実行できる)
   - 最上位の `CMakeLists.txt` 1 つで全体を扱う。Debug は `-DUNITTEST -D_DEBUG`、それ以外は `-DNDEBUG` を付ける。

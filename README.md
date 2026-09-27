@@ -33,25 +33,40 @@ sudo yum install readline-devel
 
 ## ビルド
 
+ライブラリは, 静的ライブラリ (`.a`) と動的ライブラリ (`.so`) の, どちらか一方だけを作る. 既定は, 静的ライブラリで, 実行ファイルは, 静的ライブラリにリンクする (単独で動く).
+動的ライブラリにするには, `DYNAMIC` を指定する.
+
 Make の場合:
 
 ```sh
-make clean all      # リリース
-make clean debug    # デバッグ
+make clean all                # リリース (静的ライブラリ)
+make clean debug              # デバッグ
+make clean all DYNAMIC=1      # 動的ライブラリ
 ```
+
+(GNU make の `-D` は, 変数の定義ではないので, `DYNAMIC=1` と書く.)
+静的と動的を切り替えるときは, `make clean` してから, ビルドし直す.
 
 CMake の場合:
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release                  # 静的ライブラリ
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DDYNAMIC=ON     # 動的ライブラリ
 cmake --build build
 ```
 
 ## インストール
 
 ```sh
-sudo make install
+sudo make install                # 静的ライブラリ (既定)
+sudo make install DYNAMIC=1      # 動的ライブラリ
 ```
+
+- 静的ライブラリ: 実行ファイルは, 単独で動く. `ldconfig` は不要.
+- 動的ライブラリ: 環境によって, ライブラリの検索パスが異なる. インストール後に, `sudo ldconfig` を実行する.
+  (`/usr/local/lib` が検索パスに含まれない場合は, `/etc/ld.so.conf.d/` にファイルを作って追加する.)
+- どちらも, `make install` の最後に, 上の内容がメッセージとして表示される.
+- CMake では, `cmake -S . -B build -DDYNAMIC=ON` で構成して, `cmake --install build` する.
 
 ## 使い方
 
