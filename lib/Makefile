@@ -27,10 +27,18 @@ OBJECTS = log.o \
           readline.o \
           fileio.o
 
+# DYNAMIC=1 (make DYNAMIC=1) のとき, 動的ライブラリ (.so) を作る.
+# 既定は, 静的ライブラリ (.a) を作る.
+ifdef DYNAMIC
+LIBTARGET = $(SHAREDOBJ)
+else
+LIBTARGET = $(LIBRARY)
+endif
+
 .SUFFIXES: .c .o
 
 .PHONY: all
-all: $(OBJECTS) $(LIBRARY) $(SHAREDOBJ)
+all: $(OBJECTS) $(LIBTARGET)
 
 $(LIBRARY): $(OBJECTS)
 	@$(RM) $@
@@ -59,13 +67,11 @@ debug:
 .PHONY: install
 install: all
 	@test -z $(libdir) || mkdir -p $(libdir) || exit 1;
-	$(INSTALL) $(LIBRARY) $(libdir)
-	$(INSTALL) $(SHAREDOBJ) $(libdir)
+	$(INSTALL) $(LIBTARGET) $(libdir)
 
 .PHONY: strip
 strip:
-	$(STRIP) $(LIBRARY)
-	$(STRIP) $(SHAREDOBJ)
+	$(STRIP) $(LIBTARGET)
 
 .PHONY: clean
 clean:
