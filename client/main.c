@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,17 +19,17 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* stderr */
 #include <stdlib.h> /* exit EXIT_SUCCESS */
 #include <string.h> /* memset */
-#include <signal.h> /* sigaction */
+#include <signal.h> /* SIGINT SIGTERM SIGQUIT SIGPIPE */
 
 #include "log.h"
 #include "net.h"
+#include "sig.h"
 #include "option.h"
 #include "client.h"
 
@@ -51,9 +51,11 @@ static void sig_handler(int signo);
  * @param[in] argv コマンド引数・オプション引数
  * @return ステータス
  */
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     st_client status = EX_SUCCESS; /* ステータス */
+    int retval = 0;                /* 戻り値 */
 
     dbglog("start");
 
@@ -63,17 +65,20 @@ int main(int argc, char *argv[])
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdin, (char *)NULL, _IONBF, 0))
+    retval = setvbuf(stdin, (char *)NULL, _IONBF, 0);
+    if (retval != 0)
         outlog("setvbuf: stdin");
-    if (setvbuf(stdout, (char *)NULL, _IONBF, 0))
+    retval = setvbuf(stdout, (char *)NULL, _IONBF, 0);
+    if (retval != 0)
         outlog("setvbuf: stdout");
 
     /* オプション引数 */
     parse_args(argc, argv);
 
     /* 関数登録 */
-    if (atexit(exit_close_sock)) {
-        outlog("atexit");
+    retval = atexit(exit_close_sock);
+    if (retval != 0) {
+        outlog("atexit=%d", retval);
         exit(EX_FAILURE);
     }
 
@@ -106,47 +111,28 @@ exit_close_sock(void)
 static void
 set_sig_handler(void)
 {
-    struct sigaction sa; /* sigaction構造体 */
-    sigset_t sigmask;    /* シグナルマスク */
+    /* シグナルの設定 */
+    struct sig_setting {
+        int signo;            /* シグナル番号 */
+        void (*handler)(int); /* ハンドラ (SIG_IGN で, 無視する) */
+        int flags;            /* 追加するフラグ */
+    };
+    static const struct sig_setting settings[] = {
+        {SIGINT,  sig_handler, 0},
+        {SIGTERM, sig_handler, 0},
+        {SIGQUIT, sig_handler, 0},
+        /* 接続先が閉じたあとの send() で, プロセスが終了しないように, SIGPIPE を無視する.
+         * (send() が EPIPE を返して, 送信エラーとして処理される) */
+        {SIGPIPE, SIG_IGN,     0}
+    };
+    unsigned int i = 0u; /* 繰り返し */
+    int retval = 0;      /* 戻り値 */
 
-    (void)memset(&sa, 0, sizeof(struct sigaction));
-
-    /* シグナルマスクの設定 */
-    if (sigemptyset(&sigmask) < 0)
-        outlog("sigemptyset=0x%x", sigmask);
-    if (sigfillset(&sigmask) < 0)
-        outlog("sigfillset=0x%x", sigmask);
-    dbglog("sigmask=0x%x", sigmask);
-
-    /* シグナル補足 */
-    if (sigaction(SIGINT, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGINT", &sa);
-    sa.sa_handler = sig_handler;
-    sa.sa_mask = sigmask;
-    if (sigaction(SIGINT, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGINT", &sa);
-
-    if (sigaction(SIGTERM, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGTERM", &sa);
-    sa.sa_handler = sig_handler;
-    sa.sa_mask = sigmask;
-    if (sigaction(SIGTERM, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGTERM", &sa);
-
-    if (sigaction(SIGQUIT, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGQUIT", &sa);
-    sa.sa_handler = sig_handler;
-    sa.sa_mask = sigmask;
-    if (sigaction(SIGQUIT, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGQUIT", &sa);
-
-    /* 接続先が閉じたあとの send() で, プロセスが終了しないように, SIGPIPE を無視する.
-     * (send() が EPIPE を返して, 送信エラーとして処理される) */
-    if (sigaction(SIGPIPE, (struct sigaction *)NULL, &sa) < 0)
-        outlog("sigaction=%p, SIGPIPE", &sa);
-    sa.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &sa, (struct sigaction *)NULL) < 0)
-        outlog("sigaction=%p, SIGPIPE", &sa);
+    for (i = 0u; i < NELEMS(settings); i++) {
+        retval = set_sigaction(settings[i].signo, settings[i].handler, settings[i].flags);
+        if (retval < 0)
+            outlog("set_sigaction: signo=%d", settings[i].signo);
+    }
 }
 
 /**
@@ -154,8 +140,9 @@ set_sig_handler(void)
  *
  * @param[in] signo シグナル
  */
-static void sig_handler(int signo)
+static void
+sig_handler(int signo)
 {
+    (void)signo; /* 使用しない */
     g_sig_handled = 1;
 }
-

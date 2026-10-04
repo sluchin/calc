@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,21 +19,20 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>  /* snprintf */
-#include <stdlib.h> /* free */
+#include <stdio.h>    /* snprintf */
+#include <stdlib.h>   /* free */
 #include <execinfo.h> /* backtrace_symbols */
-#include <dirent.h> /* opendir readdir */
+#include <dirent.h>   /* opendir readdir */
 #include <sys/time.h> /* gettimeofday */
-#include <time.h>   /* localtime_r */
-#include <stdarg.h> /* va_list */
-#include <unistd.h> /* STDERR_FILENO */
-#include <fcntl.h>  /* open */
-#include <errno.h>  /* errno */
-#include <signal.h> /* signal */
+#include <time.h>     /* localtime_r */
+#include <stdarg.h>   /* va_list */
+#include <unistd.h>   /* STDERR_FILENO */
+#include <fcntl.h>    /* open */
+#include <errno.h>    /* errno */
+#include <signal.h>   /* signal */
 
 #include "test_helper.h"
 
@@ -41,35 +40,36 @@
 #include "fileio.h"
 #include "log.h"
 
-#define BUF_SIZE 2048
+#define BUF_SIZE 2048u
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* 標準ライブラリの関数は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
 /* va_list の引数は, FFF が引数を保存するとき, 配列と見なされて警告される */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsizeof-array-argument"
-FAKE_VALUE_FUNC(int, vsnprintf, char *, size_t, const char *, va_list);
-TEST_PASSTHROUGH(int, vsnprintf,
+FAKE_VALUE_FUNC(int, vsnprintf, char *, size_t, const char *, va_list)
+TEST_PASSTHROUGH(int,
+                 vsnprintf,
                  (char *str, size_t size, const char *format, va_list ap),
                  (str, size, format, ap))
-FAKE_VALUE_FUNC(int, vfprintf, FILE *, const char *, va_list);
-TEST_PASSTHROUGH(int, vfprintf, (FILE *fp, const char *format, va_list ap),
-                 (fp, format, ap))
-FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *);
-TEST_PASSTHROUGH(int, gettimeofday, (struct timeval *tv, void *tz), (tv, tz))
-FAKE_VALUE_FUNC(struct tm *, localtime_r, const time_t *, struct tm *);
-TEST_PASSTHROUGH(struct tm *, localtime_r,
-                 (const time_t *timep, struct tm *result), (timep, result))
-FAKE_VALUE_FUNC(int, fclose, FILE *);
-TEST_PASSTHROUGH(int, fclose, (FILE *fp), (fp))
-FAKE_VALUE_FUNC(int, gethostname, char *, size_t);
+FAKE_VALUE_FUNC(int, vfprintf, FILE *, const char *, va_list)
+TEST_PASSTHROUGH(int, vfprintf, (FILE * fp, const char *format, va_list ap), (fp, format, ap))
+FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *)
+TEST_PASSTHROUGH(int, gettimeofday, (struct timeval * tv, void *tz), (tv, tz))
+FAKE_VALUE_FUNC(struct tm *, localtime_r, const time_t *, struct tm *)
+TEST_PASSTHROUGH(struct tm *,
+                 localtime_r,
+                 (const time_t *timep, struct tm *result),
+                 (timep, result))
+FAKE_VALUE_FUNC(int, fclose, FILE *)
+TEST_PASSTHROUGH(int, fclose, (FILE * fp), (fp))
+FAKE_VALUE_FUNC(int, gethostname, char *, size_t)
 TEST_PASSTHROUGH(int, gethostname, (char *name, size_t len), (name, len))
 #pragma GCC diagnostic pop
 #ifdef HAVE_EXECINFO
-FAKE_VALUE_FUNC(char **, backtrace_symbols, void *const *, int);
-TEST_PASSTHROUGH(char **, backtrace_symbols, (void *const *buffer, int size),
-                 (buffer, size))
+FAKE_VALUE_FUNC(char **, backtrace_symbols, void *const *, int)
+TEST_PASSTHROUGH(char **, backtrace_symbols, (void *const *buffer, int size), (buffer, size))
 #endif
 
 /* プロトタイプ */
@@ -113,8 +113,8 @@ TEST test_print_trace(void);
 #endif
 
 /* 内部変数 */
-static char dump[0xFF + 1];           /**< ダンプデータ */
-static int fd = -1;                   /**< ファイルディスクリプタ */
+static char dump[0xFF + 1];                    /**< ダンプデータ */
+static int fd = -1;                            /**< ファイルディスクリプタ */
 static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
 
 /* 内部関数 */
@@ -126,7 +126,7 @@ static int match_print_hex_sys(const char *actual, const char *prefix);
 static void set_sig_handler(void);
 
 /** ダンプ表示文字列 */
-const char *print_hex[] = {
+static const char *print_hex[] = {
     "00000000 : 0001 0203 0405 0607 0809 0a0b 0c0d 0e0f ................",
     "00000010 : 1011 1213 1415 1617 1819 1a1b 1c1d 1e1f ................",
     "00000020 : 2021 2223 2425 2627 2829 2a2b 2c2d 2e2f  !\"#$%&'()*+,-./",
@@ -159,7 +159,7 @@ startup(void)
     (void)memset(dump, 0, sizeof(dump));
 
     unsigned int i;
-    for (i = 0; i < sizeof(dump); i++) {
+    for (i = 0u; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
 }
@@ -194,6 +194,7 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data; /* 使用しない */
     if (fd != -1) {
         if (close(fd) < 0)
             TEST_NOTIFY("close: fd=%d(%d)", fd, errno);
@@ -201,7 +202,7 @@ teardown(void *data)
     }
 
     if (testfile[0] != '\0') {
-        if (!access(testfile, W_OK)) { /* ファイルが存在する */
+        if (access(testfile, W_OK) == 0) { /* ファイルが存在する */
             if (unlink(testfile) < 0)
                 TEST_NOTIFY("unlink: %s(%d)", testfile, errno);
         }
@@ -245,10 +246,10 @@ test_get_progname(void)
 TEST
 test_system_log(void)
 {
-    int rlen = 0;                /* read戻り値 */
+    ssize_t rlen = 0L;           /* read戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-        "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: " \
+        "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: "
         "filename\\[15\\]: function\\(test\\): (.*)\\([0-9]+\\)";
 
     /* 正常系 */
@@ -257,15 +258,14 @@ test_system_log(void)
         TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
-    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-               "filename", 15, "function", "%s", "test");
+    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+               "test");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
     PASS();
 }
 
@@ -275,11 +275,11 @@ test_system_log(void)
 TEST
 test_system_dbg_log(void)
 {
-    int rlen = 0;                /* read戻り値 */
+    ssize_t rlen = 0L;           /* read戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-        "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: " \
-        "[0-9].\\.[0-9]+: filename\\[15\\]: " \
+        "programname\\[[0-9]+\\]: ppid=[0-9]+, tid=[0-9]+: "
+        "[0-9].\\.[0-9]+: filename\\[15\\]: "
         "function\\(test\\): (.*)\\([0-9]+\\)";
 
     /* 正常系 */
@@ -288,16 +288,15 @@ test_system_dbg_log(void)
         TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
     }
 
-    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                   "filename", 15, "function", "%s", "test");
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+                   "test");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
     PASS();
 }
 
@@ -307,11 +306,11 @@ test_system_dbg_log(void)
 TEST
 test_stderr_log(void)
 {
-    int rlen = 0;                /* 戻り値 */
+    ssize_t rlen = 0L;           /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-        "[A-Z][a-z]. [ 0-9][0-9] [0-9].:[0-9].:[0-9].\\.[0-9]+ " \
-        ".* programname\\[[0-9]+\\]: filename\\[15\\]: " \
+        "[A-Z][a-z]. [ 0-9][0-9] [0-9].:[0-9].:[0-9].\\.[0-9]+ "
+        ".* programname\\[[0-9]+\\]: filename\\[15\\]: "
         "ppid=[0-9]+, tid=[0-9]+: function\\(test\\): (.*)\\([0-9]+\\)";
 
     /* 正常系 */
@@ -323,13 +322,12 @@ test_stderr_log(void)
     stderr_log("programname", "filename", 15, "function", "%s", "test");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
     dbglog("actual=%s", actual);
 
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
     PASS();
 }
 
@@ -339,8 +337,8 @@ test_stderr_log(void)
 TEST
 test_dump_log(void)
 {
-    int rlen = 0;                  /* read戻り値 */
-    int result_ok = 0;             /* テスト関数戻り値 */
+    ssize_t rlen = 0L;                 /* read戻り値 */
+    int result_ok = 0;                 /* テスト関数戻り値 */
     char expected[BUF_SIZE * 2] = {0}; /* 期待する文字列 (tmp + ヘッダより大きく) */
     char actual[BUF_SIZE] = {0};       /* 実際の文字列 */
     char tmp[BUF_SIZE] = {0};          /* 一時バッファ */
@@ -350,29 +348,27 @@ test_dump_log(void)
     if (fd < 0) {
         TEST_FAIL("pipe_fd(%d)", errno);
     }
-    result_ok = dump_log(dump, sizeof(dump), "%s[%d]: %s(%s)",
-                         "filename", 15, "function", "test");
+    result_ok = dump_log(dump, sizeof(dump), "%s[%d]: %s(%s)", "filename", 15, "function", "test");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
     set_print_hex(tmp, sizeof(tmp));
     (void)snprintf(expected, sizeof(expected), "%s%s",
-                   "filename[15]: function(test)\n" \
-                   "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F " \
-                   "0123456789ABCDEF\n" \
-                   "--------   ---- ---- ---- ---- ---- ---- ---- ---- " \
-                   "----------------\n", tmp);
-    TEST_ASSERT_STR_MSG(expected, actual, "expected=%s actual=%s",
-                                        expected, actual);
+                   "filename[15]: function(test)\n"
+                   "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F "
+                   "0123456789ABCDEF\n"
+                   "--------   ---- ---- ---- ---- ---- ---- ---- ---- "
+                   "----------------\n",
+                   tmp);
+    TEST_ASSERT_STR_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
 
     TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
-    result_ok = dump_log(NULL, 0, "%s[%d]: %s(%s)",
-                         "filename", 15, "function", "test");
+    result_ok = dump_log(NULL, 0u, "%s[%d]: %s(%s)", "filename", 15, "function", "test");
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
     PASS();
@@ -384,11 +380,11 @@ test_dump_log(void)
 TEST
 test_dump_sys(void)
 {
-    int rlen = 0;                  /* read戻り値 */
-    int result_ok = 0;             /* テスト関数戻り値 */
-    char actual[BUF_SIZE] = {0};   /* 実際の文字列 */
-    const char prefix[] =          /* プレフィックス */
-        "programname\\[[0-9]+\\]: filename\\[15\\]: " \
+    ssize_t rlen = 0L;           /* read戻り値 */
+    int result_ok = 0;           /* テスト関数戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+    const char prefix[] =        /* プレフィックス */
+        "programname\\[[0-9]+\\]: filename\\[15\\]: "
         "function\\(test\\): ";
 
     /* 正常系 */
@@ -397,12 +393,11 @@ test_dump_sys(void)
         TEST_FAIL("pipe_fd(%d)", errno);
     }
 
-    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
-                         "programname", "filename", 15,
-                         "function", dump, sizeof(dump), "%s", "test");
+    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function",
+                         dump, sizeof(dump), "%s", "test");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
@@ -411,9 +406,8 @@ test_dump_sys(void)
     TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
-    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR,
-                         "programname", "filename", 15,
-                         "function", NULL, 0, "%s", "test");
+    result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function",
+                         NULL, 0u, "%s", "test");
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
     PASS();
@@ -426,7 +420,7 @@ TEST
 test_dump_file(void)
 {
     char readbuf[0xFF + 1] = {0}; /* readバッファ */
-    size_t rlen = 0;              /* fread戻り値 */
+    ssize_t rlen = 0L;            /* read戻り値 */
     int result_ok = 0;            /* テスト関数戻り値 */
 
     /* 正常系 */
@@ -442,7 +436,7 @@ test_dump_file(void)
     }
 
     rlen = read(fd, readbuf, sizeof(readbuf));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
@@ -451,7 +445,7 @@ test_dump_file(void)
     TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
-    result_ok = dump_file("program", testfile, NULL, 0);
+    result_ok = dump_file("program", testfile, NULL, 0u);
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
 
@@ -465,10 +459,10 @@ test_dump_file(void)
 TEST
 test_systrace(void)
 {
-    int rlen = 0;                /* 戻り値 */
+    ssize_t rlen = 0L;           /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
-        "programname\\[[0-9]+\\]: filename\\[15\\]: function: " \
+        "programname\\[[0-9]+\\]: filename\\[15\\]: function: "
         "Obtained [0-9]+ stack frames.\\n*";
 
     /* 正常系 */
@@ -477,16 +471,14 @@ test_systrace(void)
         TEST_FAIL("pipe_fd(%d)", errno);
     }
 
-    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-             "filename", 15, "function");
+    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function");
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
     PASS();
 }
 
@@ -496,7 +488,7 @@ test_systrace(void)
 TEST
 test_print_trace(void)
 {
-    int rlen = 0;                /* 戻り値 */
+    ssize_t rlen = 0L;           /* 戻り値 */
     char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
     const char expected[] =      /* 期待する文字列 */
         "Obtained [0-9]+ stack frames.\\n*";
@@ -510,12 +502,11 @@ test_print_trace(void)
     print_trace();
 
     rlen = read(fd, actual, sizeof(actual));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("read: fd=%d(%d)", fd, errno);
     }
 
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
     PASS();
 }
 #endif
@@ -529,15 +520,15 @@ test_print_trace(void)
 static void
 set_print_hex(char *buf, size_t len)
 {
-    size_t length = 0; /* 文字列長(一行) */
-    size_t total = 0;  /* 文字列長(全て) */
+    size_t length = 0u; /* 文字列長(一行) */
+    size_t total = 0u;  /* 文字列長(全て) */
 
     unsigned int i;
-    for (i = 0; i < NELEMS(print_hex); i++) {
+    for (i = 0u; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
-        strncat(buf, print_hex[i], len - total - 1);
+        strncat(buf, print_hex[i], len - total - 1u);
         total += length;
-        strncat(buf, "\n", len - total - 1);
+        strncat(buf, "\n", len - total - 1u);
         total += strlen("\n");
     }
     (void)strcat(buf, "\n");
@@ -565,9 +556,9 @@ match_print_hex_sys(const char *actual, const char *prefix)
     (void)snprintf(pattern, sizeof(pattern), "^%s$", prefix);
 
     unsigned int i;
-    for (i = 0; i < NELEMS(print_hex); i++) {
+    for (i = 0u; i < NELEMS(print_hex); i++) {
         pos = strstr(line, print_hex[i]);
-        if (!pos)
+        if (pos == NULL)
             return 0;
         /* 直前の改行の次から, ダンプ表示の前までがプレフィックス */
         lf = pos;
@@ -577,7 +568,7 @@ match_print_hex_sys(const char *actual, const char *prefix)
             return 0;
         (void)memcpy(head, lf, (size_t)(pos - lf));
         head[pos - lf] = '\0';
-        if (!test_match(pattern, head))
+        if (test_match(pattern, head) == 0)
             return 0;
         line = pos + strlen(print_hex[i]);
     }
@@ -591,18 +582,17 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGINT");
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
-
 
 /**
  * 失敗のログが標準エラー出力 (前のテストで閉じたパイプ) に出ないように,
@@ -624,8 +614,8 @@ test_system_log_failure(void)
 
     /* vsnprintf() に失敗 */
     TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
-    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-               "filename", 15, "function", "%s", "test");
+    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+               "test");
     TEST_ASSERT_INJECTED(vsnprintf);
     PASS();
 }
@@ -640,20 +630,20 @@ test_system_dbg_log_failure(void)
 
     /* gettimeofday() に失敗 */
     TEST_INJECT(gettimeofday, 0, 1, -1, EFAULT);
-    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                   "filename", 15, "function", "%s", "test");
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+                   "test");
     TEST_ASSERT_INJECTED(gettimeofday);
 
     /* localtime_r() に失敗 */
     TEST_INJECT(localtime_r, 0, 1, NULL, EOVERFLOW);
-    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                   "filename", 15, "function", "%s", "test");
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+                   "test");
     TEST_ASSERT_INJECTED(localtime_r);
 
     /* vsnprintf() に失敗 */
     TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
-    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                   "filename", 15, "function", "%s", "test");
+    system_dbg_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+                   "test");
     TEST_ASSERT_INJECTED(vsnprintf);
     PASS();
 }
@@ -702,7 +692,7 @@ test_dump_log_failure(void)
     TEST_ASSERT_INJECTED(vsnprintf);
 
     /* 16 バイトに満たない行を, 空白で埋める */
-    TEST_ASSERT_INT(EX_OK, dump_log(dump, 3, "%s", "test"));
+    TEST_ASSERT_INT(EX_OK, dump_log(dump, 3u, "%s", "test"));
     PASS();
 }
 
@@ -716,17 +706,13 @@ test_dump_sys_failure(void)
 
     /* vsnprintf() に失敗 */
     TEST_INJECT(vsnprintf, 0, 1, -1, EILSEQ);
-    TEST_ASSERT_INT(EX_NG,
-                    dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                             "filename", 15, "function",
-                             dump, sizeof(dump), "%s", "test"));
+    TEST_ASSERT_INT(EX_NG, dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15,
+                                    "function", dump, sizeof(dump), "%s", "test"));
     TEST_ASSERT_INJECTED(vsnprintf);
 
     /* 16 バイトに満たない行を, 空白で埋める */
-    TEST_ASSERT_INT(EX_OK,
-                    dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-                             "filename", 15, "function",
-                             dump, 3, "%s", "test"));
+    TEST_ASSERT_INT(EX_OK, dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15,
+                                    "function", dump, 3u, "%s", "test"));
     PASS();
 }
 
@@ -738,14 +724,17 @@ test_dump_sys_failure(void)
 static int
 count_open_fds(void)
 {
-    int count = 0;              /* 数 */
+    int count = 0;                       /* 数 */
     DIR *dir = opendir("/proc/self/fd"); /* ディレクトリ */
-    struct dirent *ent = NULL;  /* ディレクトリエントリ */
+    struct dirent *ent = NULL;           /* ディレクトリエントリ */
 
-    if (!dir)
+    if (dir == NULL)
         return -1;
-    while ((ent = readdir(dir)) != NULL)
+    ent = readdir(dir);
+    while (ent != NULL) {
         count++;
+        ent = readdir(dir);
+    }
     (void)closedir(dir);
     return count;
 }
@@ -756,25 +745,24 @@ count_open_fds(void)
 TEST
 test_dump_file_failure(void)
 {
-    char big[BUF_SIZE * 4]; /* stdio のバッファより大きいデータ */
-    int fds = 0;            /* オープンしているファイルディスクリプタの数 */
+    char big[BUF_SIZE * 4u]; /* stdio のバッファより大きいデータ */
+    int fds = 0;             /* オープンしているファイルディスクリプタの数 */
 
     quiet_stderr();
     (void)memset(big, 'a', sizeof(big));
 
     /* オープンできない */
-    TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file",
-                                     "abc", 3));
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file", "abc", 3u));
     /* 書込に失敗 (/dev/full は, 常に ENOSPC になる). ファイルは閉じる */
     fds = count_open_fds();
     TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/full", big, sizeof(big)));
     TEST_ASSERT_INT(fds, count_open_fds());
     /* バッファに収まるデータは, fwrite では失敗せず, fflush で失敗する
      * (ログを出力するだけで, 戻り値は変わらない) */
-    TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3));
+    TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3u));
     /* fclose() に失敗 */
     TEST_INJECT(fclose, 0, 1, EOF, EIO);
-    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/null", "abc", 3));
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/null", "abc", 3u));
     TEST_ASSERT_INJECTED(fclose);
     PASS();
 }
@@ -790,8 +778,7 @@ test_systrace_failure(void)
 
     /* backtrace_symbols() に失敗 */
     TEST_INJECT(backtrace_symbols, 0, 1, NULL, ENOMEM);
-    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname",
-             "filename", 15, "function");
+    systrace(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function");
     TEST_ASSERT_INJECTED(backtrace_symbols);
     PASS();
 }

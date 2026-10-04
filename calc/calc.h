@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef CALC_H
@@ -31,11 +30,13 @@
 #include "def.h"
 
 #ifdef _DEBUG
-#  define MAX_DIGIT    30L /**< 有効桁数最大値 */
+#  define MAX_DIGIT 30L /**< 有効桁数最大値 */
 #else
-#  define MAX_DIGIT    15L /**< 有効桁数最大値 */
-#endif /* _DEBUG */
-#define DEFAULT_DIGIT  12L /**< 有効桁数デフォルト値 */
+#  define MAX_DIGIT 15L   /**< 有効桁数最大値 */
+#endif                    /* _DEBUG */
+#define DEFAULT_DIGIT 12L /**< 有効桁数デフォルト値 */
+/** フォーマット ("%." + 桁数 (long の最大 20 文字) + "g" + NUL) のサイズ */
+#define FMT_SIZE      24u
 
 /* 外部変数 */
 extern bool g_tflag; /**< tオプションフラグ */
@@ -54,11 +55,11 @@ typedef enum _ER ER;
 
 /** calc情報構造体 */
 struct _calcinfo {
-    int ch;                    /**< 文字 */
-    unsigned char *ptr;        /**< 文字列走査用ポインタ */
-    unsigned char *answer;     /**< 結果文字列 */
-    char fmt[sizeof("%.18g")]; /**< フォーマット */
-    ER errorcode;              /**< エラーコード */
+    int ch;                   /**< 文字 */
+    const unsigned char *ptr; /**< 文字列走査用ポインタ */
+    unsigned char *answer;    /**< 結果文字列 */
+    char fmt[FMT_SIZE];       /**< フォーマット */
+    ER errorcode;             /**< エラーコード */
 };
 typedef struct _calcinfo calcinfo;
 
@@ -146,4 +147,3 @@ void test_init_calc(testcalc *calc);
  * @endmsc
  */
 #endif /* CALC_H */
-

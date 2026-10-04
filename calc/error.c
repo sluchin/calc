@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* NULL */
@@ -35,13 +34,7 @@
 
 /** エラーメッセージ文字列構造体 */
 static const char *errormsg[] = {
-    NULL,
-    "Divide by zero.",
-    "Syntax error.",
-    "Function not defined.",
-    "NaN.",
-    "Infinity."
-};
+    NULL, "Divide by zero.", "Syntax error.", "Function not defined.", "NaN.", "Infinity."};
 
 /**
  * エラーメッセージ取得
@@ -60,16 +53,14 @@ get_errormsg(calcinfo *calc)
     assert(MAXERROR == NELEMS(errormsg));
 
     /* エラーコードが範囲外なら, メッセージはない */
-    if (calc->errorcode <= E_NONE ||
-        MAXERROR <= calc->errorcode)
+    if (calc->errorcode <= E_NONE || MAXERROR <= calc->errorcode)
         return NULL;
 
-    dbglog("errormsg=%s, errorcode=%d",
-           errormsg[calc->errorcode], (int)calc->errorcode);
+    dbglog("errormsg=%s, errorcode=%d", errormsg[calc->errorcode], (int)calc->errorcode);
 
     /* 呼び出し元が解放できるように, 複製する */
     msg = (unsigned char *)strdup(errormsg[calc->errorcode]);
-    if (!msg) {
+    if (msg == NULL) {
         outlog("strdup");
         return NULL;
     }
@@ -115,7 +106,7 @@ is_error(calcinfo *calc)
 {
     dbglog("start: errorcode=%d", (int)calc->errorcode);
 
-    if (calc->errorcode)
+    if (calc->errorcode != E_NONE)
         return true;
 
     return false;
@@ -132,13 +123,12 @@ check_validate(calcinfo *calc, double val)
 {
     dbglog("start");
 
-    if (isnan(val))
+    if (isnan(val) != 0)
         set_errorcode(calc, E_NAN);
     else if (isinf(val) != 0)
         set_errorcode(calc, E_INFINITY);
 
-    dbglog("isnan=%d, isinf=%d, fpclassify=%d",
-           isnan(val), isinf(val), fpclassify(val));
+    dbglog("isnan=%d, isinf=%d, fpclassify=%d", isnan(val), isinf(val), fpclassify(val));
 }
 
 /**
@@ -152,20 +142,16 @@ check_math_feexcept(calcinfo *calc)
     dbglog("start");
 
     /* アンダーフロー (exp(-1000) など) は, 結果が 0 に近いだけで, エラーではない */
-    if (fetestexcept(FE_DIVBYZERO |
-                     FE_OVERFLOW)) {
+    if (fetestexcept(FE_DIVBYZERO | FE_OVERFLOW) != 0) {
         set_errorcode(calc, E_INFINITY);
     } else {
-        if (fetestexcept(FE_INVALID))
+        if (fetestexcept(FE_INVALID) != 0)
             set_errorcode(calc, E_NAN);
     }
-    dbglog("FE_INVALID=%d, FE_DIVBYZERO=%d, FE_OVERFLOW=%d, " \
+    dbglog("FE_INVALID=%d, FE_DIVBYZERO=%d, FE_OVERFLOW=%d, "
            "FE_UNDERFLOW=%d, FE_INEXACT=%d",
-           fetestexcept(FE_INVALID),
-           fetestexcept(FE_DIVBYZERO),
-           fetestexcept(FE_OVERFLOW),
-           fetestexcept(FE_UNDERFLOW),
-           fetestexcept(FE_INEXACT));
+           fetestexcept(FE_INVALID), fetestexcept(FE_DIVBYZERO), fetestexcept(FE_OVERFLOW),
+           fetestexcept(FE_UNDERFLOW), fetestexcept(FE_INEXACT));
 }
 
 /**
@@ -176,8 +162,11 @@ check_math_feexcept(calcinfo *calc)
 void
 clear_math_feexcept(void)
 {
-    if (feclearexcept(FE_ALL_EXCEPT)) /* エラー(非0) */
-        outlog("feclearexcept");
+    int retval = 0; /* 戻り値 */
+
+    retval = feclearexcept(FE_ALL_EXCEPT);
+    if (retval != 0) /* エラー(非0) */
+        outlog("feclearexcept=%d", retval);
     errno = 0;
 }
 
@@ -193,4 +182,3 @@ test_init_error(testerror *error)
     error->errormsg = errormsg;
 }
 #endif /* UNITTEST */
-

@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* snprintf */
@@ -35,39 +34,37 @@
 #include "option.h"
 #include "calc.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* main.c が呼び出す, option.c の関数は, モックにする */
-FAKE_VOID_FUNC(parse_args, int, char **);
+FAKE_VOID_FUNC(parse_args, int, char **)
 
 /* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
-FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
-                struct sigaction *);
-TEST_PASSTHROUGH(int, sigaction,
-                 (int signo, const struct sigaction *act,
-                  struct sigaction *oldact),
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *, struct sigaction *)
+TEST_PASSTHROUGH(int,
+                 sigaction,
+                 (int signo, const struct sigaction *act, struct sigaction *oldact),
                  (signo, act, oldact))
-FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
-TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
-TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t);
-TEST_PASSTHROUGH(int, setvbuf,
-                 (FILE *fp, char *buf, int mode, size_t size),
-                 (fp, buf, mode, size))
-FAKE_VALUE_FUNC(int, fflush, FILE *);
-TEST_PASSTHROUGH(int, fflush, (FILE *fp), (fp))
-FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *,
-                const unsigned char *);
-TEST_PASSTHROUGH(unsigned char *, create_answer,
-                 (calcinfo *calc, const unsigned char *expr), (calc, expr))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t)
+TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (fp, buf, mode, size))
+FAKE_VALUE_FUNC(int, fflush, FILE *)
+TEST_PASSTHROUGH(int, fflush, (FILE * fp), (fp))
+FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *, const unsigned char *)
+TEST_PASSTHROUGH(unsigned char *,
+                 create_answer,
+                 (calcinfo * calc, const unsigned char *expr),
+                 (calc, expr))
 
-#define BUF_SIZE 1024 /**< バッファサイズ */
+#define BUF_SIZE 1024u /**< バッファサイズ */
 
 /** 親子プロセスで共有する情報 */
 struct shared {
-    int parse_count;   /**< parse_args() の呼び出し回数 */
-    int parse_argc;    /**< parse_args() の argc */
+    int parse_count;      /**< parse_args() の呼び出し回数 */
+    int parse_argc;       /**< parse_args() の argc */
     char parse_argv0[32]; /**< parse_args() の argv[0] */
 };
 
@@ -90,7 +87,7 @@ fake_parse_args(int argc, char **argv)
     shm->parse_count++;
     shm->parse_argc = argc;
     (void)snprintf(shm->parse_argv0, sizeof(shm->parse_argv0), "%s", argv[0]);
-    if (raise_signo)
+    if (raise_signo != 0)
         (void)raise(raise_signo);
 }
 
@@ -138,7 +135,7 @@ teardown(void *data)
 static void
 run_main(void *arg)
 {
-    char *argv[] = { "calcp", NULL }; /* 引数 */
+    char *argv[] = {"calcp", NULL}; /* 引数 */
 
     (void)arg;
     (void)calcp_main(1, argv);
@@ -154,8 +151,7 @@ test_main_calc(void)
     int status = 0;           /* 終了ステータス */
 
     /* quit で終了 */
-    status = test_run_child(run_main, NULL, "100*3\n2+3*4\nquit\n",
-                            out, sizeof(out));
+    status = test_run_child(run_main, NULL, "100*3\n2+3*4\nquit\n", out, sizeof(out));
     TEST_ASSERT_INT(EXIT_SUCCESS, status);
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     TEST_ASSERT_MSG(strstr(out, "14") != NULL, "out=%s", out);
@@ -177,15 +173,13 @@ test_main_exit(void)
 
     /* exit で終了 (以降の式は実行されない) */
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main, NULL, "100*3\nexit\n200*3\n",
-                                   out, sizeof(out)));
+                    test_run_child(run_main, NULL, "100*3\nexit\n200*3\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     TEST_ASSERT_MSG(strstr(out, "600") == NULL, "out=%s", out);
 
     /* 空行は無視する */
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main, NULL, "\n100*3\nquit\n",
-                                   out, sizeof(out)));
+                    test_run_child(run_main, NULL, "\n100*3\nquit\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     PASS();
 }
@@ -200,8 +194,7 @@ test_main_error(void)
 
     /* エラーになっても, 次の式を実行する */
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main, NULL, "1/0\n100*3\nquit\n",
-                                   out, sizeof(out)));
+                    test_run_child(run_main, NULL, "1/0\n100*3\nquit\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "Divide by zero") != NULL, "out=%s", out);
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     PASS();
@@ -218,8 +211,7 @@ test_main_signal(void)
     /* シグナルを受け取ると, ループを終了する */
     raise_signo = SIGINT;
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main, NULL, "100*3\n200*3\n",
-                                   out, sizeof(out)));
+                    test_run_child(run_main, NULL, "100*3\n200*3\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "600") == NULL, "out=%s", out);
     PASS();
 }
@@ -268,9 +260,9 @@ run_main_sigint(void *arg)
 {
     pid_t ppid = getpid(); /* main() を実行するプロセス */
 
-    (void)alarm(10); /* 終了しなかったときの保険 */
+    (void)alarm(10u); /* 終了しなかったときの保険 */
     if (fork() == 0) {
-        (void)usleep(300000);
+        (void)usleep(300000u);
         (void)kill(ppid, SIGINT);
         _exit(EXIT_SUCCESS);
     }
@@ -286,15 +278,13 @@ test_main_failure(void)
     char out[BUF_SIZE] = {0}; /* 出力 */
 
     /* 失敗しても, 最初の計算に失敗した以外は, 続行する */
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_failure, NULL,
-                                   "100*3\n200*3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_failure, NULL, "100*3\n200*3\nquit\n",
+                                                 out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "600") != NULL, "out=%s", out);
 
     /* 標準出力に書き込めなくても, 続行する */
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_closed_stdout, NULL,
-                                   "100*3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_closed_stdout, NULL, "100*3\nquit\n", out,
+                                                 sizeof(out)));
     PASS();
 }
 
@@ -306,7 +296,7 @@ test_main_failure(void)
 static void
 run_main_tty(void *arg)
 {
-    (void)alarm(10); /* 終了しなかったときの保険 */
+    (void)alarm(10u); /* 終了しなかったときの保険 */
     run_main(arg);
 }
 
@@ -319,8 +309,7 @@ test_main_readline(void)
     char out[BUF_SIZE * 4] = {0}; /* 出力 */
 
     TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child_pty(run_main_tty, NULL,
-                                       "100*3\nquit\n", out, sizeof(out)));
+                    test_run_child_pty(run_main_tty, NULL, "100*3\nquit\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     PASS();
 }
@@ -334,15 +323,11 @@ test_main_eof(void)
 {
     char out[BUF_SIZE] = {0}; /* 出力 */
 
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_tty, NULL, "100*3\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_tty, NULL, "100*3\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
 
     /* 何も入力しない */
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_tty, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_tty, NULL, NULL, out, sizeof(out)));
     PASS();
 }
 
@@ -353,16 +338,14 @@ TEST
 test_main_history(void)
 {
     char out[BUF_SIZE * 32] = {0}; /* 出力 (入力のエコーも含む) */
-    char input[1024] = {0};        /* 入力 */
+    char inbuf[1024] = {0};        /* 入力 */
     unsigned int i;
 
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < 101; i++)
-        (void)strcat(input, "1+2\n");
-    (void)strcat(input, "quit\n");
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child_pty(run_main_tty, NULL, input, out,
-                                       sizeof(out)));
+    for (i = 0u; i < 101u; i++)
+        (void)strcat(inbuf, "1+2\n");
+    (void)strcat(inbuf, "quit\n");
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child_pty(run_main_tty, NULL, inbuf, out, sizeof(out)));
     PASS();
 }
 
@@ -374,8 +357,7 @@ test_main_history(void)
 TEST
 test_main_event_hook(void)
 {
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child_pty(run_main_sigint, NULL, NULL, NULL, 0));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child_pty(run_main_sigint, NULL, NULL, NULL, 0));
     PASS();
 }
 

@@ -1,0 +1,86 @@
+# 警告オプション (Makefile と CMake の共通の一覧)
+#
+# 1 行に 1 つ. '#' から行末まではコメント.
+# Makefile は warnings.mk, CMake は cmake/warnings.cmake が読み込み, コンパイラが
+# 受け付けないオプションは, 自動で外す (古い gcc でもビルドできる).
+# 警告が出たら修正する. オプションを足したり外したりするときは, この一覧だけを直す.
+
+# 基本
+-Wall
+-Wextra
+-Wpedantic
+-Wunused
+-Wuninitialized
+-Winit-self
+-Wmissing-include-dirs
+-Wundef
+
+# 書式文字列
+-Wformat=2
+-Wformat-signedness
+-Wformat-overflow=2
+-Wformat-truncation=2
+
+# 型変換と符号
+-Wconversion
+-Wsign-conversion
+-Warith-conversion
+-Wdouble-promotion
+-Wfloat-equal
+-Wbad-function-cast
+-Wshift-overflow=2
+
+# ポインタとキャスト
+-Wcast-qual
+-Wcast-align=strict
+-Wpointer-arith
+-Wwrite-strings
+-Wstrict-aliasing=2
+-Wnull-dereference
+
+# 宣言と名前
+-Wshadow
+-Wstrict-prototypes
+-Wold-style-definition
+-Wmissing-prototypes
+-Wmissing-declarations
+-Wredundant-decls
+-Wnested-externs
+-Wunused-macros
+-Wunused-const-variable=2
+-Wmissing-variable-declarations
+-Wc++-compat
+
+# 制御構造
+-Wswitch-default
+-Wswitch-enum
+-Wimplicit-fallthrough=5
+-Wlogical-op
+-Wduplicated-cond
+-Wduplicated-branches
+-Wjump-misses-init
+-Wmissing-noreturn
+-Wsuggest-attribute=noreturn
+-Wsuggest-attribute=format
+
+# 配列, 領域, オーバーフロー
+-Warray-bounds=2
+-Wstringop-overflow=4
+-Wstrict-overflow=2
+-Wvla
+-Walloca
+-Walloc-zero
+
+# その他
+-Wtrampolines
+-Wstack-protector
+-Wdate-time
+-Wpacked
+
+# 付けないオプション (理由)
+#   -Wpadded                      構造体のパディングを全て警告する (バグの検出に役立たず, 件数も多い)
+#   -Wdeclaration-after-statement 文の途中での宣言を警告する (このプロジェクトの書き方と合わない)
+#   -Wlong-long, -Wtraditional    C99 以降の書き方を, 全て警告する
+#   -Wunsafe-loop-optimizations   -funsafe-loop-optimizations を付けたときだけ意味がある
+#   -Winline, -Waggregate-return  最適化や, 構造体の戻り値の方針に関するもので, バグの検出ではない
+#   -Wsuggest-attribute=pure/const/malloc  最適化のヒントで, 正しさには関係しない

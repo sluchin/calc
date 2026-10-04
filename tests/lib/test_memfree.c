@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdlib.h> /* malloc */
@@ -41,38 +40,35 @@ TEST test_memfree(void);
 TEST
 test_memfree(void)
 {
-    char *mem[] = { NULL, NULL, NULL }; /* ポインタ値 */
-    enum { MEM1, MEM2, MEM3, MAX };     /* 配列要素 */
+    char *mem[] = {NULL, NULL, NULL}; /* ポインタ値 */
+    enum { MEM1, MEM2, MEM3, MAX };   /* 配列要素 */
 
     int i;
     for (i = 0; i < MAX; i++) {
-        mem[i] = (char *)malloc(5 * sizeof(char));
-        if (!mem[i]) {
+        mem[i] = (char *)malloc(5u * sizeof(char));
+        if (mem[i] == NULL) {
             TEST_FAIL("malloc");
         }
     }
-    memfree((void **)&mem[MEM1],
-            (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
+    memfree(&mem[MEM1], &mem[MEM2], &mem[MEM3], NULL);
     TEST_ASSERT_NULL(mem[MEM1]);
     TEST_ASSERT_NULL(mem[MEM2]);
     TEST_ASSERT_NULL(mem[MEM3]);
 
     /* 第二引数がNULLの場合 */
-    mem[MEM1] = (char *)malloc(5 * sizeof(char));
-    if (!mem[MEM1]) {
+    mem[MEM1] = (char *)malloc(5u * sizeof(char));
+    if (mem[MEM1] == NULL) {
         TEST_FAIL("malloc");
     }
-    mem[MEM3] = (char *)malloc(5 * sizeof(char));
-    if (!mem[MEM3]) {
+    mem[MEM3] = (char *)malloc(5u * sizeof(char));
+    if (mem[MEM3] == NULL) {
         TEST_FAIL("malloc");
     }
-    memfree((void **)&mem[MEM1],
-            (void **)&mem[MEM2], (void **)&mem[MEM3], NULL);
+    memfree(&mem[MEM1], &mem[MEM2], &mem[MEM3], NULL);
     TEST_ASSERT_NULL(mem[MEM1]);
     TEST_ASSERT_NULL(mem[MEM3]);
     PASS();
 }
-
 
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();

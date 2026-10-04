@@ -1,12 +1,12 @@
 /**
- * @file  server/option.h
- * @brief オプション引数の処理
+ * @file  lib/sig.h
+ * @brief シグナル設定
  *
  * @author higashi
- * @date 2010-06-25 higashi 新規作成
+ * @date 2026-10-04 higashi 新規作成
  * @version \$Id$
  *
- * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
+ * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
 /* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef OPTION_H
-#define OPTION_H
+#ifndef SIG_H
+#define SIG_H
 
-/** オプション引数 */
-void parse_args(int argc, char *argv[]);
+/** シグナルのハンドラ設定 */
+int set_sigaction(const int signo, void (*handler)(int), const int flags);
 
-#endif /* OPTION_H */
+#endif /* SIG_H */
