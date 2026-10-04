@@ -10,6 +10,12 @@ libdir = $(prefix)/lib
 # (GNU make の -D は, 変数の定義ではないので, DYNAMIC=1 と書く. サブディレクトリの
 # Makefile にも, コマンドラインの変数は, 引き継がれる)
 
+# 整形 (clang-format). 設定は, .clang-format にある. clang-format が PATH にないときは,
+# make CLANG_FORMAT=/path/to/clang-format format のように指定する.
+# 外部のソース (tests/third_party) と, ビルドの出力 (build*) は, 整形しない.
+CLANG_FORMAT ?= clang-format
+FORMAT_SOURCES = $(shell find calc client server lib tests \( -path tests/third_party -o -path 'build*' \) -prune -o \( -name '*.c' -o -name '*.h' \) -print)
+
 .PHONY: all
 all:
 	@failcom='exit 1'; \
@@ -96,6 +102,16 @@ clean:
 	cd $(top_srcdir)/server && $(MAKE) clean
 	cd $(top_srcdir)/client && $(MAKE) clean
 
+.PHONY: format
+format:
+	@command -v $(CLANG_FORMAT) >/dev/null || { echo "format は使えません: clang-format をインストールしてください (sudo apt install clang-format)"; exit 1; }
+	$(CLANG_FORMAT) -i --style=file $(FORMAT_SOURCES)
+
+.PHONY: format-check
+format-check:
+	@command -v $(CLANG_FORMAT) >/dev/null || { echo "format-check は使えません: clang-format をインストールしてください (sudo apt install clang-format)"; exit 1; }
+	$(CLANG_FORMAT) --dry-run --Werror --style=file $(FORMAT_SOURCES)
+
 .PHONY: doc
 doc:
 	doxygen Doxyfile
@@ -110,6 +126,8 @@ help:
 	@echo "DYNAMIC=1 を付けると, 動的ライブラリ (.so) を作る (既定は, 静的ライブラリ (.a))"
 	@echo "... test (cmake, ctest)"
 	@echo "... coverage (cmake, gcovr)"
+	@echo "... format (clang-format でソースを整形する)"
+	@echo "... format-check (整形が必要なら、失敗する)"
 	@echo "... doc"
 	@echo "... strip"
 
