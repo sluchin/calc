@@ -7,6 +7,12 @@
 # forkpty() (tests/test_process.h) は, 古い glibc では libutil にある
 find_library(UTIL_LIBRARY util)
 
+# テストの引数 (argv) は, 文字列リテラルで初期化する (char *argv[] = { "prog", ... }).
+# その const は, テスト対象の関数 (char *argv[]) に合わせて外せないので, 警告を出さない.
+add_compile_options(-Wno-write-strings)
+# モック (FFF の FAKE_VALUE_FUNC など) は, libc の関数 (close, send など) を, 同じ型で再宣言する.
+add_compile_options(-Wno-redundant-decls)
+
 # add_unit_test(<ディレクトリ> <名前>
 #               LIBS <ライブラリ...> INCLUDES <ディレクトリ...>
 #               [SOURCES <追加ソース...>] [RENAME_MAIN <名前>])
@@ -25,8 +31,10 @@ function(add_unit_test dir name)
     ${T_INCLUDES})
   if(T_RENAME_MAIN) # SOURCES の先頭の main() は, 名前を変える (テストの main は変えない)
     list(GET T_SOURCES 0 main_source)
+    # 名前を変えた main() は, ヘッダに宣言がなく, exit() で終わる関数になるので, その警告は出さない
     set_source_files_properties(${main_source} PROPERTIES
-      COMPILE_DEFINITIONS main=${T_RENAME_MAIN})
+      COMPILE_DEFINITIONS main=${T_RENAME_MAIN}
+      COMPILE_OPTIONS "-Wno-missing-prototypes;-Wno-missing-declarations;-Wno-missing-noreturn")
   endif()
   # dlsym() (test_helper.h の TEST_PASSTHROUGH) のため, _GNU_SOURCE と dl が必要
   target_compile_definitions(${target} PRIVATE _GNU_SOURCE)
@@ -83,7 +91,7 @@ set(CALC_DIR ${CMAKE_SOURCE_DIR}/calc)
 set(SERVER_DIR ${CMAKE_SOURCE_DIR}/server)
 set(CLIENT_DIR ${CMAKE_SOURCE_DIR}/client)
 
-foreach(n data fileio log memfree net readline term timer)
+foreach(n data fileio log memfree net readline sig term timer)
   add_unit_test(lib test_${n} LIBS calcutil_testlib INCLUDES ${LIB_DIR})
 endforeach()
 

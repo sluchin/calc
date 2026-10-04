@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>      /* setvbuf stdin stdout */
@@ -46,65 +45,72 @@
 #include "server.h"
 #include "calc.h"
 
-#define BUF_SIZE    30  /**< バッファサイズ */
+#define BUF_SIZE 30u /**< バッファサイズ */
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* システムコールなどは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(int, socket, int, int, int);
-TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol),
-                 (domain, type, protocol))
-FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t);
-TEST_PASSTHROUGH(int, setsockopt,
+FAKE_VALUE_FUNC(int, socket, int, int, int)
+TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol), (domain, type, protocol))
+FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t)
+TEST_PASSTHROUGH(int,
+                 setsockopt,
                  (int fd, int level, int name, const void *val, socklen_t len),
                  (fd, level, name, val, len))
-FAKE_VALUE_FUNC(int, listen, int, int);
+FAKE_VALUE_FUNC(int, listen, int, int)
 TEST_PASSTHROUGH(int, listen, (int fd, int backlog), (fd, backlog))
-FAKE_VALUE_FUNC(int, pselect, int, fd_set *, fd_set *, fd_set *,
-                const struct timespec *, const sigset_t *);
-TEST_PASSTHROUGH(int, pselect,
-                 (int nfds, fd_set *readfds, fd_set *writefds,
-                  fd_set *exceptfds, const struct timespec *timeout,
+FAKE_VALUE_FUNC(
+    int, pselect, int, fd_set *, fd_set *, fd_set *, const struct timespec *, const sigset_t *)
+TEST_PASSTHROUGH(int,
+                 pselect,
+                 (int nfds,
+                  fd_set *readfds,
+                  fd_set *writefds,
+                  fd_set *exceptfds,
+                  const struct timespec *timeout,
                   const sigset_t *sigmask),
                  (nfds, readfds, writefds, exceptfds, timeout, sigmask))
-FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *);
-TEST_PASSTHROUGH(int, accept,
-                 (int fd, struct sockaddr *addr, socklen_t *len),
-                 (fd, addr, len))
+/* glibc の accept() の引数は, 透過的共用体 (GNU 拡張) なので, ISO C では型が一致しない */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *)
+TEST_PASSTHROUGH(int, accept, (int fd, struct sockaddr *addr, socklen_t *len), (fd, addr, len))
+#pragma GCC diagnostic pop
 /* FFF は, 関数ポインタの型を直接書けないので, typedef する */
 typedef void *(*thread_func_t)(void *);
-FAKE_VALUE_FUNC(int, pthread_create, pthread_t *, const pthread_attr_t *,
-                thread_func_t, void *);
-TEST_PASSTHROUGH(int, pthread_create,
-                 (pthread_t *tid, const pthread_attr_t *attr,
-                  void *(*func)(void *), void *arg),
+FAKE_VALUE_FUNC(int, pthread_create, pthread_t *, const pthread_attr_t *, thread_func_t, void *)
+TEST_PASSTHROUGH(int,
+                 pthread_create,
+                 (pthread_t * tid, const pthread_attr_t *attr, void *(*func)(void *), void *arg),
                  (tid, attr, func, arg))
-FAKE_VALUE_FUNC(int, pthread_detach, pthread_t);
+FAKE_VALUE_FUNC(int, pthread_detach, pthread_t)
 TEST_PASSTHROUGH(int, pthread_detach, (pthread_t tid), (tid))
 
 /* 計算やデータ作成, 送信と, シグナルマスクの関数は, モックにして, 通常は本物を呼ぶ */
-FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *,
-                const unsigned char *);
-TEST_PASSTHROUGH(unsigned char *, create_answer,
-                 (calcinfo *calc, const unsigned char *expr), (calc, expr))
-FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **,
-                const unsigned char *, size_t);
-TEST_PASSTHROUGH(ssize_t, set_server_data,
-                 (struct server_data **dt, const unsigned char *buf,
-                  size_t len),
+FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *, const unsigned char *)
+TEST_PASSTHROUGH(unsigned char *,
+                 create_answer,
+                 (calcinfo * calc, const unsigned char *expr),
+                 (calc, expr))
+FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **, const unsigned char *, size_t)
+TEST_PASSTHROUGH(ssize_t,
+                 set_server_data,
+                 (struct server_data * *dt, const unsigned char *buf, size_t len),
                  (dt, buf, len))
-FAKE_VALUE_FUNC(int, send_data, const int, const void *, size_t *);
-TEST_PASSTHROUGH(int, send_data,
+FAKE_VALUE_FUNC(int, send_data, int, const void *, size_t *)
+TEST_PASSTHROUGH(int,
+                 send_data,
                  (const int sock, const void *data, size_t *length),
                  (sock, data, length))
-FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
-TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
-TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int);
-TEST_PASSTHROUGH(int, sigdelset, (sigset_t *set, int signo), (set, signo))
-FAKE_VALUE_FUNC(int, pthread_sigmask, int, const sigset_t *, sigset_t *);
-TEST_PASSTHROUGH(int, pthread_sigmask,
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int)
+TEST_PASSTHROUGH(int, sigdelset, (sigset_t * set, int signo), (set, signo))
+FAKE_VALUE_FUNC(int, pthread_sigmask, int, const sigset_t *, sigset_t *)
+TEST_PASSTHROUGH(int,
+                 pthread_sigmask,
                  (int how, const sigset_t *set, sigset_t *oldset),
                  (how, set, oldset))
 
@@ -116,13 +122,13 @@ TEST_PASSTHROUGH(int, pthread_sigmask,
 extern void *__libc_malloc(size_t size);
 extern void *__libc_calloc(size_t nmemb, size_t size);
 extern void __libc_free(void *ptr);
-static size_t fail_malloc_size = 0; /**< 失敗させる malloc() のサイズ (0 は無効) */
-static int fail_malloc_count = 0;   /**< 失敗させる回数 */
-static size_t track_size = 0;       /**< 確保と解放を追跡するサイズ (0 は無効) */
+static size_t fail_malloc_size = 0u;      /**< 失敗させる malloc() のサイズ (0 は無効) */
+static int fail_malloc_count = 0;         /**< 失敗させる回数 */
+static size_t track_size = 0u;            /**< 確保と解放を追跡するサイズ (0 は無効) */
 static void *volatile tracked_ptr = NULL; /**< 追跡している, 確保したメモリ */
 static volatile int tracked_freed = 0;    /**< 追跡しているメモリが解放された */
-static size_t watch_size = 0;       /**< 確保されたかを数えるサイズ (0 は無効) */
-static volatile int watch_count = 0; /**< watch_size で確保された回数 */
+static size_t watch_size = 0u;            /**< 確保されたかを数えるサイズ (0 は無効) */
+static volatile int watch_count = 0;      /**< watch_size で確保された回数 */
 
 /**
  * 確保したメモリの記録 (malloc() と calloc() の共通処理)
@@ -133,9 +139,9 @@ static volatile int watch_count = 0; /**< watch_size で確保された回数 */
 static void
 record_alloc(void *ptr, size_t size)
 {
-    if (track_size && size == track_size)
+    if ((track_size != 0u) && (size == track_size))
         tracked_ptr = ptr;
-    if (watch_size && size == watch_size)
+    if ((watch_size != 0u) && (size == watch_size))
         watch_count++;
 }
 
@@ -194,16 +200,12 @@ calloc(size_t nmemb, size_t size)
 void
 free(void *ptr)
 {
-    if (ptr && ptr == tracked_ptr)
+    if ((ptr != NULL) && (ptr == tracked_ptr))
         tracked_freed = 1;
     __libc_free(ptr);
 }
 
 #define THREAD_WAIT 200000 /**< スレッドの終了を待つ時間 (マイクロ秒) */
-#define MAX_THREADS  5  /**< スレッド数 */
-/* MAX_THREADS 1013 まで
- * 1014 からテストエラー
- */
 
 /** スレッドデータ構造体 */
 struct send_data {
@@ -260,9 +262,9 @@ startup(void)
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdin, NULL, _IONBF, 0))
+    if (setvbuf(stdin, NULL, _IONBF, 0) != 0)
         TEST_NOTIFY("setvbuf: stdin(%d)", errno);
-    if (setvbuf(stdout, NULL, _IONBF, 0))
+    if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
         TEST_NOTIFY("setvbuf: stdout(%d)", errno);
 
     (void)memset(&server, 0, sizeof(testserver));
@@ -280,6 +282,7 @@ startup(void)
 static void
 setup(void *data)
 {
+    (void)data; /* 使用しない */
     /* モックと状態を, 初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(setsockopt);
@@ -315,6 +318,7 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data; /* 使用しない */
     close_sock(&ssock);
     close_sock(&csock);
 }
@@ -386,8 +390,10 @@ test_server_loop(void)
 
         count = 2;
         g_sig_handled = 1;
-        while (count--)
+        while (count > 0) {
             server_loop(ssock);
+            count--;
+        }
         exit(EXIT_SUCCESS);
 
     } else {
@@ -447,7 +453,7 @@ test_server_proc(void)
         dbglog("child");
 
         dt = (thread_data *)malloc(sizeof(thread_data));
-        if (!dt) {
+        if (dt == NULL) {
             outlog("malloc: size=%zu", sizeof(thread_data));
             exit(EXIT_FAILURE);
         }
@@ -457,14 +463,14 @@ test_server_proc(void)
         dt->sock = accept(ssock, (struct sockaddr *)&dt->addr, &dt->len);
         if (dt->sock < 0) {
             outlog("accept: ssock=%d", ssock);
-            memfree((void **)&dt, NULL);
+            memfree(&dt, NULL);
             exit(EXIT_FAILURE);
         }
         g_sig_handled = 1;
 
         /* テスト関数実行 */
         servret = server.server_proc(dt);
-        if (servret) {
+        if (servret != NULL) {
             outlog("server_proc");
             exit(EXIT_FAILURE);
         }
@@ -516,14 +522,14 @@ static int
 send_client(int sockfd, unsigned char *sbuf, size_t length)
 {
     struct client_data *cdata = NULL; /* 送信データ構造体 */
-    ssize_t slen = 0;                 /* 送信データバイト数 */
+    ssize_t slen = 0L;                /* 送信データバイト数 */
     int retval = 0;                   /* 戻り値 */
 
     dbglog("start");
 
     /* データ設定 */
     slen = set_client_data(&cdata, sbuf, length);
-    if (slen < 0) {
+    if (slen < 0L) {
         TEST_NOTIFY("set_server_data=%zd(%d)", slen, errno);
         return EX_NG;
     }
@@ -532,10 +538,10 @@ send_client(int sockfd, unsigned char *sbuf, size_t length)
     retval = send_data(sockfd, cdata, (size_t *)&slen);
     if (retval < 0) {
         TEST_NOTIFY("send_data: slen=%zd(%d)", slen, errno);
-        memfree((void **)&cdata, NULL);
+        memfree(&cdata, NULL);
         return EX_NG;
     }
-    memfree((void **)&cdata, NULL);
+    memfree(&cdata, NULL);
     return EX_OK;
 }
 
@@ -549,9 +555,9 @@ send_client(int sockfd, unsigned char *sbuf, size_t length)
 static int
 recv_client(int sockfd, unsigned char *rbuf)
 {
-    size_t length = 0; /* バイト数 */
-    struct header hd;  /* ヘッダ構造体 */
-    int retval = 0;    /* 戻り値 */
+    size_t length = 0u; /* バイト数 */
+    struct header hd;   /* ヘッダ構造体 */
+    int retval = 0;     /* 戻り値 */
 
     dbglog("start");
 
@@ -581,19 +587,19 @@ recv_client(int sockfd, unsigned char *rbuf)
 static int
 inet_sock_client(void)
 {
-    struct sockaddr_in server; /* ソケットアドレス情報構造体 */
-    int sockfd = 0;            /* ソケット */
-    int retval = 0;            /* 戻り値 */
+    struct sockaddr_in saddr; /* ソケットアドレス情報構造体 */
+    int sockfd = 0;           /* ソケット */
+    int retval = 0;           /* 戻り値 */
 
     dbglog("start");
 
     /* 初期化 */
-    (void)memset(&server, 0, sizeof(struct sockaddr_in));
-    server.sin_family = AF_INET;
+    (void)memset(&saddr, 0, sizeof(struct sockaddr_in));
+    saddr.sin_family = AF_INET;
 
-    if (set_hostname(&server, hostname) < 0)
+    if (set_hostname(&saddr, hostname) < 0)
         return EX_NG;
-    if (set_port(&server, port) < 0)
+    if (set_port(&saddr, port) < 0)
         return EX_NG;
 
     /* ソケット生成 */
@@ -604,8 +610,7 @@ inet_sock_client(void)
     }
 
     /* コネクト */
-    retval = connect(sockfd, (struct sockaddr *)&server,
-                     sizeof(struct sockaddr_in));
+    retval = connect(sockfd, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in));
     if (retval < 0) {
         outlog("connect=%d, sock=%d", retval, sockfd);
         /* ソケットクローズ */
@@ -622,16 +627,15 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
-
 
 /**
  * server_sock() 関数テスト (失敗)
@@ -734,8 +738,8 @@ test_server_loop_failure(void)
 TEST
 test_server_proc_failure(void)
 {
-    struct header hd;               /* ヘッダ */
-    unsigned char rbuf[BUF_SIZE];   /* 受信バッファ */
+    struct header hd;             /* ヘッダ */
+    unsigned char rbuf[BUF_SIZE]; /* 受信バッファ */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
@@ -753,7 +757,7 @@ test_server_proc_failure(void)
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(4);
+    hd.length = htonl(4u);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
     server_loop(ssock);
     close_sock(&csock);
@@ -762,7 +766,7 @@ test_server_proc_failure(void)
     /* データ長が 0 */
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
-    hd.length = htonl(0);
+    hd.length = htonl(0u);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
     server_loop(ssock);
     close_sock(&csock);
@@ -839,7 +843,7 @@ test_server_proc_internal_failure(void)
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
     g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0u; i < 4u; i++) {
         csock = inet_sock_client();
         TEST_ASSERT_NOT_INT(EX_NG, csock);
         TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
@@ -905,9 +909,9 @@ test_server_proc_length_limit(void)
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(MAX_DATA_LENGTH + 1);
+    hd.length = htonl(MAX_DATA_LENGTH + 1u);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
-    watch_size = MAX_DATA_LENGTH + 1;
+    watch_size = MAX_DATA_LENGTH + 1u;
     server_loop(ssock);
     (void)usleep(THREAD_WAIT);
     close_sock(&csock);
@@ -923,9 +927,9 @@ test_server_proc_length_limit(void)
 TEST
 test_server_proc_no_nul(void)
 {
-    struct header hd;              /* ヘッダ */
-    unsigned char noterm[] = { '1', '+', '1', '+', '1', '+', '1', '+' }; /* 終端の NUL がない式 */
-    unsigned char rbuf[BUF_SIZE];  /* 受信バッファ */
+    struct header hd;                                                  /* ヘッダ */
+    unsigned char noterm[] = {'1', '+', '1', '+', '1', '+', '1', '+'}; /* 終端の NUL がない式 */
+    unsigned char rbuf[BUF_SIZE];                                      /* 受信バッファ */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();

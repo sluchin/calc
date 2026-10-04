@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,22 +19,22 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>     /* snprintf */
-#include <stdlib.h>    /* exit */
-#include <unistd.h>    /* access fork */
-#include <fcntl.h>     /* open fcntl */
-#include <arpa/inet.h> /* inet_ntoa */
-#include <sys/stat.h>  /* chmod */
-#include <stdarg.h>    /* va_list */
+#include <stdio.h>      /* snprintf */
+#include <stdlib.h>     /* exit */
+#include <stdint.h>     /* SIZE_MAX */
+#include <unistd.h>     /* access fork */
+#include <fcntl.h>      /* open fcntl */
+#include <arpa/inet.h>  /* inet_ntoa */
+#include <sys/stat.h>   /* chmod */
+#include <stdarg.h>     /* va_list */
 #include <sys/socket.h> /* socketpair send recv */
-#include <sys/un.h>    /* sockaddr_un */
-#include <sys/wait.h>  /* wait waitpid */
-#include <errno.h>     /* errno */
-#include <signal.h>    /* signal */
+#include <sys/un.h>     /* sockaddr_un */
+#include <sys/wait.h>   /* wait waitpid */
+#include <errno.h>      /* errno */
+#include <signal.h>     /* signal */
 
 #include "test_helper.h"
 
@@ -43,23 +43,21 @@
 #include "fileio.h"
 #include "net.h"
 
-#define BUF_SIZE 2048
+#define BUF_SIZE 2048u
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* send() と recv() は, モックにして, 通常は本物を呼ぶ (EINTR などを注入する) */
-FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int);
-TEST_PASSTHROUGH(ssize_t, send, (int fd, const void *buf, size_t n, int flags),
-                 (fd, buf, n, flags))
-FAKE_VALUE_FUNC(ssize_t, recv, int, void *, size_t, int);
-TEST_PASSTHROUGH(ssize_t, recv, (int fd, void *buf, size_t n, int flags),
-                 (fd, buf, n, flags))
+FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int)
+TEST_PASSTHROUGH(ssize_t, send, (int fd, const void *buf, size_t n, int flags), (fd, buf, n, flags))
+FAKE_VALUE_FUNC(ssize_t, recv, int, void *, size_t, int)
+TEST_PASSTHROUGH(ssize_t, recv, (int fd, void *buf, size_t n, int flags), (fd, buf, n, flags))
 
 /*
  * fcntl() は, 可変引数なので, FFF のモックにはせず, F_SETFL のときだけ失敗させる.
  * 本物は dlsym(RTLD_NEXT) で探す.
  */
-static struct test_inject inject_fcntl; /**< fcntl() (F_SETFL) に注入する失敗 */
+static struct test_inject inject_fcntl;         /**< fcntl() (F_SETFL) に注入する失敗 */
 static int (*real_fcntl)(int, int, ...) = NULL; /**< 本物の fcntl() */
 /**
  * fcntl() の置き換え
@@ -71,12 +69,14 @@ static int (*real_fcntl)(int, int, ...) = NULL; /**< 本物の fcntl() */
 int
 fcntl(int fd, int cmd, ...)
 {
-    va_list ap; /* 可変引数 */
-    long arg = 0; /* fcntl の引数 */
+    va_list ap;    /* 可変引数 */
+    long arg = 0L; /* fcntl の引数 */
 
     /* 本物の fcntl() を探す */
-    if (!real_fcntl)
-        *(void **)(&real_fcntl) = dlsym(RTLD_NEXT, "fcntl");
+    if (real_fcntl == NULL) {
+        void *sym = dlsym(RTLD_NEXT, "fcntl"); /* 関数ポインタとして使う */
+        (void)memcpy(&real_fcntl, &sym, sizeof(sym));
+    }
     va_start(ap, cmd);
     arg = va_arg(ap, long);
     va_end(ap);
@@ -125,15 +125,15 @@ TEST test_close_sock_failure(void);
 
 /* 内部変数 */
 static char sockfile[TEST_TMPNAME_SIZE] = {0}; /**< ソケットファイル */
-static struct sockaddr_un addr;       /**< sockaddr_un構造体 */
-static socklen_t addrlen = 0;         /**< addr構造体の長さ */
-static char command[] = "do send";    /**< コマンド */
-static int ssock = -1;                /**< サーバソケット */
-static int csock = -1;                /**< クライアントソケット */
-static int acc = -1;                  /**< アクセプト */
-static int fd = -1;                   /**< ファイルディスクリプタ */
-static char *readnew = NULL;          /**< クライアント受信用ポインタ */
-static char sendbuf[BUF_SIZE];        /**< 送信バッファ */
+static struct sockaddr_un addr;                /**< sockaddr_un構造体 */
+static socklen_t addrlen = 0u;                 /**< addr構造体の長さ */
+static char command[] = "do send";             /**< コマンド */
+static int ssock = -1;                         /**< サーバソケット */
+static int csock = -1;                         /**< クライアントソケット */
+static int acc = -1;                           /**< アクセプト */
+static int fd = -1;                            /**< ファイルディスクリプタ */
+static char *readnew = NULL;                   /**< クライアント受信用ポインタ */
+static char sendbuf[BUF_SIZE];                 /**< 送信バッファ */
 
 /* 内部関数 */
 /** サーバプロセス */
@@ -162,8 +162,8 @@ startup(void)
     /* sockaddr_un構造体の設定 */
     (void)memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    (void)strncpy(addr.sun_path, sockfile, sizeof(addr.sun_path) - 1);
-    addrlen = sizeof(addr.sun_family) + strlen(addr.sun_path);
+    (void)strncpy(addr.sun_path, sockfile, sizeof(addr.sun_path) - 1u);
+    addrlen = (socklen_t)(sizeof(addr.sun_family) + strlen(addr.sun_path));
 }
 
 /**
@@ -174,12 +174,13 @@ startup(void)
 static void
 setup(void *data)
 {
+    (void)data; /* 使用しない */
     TEST_PASSTHROUGH_RESET(send);
     (void)memset(&inject_fcntl, 0, sizeof(inject_fcntl));
     TEST_PASSTHROUGH_RESET(recv);
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1] = '\0';
-    sendbuf[sizeof(sendbuf) - 2] = '\n';
+    sendbuf[sizeof(sendbuf) - 1u] = '\0';
+    sendbuf[sizeof(sendbuf) - 2u] = '\n';
 }
 
 /**
@@ -190,6 +191,7 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data; /* 使用しない */
     if (acc != -1) {
         if (close(acc) < 0)
             TEST_NOTIFY("close: acc=%d(%d)", acc, errno);
@@ -212,13 +214,13 @@ teardown(void *data)
     }
 
     if (sockfile[0] != '\0') {
-        if (!access(sockfile, W_OK)) { /* ファイルが存在する */
+        if (access(sockfile, W_OK) == 0) { /* ファイルが存在する */
             if (unlink(sockfile) < 0)
                 TEST_NOTIFY("unlink: %s(%d)", sockfile, errno);
         }
     }
 
-    if (readnew)
+    if (readnew != NULL)
         free(readnew);
     readnew = NULL;
 }
@@ -233,20 +235,19 @@ test_set_hostname(void)
     int retval = 0;            /* 戻り値 */
 
     /* テストデータ */
-    const char *host[] = { "localhost", "127.0.0.1" }; /* ホスト文字列 */
-    const char *ipaddr = "127.0.0.1";                  /* アドレス */
-    const char nohost[] = "nohostxhlkjiherlgfsd";      /* エラー用データ */
+    const char *host[] = {"localhost", "127.0.0.1"}; /* ホスト文字列 */
+    const char *ipaddr = "127.0.0.1";                /* アドレス */
+    const char nohost[] = "nohostxhlkjiherlgfsd";    /* エラー用データ */
 
     /* 正常系 */
     unsigned int i;
-    for (i = 0; i < NELEMS(host); i++) {
+    for (i = 0u; i < NELEMS(host); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_hostname(&server, host[i]);
 
-        TEST_ASSERT_STR_MSG(ipaddr, inet_ntoa(server.sin_addr), "expected=%s, actual=%s",
-                                            ipaddr,
-                                            inet_ntoa(server.sin_addr));
+        TEST_ASSERT_STR_MSG(ipaddr, inet_ntoa(server.sin_addr), "expected=%s, actual=%s", ipaddr,
+                            inet_ntoa(server.sin_addr));
         TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
     }
 
@@ -269,23 +270,23 @@ test_set_port(void)
     int retval = 0;            /* 戻り値 */
 
     /* テストデータ */
-    const char *port[] = { "1", "65534", "65535", "ftp" }; /* ポート文字列 */
-    const uint32_t portno[] = { 1, 65534, 65535, 21 };     /* ポート番号 */
-    const char *err_port[] = { "0", "65536", "noservice" }; /* エラー */
+    const char *port[] = {"1", "65534", "65535", "ftp"};  /* ポート文字列 */
+    const uint32_t portno[] = {1u, 65534u, 65535u, 21u};  /* ポート番号 */
+    const char *err_port[] = {"0", "65536", "noservice"}; /* エラー */
 
     /* 正常系 */
     unsigned int i;
-    for (i = 0; i < NELEMS(port); i++) {
+    for (i = 0u; i < NELEMS(port); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, port[i]);
-        TEST_ASSERT_INT_MSG((unsigned int)portno[i], (unsigned int)ntohs((uint16_t)server.sin_port), "expected=%u, actual=%u",
-                                          portno[i], ntohs(server.sin_port));
+        TEST_ASSERT_INT_MSG((unsigned int)portno[i], (unsigned int)ntohs((uint16_t)server.sin_port),
+                            "expected=%u, actual=%u", portno[i], ntohs(server.sin_port));
         TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
     }
 
     /* 異常系 */
-    for (i = 0; i < NELEMS(err_port); i++) {
+    for (i = 0u; i < NELEMS(err_port); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, err_port[i]);
@@ -349,11 +350,11 @@ test_set_block(void)
 TEST
 test_send_data(void)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* バイト数 */
-    pid_t cpid = 0;    /* 子プロセスID */
-    pid_t w = 0;       /* wait戻り値 */
-    int status = 0;    /* ステイタス */
+    int retval = 0;                /* 戻り値 */
+    size_t length = 0u;            /* バイト数 */
+    pid_t cpid = 0;                /* 子プロセスID */
+    pid_t w = 0;                   /* wait戻り値 */
+    int status = 0;                /* ステイタス */
     char servbuf[sizeof(sendbuf)]; /* サーバ受信用バッファ */
 
     (void)memset(servbuf, 0, sizeof(servbuf));
@@ -373,7 +374,7 @@ test_send_data(void)
 
         retval = server_proc(ssock, servbuf, sizeof(servbuf));
         if (retval < 0) {
-            outlog("server_proc: ssock", ssock);
+            outlog("server_proc: ssock=%d", ssock);
             exit(EXIT_FAILURE);
         }
         exit(EXIT_SUCCESS);
@@ -395,7 +396,7 @@ test_send_data(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
 
@@ -408,12 +409,12 @@ test_send_data(void)
 TEST
 test_recv_data(void)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* バイト数 */
-    ssize_t len = 0;   /* 送信されたバイト数 */
-    pid_t cpid = 0;    /* プロセスID */
-    pid_t w = 0;       /* wait戻り値 */
-    int status = 0;    /* ステイタス */
+    int retval = 0;                /* 戻り値 */
+    size_t length = 0u;            /* バイト数 */
+    ssize_t len = 0L;              /* 送信されたバイト数 */
+    pid_t cpid = 0;                /* プロセスID */
+    pid_t w = 0;                   /* wait戻り値 */
+    int status = 0;                /* ステイタス */
     char readbuf[sizeof(sendbuf)]; /* クライアント受信用バッファ */
     char servbuf[sizeof(command)]; /* サーバ受信用バッファ */
 
@@ -435,7 +436,7 @@ test_recv_data(void)
 
         retval = server_proc(ssock, servbuf, sizeof(servbuf));
         if (retval < 0) {
-            outlog("server_proc: ssock", ssock);
+            outlog("server_proc: ssock=%d", ssock);
             exit(EXIT_FAILURE);
         }
         exit(EXIT_SUCCESS);
@@ -449,7 +450,7 @@ test_recv_data(void)
         }
 
         len = writen(csock, command, sizeof(command));
-        if (len < 0) {
+        if (len < 0L) {
             TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
@@ -457,13 +458,14 @@ test_recv_data(void)
         length = sizeof(readbuf);
         retval = recv_data(csock, readbuf, &length);
 
-        TEST_ASSERT_MEM_MSG(sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf), "%s==%s", sendbuf, readbuf);
+        TEST_ASSERT_MEM_MSG(sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf), "%s==%s", sendbuf,
+                            readbuf);
         TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
         w = waitpid(-1, &status, WNOHANG);
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
     PASS();
@@ -475,12 +477,12 @@ test_recv_data(void)
 TEST
 test_recv_data_new(void)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* バイト数 */
-    ssize_t len = 0;   /* 送信されたバイト数 */
-    pid_t cpid = 0;    /* プロセスID */
-    pid_t w = 0;       /* wait戻り値 */
-    int status = 0;    /* ステイタス */
+    int retval = 0;                /* 戻り値 */
+    size_t length = 0u;            /* バイト数 */
+    ssize_t len = 0L;              /* 送信されたバイト数 */
+    pid_t cpid = 0;                /* プロセスID */
+    pid_t w = 0;                   /* wait戻り値 */
+    int status = 0;                /* ステイタス */
     char servbuf[sizeof(command)]; /* サーバ受信用バッファ */
 
     (void)memset(servbuf, 0, sizeof(servbuf));
@@ -500,7 +502,7 @@ test_recv_data_new(void)
 
         retval = server_proc(ssock, servbuf, sizeof(servbuf));
         if (retval < 0) {
-            outlog("server_proc: ssock", ssock);
+            outlog("server_proc: ssock=%d", ssock);
             exit(EXIT_FAILURE);
         }
         exit(EXIT_SUCCESS);
@@ -514,7 +516,7 @@ test_recv_data_new(void)
         }
 
         len = writen(csock, command, sizeof(command));
-        if (len < 0) {
+        if (len < 0L) {
             TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
@@ -528,7 +530,7 @@ test_recv_data_new(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
     PASS();
@@ -541,11 +543,11 @@ TEST
 test_close_sock(void)
 {
 
-    int retval = 0;    /* 戻り値 */
-    ssize_t len = 0;   /* 送信されたバイト数 */
-    pid_t cpid = 0;    /* プロセスID */
-    pid_t w = 0;       /* wait戻り値 */
-    int status = 0;    /* ステイタス */
+    int retval = 0;                /* 戻り値 */
+    ssize_t len = 0L;              /* 送信されたバイト数 */
+    pid_t cpid = 0;                /* プロセスID */
+    pid_t w = 0;                   /* wait戻り値 */
+    int status = 0;                /* ステイタス */
     char servbuf[sizeof(sendbuf)]; /* サーバ受信用バッファ */
 
     (void)memset(servbuf, 0, sizeof(servbuf));
@@ -565,7 +567,7 @@ test_close_sock(void)
 
         retval = server_proc(ssock, servbuf, sizeof(servbuf));
         if (retval < 0) {
-            outlog("server_proc: ssock", ssock);
+            outlog("server_proc: ssock=%d", ssock);
             exit(EXIT_FAILURE);
         }
         exit(EXIT_SUCCESS);
@@ -579,7 +581,7 @@ test_close_sock(void)
         }
 
         len = writen(csock, sendbuf, sizeof(sendbuf));
-        if (len < 0) {
+        if (len < 0L) {
             TEST_FAIL("writen=%zd(%d)", len, errno);
         }
 
@@ -597,7 +599,7 @@ test_close_sock(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d", WEXITSTATUS(status));
     }
     PASS();
@@ -614,10 +616,10 @@ test_close_sock(void)
 static int
 server_proc(int sockfd, char *readbuf, size_t length)
 {
-    socklen_t len = 0; /* sockaddr構造体長さ */
-    ssize_t rlen = 0;  /* 受信された長さ */
-    ssize_t wlen = 0;  /* 送信された長さ */
-    int retval = 0;    /* 戻り値 */
+    socklen_t len = 0u; /* sockaddr構造体長さ */
+    ssize_t rlen = 0L;  /* 受信された長さ */
+    ssize_t wlen = 0L;  /* 送信された長さ */
+    int retval = 0;     /* 戻り値 */
 
     dbglog("start: sockfd=%d", sockfd);
 
@@ -627,10 +629,10 @@ server_proc(int sockfd, char *readbuf, size_t length)
         outlog("accept: sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
     }
-    dbglog("accept=%d, sockfd=%d(%d)", sockfd, errno);
+    dbglog("sockfd=%d(%d)", sockfd, errno);
 
     rlen = readn(acc, readbuf, length);
-    if (rlen < 0) {
+    if (rlen < 0L) {
         outlog("readn: acc=%d(%d)", acc, errno);
         return EX_NG;
     }
@@ -639,16 +641,16 @@ server_proc(int sockfd, char *readbuf, size_t length)
     dbglog("strncmp=%d, %s==%s", retval, readbuf, command);
     if (retval == 0) { /* 送信 */
         wlen = writen(acc, sendbuf, sizeof(sendbuf));
-        if (wlen < 0) {
+        if (wlen < 0L) {
             outlog("writen: acc=%d(%d)", acc, errno);
             return EX_NG;
         }
     } else {
         retval = memcmp(sendbuf, readbuf, sizeof(sendbuf));
-        if (retval) { /* 非0 */
+        if (retval != 0) { /* 非0 */
             /* 受信されたデータが不一致な場合, エラー */
-            outlog("memcmp: sendbuf=%p, readbuf=%p, len=%zu(%d)",
-                   sendbuf, readbuf, sizeof(sendbuf), errno);
+            outlog("memcmp: sendbuf=%p, readbuf=%p, len=%zu(%d)", sendbuf, readbuf, sizeof(sendbuf),
+                   errno);
             return EX_NG;
         }
     }
@@ -667,7 +669,7 @@ unix_sock_server(void)
     int retval = 0;     /* 戻り値 */
     int sockfd = 0;     /* ソケット */
     const mode_t mode = /* ファイルの許可 */
-        S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
     dbglog("start");
 
@@ -735,18 +737,17 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGINT");
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
-
 
 /**
  * set_hostname() 関数テスト (失敗)
@@ -754,14 +755,14 @@ set_sig_handler(void)
 TEST
 test_set_hostname_failure(void)
 {
-    struct sockaddr_in addr; /* sockaddr_in構造体 */
+    struct sockaddr_in haddr; /* sockaddr_in構造体 */
 
-    (void)memset(&addr, 0, sizeof(addr));
+    (void)memset(&haddr, 0, sizeof(haddr));
 
     TEST_ASSERT_INT(EX_NG, set_hostname(NULL, "127.0.0.1"));
-    TEST_ASSERT_INT(EX_NG, set_hostname(&addr, NULL));
+    TEST_ASSERT_INT(EX_NG, set_hostname(&haddr, NULL));
     /* IPアドレスでも, ホスト名でもない */
-    TEST_ASSERT_INT(EX_NG, set_hostname(&addr, ""));
+    TEST_ASSERT_INT(EX_NG, set_hostname(&haddr, ""));
     PASS();
 }
 
@@ -771,27 +772,27 @@ test_set_hostname_failure(void)
 TEST
 test_set_port_failure(void)
 {
-    struct sockaddr_in addr; /* sockaddr_in構造体 */
+    struct sockaddr_in paddr; /* sockaddr_in構造体 */
 
-    (void)memset(&addr, 0, sizeof(addr));
+    (void)memset(&paddr, 0, sizeof(paddr));
 
     TEST_ASSERT_INT(EX_NG, set_port(NULL, "12345"));
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, NULL));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, NULL));
     /* 存在しないサービス名 */
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "no-such-service"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "no-such-service"));
 
     /* 範囲外 (65536 以上は, uint16_t に切り捨てられて, 別のポート番号にならない) */
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "0"));
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "65536"));
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "65616"));
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "70000"));
-    TEST_ASSERT_INT(EX_NG, set_port(&addr, "4294967376"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "0"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "65536"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "65616"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "70000"));
+    TEST_ASSERT_INT(EX_NG, set_port(&paddr, "4294967376"));
 
     /* 範囲内の最小と最大 */
-    TEST_ASSERT_INT(EX_OK, set_port(&addr, "1"));
-    TEST_ASSERT_INT(1, ntohs(addr.sin_port));
-    TEST_ASSERT_INT(EX_OK, set_port(&addr, "65535"));
-    TEST_ASSERT_INT(65535, ntohs(addr.sin_port));
+    TEST_ASSERT_INT(EX_OK, set_port(&paddr, "1"));
+    TEST_ASSERT_INT(1, ntohs(paddr.sin_port));
+    TEST_ASSERT_INT(EX_OK, set_port(&paddr, "65535"));
+    TEST_ASSERT_INT(65535, ntohs(paddr.sin_port));
     PASS();
 }
 
@@ -815,7 +816,7 @@ test_set_block_failure(void)
 
     /* F_SETFL に失敗すると, エラーを返す */
     inject_fcntl.count = 1;
-    inject_fcntl.value = -1;
+    inject_fcntl.value = -1LL;
     inject_fcntl.err = EBADF;
     TEST_ASSERT_INT(EX_NG, set_block(devnull, NONBLOCK));
     TEST_ASSERT_INT(0, inject_fcntl.count);
@@ -832,9 +833,9 @@ test_set_block_failure(void)
 TEST
 test_send_data_failure(void)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    size_t length = 4;      /* 送信バイト数 */
-    void (*oldsig)(int);    /* 元のシグナルハンドラ */
+    int sv[2] = {-1, -1}; /* ソケットペア */
+    size_t length = 4u;   /* 送信バイト数 */
+    void (*oldsig)(int);  /* 元のシグナルハンドラ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
         TEST_FAIL("socketpair(%d)", errno);
@@ -856,10 +857,10 @@ test_send_data_failure(void)
 TEST
 test_send_data_interrupted(void)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    size_t length = 0;      /* 送信バイト数 */
-    char readbuf[8] = {0};  /* 受信バッファ */
-    const int errnos[] = { EINTR, EAGAIN }; /* 注入する errno */
+    int sv[2] = {-1, -1};                 /* ソケットペア */
+    size_t length = 0u;                   /* 送信バイト数 */
+    char readbuf[8] = {0};                /* 受信バッファ */
+    const int errnos[] = {EINTR, EAGAIN}; /* 注入する errno */
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
@@ -873,8 +874,8 @@ test_send_data_interrupted(void)
 
     /* 1 回目は失敗するが, やり直して, 送信できる */
     unsigned int i;
-    for (i = 0; i < NELEMS(errnos); i++) {
-        length = 3;
+    for (i = 0u; i < NELEMS(errnos); i++) {
+        length = 3u;
         (void)memset(readbuf, 0, sizeof(readbuf));
         RESET_FAKE(send);
         send_fake.custom_fake = pass_send;
@@ -896,9 +897,9 @@ test_send_data_interrupted(void)
 TEST
 test_recv_data_failure(void)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    size_t length = 4;      /* 受信バイト数 */
-    char readbuf[8] = {0};  /* 受信バッファ */
+    int sv[2] = {-1, -1};  /* ソケットペア */
+    size_t length = 4u;    /* 受信バイト数 */
+    char readbuf[8] = {0}; /* 受信バッファ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
         TEST_FAIL("socketpair(%d)", errno);
@@ -911,7 +912,7 @@ test_recv_data_failure(void)
     (void)close(sv[0]);
 
     /* 不正なソケット */
-    length = 4;
+    length = 4u;
     TEST_ASSERT_INT(EX_NG, recv_data(-1, readbuf, &length));
     PASS();
 }
@@ -922,10 +923,10 @@ test_recv_data_failure(void)
 TEST
 test_recv_data_interrupted(void)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    size_t length = 0;      /* 受信バイト数 */
-    char readbuf[8] = {0};  /* 受信バッファ */
-    const int errnos[] = { EINTR, EAGAIN }; /* 注入する errno */
+    int sv[2] = {-1, -1};                 /* ソケットペア */
+    size_t length = 0u;                   /* 受信バイト数 */
+    char readbuf[8] = {0};                /* 受信バッファ */
+    const int errnos[] = {EINTR, EAGAIN}; /* 注入する errno */
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
@@ -939,10 +940,10 @@ test_recv_data_interrupted(void)
 
     /* 1 回目は失敗するが, やり直して, 受信できる */
     unsigned int i;
-    for (i = 0; i < NELEMS(errnos); i++) {
-        length = 3;
+    for (i = 0u; i < NELEMS(errnos); i++) {
+        length = 3u;
         (void)memset(readbuf, 0, sizeof(readbuf));
-        if (write(sv[1], "abc", 3) != 3) {
+        if (write(sv[1], "abc", 3u) != 3) {
             TEST_FAIL("write(%d)", errno);
         }
         RESET_FAKE(recv);
@@ -964,22 +965,22 @@ test_recv_data_interrupted(void)
 TEST
 test_recv_data_new_failure(void)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    size_t length = 0;      /* 受信バイト数 */
-    void *data = NULL;      /* 受信データ */
+    int sv[2] = {-1, -1}; /* ソケットペア */
+    size_t length = 0u;   /* 受信バイト数 */
+    void *data = NULL;    /* 受信データ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
         TEST_FAIL("socketpair(%d)", errno);
     }
 
     /* メモリを確保できない */
-    length = (size_t)-1 / 2;
+    length = SIZE_MAX / 2u;
     data = recv_data_new(sv[0], &length);
     TEST_ASSERT_NULL(data);
 
     /* 受信に失敗 (接続先がシャットダウンした) */
     (void)close(sv[1]);
-    length = 4;
+    length = 4u;
     data = recv_data_new(sv[0], &length);
     TEST_ASSERT_NULL(data);
     TEST_ASSERT_INT(0, length);

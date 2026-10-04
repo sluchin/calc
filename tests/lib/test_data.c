@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,9 +19,10 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+#include <stdint.h> /* SIZE_MAX */
 
 #include "test_helper.h"
 
@@ -29,19 +30,20 @@
 #include "log.h"
 #include "data.h"
 
-#define ALIGNOF(type)  offsetof(struct { char dummy; type var; } , var)
-#define ALIGN  8  /**< アライメント */
+/* ALIGNOF() は、dbglog() の引数にだけ使う (_DEBUG でなければ、dbglog() は何も出力しない) */
+#ifdef _DEBUG
+#  define ALIGNOF(type) \
+      offsetof(         \
+          struct {      \
+            char dummy; \
+            type var;   \
+          },            \
+          var)
+#endif
+#define ALIGN 8 /**< アライメント */
 
-const char *test_data[] = {
-    "a",
-    "aa",
-    "aaa",
-    "aaaa",
-    "aaaaa",
-    "aaaaaa",
-    "aaaaaaa",
-    "aaaaaaaa"
-};
+static const char *test_data[] = {"a",     "aa",     "aaa",     "aaaa",
+                                  "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa"};
 
 /* プロトタイプ */
 /** set_client_data() 関数テスト */
@@ -72,21 +74,21 @@ startup(void)
 TEST
 test_set_client_data(void)
 {
-    size_t length = 0; /* データ長 */
-    ssize_t len = 0; /* 送信データ長 */
+    size_t length = 0u; /* データ長 */
+    ssize_t len = 0L;   /* 送信データ長 */
     /* テストデータごとに, 実行して, 結果を確認する */
     struct client_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
-    for (i = 0; i < NELEMS(test_data); i++) {
-        length = strlen(test_data[i]) + 1;
+    for (i = 0u; i < NELEMS(test_data); i++) {
+        length = strlen(test_data[i]) + 1u;
         dbglog("length=%zu", length);
-        len = set_client_data(&dt, (unsigned char *)test_data[i], length);
+        len = set_client_data(&dt, (const unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         TEST_ASSERT_INT(0, len % ALIGN);
-        dbglog("dt=%p", dt);
+        dbglog("dt=%p", (const void *)dt);
         TEST_ASSERT_NOT_NULL(dt);
-        if (dt)
+        if (dt != NULL)
             free(dt);
         dt = NULL;
     }
@@ -99,27 +101,26 @@ test_set_client_data(void)
 TEST
 test_set_server_data(void)
 {
-    size_t length = 0; /* データ長 */
-    ssize_t len = 0; /* 送信データ長 */
+    size_t length = 0u; /* データ長 */
+    ssize_t len = 0L;   /* 送信データ長 */
     /* テストデータごとに, 実行して, 結果を確認する */
     struct server_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
-    for (i = 0; i < NELEMS(test_data); i++) {
-        length = strlen(test_data[i]) + 1;
+    for (i = 0u; i < NELEMS(test_data); i++) {
+        length = strlen(test_data[i]) + 1u;
         dbglog("length=%zu", length);
-        len = set_server_data(&dt, (unsigned char *)test_data[i], length);
+        len = set_server_data(&dt, (const unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         TEST_ASSERT_INT(0, len % ALIGN);
-        dbglog("dt=%p", dt);
+        dbglog("dt=%p", (const void *)dt);
         TEST_ASSERT_NOT_NULL(dt);
-        if (dt)
+        if (dt != NULL)
             free(dt);
         dt = NULL;
     }
     PASS();
 }
-
 
 /**
  * set_client_data() 関数テスト (失敗)
@@ -131,11 +132,11 @@ test_set_client_data_failure(void)
     unsigned char buf[] = "a";     /* 送受信バッファ */
 
     /* バッファがNULL */
-    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1));
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1u));
     TEST_ASSERT_NULL(dt);
 
     /* メモリを確保できない (巨大なサイズ) */
-    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, buf, (size_t)-1 / 2));
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, buf, SIZE_MAX / 2u));
     TEST_ASSERT_NULL(dt);
     PASS();
 }
@@ -150,11 +151,11 @@ test_set_server_data_failure(void)
     unsigned char buf[] = "a";     /* 送受信バッファ */
 
     /* バッファがNULL */
-    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1));
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1u));
     TEST_ASSERT_NULL(dt);
 
     /* メモリを確保できない (巨大なサイズ) */
-    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, buf, (size_t)-1 / 2));
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, buf, SIZE_MAX / 2u));
     TEST_ASSERT_NULL(dt);
     PASS();
 }

@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,24 +19,23 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>        /* FILE */
-#include <stdlib.h>       /* atexit */
-#include <string.h>       /* memcpy memset strcpy */
-#include <sys/socket.h>   /* socket connect */
-#include <sys/types.h>    /* socket etc... */
-#include <arpa/inet.h>    /* ntohl*/
-#include <errno.h>        /* errno */
-#include <unistd.h>       /* STDIN_FILENO */
+#include <stdio.h>      /* FILE */
+#include <stdlib.h>     /* atexit */
+#include <string.h>     /* memcpy memset */
+#include <sys/socket.h> /* socket connect */
+#include <sys/types.h>  /* socket etc... */
+#include <arpa/inet.h>  /* ntohl*/
+#include <errno.h>      /* errno */
+#include <unistd.h>     /* STDIN_FILENO */
 #ifdef _USE_SELECT
 #  include <sys/select.h> /* pselect */
 #else
 #  define _GNU_SOURCE
 #  define __USE_GNU
-#  include <poll.h>       /* ppoll */
+#  include <poll.h> /* ppoll */
 #endif
 
 #include "timer.h"
@@ -64,7 +63,7 @@ bool g_tflag = false;                    /**< tオプションフラグ */
 /* 内部変数 */
 static char hostname[HOST_SIZE];         /**< ホスト名 */
 static char portno[PORT_SIZE];           /**< ポート番号 */
-static unsigned int start_time = 0;      /**< タイマ開始 */
+static unsigned int start_time = 0u;     /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
 static unsigned char *expr = NULL;       /**< 入力バッファ */
 static unsigned char *answer = NULL;     /**< 受信データ */
@@ -135,9 +134,11 @@ connect_sock(void)
     (void)memset(&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
 
-    if (set_hostname(&server, hostname) < 0)
+    retval = set_hostname(&server, hostname);
+    if (retval < 0)
         return EX_NG;
-    if (set_port(&server, portno) < 0)
+    retval = set_port(&server, portno);
+    if (retval < 0)
         return EX_NG;
 
     /* ソケット生成 */
@@ -148,8 +149,7 @@ connect_sock(void)
     }
 
     /* コネクト */
-    retval = connect(sock, (struct sockaddr *)&server,
-                     sizeof(struct sockaddr_in));
+    retval = connect(sock, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
     if (retval < 0) {
         outlog("connect=%d, sock=%d", retval, sock);
         /* ソケットクローズ */
@@ -167,21 +167,23 @@ connect_sock(void)
 st_client
 client_loop(int sock)
 {
-    int ready = 0;                   /* select戻り値 */
-    struct timespec timeout;         /* タイムアウト値 */
-    sigset_t sigmask;                /* シグナルマスク */
-    st_client status = EX_SUCCESS;   /* ステータス */
-    int pending = 0;                 /* 送信済みで, 未受信の答えの数 */
+    int ready = 0;                 /* select戻り値 */
+    int retval = 0;                /* 戻り値 */
+    struct timespec timeout;       /* タイムアウト値 */
+    sigset_t sigmask;              /* シグナルマスク */
+    st_client status = EX_SUCCESS; /* ステータス */
+    int pending = 0;               /* 送信済みで, 未受信の答えの数 */
 #ifdef _USE_SELECT
-    fd_set fds, rfds;                /* selectマスク */
+    fd_set fds, rfds; /* selectマスク */
 #else
     struct pollfd targets[MAX_POLL]; /* poll */
 #endif /* _USE_SELECT */
 
     dbglog("start: sock=%d", sock);
 
-    if (atexit(exit_memfree)) {
-        outlog("atexit");
+    retval = atexit(exit_memfree);
+    if (retval != 0) {
+        outlog("atexit=%d", retval);
         return EX_FAILURE;
     }
 
@@ -190,7 +192,7 @@ client_loop(int sock)
     FD_ZERO(&fds);              /* 初期化 */
     FD_SET(sock, &fds);         /* ソケットをマスク */
     FD_SET(STDIN_FILENO, &fds); /* 標準入力をマスク */
-#endif /* _USE_SELECT */
+#endif                          /* _USE_SELECT */
 
     /* シグナルマスクの取得 */
     sigmask = get_sigmask();
@@ -203,8 +205,7 @@ client_loop(int sock)
     do {
 #ifdef _USE_SELECT
         (void)memcpy(&rfds, &fds, sizeof(fd_set)); /* マスクコピー */
-        ready = pselect(sock + 1, &rfds,
-                        NULL, NULL, &timeout, &sigmask);
+        ready = pselect(sock + 1, &rfds, NULL, NULL, &timeout, &sigmask);
 #else
         targets[STDIN_POLL].fd = STDIN_FILENO;
         targets[STDIN_POLL].events = POLLIN;
@@ -218,9 +219,9 @@ client_loop(int sock)
             /* selectエラー */
             outlog("select=%d", ready);
             return EX_FAILURE;
-        } else if (ready) {
+        } else if (ready > 0) {
 #ifdef _USE_SELECT
-            if (FD_ISSET(STDIN_FILENO, &rfds)) {
+            if (FD_ISSET(STDIN_FILENO, &rfds) != 0) {
                 /* 標準入力レディ */
                 status = send_sock(sock);
                 if (status == EX_EMPTY)
@@ -230,16 +231,16 @@ client_loop(int sock)
                 else
                     return drain_replies(sock, &pending, status);
             }
-            if (FD_ISSET(sock, &rfds)) {
+            if (FD_ISSET(sock, &rfds) != 0) {
                 /* ソケットレディ */
                 status = read_sock(sock);
-                if (status)
+                if (status != EX_SUCCESS)
                     return status;
                 if (pending > 0)
                     pending--;
             }
 #else
-            if (targets[STDIN_POLL].revents & POLLIN) {
+            if ((targets[STDIN_POLL].revents & POLLIN) != 0) {
                 /* 標準入力レディ */
                 status = send_sock(sock);
                 if (status == EX_EMPTY)
@@ -249,19 +250,19 @@ client_loop(int sock)
                 else
                     return drain_replies(sock, &pending, status);
             }
-            if (targets[SOCK_POLL].revents & POLLIN) {
+            if ((targets[SOCK_POLL].revents & POLLIN) != 0) {
                 /* ソケットレディ */
                 status = read_sock(sock);
-                if (status)
+                if (status != EX_SUCCESS)
                     return status;
                 if (pending > 0)
                     pending--;
             }
-#endif /* _USE_SELECT */
+#endif           /* _USE_SELECT */
         } else { /* タイムアウト */
             continue;
         }
-    } while (!g_sig_handled);
+    } while (g_sig_handled == 0);
 
     return EX_SIGNAL;
 }
@@ -288,7 +289,7 @@ drain_replies(int sock, int *pending, st_client status)
 
     while (*pending > 0) {
         st = read_sock(sock);
-        if (st)
+        if (st != EX_SUCCESS)
             return st;
         (*pending)--;
     }
@@ -304,24 +305,23 @@ drain_replies(int sock, int *pending, st_client status)
 static st_client
 send_sock(int sock)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 長さ */
-    ssize_t slen = 0;  /* 送信するバイト数 */
+    int retval = 0;     /* 戻り値 */
+    size_t length = 0u; /* 長さ */
+    ssize_t slen = 0L;  /* 送信するバイト数 */
 
     expr = _readline(stdin);
-    if (!expr)
+    if (expr == NULL)
         return EX_ALLOC_ERR;
 
     if (*expr == '\0') { /* 文字列長ゼロ */
-        memfree((void **)&expr, NULL);
+        memfree(&expr, NULL);
         return EX_EMPTY;
     }
 
-    if (!strcmp((char *)expr, "quit") ||
-        !strcmp((char *)expr, "exit"))
+    if (strcmp((char *)expr, "quit") == 0 || strcmp((char *)expr, "exit") == 0)
         return EX_QUIT;
 
-    length = strlen((char *)expr) + 1;
+    length = strlen((char *)expr) + 1u;
     dbgdump(expr, length, "stdin: expr=%zu", length);
 
     if (g_tflag)
@@ -329,20 +329,20 @@ send_sock(int sock)
 
     /* データ設定 */
     slen = set_client_data(&sdata, expr, length);
-    if (slen < 0) /* メモリ確保できない */
+    if (slen < 0L) /* メモリ確保できない */
         return EX_ALLOC_ERR;
     dbglog("slen=%zd", slen);
 
     if (g_gflag)
-        outdump(sdata, slen, "send: sdata=%p, length=%zd", sdata, slen);
-    stddump(sdata, slen, "send: sdata=%p, length=%zd", sdata, slen);
+        outdump(sdata, (size_t)slen, "send: sdata=%p, length=%zd", (const void *)sdata, slen);
+    stddump(sdata, (size_t)slen, "send: sdata=%p, length=%zd", (const void *)sdata, slen);
 
     /* データ送信 */
     retval = send_data(sock, sdata, (size_t *)&slen);
     if (retval < 0) /* エラー */
         return EX_SEND_ERR;
 
-    memfree((void **)&expr, (void **)&sdata, NULL);
+    memfree(&expr, &sdata, NULL);
 
     return EX_SUCCESS;
 }
@@ -356,9 +356,9 @@ send_sock(int sock)
 static st_client
 read_sock(int sock)
 {
-    int retval = 0;    /* 戻り値 */
-    size_t length = 0; /* 送信または受信する長さ */
-    struct header hd;  /* ヘッダ */
+    int retval = 0;     /* 戻り値 */
+    size_t length = 0u; /* 送信または受信する長さ */
+    struct header hd;   /* ヘッダ */
 
     dbglog("start");
 
@@ -368,31 +368,29 @@ read_sock(int sock)
     retval = recv_data(sock, &hd, &length);
     if (retval < 0) /* エラー */
         return EX_RECV_ERR;
-    dbglog("recv_data: hd=%p, length=%zu", &hd, length);
+    dbglog("recv_data: hd=%p, length=%zu", (const void *)&hd, length);
 
     if (g_gflag)
-        outdump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
-    stddump(&hd, length, "recv: hd=%p, length=%zu", &hd, length);
+        outdump(&hd, length, "recv: hd=%p, length=%zu", (const void *)&hd, length);
+    stddump(&hd, length, "recv: hd=%p, length=%zu", (const void *)&hd, length);
 
     length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
-    if (length > MAX_DATA_LENGTH) { /* 巨大なメモリを確保させない */
-        outlog("data length=%zu, max=%d", length, MAX_DATA_LENGTH);
+    if (length > MAX_DATA_LENGTH) {              /* 巨大なメモリを確保させない */
+        outlog("data length=%zu, max=%u", length, MAX_DATA_LENGTH);
         return EX_RECV_ERR;
     }
 
     /* データ受信 */
     answer = (unsigned char *)recv_data_new(sock, &length);
-    if (!answer) /* メモリ確保できない */
+    if (answer == NULL) /* メモリ確保できない */
         return EX_ALLOC_ERR;
-    if (!length) /* 受信エラー */
+    if (length == 0u) /* 受信エラー */
         return EX_RECV_ERR;
     dbglog("answer=%p, length=%zu", answer, length);
 
     if (g_gflag)
-        outdump(answer, length,
-                "recv: answer=%p, length=%zu", answer, length);
-    stddump(answer, length,
-            "recv: answer=%p, length=%zu", answer, length);
+        outdump(answer, length, "recv: answer=%p, length=%zu", answer, length);
+    stddump(answer, length, "recv: answer=%p, length=%zu", answer, length);
 
     if (g_tflag) {
         unsigned int client_time = stop_timer(&start_time);
@@ -403,7 +401,7 @@ read_sock(int sock)
     if (retval < 0)
         outlog("fprintf=%d", retval);
 
-    memfree((void **)&answer, NULL);
+    memfree(&answer, NULL);
     return EX_SUCCESS;
 }
 
@@ -416,17 +414,21 @@ static sigset_t
 get_sigmask(void)
 {
     sigset_t sigmask; /* シグナルマスク */
+    int retval = 0;   /* 戻り値 */
 
     /* 初期化 */
-    if (sigemptyset(&sigmask) < 0)
-        outlog("sigemptyset=0x%x", sigmask);
+    retval = sigemptyset(&sigmask);
+    if (retval < 0)
+        outlog("sigemptyset");
     /* シグナル全て */
-    if (sigfillset(&sigmask) < 0)
-        outlog("sigfillset=0x%x", sigmask);
+    retval = sigfillset(&sigmask);
+    if (retval < 0)
+        outlog("sigfillset");
     /* SIGINT除く*/
-    if (sigdelset(&sigmask, SIGINT) < 0)
-        outlog("sigdelset=0x%x", sigmask);
-    dbglog("sigmask=0x%x", sigmask);
+    retval = sigdelset(&sigmask, SIGINT);
+    if (retval < 0)
+        outlog("sigdelset");
+    dbglog("sigmask=%p", (const void *)&sigmask);
 
     return sigmask;
 }
@@ -437,9 +439,7 @@ get_sigmask(void)
 static void
 exit_memfree(void)
 {
-    memfree((void **)&expr,
-            (void **)&sdata,
-            (void **)&answer, NULL);
+    memfree(&expr, &sdata, &answer, NULL);
 }
 
 #ifdef UNITTEST
@@ -455,4 +455,3 @@ test_init_client(testclient *client)
     client->read_sock = read_sock;
 }
 #endif /* UNITTEST */
-

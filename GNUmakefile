@@ -43,6 +43,15 @@ debug:
 	echo "*******************************"; \
 	echo "";
 
+.PHONY: analyze
+analyze:
+	@failcom='exit 1'; \
+	(cd $(top_srcdir)/lib && $(MAKE) analyze) || eval $$failcom; \
+	(cd $(top_srcdir)/calc && $(MAKE) analyze) || eval $$failcom; \
+	(cd $(top_srcdir)/server && $(MAKE) analyze) || eval $$failcom; \
+	(cd $(top_srcdir)/client && $(MAKE) analyze) || eval $$failcom; \
+	echo "analyze: no findings";
+
 .PHONY: test
 test:
 	@cmake -S . -B build-test -DCMAKE_BUILD_TYPE=Debug

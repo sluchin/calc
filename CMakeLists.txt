@@ -27,8 +27,8 @@ if(ENABLE_COVERAGE)
   add_compile_options(--coverage -O0 -fno-inline)
   add_link_options(--coverage)
 endif()
-# -Wall で警告を出さないこと (警告が出たら修正する).
-add_compile_options(-Wall)
+# 警告オプションは, warnings.txt に一覧がある (Makefile と共通). 警告が出たら修正する.
+include(cmake/warnings.cmake)
 # 単体テスト (tests/) をビルドして, make test (ctest) で実行できるようにする.
 # 単体テストは, UNITTEST で公開される内部関数を使うので, 有効なときは全体に
 # -DUNITTEST を付ける. 配布用のビルドでは -DBUILD_TESTS=OFF にする.
@@ -66,7 +66,7 @@ endif()
 # lib: libcalcutil
 set(UTIL_SOURCES
   lib/log.c lib/term.c lib/memfree.c lib/data.c
-  lib/net.c lib/readline.c lib/fileio.c)
+  lib/net.c lib/readline.c lib/fileio.c lib/sig.c)
 add_library(calcutil_obj OBJECT ${UTIL_SOURCES})
 target_include_directories(calcutil_obj PUBLIC lib)
 target_compile_definitions(calcutil_obj PUBLIC HAVE_EXECINFO)
@@ -111,6 +111,29 @@ target_compile_definitions(calcc_lib PUBLIC _USE_SELECT)
 target_link_libraries(calcc_lib PUBLIC calcutil_lib)
 add_executable(calcc client/main.c client/option.c)
 target_link_libraries(calcc PRIVATE calcc_lib)
+
+# make analyze: 静的解析 (gcc -fanalyzer. gcc 10 以降). 通常のビルドには含まれない.
+# 全ソースを, ビルドタイプの設定で解析する. 指摘 (警告) があれば, 失敗する.
+set(ANALYZE_TARGETS "")
+foreach(comp IN ITEMS calcutil calcp calcd calcc)
+  get_target_property(analyze_sources ${comp}_obj SOURCES)
+  if(comp STREQUAL "calcp")
+    list(APPEND analyze_sources calc/main.c calc/option.c)
+  elseif(comp STREQUAL "calcd")
+    list(APPEND analyze_sources server/main.c server/option.c)
+  elseif(comp STREQUAL "calcc")
+    list(APPEND analyze_sources client/main.c client/option.c)
+  endif()
+  add_library(${comp}_analyze OBJECT EXCLUDE_FROM_ALL ${analyze_sources})
+  target_include_directories(${comp}_analyze PRIVATE
+    $<TARGET_PROPERTY:${comp}_obj,INTERFACE_INCLUDE_DIRECTORIES>)
+  target_compile_definitions(${comp}_analyze PRIVATE
+    $<TARGET_PROPERTY:${comp}_obj,INTERFACE_COMPILE_DEFINITIONS>)
+  # 最適化をすると, 不要なコードが消えて, 指摘できなくなることがあるので, -O0 で解析する
+  target_compile_options(${comp}_analyze PRIVATE -O0 -fanalyzer -Werror)
+  list(APPEND ANALYZE_TARGETS ${comp}_analyze)
+endforeach()
+add_custom_target(analyze DEPENDS ${ANALYZE_TARGETS})
 
 # install: 実行ファイルは bin へ, ライブラリは, 静的 (ARCHIVE) か動的 (LIBRARY) かに
 # 応じて lib へインストールする (/usr/local が既定. Makefile の make install に相当).
@@ -269,4 +292,39 @@ if(ENABLE_COVERAGE)
   if(BUILD_TESTS)
     add_coverage_clean_files(${CMAKE_SOURCE_DIR}/tests)
   endif()
+endif()
+
+# --- 整形 (clang-format) ---
+# 設定は, .clang-format にある. 使い方:
+#   cmake --build build --target format          ソースを整形する (ファイルを書き換える)
+#   cmake --build build --target format-check    整形が必要なファイルがあれば, 失敗する (書き換えない)
+# clang-format が, PATH にないときは, -DCLANG_FORMAT=/path/to/clang-format で指定する.
+find_program(CLANG_FORMAT NAMES clang-format)
+file(GLOB_RECURSE FORMAT_SOURCES CONFIGURE_DEPENDS
+     ${CMAKE_SOURCE_DIR}/calc/*.c ${CMAKE_SOURCE_DIR}/calc/*.h
+     ${CMAKE_SOURCE_DIR}/client/*.c ${CMAKE_SOURCE_DIR}/client/*.h
+     ${CMAKE_SOURCE_DIR}/server/*.c ${CMAKE_SOURCE_DIR}/server/*.h
+     ${CMAKE_SOURCE_DIR}/lib/*.c ${CMAKE_SOURCE_DIR}/lib/*.h
+     ${CMAKE_SOURCE_DIR}/tests/*.c ${CMAKE_SOURCE_DIR}/tests/*.h)
+# 外部のソース (tests/third_party) と, ビルドの出力は, 整形しない.
+list(FILTER FORMAT_SOURCES EXCLUDE REGEX "/third_party/|/build[^/]*/")
+if(CLANG_FORMAT)
+  add_custom_target(format
+    COMMAND ${CLANG_FORMAT} -i --style=file ${FORMAT_SOURCES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "clang-format でソースを整形します"
+    VERBATIM)
+  add_custom_target(format-check
+    COMMAND ${CLANG_FORMAT} --dry-run --Werror --style=file ${FORMAT_SOURCES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "clang-format で整形の必要を確認します"
+    VERBATIM)
+else()
+  foreach(t format format-check)
+    add_custom_target(${t}
+      COMMAND ${CMAKE_COMMAND} -E echo
+              "${t} は使えません: clang-format をインストールしてください (sudo apt install clang-format)"
+      COMMAND ${CMAKE_COMMAND} -E false
+      VERBATIM)
+  endforeach()
 endif()

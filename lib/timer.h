@@ -17,9 +17,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -28,8 +28,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef TIMER_H
@@ -41,10 +40,9 @@
 #include "log.h"
 
 /** 時間出力 */
-#define                                                         \
-    print_timer(te) {                                           \
-    (void)fprintf(stderr,                                       \
-                  "time of %s: %f[msec]\n", #te, te*1.0e-3);    \
+#define print_timer(te)                                                    \
+    {                                                                      \
+        (void)fprintf(stderr, "time of %s: %f[msec]\n", #te, te * 1.0e-3); \
     }
 
 /** タイマースタート */
@@ -90,14 +88,15 @@ static inline unsigned long long
 get_time(void)
 {
     struct timeval tv; /* timeval構造体 */
+    int retval = 0;    /* 戻り値 */
 
     timerclear(&tv);
 
-    if (gettimeofday(&tv, NULL) < 0)
+    retval = gettimeofday(&tv, NULL);
+    if (retval < 0)
         outlog("gettimeofday");
 
-    return ((unsigned long long)tv.tv_sec) * 1000000 + tv.tv_usec;
+    return ((unsigned long long)tv.tv_sec) * 1000000ULL + (unsigned long long)tv.tv_usec;
 }
 
 #endif /* TIMER_H */
-

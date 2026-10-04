@@ -1,0 +1,51 @@
+# .clang-format
+#
+# clang-format の設定. 標準 (LLVM) と異なる項目だけを書く.
+# 整形: cmake --build build --target format        (ファイルを書き換える)
+#       cmake --build build --target format-check  (整形が必要なファイルがあれば、失敗する)
+---
+BasedOnStyle: LLVM
+Language: Cpp
+# インデントは、空白 4 つ (タブは使わない)
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+# 中括弧は、関数定義では次の行、制御構文では同じ行 (Linux スタイル)
+BreakBeforeBraces: Linux
+# 関数の定義の戻り型は、関数名と別の行に書く (宣言 (プロトタイプ) は、1 行)
+BreakAfterReturnType: AllDefinitions
+# 宣言 (プロトタイプ) が長くても、戻り型の後ろで、改行しない
+PenaltyReturnTypeOnItsOwnLine: 10000
+# ポインタの * は、変数名につける (char *p)
+PointerAlignment: Right
+# 1 文の本体に、中括弧は付けない (付いていても、外さない)
+InsertBraces: false
+RemoveBracesLLVM: false
+# 関数の仮引数は、1 行に 1 つずつ書く (入りきらないとき)
+BinPackParameters: OnePerLine
+# 短い関数、if、ループを、1 行にしない
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+# 行末コメントは、連続する行で、桁を揃える
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+SpacesBeforeTrailingComments: 1
+# include の順序は、変えない
+SortIncludes: Never
+# #ifdef の中の # は、空白 2 つでインデントする (#  include <poll.h>)
+IndentPPDirectives: AfterHash
+PPIndentWidth: 2
+# マクロの行末の \ は、最も長い行の右に揃える
+AlignEscapedNewlines: Left
+# コメントは、手で折り返してあるので、再配置しない
+ReflowComments: false
+# 配列の初期化子 (表) は、桁を揃える ({0} は、空白なし)
+AlignArrayOfStructures: Left
+Cpp11BracedListStyle: true
+# 連続するマクロの定義は、値の桁を揃える
+AlignConsecutiveMacros: AcrossComments

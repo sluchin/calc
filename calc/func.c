@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <string.h> /* strcmp */
@@ -66,39 +65,53 @@ static double get_combination(calcinfo *calc, double n, double r);
 
 /** 関数種別 */
 enum functype {
-    FN_PI = 0, FN_E, FN_ABS, FN_SQRT, FN_SIN,
-    FN_COS, FN_TAN,  FN_ASIN, FN_ACOS, FN_ATAN,
-    FN_EXP, FN_LN, FN_LOG, FN_RAD, FN_DEG,
-    FN_FACT, FN_PERM, FN_COMB,
+    FN_PI = 0,
+    FN_E,
+    FN_ABS,
+    FN_SQRT,
+    FN_SIN,
+    FN_COS,
+    FN_TAN,
+    FN_ASIN,
+    FN_ACOS,
+    FN_ATAN,
+    FN_EXP,
+    FN_LN,
+    FN_LOG,
+    FN_RAD,
+    FN_DEG,
+    FN_FACT,
+    FN_PERM,
+    FN_COMB,
     MAXFUNC
 };
 
 /** 関数文字列構造体 */
 struct funcstring {
     enum functype type;
-    char funcname[MAX_FUNC_STRING + 1];
+    char funcname[MAX_FUNC_STRING + 1u];
 };
 
 /** 関数文字列構造体初期化 */
 static struct funcstring fstring[] = {
-    { FN_PI,   "pi"   }, /**< pi */
-    { FN_E,    "e"    }, /**< ネイピア数(オイラー数) */
-    { FN_ABS,  "abs"  }, /**< 絶対値 */
-    { FN_SQRT, "sqrt" }, /**< 平方根 */
-    { FN_SIN,  "sin"  }, /**< 三角関数(sin) */
-    { FN_COS,  "cos"  }, /**< 三角関数(cosin) */
-    { FN_TAN,  "tan"  }, /**< 三角関数(tangent) */
-    { FN_ASIN, "asin" }, /**< 逆三角関数(arcsin) */
-    { FN_ACOS, "acos" }, /**< 逆三角関数(arccosin) */
-    { FN_ATAN, "atan" }, /**< 逆三角関数(arctangent) */
-    { FN_EXP,  "exp"  }, /**< 指数関数 */
-    { FN_LN,   "ln"   }, /**< 自然対数 */
-    { FN_LOG,  "log"  }, /**< 常用対数 */
-    { FN_RAD,  "rad"  }, /**< 角度をラジアンに変換 */
-    { FN_DEG,  "deg"  }, /**< ラジアンを角度に変換 */
-    { FN_FACT, "n"    }, /**< 階乗 */
-    { FN_PERM, "nPr"  }, /**< 順列 */
-    { FN_COMB, "nCr"  }  /**< 組み合わせ */
+    {FN_PI,   "pi"  }, /**< pi */
+    {FN_E,    "e"   }, /**< ネイピア数(オイラー数) */
+    {FN_ABS,  "abs" }, /**< 絶対値 */
+    {FN_SQRT, "sqrt"}, /**< 平方根 */
+    {FN_SIN,  "sin" }, /**< 三角関数(sin) */
+    {FN_COS,  "cos" }, /**< 三角関数(cosin) */
+    {FN_TAN,  "tan" }, /**< 三角関数(tangent) */
+    {FN_ASIN, "asin"}, /**< 逆三角関数(arcsin) */
+    {FN_ACOS, "acos"}, /**< 逆三角関数(arccosin) */
+    {FN_ATAN, "atan"}, /**< 逆三角関数(arctangent) */
+    {FN_EXP,  "exp" }, /**< 指数関数 */
+    {FN_LN,   "ln"  }, /**< 自然対数 */
+    {FN_LOG,  "log" }, /**< 常用対数 */
+    {FN_RAD,  "rad" }, /**< 角度をラジアンに変換 */
+    {FN_DEG,  "deg" }, /**< ラジアンを角度に変換 */
+    {FN_FACT, "n"   }, /**< 階乗 */
+    {FN_PERM, "nPr" }, /**< 順列 */
+    {FN_COMB, "nCr" }  /**< 組み合わせ */
 };
 
 /** 関数共用体 */
@@ -110,12 +123,7 @@ union func {
 };
 
 /** 関数種別列挙体 */
-enum uniontype {
-    FUNC0,
-    FUNC1,
-    FUNC2,
-    MATH
-};
+enum uniontype { FUNC0, FUNC1, FUNC2, MATH };
 
 /** 関数情報構造体 */
 struct funcinfo {
@@ -147,7 +155,7 @@ exec_func(calcinfo *calc, const char *func)
 
     int i;
     for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
-        if (!strcmp(fstring[i].funcname, func)) {
+        if (strcmp(fstring[i].funcname, func) == 0) {
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);
             dbglog("type=%d", (int)finfo[ftype].type);
@@ -171,7 +179,7 @@ exec_func(calcinfo *calc, const char *func)
             default:
                 outlog("no functype");
                 break;
-            /* GCOVR_EXCL_STOP */
+                /* GCOVR_EXCL_STOP */
             }
             exec = true;
         }
@@ -182,7 +190,7 @@ exec_func(calcinfo *calc, const char *func)
     check_math_feexcept(calc);
 
     dbglog("x=%.15g, y=%.15g", x, y);
-    dbglog(calc->fmt, result);
+    dbglog("%g", result);
     return result;
 }
 
@@ -204,7 +212,7 @@ get_pow(calcinfo *calc, double x, double y)
     if (is_error(calc))
         return EX_ERROR;
 
-    if ((fpclassify(x) == FP_ZERO) && isless(y, 0)) {
+    if ((fpclassify(x) == FP_ZERO) && (isless(y, 0) != 0)) {
         /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
@@ -379,7 +387,7 @@ get_sqrt(calcinfo *calc, double x)
         return EX_ERROR;
 
     /* 複素数・虚数には対応しない */
-    if (isless(x, 0)) { /* 定義域エラー */
+    if (isless(x, 0) != 0) { /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
@@ -407,7 +415,7 @@ get_ln(calcinfo *calc, double x)
         return EX_ERROR;
 
     /* 複素数・虚数には対応しない */
-    if (isless(x, 0)) { /* 定義域エラー */
+    if (isless(x, 0) != 0) { /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
@@ -435,7 +443,7 @@ get_log(calcinfo *calc, double x)
         return EX_ERROR;
 
     /* 複素数・虚数には対応しない */
-    if (isless(x, 0)) { /* 定義域エラー */
+    if (isless(x, 0) != 0) { /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
@@ -455,10 +463,10 @@ get_log(calcinfo *calc, double x)
 static double
 get_factorial(calcinfo *calc, double n)
 {
-    double result = 1.0;   /* 計算結果 */
-    double decimal = 0.0;  /* 小数 */
-    double integer = 0.0;  /* 整数 */
-    bool minus = false;    /* マイナスフラグ */
+    double result = 1.0;  /* 計算結果 */
+    double decimal = 0.0; /* 小数 */
+    double integer = 0.0; /* 整数 */
+    bool minus = false;   /* マイナスフラグ */
 
     dbglog("start");
 
@@ -468,19 +476,19 @@ get_factorial(calcinfo *calc, double n)
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
     dbglog("decimal=%f, integer=%f", decimal, integer);
-    if (decimal) { /* 自然数ではない */
+    if (fpclassify(decimal) != FP_ZERO) { /* 自然数ではない */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
-    if (isless(n, 0)) { /* マイナス */
+    if (isless(n, 0) != 0) { /* マイナス */
         n *= -1;
         minus = true;
     }
 
     /* 170! (約 7.3e306) を超えると, 結果は無限大になる.
      * n が 2^53 以上だと, n-- で値が変わらず, ループが終わらないので, 先に判定する. */
-    if (isgreater(n, MAX_FACTORIAL)) {
+    if (isgreater(n, MAX_FACTORIAL) != 0) {
         set_errorcode(calc, E_INFINITY);
         return EX_ERROR;
     }
@@ -492,7 +500,7 @@ get_factorial(calcinfo *calc, double n)
         result *= -1;
     minus = false;
 
-    dbglog(calc->fmt, result);
+    dbglog("%g", result);
     return result;
 }
 
@@ -519,22 +527,21 @@ get_permutation(calcinfo *calc, double n, double r)
     if (is_error(calc))
         return EX_ERROR;
 
-    if (isless(n, 0) || isless(r, 0) ||
-        isless(n, r)) { /* 定義域エラー */
+    if ((isless(n, 0) != 0) || (isless(r, 0) != 0) || (isless(n, r) != 0)) { /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
     x = get_factorial(calc, n);
-    dbglog(calc->fmt, x);
-    if (isgreater((n - r), 0))
+    dbglog("%g", x);
+    if (isgreater((n - r), 0) != 0)
         y = get_factorial(calc, n - r);
 
     dbglog("x=%.15g, y=%.15g", x, y);
 
     result = x / y;
 
-    dbglog(calc->fmt, result);
+    dbglog("%g", result);
     return result;
 }
 
@@ -561,21 +568,20 @@ get_combination(calcinfo *calc, double n, double r)
     if (is_error(calc))
         return EX_ERROR;
 
-    if (isless(n, 0) || isless(r, 0) ||
-        isless(n, r)) { /* 定義域エラー */
+    if ((isless(n, 0) != 0) || (isless(r, 0) != 0) || (isless(n, r) != 0)) { /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }
 
     x = get_factorial(calc, n);
     y = get_factorial(calc, r);
-    if (isgreater((n - r), 0))
+    if (isgreater((n - r), 0) != 0)
         z = get_factorial(calc, n - r);
     dbglog("x=%.15g, y=%.15g, z=%.15g", x, y, z);
 
     result = x / (y * z);
 
-    dbglog(calc->fmt, result);
+    dbglog("%g", result);
     return result;
 }
 
@@ -600,4 +606,3 @@ test_init_func(testfunc *func)
     func->get_combination = get_combination;
 }
 #endif /* UNITTEST */
-

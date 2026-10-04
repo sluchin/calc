@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef OUTPUTLOG_H
@@ -31,34 +30,59 @@
 
 #include "term.h"
 
-#define SYS_FACILITY  LOG_SYSLOG
-#define LOGARGS       get_progname(), __FILE__, __LINE__, __FUNCTION__
-#define SYSARGS       LOG_INFO, LOG_PID, LOGARGS
+#define SYS_FACILITY LOG_SYSLOG
+#define LOGARGS      get_progname(), __FILE__, __LINE__, __func__
+#define SYSARGS      LOG_INFO, LOG_PID, LOGARGS
 
 /* エラー時ログメッセージ出力 */
-#define outlog(fmt, ...)        system_log(SYSARGS, fmt, ## __VA_ARGS__)
-#define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
-#define outdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ## __VA_ARGS__)
+#define outlog(fmt, ...)        system_log(SYSARGS, fmt, ##__VA_ARGS__)
+#define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ##__VA_ARGS__)
+#define outdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ##__VA_ARGS__)
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
-#  define dbglog(fmt, ...)        system_dbg_log(SYSARGS, fmt, ## __VA_ARGS__)
-#  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ## __VA_ARGS__)
-#  define dbgdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ## __VA_ARGS__)
-#  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ## __VA_ARGS__)
+#  define dbglog(fmt, ...)        system_dbg_log(SYSARGS, fmt, ##__VA_ARGS__)
+#  define stdlog(fmt, ...)        stderr_log(LOGARGS, fmt, ##__VA_ARGS__)
+#  define dbgdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ##__VA_ARGS__)
+#  define stddump(a, b, fmt, ...) dump_log(a, b, fmt, ##__VA_ARGS__)
 #  ifdef HAVE_EXECINFO
-#    define dbgtrace()            systrace(SYSARGS)
+#    define dbgtrace() systrace(SYSARGS)
 #  else
-#    define dbgtrace()            do { } while (0)
+#    define dbgtrace() \
+        do {           \
+        } while (0)
 #  endif
-#  define dbgterm(fd)             sys_print_termattr(SYSARGS, fd)
+#  define dbgterm(fd) sys_print_termattr(SYSARGS, fd)
 #else
-#  define dbglog(fmt, ...)        do { } while (0)
-#  define stdlog(fmt, ...)        do { } while (0)
-#  define dbgdump(a, b, fmt, ...) do { } while (0)
-#  define stddump(a, b, fmt, ...) do { } while (0)
-#  define dbgtrace()              do { } while (0)
-#  define dbgterm(fd)             do { } while (0)
+#  define dbglog(fmt, ...) \
+      do {                 \
+      } while (0)
+#  define stdlog(fmt, ...) \
+      do {                 \
+      } while (0)
+#  define dbgdump(a, b, fmt, ...) \
+      do {                        \
+      } while (0)
+#  define stddump(a, b, fmt, ...) \
+      do {                        \
+      } while (0)
+#  define dbgtrace() \
+      do {           \
+      } while (0)
+#  define dbgterm(fd) \
+      do {            \
+      } while (0)
 #endif /* _DEBUG */
+
+/**
+ * printf 形式の書式文字列と引数を, コンパイラに検査させる (GNU 拡張).
+ * ほかのコンパイラでは, 何もしない.
+ * fmt: 書式文字列の引数の位置, first: 書式の引数の最初の位置 (どちらも 1 から数える)
+ */
+#ifdef __GNUC__
+#  define LOG_FORMAT(fmt, first) __attribute__((format(printf, fmt, first)))
+#else
+#  define LOG_FORMAT(fmt, first)
+#endif
 
 /** プログラム名設定 */
 void set_progname(const char *name);
@@ -67,38 +91,57 @@ void set_progname(const char *name);
 char *get_progname(void);
 
 /** シスログ出力 */
-void system_log(const int level, const int option, const char *pname,
-                const char *fname, const int line, const char *func,
-                const char *format, ...);
+void system_log(const int level,
+                const int option,
+                const char *pname,
+                const char *fname,
+                const int line,
+                const char *func,
+                const char *format,
+                ...) LOG_FORMAT(7, 8);
 
 /** シスログ出力(デバッグ用) */
-void system_dbg_log(const int level, const int option, const char *pname,
-                    const char *fname, const int line, const char *func,
-                    const char *format, ...);
+void system_dbg_log(const int level,
+                    const int option,
+                    const char *pname,
+                    const char *fname,
+                    const int line,
+                    const char *func,
+                    const char *format,
+                    ...) LOG_FORMAT(7, 8);
 
 /** 標準エラー出力にログ出力 */
-void stderr_log(const char *pname, const char *fname,
-                const int line, const char *func,
-                const char *format, ...);
+void stderr_log(
+    const char *pname, const char *fname, const int line, const char *func, const char *format, ...)
+    LOG_FORMAT(5, 6);
 
 /** 標準エラー出力にHEXダンプ */
-int dump_log(const void *buf, const size_t len, const char *format, ...);
+int dump_log(const void *buf, const size_t len, const char *format, ...) LOG_FORMAT(3, 4);
 
 /** シスログにHEXダンプ */
-int dump_sys(const int level, const int option, const char *pname,
-             const char *fname, const int line, const char *func,
-             const void *buf, const size_t len, const char *format, ...);
+int dump_sys(const int level,
+             const int option,
+             const char *pname,
+             const char *fname,
+             const int line,
+             const char *func,
+             const void *buf,
+             const size_t len,
+             const char *format,
+             ...) LOG_FORMAT(9, 10);
 
 /** ファイルにバイナリ出力 */
-int dump_file(const char *pname, const char *fname, const char *buf,
-              const size_t len);
+int dump_file(const char *pname, const char *fname, const char *buf, const size_t len);
 
 /** バックトレースシスログ出力 */
-void systrace(const int level, const int option, const char *pname,
-              const char *fname, const int line, const char *func);
+void systrace(const int level,
+              const int option,
+              const char *pname,
+              const char *fname,
+              const int line,
+              const char *func);
 
 /** バックトレース出力 */
 void print_trace(void);
 
 #endif /* OUTPUTLOG_H */
-

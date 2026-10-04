@@ -12,9 +12,9 @@
  *
  * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -23,8 +23,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef TEST_PROCESS_H
@@ -55,20 +54,19 @@ typedef void (*test_child_func)(void *arg);
  * @retval -1 プロセス生成などに失敗
  */
 static inline int
-test_run_child(test_child_func func, void *arg, const char *input,
-               char *out, size_t outsize)
+test_run_child(test_child_func func, void *arg, const char *input, char *out, size_t outsize)
 {
-    int inpipe[2] = { -1, -1 };  /* 標準入力用 */
-    int outpipe[2] = { -1, -1 }; /* 出力用 */
-    pid_t cpid = 0;              /* 子プロセスID */
-    int status = 0;              /* ステータス */
-    size_t total = 0;            /* 取得したバイト数 */
-    ssize_t len = 0;             /* read戻り値 */
+    int inpipe[2] = {-1, -1};  /* 標準入力用 */
+    int outpipe[2] = {-1, -1}; /* 出力用 */
+    pid_t cpid = 0;            /* 子プロセスID */
+    int status = 0;            /* ステータス */
+    size_t total = 0u;         /* 取得したバイト数 */
+    ssize_t len = 0L;          /* read戻り値 */
 
-    if (pipe(inpipe) < 0 || pipe(outpipe) < 0)
+    if ((pipe(inpipe) < 0) || (pipe(outpipe) < 0))
         return -1;
 
-    if (input && write(inpipe[1], input, strlen(input)) < 0)
+    if ((input != NULL) && (write(inpipe[1], input, strlen(input)) < 0))
         return -1;
     (void)close(inpipe[1]);
 
@@ -79,9 +77,8 @@ test_run_child(test_child_func func, void *arg, const char *input,
 
     if (cpid == 0) { /* 子プロセス */
         (void)close(outpipe[0]);
-        if (dup2(inpipe[0], STDIN_FILENO) < 0 ||
-            dup2(outpipe[1], STDOUT_FILENO) < 0 ||
-            dup2(outpipe[1], STDERR_FILENO) < 0)
+        if ((dup2(inpipe[0], STDIN_FILENO) < 0) || (dup2(outpipe[1], STDOUT_FILENO) < 0) ||
+            (dup2(outpipe[1], STDERR_FILENO) < 0))
             exit(EXIT_FAILURE);
         (void)close(inpipe[0]);
         (void)close(outpipe[1]);
@@ -92,11 +89,14 @@ test_run_child(test_child_func func, void *arg, const char *input,
     /* 親プロセス */
     (void)close(inpipe[0]);
     (void)close(outpipe[1]);
-    if (out && outsize > 0) {
+    if ((out != NULL) && (outsize > 0u)) {
         out[0] = '\0';
-        while (total < outsize - 1 &&
-               (len = read(outpipe[0], out + total, outsize - 1 - total)) > 0)
+        while (total < outsize - 1u) {
+            len = read(outpipe[0], out + total, outsize - 1u - total);
+            if (len <= 0L)
+                break;
             total += (size_t)len;
+        }
         out[total] = '\0';
     }
     /* 残りは読み捨てる (子プロセスが SIGPIPE で終了しないように) */
@@ -109,9 +109,9 @@ test_run_child(test_child_func func, void *arg, const char *input,
 
     if (waitpid(cpid, &status, 0) < 0)
         return -1;
-    if (WIFEXITED(status))
+    if (WIFEXITED(status) != 0)
         return WEXITSTATUS(status);
-    if (WIFSIGNALED(status))
+    if (WIFSIGNALED(status) != 0)
         return 128 + WTERMSIG(status);
     return -1;
 }
@@ -130,51 +130,51 @@ test_run_child(test_child_func func, void *arg, const char *input,
  * @retval -1 プロセス生成などに失敗
  */
 static inline int
-test_run_child_pty(test_child_func func, void *arg, const char *input,
-                   char *out, size_t outsize)
+test_run_child_pty(test_child_func func, void *arg, const char *input, char *out, size_t outsize)
 {
-    int master = -1;  /* 端末のマスタ側 */
-    pid_t cpid = 0;   /* 子プロセスID */
-    int status = 0;   /* ステータス */
-    size_t total = 0; /* 取得したバイト数 */
-    ssize_t len = 0;  /* read戻り値 */
-    char dummy[256];  /* 読み捨て用 */
+    int master = -1;   /* 端末のマスタ側 */
+    pid_t cpid = 0;    /* 子プロセスID */
+    int status = 0;    /* ステータス */
+    size_t total = 0u; /* 取得したバイト数 */
+    ssize_t len = 0L;  /* read戻り値 */
+    char dummy[256];   /* 読み捨て用 */
 
     (void)fflush(NULL);
     cpid = forkpty(&master, NULL, NULL, NULL);
     if (cpid < 0)
         return -1;
 
-    if (cpid == 0) { /* 子プロセス */
+    if (cpid == 0) {                     /* 子プロセス */
         (void)setenv("TERM", "dumb", 1); /* 制御文字を減らす */
         func(arg);
         exit(EXIT_SUCCESS);
     }
 
     /* 親プロセス */
-    if (input && write(master, input, strlen(input)) < 0) {
+    if ((input != NULL) && (write(master, input, strlen(input)) < 0)) {
         (void)close(master);
         return -1;
     }
-    if (out && outsize > 0)
+    if ((out != NULL) && (outsize > 0u))
         out[0] = '\0';
     /* 子プロセスが終了して, 端末を閉じるまで読む (Linux では, EIO が返る) */
-    while ((len = read(master, dummy, sizeof(dummy))) > 0) {
-        if (out && total < outsize - 1) {
-            size_t n = ((size_t)len < outsize - 1 - total) ?
-                (size_t)len : outsize - 1 - total;
+    len = read(master, dummy, sizeof(dummy));
+    while (len > 0L) {
+        if (out != NULL && total < outsize - 1u) {
+            size_t n = (((size_t)len < outsize - 1u - total) ? (size_t)len : outsize - 1u - total);
             (void)memcpy(out + total, dummy, n);
             total += n;
             out[total] = '\0';
         }
+        len = read(master, dummy, sizeof(dummy));
     }
     (void)close(master);
 
     if (waitpid(cpid, &status, 0) < 0)
         return -1;
-    if (WIFEXITED(status))
+    if (WIFEXITED(status) != 0)
         return WEXITSTATUS(status);
-    if (WIFSIGNALED(status))
+    if (WIFSIGNALED(status) != 0)
         return 128 + WTERMSIG(status);
     return -1;
 }
@@ -191,9 +191,8 @@ test_run_child_pty(test_child_func func, void *arg, const char *input,
 static inline void *
 test_shared_alloc(size_t size)
 {
-    void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
-                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    return (ptr == MAP_FAILED) ? NULL : ptr;
+    void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    return ((ptr == MAP_FAILED) ? NULL : ptr);
 }
 
 /**
@@ -205,7 +204,7 @@ test_shared_alloc(size_t size)
 static inline void
 test_shared_free(void *ptr, size_t size)
 {
-    if (ptr)
+    if (ptr != NULL)
         (void)munmap(ptr, size);
 }
 

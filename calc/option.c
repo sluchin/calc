@@ -14,9 +14,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -25,8 +25,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* fprintf */
@@ -41,11 +40,11 @@
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
-    { "digit",   required_argument, NULL, 'd' },
-    { "time",    no_argument,       NULL, 't' },
-    { "help",    no_argument,       NULL, 'h' },
-    { "version", no_argument,       NULL, 'V' },
-    { NULL,      0,                 NULL, 0   }
+    {"digit",   required_argument, NULL, 'd'},
+    {"time",    no_argument,       NULL, 't'},
+    {"help",    no_argument,       NULL, 'h'},
+    {"version", no_argument,       NULL, 'V'},
+    {NULL,      0,                 NULL, 0  }
 };
 
 /** オプション情報文字列(ショート) */
@@ -70,15 +69,16 @@ void
 parse_args(int argc, char *argv[])
 {
     int opt = 0;         /* オプション */
-    long digit = 0;      /* 桁数 */
+    long digit = 0L;     /* 桁数 */
     const int base = 10; /* 基数 */
 
-    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+    opt = getopt_long(argc, argv, shortopts, longopts, NULL);
+    while (opt != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'd': /* 有効桁数設定 */
             digit = strtol(optarg, NULL, base);
-            if (digit <= 0 || MAX_DIGIT < digit) {
+            if (digit <= 0L || MAX_DIGIT < digit) {
                 (void)fprintf(stderr, "Digits is 1-%ld.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }
@@ -101,6 +101,7 @@ parse_args(int argc, char *argv[])
             parse_error(opt, "internal error");
             exit(EXIT_FAILURE);
         }
+        opt = getopt_long(argc, argv, shortopts, longopts, NULL);
     }
     if (optind < argc) {
         (void)printf("non-option ARGV-elements: ");
@@ -120,14 +121,10 @@ static void
 print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
-    (void)fprintf(stderr, "  -d, --digit            %s%ld%s",
-                  "set digit (1-", MAX_DIGIT, ")\n");
-    (void)fprintf(stderr, "  -t, --time             %s",
-                  "print time\n");
-    (void)fprintf(stderr, "  -h, --help             %s",
-                  "display this help and exit\n");
-    (void)fprintf(stderr, "  -V, --version          %s",
-                  "output version information and exit\n");
+    (void)fprintf(stderr, "  -d, --digit            %s%ld%s", "set digit (1-", MAX_DIGIT, ")\n");
+    (void)fprintf(stderr, "  -t, --time             %s", "print time\n");
+    (void)fprintf(stderr, "  -h, --help             %s", "display this help and exit\n");
+    (void)fprintf(stderr, "  -V, --version          %s", "output version information and exit\n");
 }
 
 /**
@@ -152,8 +149,7 @@ print_version(const char *progname)
 static void
 parse_error(const int c, const char *msg)
 {
-    if (msg)
+    if (msg != NULL)
         (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }
-

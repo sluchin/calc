@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,14 +19,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h> /* exit */
-#include <stdarg.h> /* va_list */
+#include <stdlib.h>  /* exit */
+#include <stdarg.h>  /* va_list */
 #include <stdbool.h> /* bool */
-#include <string.h> /* strcmp strncmp */
+#include <string.h>  /* strcmp strncmp */
 
 #include "test_helper.h"
 
@@ -37,10 +36,10 @@
 #include "calc.h"
 #include "helper.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(char *, strdup, const char *);
+FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
 /*
@@ -68,21 +67,22 @@ static enum snprintf_target fail_snprintf = SNPRINTF_NONE; /**< 失敗させる�
 int
 snprintf(char *str, size_t size, const char *format, ...)
 {
-    va_list ap; /* 可変引数 */
-    int retval = 0; /* 戻り値 */
+    va_list ap;        /* 可変引数 */
+    int retval = 0;    /* 戻り値 */
     bool fail = false; /* 失敗させるか */
 
     /* 失敗させる種類ごとに, 今回の呼び出しが対象か判定する */
     switch (fail_snprintf) {
     case SNPRINTF_FORMAT:
-        fail = !strcmp(format, "%s%ld%s");
+        fail = (strcmp(format, "%s%ld%s") == 0);
         break;
     case SNPRINTF_STRLEN:
-        fail = (str == NULL && size == 0);
+        fail = (str == NULL && size == 0u);
         break;
     case SNPRINTF_ANSWER:
-        fail = (str != NULL && !strncmp(format, "%.", 2));
+        fail = (str != NULL && strncmp(format, "%.", 2u) == 0);
         break;
+    case SNPRINTF_NONE:
     default:
         break;
     }
@@ -99,8 +99,8 @@ snprintf(char *str, size_t size, const char *format, ...)
 }
 
 extern void *__libc_malloc(size_t size);
-static size_t fail_malloc_size = 0; /**< 失敗させる malloc() のサイズ (0 は無効) */
-static int fail_malloc_count = 0;   /**< 失敗させる回数 */
+static size_t fail_malloc_size = 0u; /**< 失敗させる malloc() のサイズ (0 は無効) */
+static int fail_malloc_count = 0;    /**< 失敗させる回数 */
 /**
  * malloc() の置き換え
  *
@@ -198,145 +198,145 @@ struct test_data_double {
 };
 
 /** 四則演算テスト用データ */
-static const struct test_data_char four_data [] = {
-    { "(105+312)+2*(5-3)", "421" },
-    { "(105+312)+2/(5-3)", "418" },
-    { "1+2*(5-3)",         "5"   },
-    { "1+2/(5-3)",         "2"   },
-    { "-(1+2)",            "-3"  },
-    { "2*-(3)",            "-6"  },
-    { "+(1+2)",            "3"   },
-    { "2*3^2",             "18"  },
-    { "4/2^2",             "1"   },
-    { "10-2^2",            "6"   },
-    { "-2^2",              "-4"  },
-    { "2^-1",              "0.5" },
-    { "2^3^2",             "64"  }
+static const struct test_data_char four_data[] = {
+    {"(105+312)+2*(5-3)", "421"},
+    {"(105+312)+2/(5-3)", "418"},
+    {"1+2*(5-3)",         "5"  },
+    {"1+2/(5-3)",         "2"  },
+    {"-(1+2)",            "-3" },
+    {"2*-(3)",            "-6" },
+    {"+(1+2)",            "3"  },
+    {"2*3^2",             "18" },
+    {"4/2^2",             "1"  },
+    {"10-2^2",            "6"  },
+    {"-2^2",              "-4" },
+    {"2^-1",              "0.5"},
+    {"2^3^2",             "64" }
 };
 
 /** 関数テスト用データ */
-static const struct test_data_char func_data [] = {
-    { "pi",        "3.14159265359"   },
-    { "e",         "2.71828182846"   },
-    { "abs(-2)",   "2"               },
-    { "sqrt(2)",   "1.41421356237"   },
-    { "sin(2)" ,   "0.909297426826"  },
-    { "cos(2)",    "-0.416146836547" },
-    { "tan(2)",    "-2.18503986326"  },
-    { "asin(0.5)", "0.523598775598"  },
-    { "acos(0.5)", "1.0471975512"    },
-    { "atan(0.5)", "0.463647609001"  },
-    { "exp(2)" ,   "7.38905609893"   },
-    { "ln(2)",     "0.69314718056"   },
-    { "log(2)",    "0.301029995664"  },
-    { "deg(2)",    "114.591559026"   },
-    { "rad(2)",    "0.0349065850399" },
-    { "n(10)",     "3628800"         },
-    { "nPr(5,2)",  "20"              },
-    { "nCr(5,2)",  "10"              },
-    { "n(170)",    "7.25741561531e+306" },
-    { "exp(-1000)", "0"              },
-    { "10^-400",   "0"               }
+static const struct test_data_char func_data[] = {
+    {"pi",         "3.14159265359"     },
+    {"e",          "2.71828182846"     },
+    {"abs(-2)",    "2"                 },
+    {"sqrt(2)",    "1.41421356237"     },
+    {"sin(2)",     "0.909297426826"    },
+    {"cos(2)",     "-0.416146836547"   },
+    {"tan(2)",     "-2.18503986326"    },
+    {"asin(0.5)",  "0.523598775598"    },
+    {"acos(0.5)",  "1.0471975512"      },
+    {"atan(0.5)",  "0.463647609001"    },
+    {"exp(2)",     "7.38905609893"     },
+    {"ln(2)",      "0.69314718056"     },
+    {"log(2)",     "0.301029995664"    },
+    {"deg(2)",     "114.591559026"     },
+    {"rad(2)",     "0.0349065850399"   },
+    {"n(10)",      "3628800"           },
+    {"nPr(5,2)",   "20"                },
+    {"nCr(5,2)",   "10"                },
+    {"n(170)",     "7.25741561531e+306"},
+    {"exp(-1000)", "0"                 },
+    {"10^-400",    "0"                 }
 };
 
 /** 四則演算と関数の組み合わせテスト用データ */
-static const struct test_data_char four_func_data [] = {
-    { "5*pi",        "15.7079632679"  },
-    { "pi*5",        "15.7079632679"  },
-    { "5*e",         "13.5914091423"  },
-    { "e*5",         "13.5914091423"  },
-    { "5*abs(-2)",   "10"             },
-    { "abs(-2)*5",   "10"             },
-    { "5*sqrt(2)",   "7.07106781187"  },
-    { "sqrt(2)*5",   "7.07106781187"  },
-    { "5*sin(2)",    "4.54648713413"  },
-    { "sin(2)*5",    "4.54648713413"  },
-    { "5*cos(2)",    "-2.08073418274" },
-    { "cos(2)*5",    "-2.08073418274" },
-    { "5*tan(2)",    "-10.9251993163" },
-    { "tan(2)*5",    "-10.9251993163" },
-    { "2*asin(0.5)", "1.0471975512"   },
-    { "asin(0.5)*2", "1.0471975512"   },
-    { "2*acos(0.5)", "2.09439510239"  },
-    { "acos(0.5)*2", "2.09439510239"  },
-    { "5*atan(0.5)", "2.318238045"    },
-    { "atan(0.5)*5", "2.318238045"    },
-    { "5*exp(2)",    "36.9452804947"  },
-    { "exp(2)*5",    "36.9452804947"  },
-    { "5*ln(2)",     "3.4657359028"   },
-    { "ln(2)*5",     "3.4657359028"   },
-    { "5*log(2)",    "1.50514997832"  },
-    { "log(2)*5",    "1.50514997832"  },
-    { "5*deg(2)",    "572.957795131"  },
-    { "deg(2)*5",    "572.957795131"  },
-    { "5*rad(2)",    "0.174532925199" },
-    { "rad(2)*5",    "0.174532925199" },
-    { "5*n(10)",     "18144000"       },
-    { "n(10)*5",     "18144000"       },
-    { "5*nPr(5,2)",  "100"            },
-    { "nPr(5,2)*5",  "100"            },
-    { "5*nCr(5,2)",  "50"             },
-    { "nCr(5,2)*5",  "50"             }
+static const struct test_data_char four_func_data[] = {
+    {"5*pi",        "15.7079632679" },
+    {"pi*5",        "15.7079632679" },
+    {"5*e",         "13.5914091423" },
+    {"e*5",         "13.5914091423" },
+    {"5*abs(-2)",   "10"            },
+    {"abs(-2)*5",   "10"            },
+    {"5*sqrt(2)",   "7.07106781187" },
+    {"sqrt(2)*5",   "7.07106781187" },
+    {"5*sin(2)",    "4.54648713413" },
+    {"sin(2)*5",    "4.54648713413" },
+    {"5*cos(2)",    "-2.08073418274"},
+    {"cos(2)*5",    "-2.08073418274"},
+    {"5*tan(2)",    "-10.9251993163"},
+    {"tan(2)*5",    "-10.9251993163"},
+    {"2*asin(0.5)", "1.0471975512"  },
+    {"asin(0.5)*2", "1.0471975512"  },
+    {"2*acos(0.5)", "2.09439510239" },
+    {"acos(0.5)*2", "2.09439510239" },
+    {"5*atan(0.5)", "2.318238045"   },
+    {"atan(0.5)*5", "2.318238045"   },
+    {"5*exp(2)",    "36.9452804947" },
+    {"exp(2)*5",    "36.9452804947" },
+    {"5*ln(2)",     "3.4657359028"  },
+    {"ln(2)*5",     "3.4657359028"  },
+    {"5*log(2)",    "1.50514997832" },
+    {"log(2)*5",    "1.50514997832" },
+    {"5*deg(2)",    "572.957795131" },
+    {"deg(2)*5",    "572.957795131" },
+    {"5*rad(2)",    "0.174532925199"},
+    {"rad(2)*5",    "0.174532925199"},
+    {"5*n(10)",     "18144000"      },
+    {"n(10)*5",     "18144000"      },
+    {"5*nPr(5,2)",  "100"           },
+    {"nPr(5,2)*5",  "100"           },
+    {"5*nCr(5,2)",  "50"            },
+    {"nCr(5,2)*5",  "50"            }
 };
 
 /** 関数エラー時テスト用データ */
-static const struct test_data_char error_data [] = {
-    { "5/0",        "Divide by zero."       },
-    { "sin(5",      "Syntax error."         },
-    { "nCr(5)",     "Syntax error."         },
-    { "nofunc(5)",  "Function not defined." },
-    { "n(0.5)",     "NaN."                  },
-    { "nPr(-1,-2)", "NaN."                  },
-    { "nPr(1,-2)",  "NaN."                  },
-    { "nPr(3,5)",   "NaN."                  },
-    { "nCr(-1,-2)", "NaN."                  },
-    { "nCr(1,-2)",  "NaN."                  },
-    { "nCr(3,5)",   "NaN."                  },
-    { "sqrt(-5)",   "NaN."                  },
-    { "10^1000000", "Infinity."             },
-    { "n(5000)",    "Infinity."             },
-    { "n(-5000)",   "Infinity."             },
-    { "n(171)",     "Infinity."             },
-    { "sqrt(-1)*2", "NaN."                  },
-    { "sqrt(-1)*2^3", "NaN."                },
-    { "n(99999999999999999999)", "Infinity." },
-    { "nPr(99999999999999999999,1)", "Infinity." },
-    { "nCr(99999999999999999999,1)", "Infinity." }
+static const struct test_data_char error_data[] = {
+    {"5/0",                         "Divide by zero."      },
+    {"sin(5",                       "Syntax error."        },
+    {"nCr(5)",                      "Syntax error."        },
+    {"nofunc(5)",                   "Function not defined."},
+    {"n(0.5)",                      "NaN."                 },
+    {"nPr(-1,-2)",                  "NaN."                 },
+    {"nPr(1,-2)",                   "NaN."                 },
+    {"nPr(3,5)",                    "NaN."                 },
+    {"nCr(-1,-2)",                  "NaN."                 },
+    {"nCr(1,-2)",                   "NaN."                 },
+    {"nCr(3,5)",                    "NaN."                 },
+    {"sqrt(-5)",                    "NaN."                 },
+    {"10^1000000",                  "Infinity."            },
+    {"n(5000)",                     "Infinity."            },
+    {"n(-5000)",                    "Infinity."            },
+    {"n(171)",                      "Infinity."            },
+    {"sqrt(-1)*2",                  "NaN."                 },
+    {"sqrt(-1)*2^3",                "NaN."                 },
+    {"n(99999999999999999999)",     "Infinity."            },
+    {"nPr(99999999999999999999,1)", "Infinity."            },
+    {"nCr(99999999999999999999,1)", "Infinity."            }
 };
 
 /** expression() 関数テスト用データ */
-static const struct test_data_double expression_data [] = {
-    { "5+7", 12, E_NONE },
-    { "5-1",  4, E_NONE }
+static const struct test_data_double expression_data[] = {
+    {"5+7", 12, E_NONE},
+    {"5-1", 4,  E_NONE}
 };
 
 /** term() 関数テスト用データ */
-static const struct test_data_double term_data [] = {
-    { "5*7", 35,   E_NONE      },
-    { "6/2",  3,   E_NONE      },
-    { "6^2", 36,   E_NONE      },
-    { "6/0",  0.0, E_DIVBYZERO }
+static const struct test_data_double term_data[] = {
+    {"5*7", 35,  E_NONE     },
+    {"6/2", 3,   E_NONE     },
+    {"6^2", 36,  E_NONE     },
+    {"6/0", 0.0, E_DIVBYZERO}
 };
 
 /** factor() 関数テスト用データ */
-static const struct test_data_double factor_data [] = {
-    { "(5+4)", 9,   E_NONE   },
-    { "(5+4",  0.0, E_SYNTAX }
+static const struct test_data_double factor_data[] = {
+    {"(5+4)", 9,   E_NONE  },
+    {"(5+4",  0.0, E_SYNTAX}
 };
 
 /** token() 関数テスト用データ */
-static const struct test_data_double token_data [] = {
-    { "+54321",    54321,   E_NONE   },
-    { "-54321",   -54321,   E_NONE   },
-    { "54231",     54231,   E_NONE   },
-    { "nCr(5,2)",     10,   E_NONE   },
-    { "テスト",        0.0, E_SYNTAX }
+static const struct test_data_double token_data[] = {
+    {"+54321",   54321,  E_NONE  },
+    {"-54321",   -54321, E_NONE  },
+    {"54231",    54231,  E_NONE  },
+    {"nCr(5,2)", 10,     E_NONE  },
+    {"テスト",   0.0,    E_SYNTAX}
 };
 
 /** number() 関数テスト用データ */
-static const struct test_data_double number_data [] = {
-    { "54321",  54321,     E_NONE },
-    { "543.21",   543.21,  E_NONE },
+static const struct test_data_double number_data[] = {
+    {"54321",  54321,  E_NONE},
+    {"543.21", 543.21, E_NONE},
 };
 
 /**
@@ -359,15 +359,14 @@ test_answer_four(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(four_data); i++) {
+    for (i = 0u; i < NELEMS(four_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(four_data[i].answer, (char *)calc.answer, "%s=%s",
-                                            four_data[i].expr,
-                                            four_data[i].answer);
+        TEST_ASSERT_STR_MSG(four_data[i].answer, (char *)calc.answer, "%s=%s", four_data[i].expr,
+                            four_data[i].answer);
         destroy_answer(&calc);
-        memfree((void **)&calc, NULL);
+        memfree(&calc, NULL);
     }
     PASS();
 }
@@ -382,13 +381,12 @@ test_answer_func(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(func_data); i++) {
+    for (i = 0u; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(func_data[i].answer, (char *)calc.answer, "%s=%s",
-                                            func_data[i].expr,
-                                            func_data[i].answer);
+        TEST_ASSERT_STR_MSG(func_data[i].answer, (char *)calc.answer, "%s=%s", func_data[i].expr,
+                            func_data[i].answer);
         destroy_answer(&calc);
     }
     PASS();
@@ -404,13 +402,12 @@ test_answer_four_func(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(four_func_data); i++) {
+    for (i = 0u; i < NELEMS(four_func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
 
         TEST_ASSERT_STR_MSG(four_func_data[i].answer, (char *)calc.answer, "%s=%s",
-                                            four_func_data[i].expr,
-                                            four_func_data[i].answer);
+                            four_func_data[i].expr, four_func_data[i].answer);
         destroy_answer(&calc);
     }
     PASS();
@@ -426,13 +423,12 @@ test_answer_error(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(error_data); i++) {
+    for (i = 0u; i < NELEMS(error_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(error_data[i].answer, (char *)calc.answer, "%s=%s",
-                                            error_data[i].expr,
-                                            error_data[i].answer);
+        TEST_ASSERT_STR_MSG(error_data[i].answer, (char *)calc.answer, "%s=%s", error_data[i].expr,
+                            error_data[i].answer);
         destroy_answer(&calc);
     }
     PASS();
@@ -481,8 +477,7 @@ test_set_digit(void)
     set_digit(15L);
     (void)memset(&calc, 0, sizeof(calcinfo));
     exec_calc(&calc, expr);
-    TEST_ASSERT_STR_MSG(expect, (char *)calc.answer, "%s=%s",
-                                        expect, calc.answer);
+    TEST_ASSERT_STR_MSG(expect, (char *)calc.answer, "%s=%s", expect, calc.answer);
     PASS();
 }
 
@@ -492,8 +487,8 @@ test_set_digit(void)
 TEST
 test_readch(void)
 {
-    unsigned char *ptr = NULL; /* ポインタ */
-    calcinfo calc;             /* calc情報構造体 */
+    const unsigned char *ptr = NULL; /* ポインタ */
+    calcinfo calc;                   /* calc情報構造体 */
 
     /* スペース・タブを含んだ文字列を設定 */
     (void)memset(&calc, 0, sizeof(calcinfo));
@@ -529,15 +524,14 @@ test_expression(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(expression_data); i++) {
+    for (i = 0u; i < NELEMS(expression_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, expression_data[i].expr);
         st_calc.readch(&calc);
 
         result = st_calc.expression(&calc);
         TEST_ASSERT_DOUBLE_MSG(expression_data[i].answer, 0.0, result, "%s=%.12g",
-                                            expression_data[i].expr,
-                                            expression_data[i].answer);
+                               expression_data[i].expr, expression_data[i].answer);
     }
     PASS();
 }
@@ -553,17 +547,16 @@ test_term(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(term_data); i++) {
+    for (i = 0u; i < NELEMS(term_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, term_data[i].expr);
         st_calc.readch(&calc);
 
         result = st_calc.term(&calc);
-        TEST_ASSERT_DOUBLE_MSG(term_data[i].answer, 0.0, result, "%s=%.12g",
-                                            term_data[i].expr,
-                                            term_data[i].answer);
+        TEST_ASSERT_DOUBLE_MSG(term_data[i].answer, 0.0, result, "%s=%.12g", term_data[i].expr,
+                               term_data[i].answer);
         TEST_ASSERT_INT_MSG((int)term_data[i].errorcode, (int)calc.errorcode, "%s error",
-                                         term_data[i].expr);
+                            term_data[i].expr);
         clear_error(&calc);
     }
     PASS();
@@ -580,17 +573,16 @@ test_factor(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(factor_data); i++) {
+    for (i = 0u; i < NELEMS(factor_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factor_data[i].expr);
         st_calc.readch(&calc);
 
         result = st_calc.factor(&calc);
-        TEST_ASSERT_DOUBLE_MSG(factor_data[i].answer, 0.0, result, "%s=%.12g",
-                                            factor_data[i].expr,
-                                            factor_data[i].answer);
+        TEST_ASSERT_DOUBLE_MSG(factor_data[i].answer, 0.0, result, "%s=%.12g", factor_data[i].expr,
+                               factor_data[i].answer);
         TEST_ASSERT_INT_MSG((int)factor_data[i].errorcode, (int)calc.errorcode, "%s error",
-                                         factor_data[i].expr);
+                            factor_data[i].expr);
         clear_error(&calc);
     }
     PASS();
@@ -607,17 +599,16 @@ test_token(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(token_data); i++) {
+    for (i = 0u; i < NELEMS(token_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, token_data[i].expr);
         st_calc.readch(&calc);
 
         result = st_calc.token(&calc);
-        TEST_ASSERT_DOUBLE_MSG(token_data[i].answer, 0.0, result, "%s=%.12g",
-                                            token_data[i].expr,
-                                            token_data[i].answer);
+        TEST_ASSERT_DOUBLE_MSG(token_data[i].answer, 0.0, result, "%s=%.12g", token_data[i].expr,
+                               token_data[i].answer);
         TEST_ASSERT_INT_MSG((int)token_data[i].errorcode, (int)calc.errorcode, "%s error",
-                                         token_data[i].expr);
+                            token_data[i].expr);
         clear_error(&calc);
     }
     PASS();
@@ -634,15 +625,14 @@ test_number(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0; i < NELEMS(number_data); i++) {
+    for (i = 0u; i < NELEMS(number_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, number_data[i].expr);
         st_calc.readch(&calc);
 
         result = st_calc.number(&calc);
-        TEST_ASSERT_DOUBLE_MSG(number_data[i].answer, 0.0, result, "%s=%.12g",
-                                            number_data[i].expr,
-                                            number_data[i].answer);
+        TEST_ASSERT_DOUBLE_MSG(number_data[i].answer, 0.0, result, "%s=%.12g", number_data[i].expr,
+                               number_data[i].answer);
     }
     PASS();
 }
@@ -695,13 +685,12 @@ test_get_strlen(void)
 static void
 exec_calc(calcinfo *calc, const char *str)
 {
-    if (!create_answer(calc, (unsigned char *)str)) {
+    if (create_answer(calc, (const unsigned char *)str) == NULL) {
         TEST_ERROR("create_answer: calc=%p", (void *)calc);
         exit(EXIT_FAILURE);
     }
     dbglog("%p answer=%s", calc->answer, calc->answer);
 }
-
 
 /**
  * 初期化処理
@@ -755,10 +744,10 @@ test_answer_timer(void)
 TEST
 test_answer_failure(void)
 {
-    calcinfo calc;                       /* calcinfo構造体 */
-    unsigned char expr[] = "1+2";        /* 式 (答えは "3") */
-    unsigned char third[] = "1/3";       /* 式 (答えは "0.333333333333") */
-    unsigned char zero[] = "1/0";        /* 式 (0 で割る) */
+    calcinfo calc;                 /* calcinfo構造体 */
+    unsigned char expr[] = "1+2";  /* 式 (答えは "3") */
+    unsigned char third[] = "1/3"; /* 式 (答えは "0.333333333333") */
+    unsigned char zero[] = "1/0";  /* 式 (0 で割る) */
 
     /* 書式の設定に失敗 */
     (void)memset(&calc, 0, sizeof(calcinfo));
@@ -823,7 +812,7 @@ test_calc_error_state(void)
 TEST
 test_parse_func_args_failure(void)
 {
-    calcinfo calc; /* calcinfo構造体 */
+    calcinfo calc;  /* calcinfo構造体 */
     double x = 0.0; /* 値 */
 
     /* 引数の始まりが '(' ではない */

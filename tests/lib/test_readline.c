@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <unistd.h>   /* pipe fork */
@@ -37,12 +36,12 @@
 #include "readline.h"
 
 /* 端末の入力可能なバイト数(4096)より大きいサイズに設定 */
-#define BUF_SIZE 1100 /**< バッファサイズ */
+#define BUF_SIZE 1100u /**< バッファサイズ */
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* realloc() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(void *, realloc, void *, size_t);
+FAKE_VALUE_FUNC(void *, realloc, void *, size_t)
 TEST_PASSTHROUGH(void *, realloc, (void *ptr, size_t size), (ptr, size))
 
 /* プロトタイプ */
@@ -52,7 +51,7 @@ TEST test_readline(void);
 TEST test_readline_failure(void);
 
 /* 内部変数 */
-static int pfd[] = { -1, -1 };       /* パイプ */
+static int pfd[] = {-1, -1};         /* パイプ */
 static char test_data[BUF_SIZE];     /* テストデータ */
 static unsigned char *result = NULL; /* 結果文字列 */
 
@@ -82,8 +81,8 @@ setup(void *data)
     (void)data;
     TEST_PASSTHROUGH_RESET(realloc);
     (void)memset(test_data, 0x31, sizeof(test_data));
-    test_data[sizeof(test_data) - 1] = '\0';
-    test_data[sizeof(test_data) - 2] = '\n';
+    test_data[sizeof(test_data) - 1u] = '\0';
+    test_data[sizeof(test_data) - 2u] = '\n';
 }
 
 /**
@@ -94,8 +93,9 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data; /* 使用しない */
     close_fd(&pfd[PIPE_R], &pfd[PIPE_W], NULL);
-    memfree((void **)&result, NULL);
+    memfree(&result, NULL);
 }
 
 /**
@@ -110,23 +110,23 @@ test_readline(void)
     result = exec_readline(test_data, sizeof(test_data));
 
     /* 改行削除 */
-    if (test_data[strlen(test_data) - 1] == '\n')
-        test_data[strlen(test_data) - 1] = '\0';
+    if (test_data[strlen(test_data) - 1u] == '\n')
+        test_data[strlen(test_data) - 1u] = '\0';
 
     TEST_ASSERT_STR(test_data, (char *)result);
 
-    memfree((void **)&result, NULL);
+    memfree(&result, NULL);
 
     /* 改行がなく, 入力の終わりで終わる最後の行も, 返す (終端の NUL も送る) */
     result = exec_readline(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
     TEST_ASSERT_STR("test", (char *)result);
-    memfree((void **)&result, NULL);
+    memfree(&result, NULL);
 
     /* 終端の NUL もない場合 */
     result = exec_readline(nolf_data, strlen(nolf_data));
     TEST_ASSERT_STR("test", (char *)result);
-    memfree((void **)&result, NULL);
+    memfree(&result, NULL);
 
     /* 何も入力されない場合 (入力の終わり) */
     result = exec_readline(nolf_data, 0);
@@ -150,12 +150,12 @@ test_readline(void)
 static unsigned char *
 exec_readline(char *data, size_t length)
 {
-    FILE *fp = NULL; /* ファイルポインタ */
-    int retval = 0;  /* 戻り値 */
-    pid_t cpid = 0;  /* プロセスID */
-    pid_t w = 0;     /* wait戻り値 */
-    int status = 0;  /* ステイタス */
-    ssize_t len = 0; /* writen 戻り値 */
+    FILE *fp = NULL;  /* ファイルポインタ */
+    int retval = 0;   /* 戻り値 */
+    pid_t cpid = 0;   /* プロセスID */
+    pid_t w = 0;      /* wait戻り値 */
+    int status = 0;   /* ステイタス */
+    ssize_t len = 0L; /* writen 戻り値 */
 
     retval = pipe(pfd);
     if (retval < 0) {
@@ -164,8 +164,8 @@ exec_readline(char *data, size_t length)
     }
 
     fp = fdopen(pfd[PIPE_R], "r");
-    if (!fp) {
-        TEST_ERROR("fdopen=%p", fp);
+    if (fp == NULL) {
+        TEST_ERROR("fdopen=%p", (void *)fp);
         return NULL;
     }
 
@@ -182,7 +182,7 @@ exec_readline(char *data, size_t length)
 
         /* 送信 */
         len = writen(pfd[PIPE_W], data, length);
-        if (len < 0) {
+        if (len < 0L) {
             outlog("writen");
             close_fd(&pfd[PIPE_W], NULL);
             exit(EXIT_FAILURE);
@@ -205,7 +205,7 @@ exec_readline(char *data, size_t length)
         if (w < 0)
             TEST_NOTIFY("wait: status=%d(%d)", status, errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status)) {
+        if (WEXITSTATUS(status) != 0) {
             TEST_NOTIFY("child error");
             return NULL;
         }
@@ -220,18 +220,17 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGINT");
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
-
 
 /**
  * readline() 関数テスト (失敗)
@@ -239,12 +238,12 @@ set_sig_handler(void)
 TEST
 test_readline_failure(void)
 {
-    int p[2] = { -1, -1 }; /* パイプ */
-    FILE *fp = NULL;       /* ファイルポインタ */
+    int p[2] = {-1, -1}; /* パイプ */
+    FILE *fp = NULL;     /* ファイルポインタ */
 
     /* 読み込みエラー (ディレクトリは, オープンできるが, 読み込めない) */
     fp = fopen("/tmp", "r");
-    if (!fp) {
+    if (fp == NULL) {
         TEST_FAIL("fopen(%d)", errno);
     }
     result = _readline(fp);
@@ -255,12 +254,12 @@ test_readline_failure(void)
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    if (write(p[1], "abc\n", 4) != 4) {
+    if (write(p[1], "abc\n", 4u) != 4) {
         TEST_FAIL("write(%d)", errno);
     }
     (void)close(p[1]);
     fp = fdopen(p[0], "r");
-    if (!fp) {
+    if (fp == NULL) {
         TEST_FAIL("fdopen(%d)", errno);
     }
     TEST_INJECT(realloc, 0, 1, NULL, ENOMEM);
