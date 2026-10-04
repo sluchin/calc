@@ -15,9 +15,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -26,18 +26,18 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>    /* fprintf snprintf FILE */
-#include <string.h>   /* memcpy memset */
-#include <stdlib.h>   /* malloc */
-#include <ctype.h>    /* isdigit isalpha */
-#include <stdarg.h>   /* va_list va_arg */
+#include <stdio.h>  /* fprintf snprintf FILE */
+#include <string.h> /* memcpy memset */
+#include <stdlib.h> /* malloc */
+#include <ctype.h>  /* isdigit isalpha */
+#include <stdarg.h> /* va_list va_arg */
+#include <math.h>   /* fpclassify FP_ZERO */
 #ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
-#endif /* _DEBUG */
+#endif                /* _DEBUG */
 
 #include "timer.h"
 #include "log.h"
@@ -47,7 +47,7 @@
 #include "calc.h"
 
 /* 外部変数 */
-bool g_tflag = false;               /**< tオプションフラグ */
+bool g_tflag = false; /**< tオプションフラグ */
 
 /* 内部変数 */
 static const double EX_ERROR = 0.0; /**< エラー戻り値 */
@@ -86,18 +86,17 @@ unsigned char *
 create_answer(calcinfo *calc, const unsigned char *expr)
 {
     double val = 0.0;        /* 値 */
-    size_t length = 0;       /* 文字数 */
+    size_t length = 0u;      /* 文字数 */
     int retval = 0;          /* 戻り値 */
-    unsigned int start = 0;  /* タイマ開始 */
+    unsigned int start = 0u; /* タイマ開始 */
 
     dbglog("start");
 
-    calc->ptr = (unsigned char *)expr; /* 走査用ポインタ */
+    calc->ptr = expr; /* 走査用ポインタ */
     dbglog("ptr=%p", calc->ptr);
 
     /* フォーマット設定 */
-    retval = snprintf(calc->fmt, sizeof(calc->fmt),
-                      "%s%ld%s", "%.", digit, "g");
+    retval = snprintf(calc->fmt, sizeof(calc->fmt), "%s%ld%s", "%.", digit, "g");
     if (retval < 0) {
         outlog("snprintf");
         return NULL;
@@ -110,7 +109,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
         start_timer(&start);
 
     val = expression(calc);
-    dbglog(calc->fmt, val);
+    dbglog("%.*g", (int)digit, val);
     dbglog("ptr=%p, ch=%c", calc->ptr, calc->ch);
 
     check_validate(calc, val);
@@ -125,7 +124,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
     if (is_error(calc)) { /* エラー */
         calc->answer = get_errormsg(calc);
         clear_error(calc);
-        if (!calc->answer)
+        if (calc->answer == NULL)
             return NULL;
         dbglog("answer=%p, length=%zu", calc->answer, length);
     } else {
@@ -136,23 +135,27 @@ create_answer(calcinfo *calc, const unsigned char *expr)
             return NULL;
         }
         dbglog("get_strlen=%d, INT_MAX=%d", retval, INT_MAX);
-        length = (size_t)retval + 1; /* 文字数 + 1 */
+        length = (size_t)retval + 1u; /* 文字数 + 1 */
 
         /* メモリ確保 */
         calc->answer = (unsigned char *)malloc(length * sizeof(unsigned char));
-        if (!calc->answer) {
+        if (calc->answer == NULL) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
         (void)memset(calc->answer, 0, length * sizeof(unsigned char));
 
         /* 値を文字列に変換 */
+        /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので, 文字列リテラルではない */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
         retval = snprintf((char *)calc->answer, length, calc->fmt, val);
+#pragma GCC diagnostic pop
         if (retval < 0) {
             outlog("snprintf: answer=%p, length=%zu", calc->answer, length);
             return NULL;
         }
-        dbglog(calc->fmt, val);
+        dbglog("%.*g", (int)digit, val);
         dbglog("answer=%s, length=%zu", calc->answer, length);
     }
     return calc->answer;
@@ -168,7 +171,7 @@ destroy_answer(void *calc)
 {
     calcinfo *ptr = (calcinfo *)calc; /* calcinfo構造体 */
     dbglog("start: result=%p", ptr->answer);
-    memfree((void **)&ptr->answer, NULL);
+    memfree(&ptr->answer, NULL);
 }
 
 /**
@@ -199,12 +202,13 @@ parse_func_args(calcinfo *calc, double *x, ...)
     /* 1 つ目の引数 */
     readch(calc);
     *x = expression(calc);
-    dbglog(calc->fmt, *x);
+    dbglog("%.*g", (int)digit, *x);
 
     va_start(ap, x);
 
     /* 2 つ目以降の引数は, ',' で区切られる */
-    while ((val = va_arg(ap, double *)) != NULL) {
+    val = va_arg(ap, double *);
+    while (val != NULL) {
         if (calc->ch != ',') {
             set_errorcode(calc, E_SYNTAX);
             va_end(ap);
@@ -212,7 +216,8 @@ parse_func_args(calcinfo *calc, double *x, ...)
         }
         readch(calc);
         *val = expression(calc);
-        dbglog(calc->fmt, *val);
+        dbglog("%.*g", (int)digit, *val);
+        val = va_arg(ap, double *);
     }
 
     va_end(ap);
@@ -255,7 +260,7 @@ readch(calcinfo *calc)
         if (calc->ch == '\0')
             break;
         calc->ptr++;
-    } while (isblank(calc->ch));
+    } while (isblank(calc->ch) != 0);
 }
 
 /**
@@ -276,7 +281,7 @@ expression(calcinfo *calc)
 
     /* 最初の項 */
     x = term(calc);
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
 
     /* 続く項を, '+' '-' で, 左から順に加減算する */
     while (true) {
@@ -291,7 +296,7 @@ expression(calcinfo *calc)
         }
     }
 
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
     return x;
 }
 
@@ -312,7 +317,7 @@ term(calcinfo *calc)
         return EX_ERROR;
 
     x = unary(calc);
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
 
     while (true) {
         if (calc->ch == '*') {
@@ -321,7 +326,7 @@ term(calcinfo *calc)
         } else if (calc->ch == '/') {
             readch(calc);
             y = unary(calc);
-            if (y == 0) { /* ゼロ除算エラー */
+            if (fpclassify(y) == FP_ZERO) { /* ゼロ除算エラー */
                 set_errorcode(calc, E_DIVBYZERO);
                 return EX_ERROR;
             }
@@ -330,7 +335,7 @@ term(calcinfo *calc)
             break;
         }
     }
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
     return x;
 }
 
@@ -344,8 +349,8 @@ term(calcinfo *calc)
 static double
 unary(calcinfo *calc)
 {
-    double x = 0.0;  /* 値 */
-    int sign = '+';  /* 単項+- */
+    double x = 0.0; /* 値 */
+    int sign = '+'; /* 単項+- */
 
     dbglog("start");
 
@@ -357,7 +362,7 @@ unary(calcinfo *calc)
         readch(calc);
     }
     x = power(calc);
-    return (sign == '+') ? x : -x;
+    return ((sign == '+') ? x : -x);
 }
 
 /**
@@ -376,14 +381,14 @@ power(calcinfo *calc)
 
     /* unary() が, エラー状態を確認してから呼ぶので, ここでは確認しない */
     x = factor(calc);
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
 
     while (calc->ch == '^') {
         readch(calc);
         y = factor(calc); /* 指数の符号は, token() が処理する (2^-1) */
         x = get_pow(calc, x, y);
     }
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
     return x;
 }
 
@@ -415,7 +420,7 @@ factor(calcinfo *calc)
     }
     readch(calc);
 
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
     return x;
 }
 
@@ -428,10 +433,10 @@ factor(calcinfo *calc)
 static double
 token(calcinfo *calc)
 {
-    double result = 0.0;               /* 結果 */
-    int sign = '+';                 /* 単項+- */
-    char func[MAX_FUNC_STRING + 1]; /* 関数文字列 */
-    int pos = 0;                    /* 配列位置 */
+    double result = 0.0;             /* 結果 */
+    int sign = '+';                  /* 単項+- */
+    char func[MAX_FUNC_STRING + 1u]; /* 関数文字列 */
+    unsigned int pos = 0u;           /* 配列位置 */
 
     dbglog("start");
 
@@ -446,12 +451,11 @@ token(calcinfo *calc)
         readch(calc);
     }
 
-    if (isdigit(calc->ch)) { /* 数値 */
+    if (isdigit(calc->ch) != 0) { /* 数値 */
         result = number(calc);
-    } else if (isalpha(calc->ch)) { /* 関数 */
-        while (isalpha(calc->ch) && (calc->ch != '\0') &&
-               (pos < MAX_FUNC_STRING)) {
-            func[pos++] = calc->ch;
+    } else if (isalpha(calc->ch) != 0) { /* 関数 */
+        while ((isalpha(calc->ch) != 0) && (calc->ch != '\0') && (pos < MAX_FUNC_STRING)) {
+            func[pos++] = (char)calc->ch;
             readch(calc);
         }
         dbglog("func=%s", func);
@@ -463,8 +467,8 @@ token(calcinfo *calc)
         set_errorcode(calc, E_SYNTAX);
     }
 
-    dbglog(calc->fmt, result);
-    return (sign == '+') ? result : -result;
+    dbglog("%.*g", (int)digit, result);
+    return ((sign == '+') ? result : -result);
 }
 
 /**
@@ -481,15 +485,22 @@ number(calcinfo *calc)
     dbglog("start");
 
     x = calc->ch - '0';
-    while (readch(calc), isdigit(calc->ch)) /* 整数 */
+    readch(calc);
+    while (isdigit(calc->ch) != 0) { /* 整数 */
         x = (x * 10) + (calc->ch - '0');
-    dbglog(calc->fmt, x);
+        readch(calc);
+    }
+    dbglog("%.*g", (int)digit, x);
 
     if (calc->ch == '.') { /* 小数 */
-        while (readch(calc), isdigit(calc->ch))
-            x += (y /= 10) * (calc->ch - '0');
+        readch(calc);
+        while (isdigit(calc->ch) != 0) {
+            y /= 10.0;
+            x += y * (calc->ch - '0');
+            readch(calc);
+        }
     }
-    dbglog(calc->fmt, x);
+    dbglog("%.*g", (int)digit, x);
 
     check_validate(calc, x);
 
@@ -508,7 +519,14 @@ number(calcinfo *calc)
 static int
 get_strlen(const double val, const char *fmt)
 {
-    return snprintf(NULL, 0, fmt, val);
+    int retval = 0; /* 戻り値 */
+
+    /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので, 文字列リテラルではない */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+    retval = snprintf(NULL, 0u, fmt, val);
+#pragma GCC diagnostic pop
+    return retval;
 }
 
 #ifdef UNITTEST
@@ -529,4 +547,3 @@ test_init_calc(testcalc *calc)
     calc->readch = readch;
 }
 #endif /* UNITTEST */
-

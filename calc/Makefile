@@ -10,9 +10,10 @@ RM = rm -rf
 AR = ar rcs
 STRIP = strip
 INSTALL = install -c
+include $(top_srcdir)/warnings.mk
 INCLUDES = -I$(srcdir) -I$(top_srcdir)/lib
-CFLAGS = -g -Wall -O2 -fPIC -DNDEBUG -DHAVE_READLINE
-DFLAGS = -g -Wall -O2 -fPIC -DUNITTEST -D_DEBUG -DHAVE_READLINE
+CFLAGS = -g $(WARNFLAGS) -O2 -fPIC -DNDEBUG -DHAVE_READLINE
+DFLAGS = -g $(WARNFLAGS) -O2 -fPIC -DUNITTEST -D_DEBUG -DHAVE_READLINE
 LDFLAGS = -L$(srcdir) -L$(top_srcdir)/lib
 LIBS = -lm -lpthread -lreadline
 UTILLIBS = -lcalcutil
@@ -58,6 +59,19 @@ $(PROGRAM): $(OBJECTS) $(LIBTARGET)
 	$(COMPILE) -c $<
 
 $(OBJECTS) $(OBJCALC): option.h calc.h func.h error.h Makefile
+
+# 静的解析 (gcc -fanalyzer. gcc 10 以降). 通常のビルドとは分けてあり, 解析に時間がかかる.
+# リリース用 (CFLAGS) とデバッグ用 (DFLAGS) の両方の設定で, 全ソースを解析する.
+# 指摘 (警告) があれば, 失敗する.
+# 最適化をすると, 不要なコードが消えて, 指摘できなくなることがあるので, -O0 で解析する.
+.PHONY: analyze
+analyze:
+	@for fl in "$(CFLAGS)" "$(DFLAGS)"; do \
+	    for f in $(wildcard *.c); do \
+	        echo "analyze: $$f"; \
+	        $(CC) $(INCLUDES) $$fl -O0 -fanalyzer -Werror -c -o /dev/null $$f || exit 1; \
+	    done; \
+	done
 
 .PHONY: debug
 debug:

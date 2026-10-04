@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>      /* setvbuf stdin stdout */
@@ -45,19 +44,22 @@
 #include "memfree.h"
 #include "client.h"
 
-#define BUF_SIZE 4100 /**< バッファサイズ */
+#define BUF_SIZE 4100u /**< バッファサイズ */
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* socket() と pselect() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(int, socket, int, int, int);
-TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol),
-                 (domain, type, protocol))
-FAKE_VALUE_FUNC(int, pselect, int, fd_set *, fd_set *, fd_set *,
-                const struct timespec *, const sigset_t *);
-TEST_PASSTHROUGH(int, pselect,
-                 (int nfds, fd_set *readfds, fd_set *writefds,
-                  fd_set *exceptfds, const struct timespec *timeout,
+FAKE_VALUE_FUNC(int, socket, int, int, int)
+TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol), (domain, type, protocol))
+FAKE_VALUE_FUNC(
+    int, pselect, int, fd_set *, fd_set *, fd_set *, const struct timespec *, const sigset_t *)
+TEST_PASSTHROUGH(int,
+                 pselect,
+                 (int nfds,
+                  fd_set *readfds,
+                  fd_set *writefds,
+                  fd_set *exceptfds,
+                  const struct timespec *timeout,
                   const sigset_t *sigmask),
                  (nfds, readfds, writefds, exceptfds, timeout, sigmask))
 
@@ -71,22 +73,21 @@ static unsigned char sendbuf[BUF_SIZE];    /**< 送信データ */
 static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 static int acc = -1;                       /**< アクセプト */
-static int pfd1[] = { -1, -1 };            /**< パイプ1 */
-static int pfd2[] = { -1, -1 };            /**< パイプ2 */
+static int pfd1[] = {-1, -1};              /**< パイプ1 */
+static int pfd2[] = {-1, -1};              /**< パイプ2 */
 static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
 /* sigemptyset() などと, set_client_data() は, モックにして, 通常は本物を呼ぶ */
-FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
-TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
-TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int);
-TEST_PASSTHROUGH(int, sigdelset, (sigset_t *set, int signo), (set, signo))
-FAKE_VALUE_FUNC(ssize_t, set_client_data, struct client_data **,
-                const unsigned char *, size_t);
-TEST_PASSTHROUGH(ssize_t, set_client_data,
-                 (struct client_data **dt, const unsigned char *buf,
-                  size_t len),
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int)
+TEST_PASSTHROUGH(int, sigdelset, (sigset_t * set, int signo), (set, signo))
+FAKE_VALUE_FUNC(ssize_t, set_client_data, struct client_data **, const unsigned char *, size_t)
+TEST_PASSTHROUGH(ssize_t,
+                 set_client_data,
+                 (struct client_data * *dt, const unsigned char *buf, size_t len),
                  (dt, buf, len))
 
 /*
@@ -114,9 +115,11 @@ __cxa_atexit(void (*func)(void *), void *arg, void *dso)
         errno = inject_cxa_atexit.err;
         return (int)inject_cxa_atexit.value;
     }
-    if (!real_cxa_atexit)
-        *(void **)(&real_cxa_atexit) = dlsym(RTLD_NEXT, "__cxa_atexit");
-    return real_cxa_atexit ? real_cxa_atexit(func, arg, dso) : -1;
+    if (real_cxa_atexit == NULL) {
+        void *sym = dlsym(RTLD_NEXT, "__cxa_atexit"); /* 関数ポインタとして使う */
+        (void)memcpy(&real_cxa_atexit, &sym, sizeof(sym));
+    }
+    return ((real_cxa_atexit != NULL) ? real_cxa_atexit(func, arg, dso) : -1);
 }
 
 /* プロトタイプ */
@@ -168,9 +171,9 @@ startup(void)
     set_sig_handler();
 
     /* バッファリングしない */
-    if (setvbuf(stdin, NULL, _IONBF, 0))
+    if (setvbuf(stdin, NULL, _IONBF, 0) != 0)
         TEST_NOTIFY("setvbuf: stdin(%d)", errno);
-    if (setvbuf(stdout, NULL, _IONBF, 0))
+    if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
         TEST_NOTIFY("setvbuf: stdout(%d)", errno);
 
     (void)memset(&client, 0, sizeof(testclient));
@@ -188,6 +191,7 @@ startup(void)
 static void
 setup(void *data)
 {
+    (void)data; /* 使用しない */
     /* モックと状態を, 初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(pselect);
@@ -201,8 +205,8 @@ setup(void *data)
     g_tflag = false;
     g_sig_handled = 0;
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1] = '\0';
-    sendbuf[sizeof(sendbuf) - 2] = '\n';
+    sendbuf[sizeof(sendbuf) - 1u] = '\0';
+    sendbuf[sizeof(sendbuf) - 2u] = '\n';
 
     (void)memset(readbuf, 0, sizeof(readbuf));
 }
@@ -215,11 +219,11 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data;     /* 使用しない */
     int retval = 0; /* 戻り値 */
 
     /* 後始末 (開いたファイルディスクリプタなどを閉じる) */
-    close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W],
-             &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
+    close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
 
     if (ssock != -1) {
         retval = shutdown(ssock, SHUT_RDWR);
@@ -303,10 +307,10 @@ test_client_loop(void)
     pid_t cpid = 0;            /* 子プロセスID */
     pid_t w = 0;               /* wait戻り値 */
     int status = 0;            /* wait引数 */
-    ssize_t wlen = 0;          /* write戻り値 */
-    ssize_t rlen = 0;          /* read戻り値 */
+    ssize_t wlen = 0L;         /* write戻り値 */
+    ssize_t rlen = 0L;         /* read戻り値 */
     int oldfd = 0;             /* 退避用 */
-    size_t sendlen = 0;        /* 送信バイト数 */
+    size_t sendlen = 0u;       /* 送信バイト数 */
     int retval = 0;            /* 戻り値 */
     st_client st = EX_SUCCESS; /* ステータス */
 
@@ -330,6 +334,7 @@ test_client_loop(void)
     oldfd = dup(STDOUT_FILENO);
     if (oldfd < 0)
         TEST_NOTIFY("dup(%d)", errno);
+    (void)fflush(stdout); /* FILE に残った出力は, 呼び出し側が書き出す */
     redirect(STDOUT_FILENO, "/dev/null");
 
     cpid = fork();
@@ -348,8 +353,7 @@ test_client_loop(void)
         csock = connect_sock();
         if (csock < 0) {
             outlog("connect_sock");
-            close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W],
-                     &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
+            close_fd(&pfd1[PIPE_R], &pfd1[PIPE_W], &pfd2[PIPE_R], &pfd2[PIPE_W], NULL);
             exit(CHILD_FAILED);
         }
 
@@ -373,7 +377,7 @@ test_client_loop(void)
         /* 送信と受信が終わるまでループを続け, 一定時間後に, SIGINT で終了する */
         (void)signal(SIGINT, on_sigint);
         if (fork() == 0) {
-            (void)usleep(800000);
+            (void)usleep(800000u);
             (void)kill(getppid(), SIGINT);
             _exit(EXIT_SUCCESS);
         }
@@ -395,7 +399,7 @@ test_client_loop(void)
         sendlen = sizeof(sendbuf);
         /* 1 行だけ送る (終端の NUL まで送ると, 次のループで, 改行のない行を待ち続ける) */
         wlen = write(STDIN_FILENO, (char *)sendbuf, strlen((char *)sendbuf));
-        if (wlen < 0) {
+        if (wlen < 0L) {
             TEST_FAIL("write=%zd(%d)", wlen, errno);
         }
         dbglog("write=%zd", wlen);
@@ -413,13 +417,13 @@ test_client_loop(void)
         }
 
         /* 改行削除 */
-        if (sendbuf[strlen((char *)sendbuf) - 1] == '\n')
-            sendbuf[strlen((char *)sendbuf) - 1] = '\0';
+        if (sendbuf[strlen((char *)sendbuf) - 1u] == '\n')
+            sendbuf[strlen((char *)sendbuf) - 1u] = '\0';
 
         TEST_ASSERT_MEM(sendbuf, sendlen, readbuf, sendlen);
 
         /* 送信 */
-        sendlen = strlen((char *)readbuf) + 1;
+        sendlen = strlen((char *)readbuf) + 1u;
         retval = send_server(acc, readbuf, sendlen);
         if (retval < 0) {
             TEST_FAIL("send_server: acc=%d(%d)", acc, errno);
@@ -433,8 +437,8 @@ test_client_loop(void)
 
         /* 標準出力から受信 */
         (void)memset(readbuf, 0, sizeof(readbuf));
-        rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1);
-        if (rlen < 0) {
+        rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1u);
+        if (rlen < 0L) {
             TEST_FAIL("read=%zd(%d)", rlen, errno);
         }
         dbglog("readbuf=%s", readbuf);
@@ -490,7 +494,7 @@ test_read_sock(void)
     pid_t cpid = 0;            /* プロセスID */
     pid_t w = 0;               /* wait戻り値 */
     int status = 0;            /* wait引数 */
-    ssize_t rlen = 0;          /* read戻り値 */
+    ssize_t rlen = 0L;         /* read戻り値 */
     int oldfd = 0;             /* 退避用 */
     int retval = 0;            /* 戻り値 */
     st_client st = EX_SUCCESS; /* ステータス */
@@ -558,7 +562,7 @@ test_read_sock(void)
 
         /* 標準出力から受信 */
         rlen = readn(STDOUT_FILENO, (char *)readbuf, sizeof(sendbuf));
-        if (rlen < 0) {
+        if (rlen < 0L) {
             TEST_FAIL("read=%zd(%d)", rlen, errno);
         }
 
@@ -571,7 +575,7 @@ test_read_sock(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d(%d)", WEXITSTATUS(status), errno);
     }
     PASS();
@@ -586,16 +590,21 @@ test_read_sock(void)
 static int
 exec_send_sock(unsigned char *sbuf, size_t length)
 {
-    pid_t cpid = 0;             /* プロセスID */
-    pid_t w = 0;                /* wait戻り値 */
-    int status = 0;             /* wait引数 */
-    ssize_t wlen = 0;           /* write戻り値 */
-    int oldfd = 0;              /* 退避用 */
-    int retval = 0;             /* 戻り値 */
-    unsigned char rbuf[length]; /* 受信バッファ */
-    st_client st = EX_SUCCESS;  /* ステータス */
+    pid_t cpid = 0;                     /* プロセスID */
+    pid_t w = 0;                        /* wait戻り値 */
+    int status = 0;                     /* wait引数 */
+    ssize_t wlen = 0L;                  /* write戻り値 */
+    int oldfd = 0;                      /* 退避用 */
+    int retval = 0;                     /* 戻り値 */
+    unsigned char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
+    st_client st = EX_SUCCESS;          /* ステータス */
 
     dbglog("start");
+
+    if (length > sizeof(rbuf)) { /* 受信バッファに入らない */
+        TEST_ERROR("length=%zu", length);
+        return EX_NG;
+    }
 
     retval = pipe(pfd1);
     if (retval < 0) {
@@ -612,6 +621,7 @@ exec_send_sock(unsigned char *sbuf, size_t length)
     oldfd = dup(STDOUT_FILENO);
     if (oldfd < 0)
         TEST_NOTIFY("dup(%d)", errno);
+    (void)fflush(stdout); /* FILE に残った出力は, 呼び出し側が書き出す */
     redirect(STDOUT_FILENO, "/dev/null");
 
     cpid = fork();
@@ -660,14 +670,13 @@ exec_send_sock(unsigned char *sbuf, size_t length)
 
         /* 標準入力に送信 */
         wlen = writen(STDIN_FILENO, (char *)sbuf, length);
-        if (wlen < 0) {
+        if (wlen < 0L) {
             TEST_ERROR("write=%zd(%d)", wlen, errno);
             return EX_NG;
         }
         dbglog("write=%zd", wlen);
 
-        if (strcmp((char *)sbuf, "quit\n") &&
-            strcmp((char *)sbuf, "exit\n")) {
+        if (strcmp((char *)sbuf, "quit\n") != 0 && strcmp((char *)sbuf, "exit\n") != 0) {
 
             /* 受信待ち */
             acc = accept_server(ssock);
@@ -684,10 +693,10 @@ exec_send_sock(unsigned char *sbuf, size_t length)
             }
 
             /* 改行削除 */
-            if (sbuf[strlen((char *)sbuf) - 1] == '\n')
-                sbuf[strlen((char *)sbuf) - 1] = '\0';
+            if (sbuf[strlen((char *)sbuf) - 1u] == '\n')
+                sbuf[strlen((char *)sbuf) - 1u] = '\0';
 
-            if (strcmp((char *)sbuf, (char *)rbuf)) {
+            if (strcmp((char *)sbuf, (char *)rbuf) != 0) {
                 TEST_ERROR("expected=%s actual=%s", sbuf, rbuf);
                 return EX_NG;
             }
@@ -718,7 +727,7 @@ accept_server(int sockfd)
 {
     int ready = 0;           /* pselect戻り値 */
     int accfd = -1;          /* アクセプト */
-    socklen_t addrlen = 0;   /* addr構造体の長さ */
+    socklen_t addrlen = 0u;  /* addr構造体の長さ */
     fd_set fds, rfds;        /* selectマスク */
     struct timespec timeout; /* タイムアウト値 */
     sigset_t sigmask;        /* シグナルマスク */
@@ -731,9 +740,9 @@ accept_server(int sockfd)
 
     /* シグナルマスクの設定 */
     if (sigemptyset(&sigmask) < 0) /* 初期化 */
-        outlog("sigemptyset=0x%x", sigmask);
-    if (sigfillset(&sigmask) < 0)  /* シグナル全て */
-        outlog("sigfillset=0x%x", sigmask);
+        outlog("sigemptyset");
+    if (sigfillset(&sigmask) < 0) /* シグナル全て */
+        outlog("sigfillset");
 
     /* タイムアウト値初期化 */
     (void)memset(&timeout, 0, sizeof(struct timespec));
@@ -743,15 +752,14 @@ accept_server(int sockfd)
 
     while (true) {
         (void)memcpy(&rfds, &fds, sizeof(fd_set)); /* マスクコピー */
-        ready = pselect(sockfd + 1, &rfds,
-                        NULL, NULL, &timeout, &sigmask);
+        ready = pselect(sockfd + 1, &rfds, NULL, NULL, &timeout, &sigmask);
         if (ready < 0) {
             if (errno == EINTR) /* 割り込み */
                 continue;
             TEST_NOTIFY("select=%d", ready);
             break;
-        } else if (ready) {
-            if (FD_ISSET(sockfd, &rfds)) {
+        } else if (ready > 0) {
+            if (FD_ISSET(sockfd, &rfds) != 0) {
                 /* アクセプト */
                 addrlen = (socklen_t)sizeof(struct sockaddr_in);
                 accfd = accept(sockfd, (struct sockaddr *)&addr, &addrlen);
@@ -779,9 +787,9 @@ accept_server(int sockfd)
 static int
 recv_server(int sockfd, unsigned char *rbuf)
 {
-    size_t length = 0; /* バイト数 */
-    struct header hd;  /* ヘッダ構造体 */
-    int retval = 0;    /* 戻り値 */
+    size_t length = 0u; /* バイト数 */
+    struct header hd;   /* ヘッダ構造体 */
+    int retval = 0;     /* 戻り値 */
 
     dbglog("start");
 
@@ -817,14 +825,14 @@ static int
 send_server(int sockfd, unsigned char *sbuf, size_t length)
 {
     struct server_data *sdata = NULL; /* 送信データ構造体 */
-    ssize_t slen = 0;                 /* 送信データバイト数 */
+    ssize_t slen = 0L;                /* 送信データバイト数 */
     int retval = 0;                   /* 戻り値 */
 
     dbglog("start");
 
     /* データ設定 */
     slen = set_server_data(&sdata, sbuf, length);
-    if (slen < 0) {
+    if (slen < 0L) {
         TEST_NOTIFY("set_server_data=%zd(%d)", slen, errno);
         return EX_NG;
     }
@@ -833,10 +841,10 @@ send_server(int sockfd, unsigned char *sbuf, size_t length)
     retval = send_data(sockfd, sdata, (size_t *)&slen);
     if (retval < 0) {
         TEST_NOTIFY("send_data: slen=%zd(%d)", slen, errno);
-        memfree((void **)&sdata, NULL);
+        memfree(&sdata, NULL);
         return EX_NG;
     }
-    memfree((void **)&sdata, NULL);
+    memfree(&sdata, NULL);
     return EX_OK;
 }
 
@@ -870,16 +878,14 @@ inet_sock_server(void)
 
     /* ソケットオプション */
     int optval = 1; /* 二値オプション有効 */
-    retval = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
-                        &optval, (socklen_t)sizeof(int));
+    retval = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, (socklen_t)sizeof(int));
     if (retval < 0) {
         TEST_NOTIFY("setsockopt: sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
     }
 
     /* ソケットにアドレスを指定 */
-    retval = bind(sockfd, (struct sockaddr *)&addr,
-                  (socklen_t)sizeof(addr));
+    retval = bind(sockfd, (struct sockaddr *)&addr, (socklen_t)sizeof(addr));
     if (retval < 0) {
         if (errno == EADDRINUSE)
             TEST_NOTIFY("Address already in use\n");
@@ -911,22 +917,21 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGINT");
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
 
-
 /* 子プロセスで実行する処理の種類 */
-static int child_mode = 0;   /**< 処理の種類 */
-static int child_sock = -1;  /**< 使用するソケット */
+static int child_mode = 0;  /**< 処理の種類 */
+static int child_sock = -1; /**< 使用するソケット */
 
 /**
  * client_loop() を子プロセスで実行する
@@ -963,10 +968,10 @@ child_send_sock(void *arg)
 static void
 child_read_sock(void *arg)
 {
-    int sv[2] = { -1, -1 };        /* ソケットペア */
+    int sv[2] = {-1, -1};          /* ソケットペア */
     struct header hd;              /* ヘッダ */
     struct server_data *dt = NULL; /* 送信データ */
-    ssize_t len = 0;               /* 送信データ長 */
+    ssize_t len = 0L;              /* 送信データ長 */
 
     (void)arg;
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
@@ -977,20 +982,20 @@ child_read_sock(void *arg)
     case 0: /* 何も送らずに閉じる: ヘッダを受信できない */
         break;
     case 1: /* データ長が 4 のヘッダだけ送って閉じる: データを受信できない */
-        hd.length = htonl(4);
+        hd.length = htonl(4u);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     case 5: /* データ長が上限を超えるヘッダ */
-        hd.length = htonl(MAX_DATA_LENGTH + 1);
+        hd.length = htonl(MAX_DATA_LENGTH + 1u);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     case 2: /* データ長が 0 のヘッダ */
-        hd.length = htonl(0);
+        hd.length = htonl(0u);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     default: /* 正常なデータ (4 は, 標準出力を閉じて, 出力に失敗する) */
-        len = set_server_data(&dt, (const unsigned char *)"42", 3);
-        if (len < 0)
+        len = set_server_data(&dt, (const unsigned char *)"42", 3u);
+        if (len < 0L)
             exit(CHILD_FAILED);
         (void)writen(sv[1], dt, (size_t)len);
         break;
@@ -1036,7 +1041,7 @@ TEST
 test_client_loop_failure(void)
 {
     char out[BUF_SIZE] = {0}; /* 出力 */
-    int sv[2] = { -1, -1 };   /* ソケットペア */
+    int sv[2] = {-1, -1};     /* ソケットペア */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
         TEST_FAIL("socketpair(%d)", errno);
@@ -1045,42 +1050,31 @@ test_client_loop_failure(void)
 
     /* pselect() が割り込まれた */
     TEST_INJECT(pselect, 0, 1, -1, EINTR);
-    TEST_ASSERT_INT(EX_SIGNAL,
-                    test_run_child(child_client_loop, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop, NULL, NULL, out, sizeof(out)));
 
     /* pselect() に失敗 */
     TEST_INJECT(pselect, 0, 1, -1, EBADF);
-    TEST_ASSERT_INT(EX_FAILURE,
-                    test_run_child(child_client_loop, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_FAILURE, test_run_child(child_client_loop, NULL, NULL, out, sizeof(out)));
 
     /* タイムアウトして, シグナルを受け取っていれば, ループを終了する */
     g_sig_handled = 1;
     TEST_INJECT(pselect, 0, 1, 0, 0);
-    TEST_ASSERT_INT(EX_SIGNAL,
-                    test_run_child(child_client_loop, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop, NULL, NULL, out, sizeof(out)));
 
     /* 標準入力が空行なら, 次のループへ (シグナルを受け取っていれば終了) */
     TEST_INJECT(pselect, 0, 1, 1, 0);
-    TEST_ASSERT_INT(EX_SIGNAL,
-                    test_run_child(child_client_loop, NULL, "\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop, NULL, "\n", out, sizeof(out)));
     g_sig_handled = 0;
 
     /* 標準入力が quit なら, 終了 */
     TEST_INJECT(pselect, 0, 1, 1, 0);
-    TEST_ASSERT_INT(EX_QUIT,
-                    test_run_child(child_client_loop, NULL, "quit\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_QUIT, test_run_child(child_client_loop, NULL, "quit\n", out, sizeof(out)));
 
     /* 受信に失敗 (接続先が閉じている) */
     (void)close(sv[1]);
     TEST_INJECT(pselect, 0, 1, 1, 0);
     TEST_ASSERT_INT(EX_SEND_ERR,
-                    test_run_child(child_client_loop, NULL, "1+1\n", out,
-                                   sizeof(out)));
+                    test_run_child(child_client_loop, NULL, "1+1\n", out, sizeof(out)));
     (void)close(sv[0]);
     PASS();
 }
@@ -1096,17 +1090,11 @@ test_send_sock_failure(void)
     child_sock = -1;
 
     /* 標準入力が閉じている */
-    TEST_ASSERT_INT(EX_ALLOC_ERR,
-                    test_run_child(child_send_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_ALLOC_ERR, test_run_child(child_send_sock, NULL, NULL, out, sizeof(out)));
     /* 空行 */
-    TEST_ASSERT_INT(EX_EMPTY,
-                    test_run_child(child_send_sock, NULL, "\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_EMPTY, test_run_child(child_send_sock, NULL, "\n", out, sizeof(out)));
     /* 不正なソケットには, 送信できない */
-    TEST_ASSERT_INT(EX_SEND_ERR,
-                    test_run_child(child_send_sock, NULL, "1+1\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SEND_ERR, test_run_child(child_send_sock, NULL, "1+1\n", out, sizeof(out)));
     PASS();
 }
 
@@ -1117,7 +1105,7 @@ TEST
 test_send_sock_timer(void)
 {
     char out[BUF_SIZE] = {0}; /* 出力 */
-    int sv[2] = { -1, -1 };   /* ソケットペア */
+    int sv[2] = {-1, -1};     /* ソケットペア */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
         TEST_FAIL("socketpair(%d)", errno);
@@ -1127,17 +1115,13 @@ test_send_sock_timer(void)
     g_tflag = true;
     g_gflag = true;
     child_sock = sv[0];
-    TEST_ASSERT_INT(EX_SUCCESS,
-                    test_run_child(child_send_sock, NULL, "1+1\n", out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SUCCESS, test_run_child(child_send_sock, NULL, "1+1\n", out, sizeof(out)));
     (void)close(sv[0]);
     (void)close(sv[1]);
 
     /* 受信 (処理時間も表示する) */
     child_mode = 3;
-    TEST_ASSERT_INT(EX_SUCCESS,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SUCCESS, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     TEST_ASSERT_MATCH("time of client_time: [0-9]+\\.[0-9]+\\[msec\\]", out);
     TEST_ASSERT_MATCH("42", out);
     PASS();
@@ -1153,29 +1137,19 @@ test_read_sock_failure(void)
 
     /* ヘッダを受信できない */
     child_mode = 0;
-    TEST_ASSERT_INT(EX_RECV_ERR,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_RECV_ERR, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     /* データを受信できない */
     child_mode = 1;
-    TEST_ASSERT_INT(EX_ALLOC_ERR,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_ALLOC_ERR, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     /* データ長が 0 */
     child_mode = 2;
-    TEST_ASSERT_INT(EX_RECV_ERR,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_RECV_ERR, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     /* データ長が上限を超える (巨大なメモリを確保しない) */
     child_mode = 5;
-    TEST_ASSERT_INT(EX_RECV_ERR,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_RECV_ERR, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     /* 標準出力に書き込めなくても, 続行する */
     child_mode = 4;
-    TEST_ASSERT_INT(EX_SUCCESS,
-                    test_run_child(child_read_sock, NULL, NULL, out,
-                                   sizeof(out)));
+    TEST_ASSERT_INT(EX_SUCCESS, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     PASS();
 }
 
@@ -1204,14 +1178,14 @@ child_client_loop_mask_failure(void *arg)
 static void
 child_client_loop_read_failure(void *arg)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
-    struct header hd;       /* ヘッダ */
+    int sv[2] = {-1, -1}; /* ソケットペア */
+    struct header hd;     /* ヘッダ */
 
     (void)arg;
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
         exit(CHILD_FAILED);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(4);
+    hd.length = htonl(4u);
     (void)writen(sv[1], &hd, sizeof(hd));
     (void)shutdown(sv[1], SHUT_WR); /* 読込側は開いているので, 送信は成功する */
 
@@ -1227,9 +1201,7 @@ test_client_loop_signal_mask_failure(void)
 {
     child_sock = -1;
     /* 失敗しても, 続行する */
-    TEST_ASSERT_INT(EX_SIGNAL,
-                    test_run_child(child_client_loop_mask_failure, NULL, NULL,
-                                   NULL, 0));
+    TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop_mask_failure, NULL, NULL, NULL, 0));
     PASS();
 }
 
@@ -1241,8 +1213,7 @@ test_client_loop_read_failure(void)
 {
     /* 送信のあとの受信で, データを受信できない (EX_ALLOC_ERR) */
     TEST_ASSERT_INT(EX_ALLOC_ERR,
-                    test_run_child(child_client_loop_read_failure, NULL,
-                                   "1+1\n", NULL, 0));
+                    test_run_child(child_client_loop_read_failure, NULL, "1+1\n", NULL, 0));
     PASS();
 }
 
@@ -1254,8 +1225,7 @@ test_send_sock_alloc_failure(void)
 {
     child_sock = -1;
     TEST_INJECT(set_client_data, 0, 1, EX_NG, ENOMEM);
-    TEST_ASSERT_INT(EX_ALLOC_ERR,
-                    test_run_child(child_send_sock, NULL, "1+1\n", NULL, 0));
+    TEST_ASSERT_INT(EX_ALLOC_ERR, test_run_child(child_send_sock, NULL, "1+1\n", NULL, 0));
     PASS();
 }
 
@@ -1269,7 +1239,7 @@ child_client_loop_atexit_failure(void *arg)
 {
     (void)arg;
     inject_cxa_atexit.count = 1;
-    inject_cxa_atexit.value = -1;
+    inject_cxa_atexit.value = -1LL;
     inject_cxa_atexit.err = ENOMEM;
     exit(client_loop(child_sock));
 }
@@ -1282,8 +1252,7 @@ test_client_loop_atexit_failure(void)
 {
     child_sock = -1;
     TEST_ASSERT_INT(EX_FAILURE,
-                    test_run_child(child_client_loop_atexit_failure, NULL, NULL,
-                                   NULL, 0));
+                    test_run_child(child_client_loop_atexit_failure, NULL, NULL, NULL, 0));
     PASS();
 }
 
@@ -1309,25 +1278,25 @@ on_sigint(int signo)
 static void
 child_client_loop_socket_only(void *arg)
 {
-    int idle[2] = { -1, -1 };      /* 標準入力用のパイプ */
-    int sv[2] = { -1, -1 };        /* ソケットペア */
+    int idle[2] = {-1, -1};        /* 標準入力用のパイプ */
+    int sv[2] = {-1, -1};          /* ソケットペア */
     struct server_data *dt = NULL; /* 送信データ */
-    ssize_t len = 0;               /* 送信データ長 */
+    ssize_t len = 0L;              /* 送信データ長 */
     pid_t ppid = getpid();         /* client_loop() を実行するプロセス */
 
     (void)arg;
     (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
-    (void)alarm(10);                /* 終了しなかったときの保険 */
+    (void)alarm(10u);               /* 終了しなかったときの保険 */
     if (pipe(idle) < 0 || socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
         exit(CHILD_FAILED);
     (void)dup2(idle[0], STDIN_FILENO);
-    len = set_server_data(&dt, (const unsigned char *)"42", 3);
-    if (len < 0 || writen(sv[1], dt, (size_t)len) < 0)
+    len = set_server_data(&dt, (const unsigned char *)"42", 3u);
+    if (len < 0L || writen(sv[1], dt, (size_t)len) < 0)
         exit(CHILD_FAILED);
 
     (void)signal(SIGINT, on_sigint);
     if (fork() == 0) {
-        (void)usleep(500000);
+        (void)usleep(500000u);
         (void)kill(ppid, SIGINT);
         _exit(EXIT_SUCCESS);
     }
@@ -1344,8 +1313,7 @@ test_client_loop_socket_only(void)
     char out[BUF_SIZE] = {0}; /* 出力 */
 
     TEST_ASSERT_INT(EX_SIGNAL,
-                    test_run_child(child_client_loop_socket_only, NULL, NULL,
-                                   out, sizeof(out)));
+                    test_run_child(child_client_loop_socket_only, NULL, NULL, out, sizeof(out)));
     /* デバッグビルドは, ダンプも標準エラー出力に出す (子プロセスの出力に含まれる) */
     TEST_ASSERT_MATCH("(^|\n)42\n", out);
     PASS();
@@ -1364,15 +1332,15 @@ test_client_loop_socket_only(void)
 static int
 count_line(const char *out, const char *line)
 {
-    int count = 0;                    /* 行の数 */
-    size_t len = strlen(line);        /* 行の長さ */
-    const char *p = out;              /* 検索位置 */
+    int count = 0;             /* 行の数 */
+    size_t len = strlen(line); /* 行の長さ */
+    const char *p = out;       /* 検索位置 */
 
-    while (*p) {
-        if (!strncmp(p, line, len) && (p[len] == '\n' || p[len] == '\0'))
+    while (*p != '\0') {
+        if (strncmp(p, line, len) == 0 && (p[len] == '\n' || p[len] == '\0'))
             count++;
         p = strchr(p, '\n');
-        if (!p)
+        if (p == NULL)
             break;
         p++;
     }
@@ -1388,10 +1356,10 @@ static void
 responder(int sock)
 {
     struct header hd;              /* ヘッダ */
-    size_t length = 0;             /* バイト数 */
+    size_t length = 0u;            /* バイト数 */
     void *data = NULL;             /* 受信データ */
     struct server_data *dt = NULL; /* 送信データ */
-    ssize_t len = 0;               /* 送信データ長 */
+    ssize_t len = 0L;              /* 送信データ長 */
 
     /* 接続先が閉じるまで, 要求を受信して, 答えを送信する */
     for (;;) {
@@ -1400,13 +1368,13 @@ responder(int sock)
             exit(EXIT_SUCCESS);
         length = (size_t)ntohl((uint32_t)hd.length);
         data = recv_data_new(sock, &length);
-        if (!data)
+        if (data == NULL)
             exit(EXIT_SUCCESS);
         free(data);
         if (child_mode == 6) /* 答えを返さずに, 終了する */
             exit(EXIT_SUCCESS);
-        len = set_server_data(&dt, (const unsigned char *)"ok", 3);
-        if (len < 0 || writen(sock, dt, (size_t)len) < 0)
+        len = set_server_data(&dt, (const unsigned char *)"ok", 3u);
+        if ((len < 0L) || (writen(sock, dt, (size_t)len) < 0))
             exit(EXIT_FAILURE);
         free(dt);
         dt = NULL;
@@ -1422,11 +1390,11 @@ responder(int sock)
 static void
 child_client_loop_drain(void *arg)
 {
-    int sv[2] = { -1, -1 }; /* ソケットペア */
+    int sv[2] = {-1, -1}; /* ソケットペア */
 
     (void)arg;
     (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
-    (void)alarm(10);                /* 終了しなかったときの保険 */
+    (void)alarm(10u);               /* 終了しなかったときの保険 */
     (void)signal(SIGPIPE, SIG_IGN);
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
         exit(CHILD_FAILED);
@@ -1450,22 +1418,19 @@ test_client_loop_drain(void)
     child_mode = 0;
 
     /* quit で終わる */
-    TEST_ASSERT_INT(EX_QUIT,
-                    test_run_child(child_client_loop_drain, NULL,
-                                   "1+1\n2+2\n3+3\nquit\n", out, sizeof(out)));
+    TEST_ASSERT_INT(EX_QUIT, test_run_child(child_client_loop_drain, NULL, "1+1\n2+2\n3+3\nquit\n",
+                                            out, sizeof(out)));
     TEST_ASSERT_INT(3, count_line(out, "ok"));
 
     /* 入力の終わりで終わる (改行のない最後の行も, 送信される) */
     TEST_ASSERT_INT(EX_ALLOC_ERR,
-                    test_run_child(child_client_loop_drain, NULL,
-                                   "1+1\n2+2", out, sizeof(out)));
+                    test_run_child(child_client_loop_drain, NULL, "1+1\n2+2", out, sizeof(out)));
     TEST_ASSERT_INT(2, count_line(out, "ok"));
 
     /* 答えを受信できない (接続先が, 答えを返さずに, 閉じる) 場合は, その受信エラー */
     child_mode = 6;
     TEST_ASSERT_INT(EX_RECV_ERR,
-                    test_run_child(child_client_loop_drain, NULL,
-                                   "1+1\nquit\n", out, sizeof(out)));
+                    test_run_child(child_client_loop_drain, NULL, "1+1\nquit\n", out, sizeof(out)));
     PASS();
 }
 

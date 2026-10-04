@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* snprintf */
@@ -36,40 +35,39 @@
 #include "server.h"
 #include "option.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* main.c が呼び出す, option.c と server.c と net.c の関数は, モックにする */
-FAKE_VOID_FUNC(parse_args, int, char **);
+FAKE_VOID_FUNC(parse_args, int, char **)
 
 /* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
-FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
-                struct sigaction *);
-TEST_PASSTHROUGH(int, sigaction,
-                 (int signo, const struct sigaction *act,
-                  struct sigaction *oldact),
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *, struct sigaction *)
+TEST_PASSTHROUGH(int,
+                 sigaction,
+                 (int signo, const struct sigaction *act, struct sigaction *oldact),
                  (signo, act, oldact))
-FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
-TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
-TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, server_sock);
-FAKE_VOID_FUNC(server_loop, int);
-FAKE_VALUE_FUNC(int, close_sock, int *);
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, server_sock)
+FAKE_VOID_FUNC(server_loop, int)
+FAKE_VALUE_FUNC(int, close_sock, int *)
 #ifndef _DEBUG
-FAKE_VALUE_FUNC(int, daemon, int, int);
+FAKE_VALUE_FUNC(int, daemon, int, int)
 #endif
 
 #define SOCKFD 7 /**< server_sock() が返すソケット */
 
 /** 親子プロセスで共有する情報 */
 struct shared {
-    int parse_count; /**< parse_args() の呼び出し回数 */
-    int loop_count;  /**< server_loop() の呼び出し回数 */
-    int loop_sock;   /**< server_loop() のソケット */
-    int loop_signal; /**< server_loop() で g_sig_handled */
-    int close_count; /**< close_sock() の呼び出し回数 */
+    int parse_count;  /**< parse_args() の呼び出し回数 */
+    int loop_count;   /**< server_loop() の呼び出し回数 */
+    int loop_sock;    /**< server_loop() のソケット */
+    int loop_signal;  /**< server_loop() で g_sig_handled */
+    int close_count;  /**< close_sock() の呼び出し回数 */
     int daemon_count; /**< daemon() の呼び出し回数 */
-    int close_sock;  /**< close_sock() のソケット */
+    int close_sock;   /**< close_sock() のソケット */
 };
 
 extern char **environ; /**< 環境変数 */
@@ -105,7 +103,7 @@ fake_server_loop(int sock)
 {
     shm->loop_count++;
     shm->loop_sock = sock;
-    if (raise_signo)
+    if (raise_signo != 0)
         (void)raise(raise_signo);
     shm->loop_signal = g_sig_handled;
 }
@@ -200,7 +198,7 @@ run_main(void *arg)
     char **argv = (char **)arg; /* 引数 */
     int argc = 0;               /* 引数の数 */
 
-    while (argv[argc])
+    while (argv[argc] != NULL)
         argc++;
     (void)calcd_main(argc, argv, environ);
 }
@@ -211,7 +209,7 @@ run_main(void *arg)
 TEST
 test_main_success(void)
 {
-    char *argv[] = { "calcd", NULL }; /* 引数 */
+    char *argv[] = {"calcd", NULL}; /* 引数 */
 
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->parse_count);
@@ -232,11 +230,10 @@ test_main_success(void)
 TEST
 test_main_server_sock_failure(void)
 {
-    char *argv[] = { "calcd", NULL }; /* 引数 */
+    char *argv[] = {"calcd", NULL}; /* 引数 */
 
     server_sock_fake.return_val = EX_NG;
-    TEST_ASSERT_INT(EXIT_FAILURE,
-                    test_run_child(run_main, argv, NULL, NULL, 0));
+    TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->parse_count);
     TEST_ASSERT_INT(0, shm->loop_count);
     PASS();
@@ -249,12 +246,11 @@ test_main_server_sock_failure(void)
 TEST
 test_main_daemon_failure(void)
 {
-    char *argv[] = { "calcd", NULL }; /* 引数 */
+    char *argv[] = {"calcd", NULL}; /* 引数 */
 
     daemon_fake.custom_fake = NULL;
     daemon_fake.return_val = -1;
-    TEST_ASSERT_INT(EXIT_FAILURE,
-                    test_run_child(run_main, argv, NULL, NULL, 0));
+    TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(0, shm->loop_count);
     PASS();
 }
@@ -266,7 +262,7 @@ test_main_daemon_failure(void)
 TEST
 test_main_signal(void)
 {
-    char *argv[] = { "calcd", NULL }; /* 引数 */
+    char *argv[] = {"calcd", NULL}; /* 引数 */
 
     /* SIGTERM: ループを終了して, 正常終了する */
     raise_signo = SIGTERM;
@@ -283,7 +279,7 @@ TEST
 test_main_sighup(void)
 {
     /* argv[0] を再実行する. sh に 42 で終了させて, 再実行を確認する */
-    char *argv[] = { "/bin/sh", "-c", "exit 42", NULL }; /* 引数 (-c exit 42) */
+    char *argv[] = {"/bin/sh", "-c", "exit 42", NULL}; /* 引数 (-c exit 42) */
 
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(42, test_run_child(run_main, argv, NULL, NULL, 0));
@@ -314,11 +310,10 @@ run_main_failure(void *arg)
 TEST
 test_main_failure(void)
 {
-    char *argv[] = { "calcd", NULL }; /* 引数 */
+    char *argv[] = {"calcd", NULL}; /* 引数 */
 
     /* 失敗しても, 続行する */
-    TEST_ASSERT_INT(EXIT_SUCCESS,
-                    test_run_child(run_main_failure, argv, NULL, NULL, 0));
+    TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_failure, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->loop_count);
     PASS();
 }
@@ -345,7 +340,7 @@ TEST
 test_main_sighup_relative(void)
 {
     /* /bin/sh を, 相対パスで再実行し, sh に 42 で終了させる */
-    char *argv[] = { "./sh", "-c", "exit 42", NULL }; /* 引数 (-c exit 42) */
+    char *argv[] = {"./sh", "-c", "exit 42", NULL}; /* 引数 (-c exit 42) */
 
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(42, test_run_child(run_main_relative, argv, NULL, NULL, 0));
@@ -358,7 +353,7 @@ test_main_sighup_relative(void)
 TEST
 test_main_sighup_failure(void)
 {
-    char *argv[] = { "/nonexistent/calcd", NULL }; /* 引数 */
+    char *argv[] = {"/nonexistent/calcd", NULL}; /* 引数 */
 
     /* 再実行できなければ, 異常終了する (以前は, ログもなく, 正常終了した) */
     raise_signo = SIGHUP;

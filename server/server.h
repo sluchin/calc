@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef SERVER_H
@@ -33,10 +32,9 @@
 #include "data.h"
 #include "calc.h"
 
-#define HOST_SIZE 48           /**< ホスト名サイズ */
-#define PORT_SIZE  6           /**< ポート名サイズ */
+#define HOST_SIZE      48u     /**< ホスト名サイズ */
+#define PORT_SIZE      6u      /**< ポート名サイズ */
 #define DEFAULT_PORTNO "12345" /**< デフォルトポート番号 */
-
 
 /* 外部変数 */
 extern volatile sig_atomic_t g_sig_handled; /**< シグナル */
@@ -70,4 +68,3 @@ void test_init_server(testserver *server);
 #endif /* UNITTEST */
 
 #endif /* SERVER_H */
-

@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <unistd.h> /* read STDERR_FILENO */
@@ -33,13 +32,13 @@
 #include "fileio.h"
 #include "timer.h"
 
-#define BUF_SIZE 256
+#define BUF_SIZE 256u
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* gettimeofday() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *);
-TEST_PASSTHROUGH(int, gettimeofday, (struct timeval *tv, void *tz), (tv, tz))
+FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *)
+TEST_PASSTHROUGH(int, gettimeofday, (struct timeval * tv, void *tz), (tv, tz))
 
 /* プロトタイプ */
 /** print_timer() 関数テスト */
@@ -61,11 +60,11 @@ TEST test_stop_timer_wrap(void);
 TEST
 test_print_timer(void)
 {
-    unsigned int t = 0, time = 0; /* タイマ用変数 */
-    int fd = -1;                  /* ファイルディスクリプタ */
-    int retval = 0;               /* 戻り値 */
-    char actual[BUF_SIZE] = {0};  /* 実際の文字列 */
-    const char expected[] =       /* 期待する文字列 */
+    unsigned int t = 0u, time = 0u; /* タイマ用変数 */
+    int fd = -1;                    /* ファイルディスクリプタ */
+    ssize_t retval = 0L;            /* 戻り値 */
+    char actual[BUF_SIZE] = {0};    /* 実際の文字列 */
+    const char expected[] =         /* 期待する文字列 */
         "time of time: [0-9]+\\.[0-9]+\\[msec\\]";
 
     start_timer(&t);
@@ -78,14 +77,13 @@ test_print_timer(void)
     print_timer(time);
 
     retval = read(fd, actual, sizeof(actual));
-    if (retval < 0) {
+    if (retval < 0L) {
         TEST_FAIL("read=%d(%d)", fd, errno);
         goto error_handler;
     }
     dbglog("actual=%s", actual);
 
-    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s",
-                                 expected, actual);
+    TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
 
 error_handler:
     close_fd(&fd, NULL);
@@ -98,7 +96,7 @@ error_handler:
 TEST
 test_start_timer(void)
 {
-    unsigned int t = 0; /* タイマ用変数 */
+    unsigned int t = 0u; /* タイマ用変数 */
 
     start_timer(&t);
     TEST_ASSERT_NOT_INT(0, t);
@@ -111,11 +109,11 @@ test_start_timer(void)
 TEST
 test_stop_timer(void)
 {
-    unsigned int t = 0, time = 0; /* タイマ用変数 */
+    unsigned int t = 0u, time = 0u; /* タイマ用変数 */
 
     start_timer(&t);
     dbglog("t=%u", t);
-    (void)usleep(1000); /* 最適化されると, 経過時間が 0 になることがあるので待つ */
+    (void)usleep(1000u); /* 最適化されると, 経過時間が 0 になることがあるので待つ */
     time = stop_timer(&t);
     dbglog("time=%u", time);
     ASSERT((time) > (0));
@@ -128,13 +126,12 @@ test_stop_timer(void)
 TEST
 test_get_time(void)
 {
-    unsigned long long t = 0; /* 戻り値 */
+    unsigned long long t = 0ULL; /* 戻り値 */
 
     t = get_time();
     TEST_ASSERT_NOT_INT(0, (unsigned int)t);
     PASS();
 }
-
 
 /**
  * 初期化処理
@@ -161,7 +158,7 @@ test_get_time_failure(void)
     PASS();
 }
 
-static long long fake_time = 0; /**< gettimeofday() のモックが返す時刻 (マイクロ秒) */
+static long long fake_time = 0LL; /**< gettimeofday() のモックが返す時刻 (マイクロ秒) */
 
 /**
  * gettimeofday() のモック動作 (fake_time を返す)
@@ -174,8 +171,8 @@ static int
 fake_gettimeofday(struct timeval *tv, void *tz)
 {
     (void)tz;
-    tv->tv_sec = (time_t)(fake_time / 1000000);
-    tv->tv_usec = (suseconds_t)(fake_time % 1000000);
+    tv->tv_sec = (time_t)(fake_time / 1000000LL);
+    tv->tv_usec = (suseconds_t)(fake_time % 1000000LL);
     return 0;
 }
 
@@ -185,14 +182,14 @@ fake_gettimeofday(struct timeval *tv, void *tz)
 TEST
 test_stop_timer_wrap(void)
 {
-    unsigned int t = 0; /* タイマ用変数 */
+    unsigned int t = 0u; /* タイマ用変数 */
 
     gettimeofday_fake.custom_fake = fake_gettimeofday;
 
     /* 通常 */
-    fake_time = 5000000000LL + 1000;
+    fake_time = 5000000000LL + 1000LL;
     start_timer(&t);
-    fake_time += 500;
+    fake_time += 500LL;
     TEST_ASSERT_INT(500, stop_timer(&t));
 
     /* 開始が, 一周する直前 (0xFFFFFF00) で, 終了が, 一周したあと (0x100) */

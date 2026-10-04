@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,12 +19,11 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <math.h>   /* sqrt log */
-#include <fenv.h>   /* feclearexcept */
+#include <math.h> /* sqrt log */
+#include <fenv.h> /* feclearexcept */
 
 #include "test_helper.h"
 
@@ -34,14 +33,14 @@
 #include "error.h"
 #include "helper.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(char *, strdup, const char *);
+FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
 /* feclearexcept() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(int, feclearexcept, int);
+FAKE_VALUE_FUNC(int, feclearexcept, int)
 TEST_PASSTHROUGH(int, feclearexcept, (int excepts), (excepts))
 
 /* プロトタイプ */
@@ -93,8 +92,7 @@ test_get_errormsg(void)
         calc.errorcode = (ER)i;
         calc.answer = get_errormsg(&calc);
         TEST_ASSERT_STR_MSG(st_error.errormsg[i], (char *)calc.answer, "%s==%s",
-                                            (char *)calc.answer,
-                                            (char *)st_error.errormsg);
+                            (char *)calc.answer, (char *)st_error.errormsg);
         clear_error(&calc);
         destroy_answer(&calc);
     }
@@ -117,9 +115,7 @@ test_set_errorcode(void)
         st_calc.readch(&calc);
 
         set_errorcode(&calc, (ER)i);
-        TEST_ASSERT_INT_MSG(i, (int)calc.errorcode, "%d==%d",
-                                         (int)calc.errorcode,
-                                         i);
+        TEST_ASSERT_INT_MSG(i, (int)calc.errorcode, "%d==%d", (int)calc.errorcode, i);
         clear_error(&calc);
     }
     PASS();
@@ -267,7 +263,6 @@ test_clear_math_feexcept(void)
     clear_error(&calc);
     PASS();
 }
-
 
 /**
  * 初期化処理

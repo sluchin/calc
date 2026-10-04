@@ -16,9 +16,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -27,8 +27,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* fprintf */
@@ -43,13 +42,13 @@
 /* 内部変数 */
 /** オプション情報構造体(ロング) */
 static struct option longopts[] = {
-    { "ipaddress", required_argument, NULL, 'i' },
-    { "port",      required_argument, NULL, 'p' },
-    { "time",      no_argument,       NULL, 't' },
-    { "debug",     no_argument,       NULL, 'g' },
-    { "help",      no_argument,       NULL, 'h' },
-    { "version",   no_argument,       NULL, 'V' },
-    { NULL,        0,                 NULL, 0   }
+    {"ipaddress", required_argument, NULL, 'i'},
+    {"port",      required_argument, NULL, 'p'},
+    {"time",      no_argument,       NULL, 't'},
+    {"debug",     no_argument,       NULL, 'g'},
+    {"help",      no_argument,       NULL, 'h'},
+    {"version",   no_argument,       NULL, 'V'},
+    {NULL,        0,                 NULL, 0  }
 };
 
 /** オプション情報文字列(ショート) */
@@ -73,30 +72,36 @@ static void parse_error(const int c, const char *msg);
 void
 parse_args(int argc, char *argv[])
 {
-    int opt = 0; /* オプション */
+    int opt = 0;    /* オプション */
+    int retval = 0; /* 戻り値 */
 
     dbglog("start");
 
     /* デフォルトのポート番号を設定 */
-    if (set_port_string(DEFAULT_PORTNO) < 0)
+    retval = set_port_string(DEFAULT_PORTNO);
+    if (retval < 0)
         exit(EXIT_FAILURE);
 
     /* デフォルトのIPアドレスを設定 */
-    if (set_host_string(DEFAULT_IPADDR) < 0)
+    retval = set_host_string(DEFAULT_IPADDR);
+    if (retval < 0)
         exit(EXIT_FAILURE);
 
-    while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) != EOF) {
+    opt = getopt_long(argc, argv, shortopts, longopts, NULL);
+    while (opt != EOF) {
         dbglog("opt=%c, optarg=%s", opt, optarg);
         switch (opt) {
         case 'i': /* IPアドレス指定 */
-            if (set_host_string(optarg) < 0) {
-                fprintf(stderr, "Hostname string length %d", (HOST_SIZE - 1));
+            retval = set_host_string(optarg);
+            if (retval < 0) {
+                fprintf(stderr, "Hostname string length %u", (HOST_SIZE - 1u));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
-            if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno string length %d", (PORT_SIZE - 1));
+            retval = set_port_string(optarg);
+            if (retval < 0) {
+                fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1u));
                 exit(EXIT_FAILURE);
             }
             break;
@@ -120,6 +125,7 @@ parse_args(int argc, char *argv[])
             parse_error(opt, "internal error");
             exit(EXIT_FAILURE);
         }
+        opt = getopt_long(argc, argv, shortopts, longopts, NULL);
     }
     if (optind < argc) {
         (void)printf("non-option ARGV-elements: ");
@@ -140,19 +146,13 @@ print_help(const char *progname)
 {
     (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
     (void)fprintf(stderr, "  -i, --ipaddress        %s%s%s",
-                  "set ip address or host name (default: ",
-                  DEFAULT_IPADDR, ")\n");
+                  "set ip address or host name (default: ", DEFAULT_IPADDR, ")\n");
     (void)fprintf(stderr, "  -p, --port             %s%s%s",
-                  "set port number or service name (default: ",
-                  DEFAULT_PORTNO, ")\n");
-    (void)fprintf(stderr, "  -g, --debug            %s",
-                  "execute for debug mode\n");
-    (void)fprintf(stderr, "  -t, --time             %s",
-                  "print time\n");
-    (void)fprintf(stderr, "  -h, --help             %s",
-                  "display this help and exit\n");
-    (void)fprintf(stderr, "  -V, --version          %s",
-                  "output version information and exit\n");
+                  "set port number or service name (default: ", DEFAULT_PORTNO, ")\n");
+    (void)fprintf(stderr, "  -g, --debug            %s", "execute for debug mode\n");
+    (void)fprintf(stderr, "  -t, --time             %s", "print time\n");
+    (void)fprintf(stderr, "  -h, --help             %s", "display this help and exit\n");
+    (void)fprintf(stderr, "  -V, --version          %s", "output version information and exit\n");
 }
 
 /**
@@ -177,8 +177,7 @@ print_version(const char *progname)
 static void
 parse_error(const int c, const char *msg)
 {
-    if (msg)
+    if (msg != NULL)
         (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
     (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }
-

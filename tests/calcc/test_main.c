@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* fprintf */
@@ -35,26 +34,23 @@
 #include "client.h"
 #include "option.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* main.c が呼び出す, option.c と client.c と net.c の関数は, モックにする */
-FAKE_VOID_FUNC(parse_args, int, char **);
+FAKE_VOID_FUNC(parse_args, int, char **)
 
 /* main.c が呼び出す関数の失敗は, 子プロセスの中で注入する (本物を呼ぶ素通し) */
-FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *,
-                struct sigaction *);
-TEST_PASSTHROUGH(int, sigaction,
-                 (int signo, const struct sigaction *act,
-                  struct sigaction *oldact),
+FAKE_VALUE_FUNC(int, sigaction, int, const struct sigaction *, struct sigaction *)
+TEST_PASSTHROUGH(int,
+                 sigaction,
+                 (int signo, const struct sigaction *act, struct sigaction *oldact),
                  (signo, act, oldact))
-FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *);
-TEST_PASSTHROUGH(int, sigemptyset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, sigfillset, sigset_t *);
-TEST_PASSTHROUGH(int, sigfillset, (sigset_t *set), (set))
-FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t);
-TEST_PASSTHROUGH(int, setvbuf,
-                 (FILE *fp, char *buf, int mode, size_t size),
-                 (fp, buf, mode, size))
+FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
+TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
+TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
+FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t)
+TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (fp, buf, mode, size))
 
 /*
  * atexit() は, libc の共有ライブラリには無い (静的ライブラリの関数) ので,
@@ -62,7 +58,7 @@ TEST_PASSTHROUGH(int, setvbuf,
  * このモックになる (共有ライブラリの中の呼び出しは, 置き換えられない).
  */
 typedef void (*atexit_func_t)(void);
-FAKE_VALUE_FUNC(int, atexit, atexit_func_t);
+FAKE_VALUE_FUNC(int, atexit, atexit_func_t)
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
 extern void *__dso_handle;
 static struct test_inject inject_atexit; /**< atexit() に注入する失敗 */
@@ -82,21 +78,21 @@ pass_atexit(atexit_func_t func)
     }
     return __cxa_atexit((void (*)(void *))func, NULL, __dso_handle);
 }
-FAKE_VALUE_FUNC(int, connect_sock);
-FAKE_VALUE_FUNC(st_client, client_loop, int);
-FAKE_VALUE_FUNC(int, close_sock, int *);
+FAKE_VALUE_FUNC(int, connect_sock)
+FAKE_VALUE_FUNC(st_client, client_loop, int)
+FAKE_VALUE_FUNC(int, close_sock, int *)
 
 #define SOCKFD 5 /**< connect_sock() が返すソケット */
 
 /** 親子プロセスで共有する情報 */
 struct shared {
-    int parse_count; /**< parse_args() の呼び出し回数 */
-    int loop_count;  /**< client_loop() の呼び出し回数 */
-    int loop_sock;   /**< client_loop() のソケット */
-    int loop_signal; /**< client_loop() で g_sig_handled */
+    int parse_count;  /**< parse_args() の呼び出し回数 */
+    int loop_count;   /**< client_loop() の呼び出し回数 */
+    int loop_sock;    /**< client_loop() のソケット */
+    int loop_signal;  /**< client_loop() で g_sig_handled */
     int pipe_ignored; /**< client_loop() で SIGPIPE を無視している */
-    int close_count; /**< close_sock() の呼び出し回数 */
-    int close_sock;  /**< close_sock() のソケット */
+    int close_count;  /**< close_sock() の呼び出し回数 */
+    int close_sock;   /**< close_sock() のソケット */
 };
 
 /** main() (main.c) */
@@ -118,7 +114,7 @@ fake_parse_args(int argc, char **argv)
     (void)argc;
     (void)argv;
     shm->parse_count++;
-    if (raise_signo)
+    if (raise_signo != 0)
         (void)raise(raise_signo);
 }
 
@@ -207,7 +203,7 @@ teardown(void *data)
 static void
 run_main(void *arg)
 {
-    char *argv[] = { "calcc", NULL }; /* 引数 */
+    char *argv[] = {"calcc", NULL}; /* 引数 */
 
     (void)arg;
     (void)calcc_main(1, argv);
@@ -254,8 +250,7 @@ test_main_connect_failure(void)
     char out[256] = {0}; /* 出力 */
 
     connect_sock_fake.return_val = EX_NG;
-    TEST_ASSERT_INT(EX_CONNECT_ERR,
-                    test_run_child(run_main, NULL, NULL, out, sizeof(out)));
+    TEST_ASSERT_INT(EX_CONNECT_ERR, test_run_child(run_main, NULL, NULL, out, sizeof(out)));
     TEST_ASSERT_STR("Connect error\n", out);
     TEST_ASSERT_INT(0, shm->loop_count);
     /* 接続できなくても, atexit で close_sock() が呼ばれる */
@@ -303,7 +298,7 @@ static void
 run_main_atexit_failure(void *arg)
 {
     inject_atexit.count = 1;
-    inject_atexit.value = -1;
+    inject_atexit.value = -1LL;
     inject_atexit.err = ENOMEM;
     run_main(arg);
 }
@@ -315,14 +310,11 @@ TEST
 test_main_failure(void)
 {
     /* シグナルハンドラの設定と, バッファリングの設定に失敗しても, 続行する */
-    TEST_ASSERT_INT(EX_SUCCESS,
-                    test_run_child(run_main_failure, NULL, NULL, NULL, 0));
+    TEST_ASSERT_INT(EX_SUCCESS, test_run_child(run_main_failure, NULL, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->loop_count);
 
     /* atexit() に失敗すると, 終了する */
-    TEST_ASSERT_INT(EX_FAILURE,
-                    test_run_child(run_main_atexit_failure, NULL, NULL, NULL,
-                                   0));
+    TEST_ASSERT_INT(EX_FAILURE, test_run_child(run_main_atexit_failure, NULL, NULL, NULL, 0));
     PASS();
 }
 

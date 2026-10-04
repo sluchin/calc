@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef HELPER_H
@@ -28,7 +27,7 @@
 
 #include "calc.h"
 
-#define MAX_STRING  32 /**< 最大文字列 */
+#define MAX_STRING 32 /**< 最大文字列 */
 
 /** 文字列設定 */
 void set_string(calcinfo *calc, const char *str);
@@ -36,4 +35,3 @@ void set_string(calcinfo *calc, const char *str);
 void free_strings(void);
 
 #endif /* HELPER_H */
-

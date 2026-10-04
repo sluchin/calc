@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>    /* snprintf */
@@ -37,27 +36,24 @@
 #include "log.h"
 #include "fileio.h"
 
-#define BUF_SIZE 4100 /**< バッファサイズ */
+#define BUF_SIZE 4100u /**< バッファサイズ */
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* システムコールは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t);
+FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t)
 TEST_PASSTHROUGH(ssize_t, read, (int fd, void *buf, size_t n), (fd, buf, n))
-FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t);
-TEST_PASSTHROUGH(ssize_t, write, (int fd, const void *buf, size_t n),
-                 (fd, buf, n))
+FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t)
+TEST_PASSTHROUGH(ssize_t, write, (int fd, const void *buf, size_t n), (fd, buf, n))
 /* pipe() は, 引数が配列 (int[2]) と宣言されているので, ポインタとの違いを警告される */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-parameter"
-FAKE_VALUE_FUNC(int, pipe, int *);
+FAKE_VALUE_FUNC(int, pipe, int *)
 TEST_PASSTHROUGH(int, pipe, (int *pipefd), (pipefd))
 #pragma GCC diagnostic pop
-FAKE_VALUE_FUNC(int, fflush, FILE *);
-TEST_PASSTHROUGH(int, fflush, (FILE *fp), (fp))
-FAKE_VALUE_FUNC(int, close, int);
+FAKE_VALUE_FUNC(int, close, int)
 TEST_PASSTHROUGH(int, close, (int fd), (fd))
-FAKE_VALUE_FUNC(int, dup2, int, int);
+FAKE_VALUE_FUNC(int, dup2, int, int)
 TEST_PASSTHROUGH(int, dup2, (int oldfd, int newfd), (oldfd, newfd))
 
 /* プロトタイプ */
@@ -90,9 +86,9 @@ TEST test_close_fd_failure(void);
 
 /* 内部変数 */
 static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
-static int fd = -1;                   /**< ファイルディスクリプタ */
-static int pfd[] = { -1, -1 };        /**< パイプ */
-static char sendbuf[BUF_SIZE];        /**< 送信バッファ */
+static int fd = -1;                            /**< ファイルディスクリプタ */
+static int pfd[] = {-1, -1};                   /**< パイプ */
+static char sendbuf[BUF_SIZE];                 /**< 送信バッファ */
 
 /* 内部関数 */
 /** 受信プロセス起動 */
@@ -110,7 +106,7 @@ startup(void)
 {
     set_sig_handler();
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1] = '\0';
+    sendbuf[sizeof(sendbuf) - 1u] = '\0';
 }
 
 /**
@@ -127,7 +123,6 @@ setup(void *data)
     TEST_PASSTHROUGH_RESET(write);
     TEST_PASSTHROUGH_RESET(pipe);
     TEST_PASSTHROUGH_RESET(dup2);
-    TEST_PASSTHROUGH_RESET(fflush);
     TEST_PASSTHROUGH_RESET(close);
     FFF_RESET_HISTORY();
 }
@@ -140,6 +135,7 @@ setup(void *data)
 static void
 teardown(void *data)
 {
+    (void)data;     /* 使用しない */
     int retval = 0; /* 戻り値 */
 
     if (fd != -1) {
@@ -159,8 +155,8 @@ teardown(void *data)
     }
 
     if (testfile[0] != '\0') {
-        if (!access(testfile, W_OK)) { /* ファイルが存在する */
-            retval = chmod(testfile, S_IWUSR|S_IWGRP);
+        if (access(testfile, W_OK) == 0) { /* ファイルが存在する */
+            retval = chmod(testfile, S_IWUSR | S_IWGRP);
             if (retval < 0)
                 TEST_NOTIFY("chmod: %s(%d)", testfile, errno);
             retval = unlink(testfile);
@@ -178,7 +174,7 @@ TEST
 test_readn(void)
 {
 
-    ssize_t rlen = 0;              /* 受信バイト数 */
+    ssize_t rlen = 0L;             /* 受信バイト数 */
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステータス */
     char readbuf[sizeof(sendbuf)]; /* 受信バッファ */
@@ -193,7 +189,7 @@ test_readn(void)
 
     dbglog("parent");
     rlen = writen(STDERR_FILENO, sendbuf, sizeof(sendbuf));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("writen(%d)", errno);
     }
 
@@ -211,7 +207,7 @@ test_readn(void)
 TEST
 test_writen(void)
 {
-    ssize_t rlen = 0;              /* 受信バイト数 */
+    ssize_t rlen = 0L;             /* 受信バイト数 */
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステータス */
     char readbuf[sizeof(sendbuf)]; /* 受信バッファ */
@@ -227,7 +223,7 @@ test_writen(void)
     dbglog("parent");
     (void)memset(readbuf, 0, sizeof(readbuf));
     rlen = readn(fd, readbuf, sizeof(sendbuf));
-    if (rlen < 0) {
+    if (rlen < 0L) {
         TEST_FAIL("readn(%d)", errno);
     }
     TEST_ASSERT_STR(sendbuf, readbuf);
@@ -246,8 +242,8 @@ test_writen(void)
 TEST
 test_pipe_fd(void)
 {
-    ssize_t rlen = 0;              /* 受信バイト数 */
-    ssize_t wlen = 0;              /* 送信バイト数 */
+    ssize_t rlen = 0L;             /* 受信バイト数 */
+    ssize_t wlen = 0L;             /* 送信バイト数 */
     pid_t cpid = 0;                /* 子プロセスID */
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステータス */
@@ -268,7 +264,7 @@ test_pipe_fd(void)
         dbglog("child");
 
         wlen = writen(STDERR_FILENO, sendbuf, sizeof(sendbuf));
-        if (wlen < 0) {
+        if (wlen < 0L) {
             outlog("write: fd=%d", STDERR_FILENO);
             exit(EXIT_FAILURE);
         }
@@ -279,7 +275,7 @@ test_pipe_fd(void)
 
         (void)memset(readbuf, 0, sizeof(readbuf));
         rlen = readn(fd, readbuf, sizeof(sendbuf));
-        if (rlen < 0) {
+        if (rlen < 0L) {
             TEST_FAIL("read(%d)", errno);
         }
         TEST_ASSERT_STR(sendbuf, readbuf);
@@ -288,7 +284,7 @@ test_pipe_fd(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d(%d)", WEXITSTATUS(status), errno);
     }
 
@@ -309,8 +305,8 @@ TEST
 test_pipe_fd2(void)
 {
     int retval = 0;                /* 戻り値 */
-    ssize_t rlen = 0;              /* 受信バイト数 */
-    ssize_t wlen = 0;              /* 送信バイト数 */
+    ssize_t rlen = 0L;             /* 受信バイト数 */
+    ssize_t wlen = 0L;             /* 送信バイト数 */
     pid_t cpid = 0;                /* 子プロセスID */
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステータス */
@@ -342,11 +338,11 @@ test_pipe_fd2(void)
             exit(EXIT_FAILURE);
         }
         wlen = writen(STDIN_FILENO, sendbuf, sizeof(sendbuf));
-        if (wlen < 0) {
+        if (wlen < 0L) {
             outlog("write");
             exit(EXIT_FAILURE);
         }
-        dbglog("writen=%d, %s", wlen, sendbuf);
+        dbglog("writen=%zd, %s", wlen, sendbuf);
 
         if (dup2(oldfd, STDIN_FILENO) < 0)
             TEST_NOTIFY("dup2(%d)", errno);
@@ -366,10 +362,10 @@ test_pipe_fd2(void)
 
         (void)memset(readbuf, 0, sizeof(readbuf));
         rlen = readn(STDIN_FILENO, readbuf, sizeof(sendbuf));
-        if (rlen < 0) {
+        if (rlen < 0L) {
             TEST_FAIL("readn(%d)", errno);
         }
-        dbglog("readn=%d, %s", rlen, readbuf);
+        dbglog("readn=%zd, %s", rlen, readbuf);
 
         TEST_ASSERT_INT_MSG(EX_OK, retval, "return value");
         TEST_ASSERT_STR(sendbuf, readbuf);
@@ -378,7 +374,7 @@ test_pipe_fd2(void)
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
         dbglog("w=%d", (int)w);
-        if (WEXITSTATUS(status))
+        if (WEXITSTATUS(status) != 0)
             TEST_FAIL("status=%d(%d)", WEXITSTATUS(status), errno);
     }
 
@@ -424,7 +420,7 @@ test_redirect(void)
         TEST_FAIL("test_tmpname(%d)", errno);
     }
 
-    retval = creat(testfile, S_IRUSR|S_IRGRP);
+    retval = creat(testfile, S_IRUSR | S_IRGRP);
     if (retval < 0) {
         TEST_FAIL("create: %s(%d)", testfile, errno);
     }
@@ -441,41 +437,41 @@ TEST
 test_close_fd(void)
 {
     int retval = 0;              /* 戻り値 */
-    int fd[] = { -1, -1, -1 };   /* ファイルディスクリプタ */
+    int fds[] = {-1, -1, -1};    /* ファイルディスクリプタ */
     enum { FD1, FD2, FD3, MAX }; /* 配列要素 */
 
     /* 正常系 */
     int i;
     for (i = 0; i < MAX; i++) {
-        fd[i] = open("/dev/null", O_WRONLY|O_APPEND);
-        if (fd[i] < 0) {
-            TEST_FAIL("open=%d(%d)", fd[i], errno);
+        fds[i] = open("/dev/null", O_WRONLY | O_APPEND);
+        if (fds[i] < 0) {
+            TEST_FAIL("open=%d(%d)", fds[i], errno);
         }
     }
-    retval = close_fd(&fd[FD1], &fd[FD2], &fd[FD3], NULL);
-    TEST_ASSERT_INT(-1, fd[FD1]);
-    TEST_ASSERT_INT(-1, fd[FD2]);
-    TEST_ASSERT_INT(-1, fd[FD3]);
+    retval = close_fd(&fds[FD1], &fds[FD2], &fds[FD3], NULL);
+    TEST_ASSERT_INT(-1, fds[FD1]);
+    TEST_ASSERT_INT(-1, fds[FD2]);
+    TEST_ASSERT_INT(-1, fds[FD3]);
     TEST_ASSERT_INT_MSG(EX_OK, retval, "retrun value");
 
     /* 第二引数が-1の場合 */
-    fd[FD1] = open("/dev/null", O_WRONLY|O_APPEND);
-    if (fd[FD1] < 0) {
-        TEST_FAIL("open=%d(%d)", fd[FD1], errno);
+    fds[FD1] = open("/dev/null", O_WRONLY | O_APPEND);
+    if (fds[FD1] < 0) {
+        TEST_FAIL("open=%d(%d)", fds[FD1], errno);
     }
-    fd[FD3] = open("/dev/null", O_WRONLY|O_APPEND);
-    if (fd[FD3] < 0) {
-        TEST_FAIL("open=%d(%d)", fd[FD3], errno);
+    fds[FD3] = open("/dev/null", O_WRONLY | O_APPEND);
+    if (fds[FD3] < 0) {
+        TEST_FAIL("open=%d(%d)", fds[FD3], errno);
     }
-    retval = close_fd(&fd[FD1], &fd[FD2], &fd[FD3], NULL);
-    TEST_ASSERT_INT(-1, fd[FD1]);
-    TEST_ASSERT_INT(-1, fd[FD3]);
+    retval = close_fd(&fds[FD1], &fds[FD2], &fds[FD3], NULL);
+    TEST_ASSERT_INT(-1, fds[FD1]);
+    TEST_ASSERT_INT(-1, fds[FD3]);
     TEST_ASSERT_INT_MSG(EX_OK, retval, "retrun value");
 
     /* 異常系 */
-    fd[FD1] = 65535; /* オープンしていない */
-    retval = close_fd(&fd[FD1], NULL);
-    TEST_ASSERT_INT(-1, fd[FD1]);
+    fds[FD1] = 65535; /* オープンしていない */
+    retval = close_fd(&fds[FD1], NULL);
+    TEST_ASSERT_INT(-1, fds[FD1]);
     TEST_ASSERT_INT_MSG(EX_NG, retval, "retrun value");
     PASS();
 }
@@ -492,10 +488,10 @@ test_close_fd(void)
 static int
 read_child_process(char *readbuf, char *senddata, size_t len)
 {
-    ssize_t rlen = 0; /* 受信バイト数 */
-    pid_t cpid = 0;   /* 子プロセスID */
-    int f = 0;        /* ファイルディスクリプタ */
-    int retval = 0;   /* 戻り値 */
+    ssize_t rlen = 0L; /* 受信バイト数 */
+    pid_t cpid = 0;    /* 子プロセスID */
+    int f = 0;         /* ファイルディスクリプタ */
+    int retval = 0;    /* 戻り値 */
 
     f = pipe_fd(STDERR_FILENO);
     if (f < 0) {
@@ -513,14 +509,14 @@ read_child_process(char *readbuf, char *senddata, size_t len)
         dbglog("child");
 
         rlen = readn(f, readbuf, len);
-        if (rlen < 0) {
+        if (rlen < 0L) {
             outlog("readn: fds=%d", f);
             close_fd(&f, NULL);
             exit(EXIT_FAILURE);
         }
         dbglog("readn=%zd", rlen);
         retval = memcmp(senddata, readbuf, len);
-        if (retval) { /* 非0 */
+        if (retval != 0) { /* 非0 */
             outlog("memcmp: senddata=%p, readbuf=%p", senddata, readbuf);
             close_fd(&f, NULL);
             exit(EXIT_FAILURE);
@@ -542,9 +538,9 @@ read_child_process(char *readbuf, char *senddata, size_t len)
 static int
 write_child_process(char *buf, size_t len)
 {
-    ssize_t wlen = 0; /* 送信バイト数 */
-    pid_t cpid = 0;   /* 子プロセスID */
-    int f = 0;        /* ファイルディスクリプタ */
+    ssize_t wlen = 0L; /* 送信バイト数 */
+    pid_t cpid = 0;    /* 子プロセスID */
+    int f = 0;         /* ファイルディスクリプタ */
 
     f = pipe_fd(STDERR_FILENO);
     if (f < 0) {
@@ -562,7 +558,7 @@ write_child_process(char *buf, size_t len)
         dbglog("child");
 
         wlen = writen(STDERR_FILENO, buf, len);
-        if (wlen < 0) {
+        if (wlen < 0L) {
             outlog("write: fd=%d", STDERR_FILENO);
             close_fd(&f, NULL);
             exit(EXIT_FAILURE);
@@ -581,18 +577,17 @@ static void
 set_sig_handler(void)
 {
     /* シグナル無視 */
-    if (signal(SIGINT, SIG_IGN) < 0)
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGINT");
-    if (signal(SIGTERM, SIG_IGN) < 0)
+    if (signal(SIGTERM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGTERM");
-    if (signal(SIGQUIT, SIG_IGN) < 0)
+    if (signal(SIGQUIT, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGQUIT");
-    if (signal(SIGHUP, SIG_IGN) < 0)
+    if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGHUP");
-    if (signal(SIGALRM, SIG_IGN) < 0)
+    if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
         TEST_NOTIFY("SIGALRM");
 }
-
 
 /**
  * オープンしていない, 小さなファイルディスクリプタ番号を探す
@@ -619,7 +614,7 @@ unused_fd(void)
 TEST
 test_readn_failure(void)
 {
-    int p[2] = { -1, -1 }; /* パイプ */
+    int p[2] = {-1, -1};   /* パイプ */
     char readbuf[8] = {0}; /* 受信バッファ */
 
     /* 不正なファイルディスクリプタ */
@@ -629,9 +624,9 @@ test_readn_failure(void)
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    TEST_ASSERT_INT(2, write(p[1], "ab", 2));
+    TEST_ASSERT_INT(2, write(p[1], "ab", 2u));
     (void)close(p[1]);
-    TEST_ASSERT_INT(2, readn(p[0], readbuf, 4));
+    TEST_ASSERT_INT(2, readn(p[0], readbuf, 4u));
     TEST_ASSERT_STR("ab", readbuf);
     (void)close(p[0]);
     PASS();
@@ -643,17 +638,17 @@ test_readn_failure(void)
 TEST
 test_readn_interrupted(void)
 {
-    int p[2] = { -1, -1 }; /* パイプ */
+    int p[2] = {-1, -1};   /* パイプ */
     char readbuf[8] = {0}; /* 受信バッファ */
 
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    TEST_ASSERT_INT(3, write(p[1], "abc", 3));
+    TEST_ASSERT_INT(3, write(p[1], "abc", 3u));
 
     /* 1 回目は割り込まれるが, やり直して, 受信できる */
     TEST_INJECT(read, 0, 1, -1, EINTR);
-    TEST_ASSERT_INT(3, readn(p[0], readbuf, 3));
+    TEST_ASSERT_INT(3, readn(p[0], readbuf, 3u));
     TEST_ASSERT_INT(2, read_fake.call_count);
     TEST_ASSERT_STR("abc", readbuf);
     (void)close(p[0]);
@@ -668,7 +663,7 @@ TEST
 test_writen_failure(void)
 {
     /* 不正なファイルディスクリプタ */
-    TEST_ASSERT_INT(EX_NG, writen(-1, "abc", 3));
+    TEST_ASSERT_INT(EX_NG, writen(-1, "abc", 3u));
     PASS();
 }
 
@@ -678,7 +673,7 @@ test_writen_failure(void)
 TEST
 test_writen_interrupted(void)
 {
-    int p[2] = { -1, -1 }; /* パイプ */
+    int p[2] = {-1, -1};   /* パイプ */
     char readbuf[8] = {0}; /* 受信バッファ */
 
     if (pipe(p) < 0) {
@@ -687,7 +682,7 @@ test_writen_interrupted(void)
 
     /* 1 回目は割り込まれるが, やり直して, 送信できる */
     TEST_INJECT(write, 0, 1, -1, EINTR);
-    TEST_ASSERT_INT(3, writen(p[1], "abc", 3));
+    TEST_ASSERT_INT(3, writen(p[1], "abc", 3u));
     TEST_ASSERT_INT(2, write_fake.call_count);
     TEST_ASSERT_INT(3, read(p[0], readbuf, sizeof(readbuf)));
     TEST_ASSERT_STR("abc", readbuf);
@@ -728,10 +723,10 @@ test_pipe_fd_failure(void)
 TEST
 test_pipe_fd2_failure(void)
 {
-    int p[2] = { -1, -1 }; /* パイプ */
-    int oldfd = -1;        /* 退避用 */
+    int p[2] = {-1, -1};     /* パイプ */
+    int oldfd = -1;          /* 退避用 */
     int newfd = unused_fd(); /* オープンしていない */
-    int retval = 0;        /* 戻り値 */
+    int retval = 0;          /* 戻り値 */
 
     if (newfd < 0) {
         TEST_FAIL("unused_fd");
@@ -763,7 +758,7 @@ test_redirect_failure(void)
     /* ディレクトリは, 書込権限があっても, open() できない */
     TEST_ASSERT_INT(EX_NG, redirect(STDERR_FILENO, "/tmp"));
 
-    /* オープンしていないファイルディスクリプタ (fdopen, close の失敗) */
+    /* オープンしていないファイルディスクリプタ (close の失敗) */
     TEST_ASSERT_INT(EX_OK, redirect(fdnum, "/dev/null"));
     (void)close(fdnum);
 
@@ -771,15 +766,13 @@ test_redirect_failure(void)
     TEST_INJECT(dup2, 0, 1, -1, EBADF);
     TEST_ASSERT_INT(EX_NG, redirect(fdnum, "/dev/null"));
 
-    /* fflush() と, 最後の close() に失敗しても, ログを出力するだけ */
+    /* 最後の close() に失敗しても, ログを出力するだけ */
     fdnum = open("/dev/null", O_RDWR);
     if (fdnum < 0) {
         TEST_FAIL("open(%d)", errno);
     }
-    TEST_INJECT(fflush, 0, 1, EOF, EIO);
     TEST_INJECT(close, 1, 1, -1, EIO); /* 1 回目は, 元のファイルディスクリプタ */
     TEST_ASSERT_INT(EX_OK, redirect(fdnum, "/dev/null"));
-    TEST_ASSERT_INJECTED(fflush);
     TEST_ASSERT_INJECTED(close);
     (void)close(fdnum);
     PASS();
@@ -791,7 +784,7 @@ test_redirect_failure(void)
 TEST
 test_close_fd_failure(void)
 {
-    int fds[] = { -1, 9999 }; /* 2 つ目は, オープンしていない */
+    int fds[] = {-1, 9999}; /* 2 つ目は, オープンしていない */
 
     fds[0] = open("/dev/null", O_WRONLY);
     if (fds[0] < 0) {

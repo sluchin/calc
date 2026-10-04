@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef DATA_H
@@ -31,7 +30,7 @@
 #include "def.h"
 
 /** 送受信するデータ長の上限 (これを超えるヘッダは, 不正として受け付けない) */
-#define MAX_DATA_LENGTH 65536
+#define MAX_DATA_LENGTH 65536u
 
 /** ヘッダ構造体 */
 struct header {
@@ -47,17 +46,14 @@ struct client_data {
 
 /** サーバデータ構造体 */
 struct server_data {
-    struct header hd;         /**< ヘッダ構造体 */
-    unsigned char answer[1];  /**< データバッファ */
+    struct header hd;        /**< ヘッダ構造体 */
+    unsigned char answer[1]; /**< データバッファ */
 };
 
 /** クライアントデータ構造体設定 */
-ssize_t set_client_data(struct client_data **dt,
-                        const unsigned char *buf, const size_t len);
+ssize_t set_client_data(struct client_data **dt, const unsigned char *buf, const size_t len);
 
 /** サーバデータ構造体設定 */
-ssize_t set_server_data(struct server_data **dt,
-                        const unsigned char *buf, const size_t len);
+ssize_t set_server_data(struct server_data **dt, const unsigned char *buf, const size_t len);
 
 #endif /* DATA_H */
-

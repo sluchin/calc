@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2010-2011 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdlib.h>     /* strtol */
@@ -34,9 +33,9 @@
 #include <errno.h>      /* errno */
 #include <fcntl.h>      /* fcntl */
 #ifdef __cplusplus
-# define __STDC_FORMAT_MACROS
+#  define __STDC_FORMAT_MACROS
 #endif
-#include <inttypes.h>   /* uint16_t PRIu16 */
+#include <inttypes.h> /* uint16_t PRIu16 */
 
 #include "log.h"
 #include "net.h"
@@ -57,24 +56,22 @@ set_hostname(struct sockaddr_in *addr, const char *host)
 
     dbglog("start: host=%s", host);
 
-    if (!addr || !host)
+    if ((addr == NULL) || (host == NULL))
         return EX_NG;
 
     (void)memset(&s_addr, 0, sizeof(struct in_addr));
 
     retval = inet_aton(host, &s_addr);
-    if (!retval) { /* IPアドレスではない */
+    if (retval == 0) { /* IPアドレスではない */
         dbglog("inet_aton: host=%s", host);
         hp = gethostbyname(host);
-        if (!hp) { /* ホスト名でもない */
+        if (hp == NULL) { /* ホスト名でもない */
             outlog("gethostbyname: host=%s", host);
             return EX_NG;
         }
-        dbglog("%p s_addr=%zu h_length=%d",
-               &s_addr, sizeof(s_addr), hp->h_length);
+        dbglog("%p s_addr=%zu h_length=%d", (const void *)&s_addr, sizeof(s_addr), hp->h_length);
         /* ホスト名を設定 */
-        (void)memcpy(&s_addr, (struct in_addr *)*hp->h_addr_list,
-                     hp->h_length);
+        (void)memcpy(&s_addr, *hp->h_addr_list, (size_t)hp->h_length);
     }
 
     /* IPアドレスを設定 */
@@ -96,36 +93,36 @@ int
 set_port(struct sockaddr_in *addr, const char *port)
 {
     struct servent *sp = NULL; /* サービス情報構造体 */
-    uint16_t portno = 0;       /* ポート番号 */
-    long value = 0;            /* strtol戻り値 */
+    uint16_t portno = 0u;      /* ポート番号 */
+    long value = 0L;           /* strtol戻り値 */
     const int base = 10;       /* 基数 */
 
-    dbglog("start: addr=%p, port=%s", addr, port);
+    dbglog("start: addr=%p, port=%s", (const void *)addr, port);
 
-    if (!addr || !port)
+    if ((addr == NULL) || (port == NULL))
         return EX_NG;
 
-    if (isdigit((unsigned char)port[0])) { /* 先頭が数字 */
+    if (isdigit((unsigned char)port[0]) != 0) { /* 先頭が数字 */
         /* uint16_t にキャストすると, 65616 が 80 になるので, 範囲は long で確認する */
         value = strtol(port, NULL, base);
         dbglog("value=%ld", value);
-        if (value <= 0 || 65535 < value) {
+        if ((value <= 0L) || (65535L < value)) {
             outlog("portno=%ld", value);
             return EX_NG;
         }
         portno = (uint16_t)value;
-        dbglog("portno=%"PRIu16", 0x%"PRIx16"", portno, portno);
-        dbglog("portno=0x%"PRIx16"", htons(portno));
+        dbglog("portno=%" PRIu16 ", 0x%" PRIx16 "", portno, portno);
+        dbglog("portno=0x%" PRIx16 "", htons(portno));
         addr->sin_port = (u_short)htons(portno);
     } else {
         sp = getservbyname(port, "tcp");
-        if (!sp) {
+        if (sp == NULL) {
             outlog("getservbyname: port=%s", port);
             return EX_NG;
         }
-        addr->sin_port = sp->s_port;
+        addr->sin_port = (in_port_t)sp->s_port;
     }
-    dbglog("port=%"PRIu16"", ntohs((uint16_t)addr->sin_port));
+    dbglog("port=%" PRIu16 "", ntohs((uint16_t)addr->sin_port));
     return EX_OK;
 }
 
@@ -144,10 +141,10 @@ set_block(int fd, blockmode mode)
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
-        outlog("fcntl=0x%x", flags);
+        outlog("fcntl=0x%x", (unsigned int)flags);
         return EX_NG;
     }
-    dbglog("fcntl=0x%x", flags);
+    dbglog("fcntl=0x%x", (unsigned int)flags);
 
     if (mode == NONBLOCK) { /* ノンブロッキング */
         retval = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
@@ -162,15 +159,15 @@ set_block(int fd, blockmode mode)
             return EX_NG;
         }
     } else { /* no mode */
-        outlog("mode=%d", mode);
+        outlog("mode=%u", mode);
         return EX_NG;
     }
 
 #ifdef _DEBUG
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
-        dbglog("fcntl=0x%x", flags);
-    dbglog("fcntl=0x%x", flags);
+        dbglog("fcntl=0x%x", (unsigned int)flags);
+    dbglog("fcntl=0x%x", (unsigned int)flags);
 #endif /* _DEBUG */
 
     return EX_OK;
@@ -187,38 +184,35 @@ set_block(int fd, blockmode mode)
 int
 send_data(const int sock, const void *sdata, size_t *length)
 {
-    ssize_t len = 0;                 /* send戻り値 */
-    size_t left = 0;                 /* 残りのバイト数 */
+    ssize_t len = 0L;                /* send戻り値 */
+    size_t left = 0u;                /* 残りのバイト数 */
     const unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: sdata=%p, length=%zu", sdata, *length);
 
-    ptr = (unsigned char *)sdata;
+    ptr = (const unsigned char *)sdata;
     left = *length;
     /* 全て送信するまで繰り返す (send は, 少ないバイト数を返すことがある) */
-    while (left > 0) {
+    while (left > 0u) {
         len = send(sock, ptr, left, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
-        if (len <= 0) {
+        if (len <= 0L) {
             /* 割り込みや, 一時的に送信できないときは, やり直す */
-            if ((errno == EINTR) ||
-                (errno == EAGAIN) || (errno == EWOULDBLOCK))
-                len = 0;
+            if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+                len = 0L;
             else
                 goto error_handler;
         }
-        left -= len;
+        left -= (size_t)len;
         ptr += len;
     }
     *length -= left;
-    dbglog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
-           len, sock, ptr, left, *length);
+    dbglog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu", len, sock, ptr, left, *length);
     return EX_OK;
 
 error_handler:
     *length -= left;
-    outlog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
-           len, sock, ptr, left, *length);
+    outlog("send=%zd, sock=%d, ptr=%p, left=%zu, length=%zu", len, sock, ptr, left, *length);
     return EX_NG;
 }
 
@@ -233,41 +227,38 @@ error_handler:
 int
 recv_data(const int sock, void *rdata, size_t *length)
 {
-    ssize_t len = 0;           /* recv戻り値 */
-    size_t left = 0;           /* 残りのバイト数 */
+    ssize_t len = 0L;          /* recv戻り値 */
+    size_t left = 0u;          /* 残りのバイト数 */
     unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: rdata=%p, length=%zu", rdata, *length);
 
     ptr = (unsigned char *)rdata;
     left = *length;
-    while (left > 0) {
+    while (left > 0u) {
         len = recv(sock, ptr, left, 0);
         dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
-        if (len < 0) { /* エラー */
+        if (len < 0L) { /* エラー */
             /* 割り込みや, 一時的に受信できないときは, やり直す */
-            if ((errno == EINTR) ||
-                (errno == EAGAIN) || (errno == EWOULDBLOCK))
-                len = 0;
+            if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+                len = 0L;
             else
                 goto error_handler;
-        } else if (len == 0) { /* 接続先がシャットダウンした */
+        } else if (len == 0L) { /* 接続先がシャットダウンした */
             outlog("The socket is not connected.");
             goto error_handler;
         } else { /* 正常時 */
-            left -= len;
+            left -= (size_t)len;
             ptr += len;
         }
     }
     *length -= left;
-    dbglog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
-           len, sock, ptr, left, *length);
+    dbglog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu", len, sock, ptr, left, *length);
     return EX_OK;
 
 error_handler:
     *length -= left;
-    outlog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu",
-           len, sock, ptr, left, *length);
+    outlog("recv=%zd, sock=%d, ptr=%p, left=%zu, length=%zu", len, sock, ptr, left, *length);
     return EX_NG;
 }
 
@@ -292,7 +283,7 @@ recv_data_new(const int sock, size_t *length)
 
     /* メモリ確保 */
     rdata = malloc(len);
-    if (!rdata) {
+    if (rdata == NULL) {
         outlog("malloc: len= %zu", len);
         return NULL;
     }
@@ -301,7 +292,7 @@ recv_data_new(const int sock, size_t *length)
     /* データ受信 */
     retval = recv_data(sock, rdata, &len);
     if (retval < 0) { /* エラー */
-        *length = 0;
+        *length = 0u;
         if (rdata != NULL) {
             free(rdata);
         }
@@ -339,4 +330,3 @@ close_sock(int *sock)
     *sock = -1;
     return EX_OK;
 }
-

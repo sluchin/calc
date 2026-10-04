@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2026 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,8 +19,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>  /* snprintf */
@@ -36,21 +35,24 @@
 #include "server.h"
 #include "option.h"
 
-DEFINE_FFF_GLOBALS;
+DEFINE_FFF_GLOBALS
 
 /* getopt_long() は, モックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
-FAKE_VALUE_FUNC(int, getopt_long, int, char *const *, const char *,
-                const struct option *, int *);
-TEST_PASSTHROUGH(int, getopt_long,
-                 (int argc, char *const *argv, const char *shortopts,
-                  const struct option *longopts, int *longindex),
+FAKE_VALUE_FUNC(int, getopt_long, int, char *const *, const char *, const struct option *, int *)
+TEST_PASSTHROUGH(int,
+                 getopt_long,
+                 (int argc,
+                  char *const *argv,
+                  const char *shortopts,
+                  const struct option *longopts,
+                  int *longindex),
                  (argc, argv, shortopts, longopts, longindex))
 
 /* option.c が呼び出す, calc.c と server.c の関数は, モックにする */
-FAKE_VOID_FUNC(set_digit, long);
-FAKE_VALUE_FUNC(int, set_port_string, const char *);
+FAKE_VOID_FUNC(set_digit, long)
+FAKE_VALUE_FUNC(int, set_port_string, const char *)
 
-#define BUF_SIZE 1024 /**< バッファサイズ */
+#define BUF_SIZE 1024u /**< バッファサイズ */
 
 /** parse_args() の引数 */
 struct args {
@@ -110,7 +112,7 @@ run_parse_args(void *arg)
 static int
 exec_parse_args(char *out, size_t size, int argc, char **argv)
 {
-    struct args a = { argc, argv }; /* 引数 */
+    struct args a = {argc, argv}; /* 引数 */
 
     return test_run_child(run_parse_args, &a, NULL, out, size);
 }
@@ -121,8 +123,8 @@ exec_parse_args(char *out, size_t size, int argc, char **argv)
 TEST
 test_parse_args_digit(void)
 {
-    char *argv1[] = { "testprog", "-d", "5", NULL }; /* 引数 (-d 5) */
-    char *argv2[] = { "testprog", "--digit=10", NULL }; /* 引数 (--digit=10) */
+    char *argv1[] = {"testprog", "-d", "5", NULL};    /* 引数 (-d 5) */
+    char *argv2[] = {"testprog", "--digit=10", NULL}; /* 引数 (--digit=10) */
 
     /* ショートオプション */
     parse_args(3, argv1);
@@ -143,23 +145,21 @@ test_parse_args_digit(void)
 TEST
 test_parse_args_digit_failure(void)
 {
-    char out[BUF_SIZE] = {0};                 /* 出力 */
-    char maxplus[16] = {0};                   /* MAX_DIGIT + 1 */
-    char *argv0[] = { "testprog", "-d", "0", NULL }; /* 引数 (-d 0) */
-    char *argv1[] = { "testprog", "-d", "-1", NULL }; /* 引数 (-d -1) */
-    char *argv2[] = { "testprog", "-d", "abc", NULL }; /* 引数 (-d abc) */
-    char *argv3[] = { "testprog", "-d", maxplus, NULL }; /* 引数 (-d maxplus) */
-    char *argv4[] = { "testprog", "-d", NULL }; /* 引数 (-d) */
-    char **argvs[] = { argv0, argv1, argv2, argv3 }; /* 引数の配列 */
-    int argcs[] = { 3, 3, 3, 3 }; /* 引数の数 */
+    char out[BUF_SIZE] = {0};                          /* 出力 */
+    char maxplus[16] = {0};                            /* MAX_DIGIT + 1 */
+    char *argv0[] = {"testprog", "-d", "0", NULL};     /* 引数 (-d 0) */
+    char *argv1[] = {"testprog", "-d", "-1", NULL};    /* 引数 (-d -1) */
+    char *argv2[] = {"testprog", "-d", "abc", NULL};   /* 引数 (-d abc) */
+    char *argv3[] = {"testprog", "-d", maxplus, NULL}; /* 引数 (-d maxplus) */
+    char *argv4[] = {"testprog", "-d", NULL};          /* 引数 (-d) */
+    char **argvs[] = {argv0, argv1, argv2, argv3};     /* 引数の配列 */
+    int argcs[] = {3, 3, 3, 3};                        /* 引数の数 */
 
-    (void)snprintf(maxplus, sizeof(maxplus), "%ld", MAX_DIGIT + 1);
+    (void)snprintf(maxplus, sizeof(maxplus), "%ld", MAX_DIGIT + 1L);
 
     unsigned int i;
-    for (i = 0; i < NELEMS(argvs); i++) {
-        TEST_ASSERT_INT_MSG(EXIT_FAILURE,
-                            exec_parse_args(out, sizeof(out), argcs[i],
-                                            argvs[i]),
+    for (i = 0u; i < NELEMS(argvs); i++) {
+        TEST_ASSERT_INT_MSG(EXIT_FAILURE, exec_parse_args(out, sizeof(out), argcs[i], argvs[i]),
                             "argv[2]=%s", argvs[i][2]);
         TEST_ASSERT_MATCH("Digits is 1-[0-9]+\\.", out);
     }
@@ -177,8 +177,8 @@ test_parse_args_digit_failure(void)
 TEST
 test_parse_args_non_option(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv[] = { "testprog", "abc", "def", NULL }; /* 引数 (abc def) */
+    char out[BUF_SIZE] = {0};                        /* 出力 */
+    char *argv[] = {"testprog", "abc", "def", NULL}; /* 引数 (abc def) */
 
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 3, argv));
     TEST_ASSERT_STR("non-option ARGV-elements: abc def \n", out);
@@ -191,9 +191,9 @@ test_parse_args_non_option(void)
 TEST
 test_print_help(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv1[] = { "testprog", "-h", NULL }; /* 引数 (-h) */
-    char *argv2[] = { "testprog", "--help", NULL }; /* 引数 (--help) */
+    char out[BUF_SIZE] = {0};                     /* 出力 */
+    char *argv1[] = {"testprog", "-h", NULL};     /* 引数 (-h) */
+    char *argv2[] = {"testprog", "--help", NULL}; /* 引数 (--help) */
 
     /* 準備をして, 関数を実行し, 結果を確認する */
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 2, argv1));
@@ -210,9 +210,9 @@ test_print_help(void)
 TEST
 test_print_version(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv1[] = { "testprog", "-V", NULL }; /* 引数 (-V) */
-    char *argv2[] = { "testprog", "--version", NULL }; /* 引数 (--version) */
+    char out[BUF_SIZE] = {0};                        /* 出力 */
+    char *argv1[] = {"testprog", "-V", NULL};        /* 引数 (-V) */
+    char *argv2[] = {"testprog", "--version", NULL}; /* 引数 (--version) */
 
     /* 準備をして, 関数を実行し, 結果を確認する */
     TEST_ASSERT_INT(EXIT_SUCCESS, exec_parse_args(out, sizeof(out), 2, argv1));
@@ -228,8 +228,8 @@ test_print_version(void)
 TEST
 test_parse_error(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv[] = { "testprog", "-x", NULL }; /* 引数 (-x) */
+    char out[BUF_SIZE] = {0};                /* 出力 */
+    char *argv[] = {"testprog", "-x", NULL}; /* 引数 (-x) */
 
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 2, argv));
     TEST_ASSERT_MATCH("Try `getopt --help' for more information", out);
@@ -242,9 +242,9 @@ test_parse_error(void)
 TEST
 test_parse_args_port(void)
 {
-    char *argv0[] = { "testprog", NULL }; /* 引数 */
-    char *argv1[] = { "testprog", "-p", "8080", NULL }; /* 引数 (-p 8080) */
-    char *argv2[] = { "testprog", "--port=http", NULL }; /* 引数 (--port=http) */
+    char *argv0[] = {"testprog", NULL};                /* 引数 */
+    char *argv1[] = {"testprog", "-p", "8080", NULL};  /* 引数 (-p 8080) */
+    char *argv2[] = {"testprog", "--port=http", NULL}; /* 引数 (--port=http) */
 
     /* 指定しない場合は, デフォルトのポート番号 */
     parse_args(1, argv0);
@@ -272,9 +272,9 @@ test_parse_args_port(void)
 TEST
 test_parse_args_port_failure(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv[] = { "testprog", "-p", "1234567", NULL }; /* 引数 (-p 1234567) */
-    int seq[] = { 0, -1 }; /* デフォルトは成功, -p の指定は失敗 */
+    char out[BUF_SIZE] = {0};                           /* 出力 */
+    char *argv[] = {"testprog", "-p", "1234567", NULL}; /* 引数 (-p 1234567) */
+    int seq[] = {0, -1};                                /* デフォルトは成功, -p の指定は失敗 */
 
     SET_RETURN_SEQ(set_port_string, seq, 2);
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 3, argv));
@@ -293,8 +293,8 @@ test_parse_args_port_failure(void)
 TEST
 test_parse_args_debug(void)
 {
-    char *argv1[] = { "testprog", "-g", NULL }; /* 引数 (-g) */
-    char *argv2[] = { "testprog", "--debug", NULL }; /* 引数 (--debug) */
+    char *argv1[] = {"testprog", "-g", NULL};      /* 引数 (-g) */
+    char *argv2[] = {"testprog", "--debug", NULL}; /* 引数 (--debug) */
 
     /* 準備をして, 関数を実行し, 結果を確認する */
     ASSERT_FALSE(g_gflag);
@@ -314,8 +314,8 @@ test_parse_args_debug(void)
 TEST
 test_parse_args_internal_error(void)
 {
-    char out[BUF_SIZE] = {0}; /* 出力 */
-    char *argv[] = { "testprog", NULL }; /* 引数 */
+    char out[BUF_SIZE] = {0};          /* 出力 */
+    char *argv[] = {"testprog", NULL}; /* 引数 */
 
     TEST_INJECT(getopt_long, 0, 1, 'z', 0);
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 1, argv));

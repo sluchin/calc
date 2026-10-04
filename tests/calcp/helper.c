@@ -8,9 +8,9 @@
  *
  * Copyright (C) 2011-2018 Tetsuya Higashi. All Rights Reserved.
  */
-/* This program is free software; you can redistribute it and/or modify
+/* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -19,10 +19,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 
 #include <stdio.h>  /* snprintf */
 #include <stdlib.h> /* free exit */
@@ -38,7 +36,7 @@
 
 /* 内部変数 */
 static char *strings[MAX_STRINGS]; /**< 確保した文字列 */
-static size_t nstrings = 0;        /**< 確保した文字列数 */
+static size_t nstrings = 0u;       /**< 確保した文字列数 */
 
 /**
  * 文字列設定
@@ -49,7 +47,7 @@ static size_t nstrings = 0;        /**< 確保した文字列数 */
 void
 set_string(calcinfo *calc, const char *str)
 {
-    size_t length = 0;          /* 文字列長 */
+    size_t length = 0u;         /* 文字列長 */
     unsigned char *expr = NULL; /* 式 */
     int retval = 0;             /* 戻り値 */
 
@@ -59,7 +57,7 @@ set_string(calcinfo *calc, const char *str)
         exit(EXIT_FAILURE);
     }
     expr = (unsigned char *)strndup(str, length);
-    if (!expr) {
+    if (expr == NULL) {
         (void)printf("set_string: strndup=%p\n", (void *)expr);
         exit(EXIT_FAILURE);
     }
@@ -68,8 +66,7 @@ set_string(calcinfo *calc, const char *str)
     calc->ptr = expr;
 
     /* フォーマット設定 */
-    retval = snprintf(calc->fmt, sizeof(calc->fmt),
-                      "%s%ld%s", "%.", 12L, "g");
+    retval = snprintf(calc->fmt, sizeof(calc->fmt), "%s%ld%s", "%.", 12L, "g");
     if (retval < 0) {
         (void)printf("set_string: snprintf\n");
         exit(EXIT_FAILURE);
@@ -88,9 +85,9 @@ free_strings(void)
 {
     size_t i;
 
-    for (i = 0; i < nstrings; i++) {
+    for (i = 0u; i < nstrings; i++) {
         free(strings[i]);
         strings[i] = NULL;
     }
-    nstrings = 0;
+    nstrings = 0u;
 }
