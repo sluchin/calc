@@ -23,12 +23,12 @@
  */
 
 #include <stdio.h>  /* snprintf */
-#include <stdlib.h> /* free */
 #include <string.h> /* memcpy memset strdup strlen */
 #include <unistd.h> /* STDIN_FILENO */
 
 #include "def.h"
 #include "log.h"
+#include "memfree.h"
 #include "term.h"
 
 #define BUF_SIZE 512u /**< バッファサイズ */
@@ -210,9 +210,7 @@ sys_print_termattr(const int level,
 
     closelog();
 
-    if (result != NULL)
-        free(result);
-    result = NULL;
+    memfree(&result, NULL);
 }
 
 /**

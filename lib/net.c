@@ -38,6 +38,7 @@
 #include <inttypes.h> /* uint16_t PRIu16 */
 
 #include "log.h"
+#include "memfree.h"
 #include "net.h"
 
 /**
@@ -293,10 +294,7 @@ recv_data_new(const int sock, size_t *length)
     retval = recv_data(sock, rdata, &len);
     if (retval < 0) { /* エラー */
         *length = 0u;
-        if (rdata != NULL) {
-            free(rdata);
-        }
-        rdata = NULL;
+        memfree(&rdata, NULL);
         return rdata;
     }
 

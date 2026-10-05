@@ -145,7 +145,7 @@ main_loop(void)
         dbgdump(expr, strlen((char *)expr) + 1u, "stdin: expr=%p, strlen=%zu", expr,
                 strlen((char *)expr) + 1u);
 
-        if (strcmp((char *)expr, "quit") == 0 || strcmp((char *)expr, "exit") == 0)
+        if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
             break;
 
         (void)memset(&calc, 0, sizeof(calcinfo));

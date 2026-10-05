@@ -53,7 +53,7 @@ get_errormsg(calcinfo *calc)
     assert(MAXERROR == NELEMS(errormsg));
 
     /* エラーコードが範囲外なら, メッセージはない */
-    if (calc->errorcode <= E_NONE || MAXERROR <= calc->errorcode)
+    if ((calc->errorcode <= E_NONE) || (MAXERROR <= calc->errorcode))
         return NULL;
 
     dbglog("errormsg=%s, errorcode=%d", errormsg[calc->errorcode], (int)calc->errorcode);

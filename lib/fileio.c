@@ -217,7 +217,7 @@ redirect(int fd, const char *path)
     int newfd = 0;  /* dup2戻り値 (リダイレクト先の fd) */
     int retval = 0; /* 戻り値 */
 
-    if (fd < 0 || path == NULL)
+    if ((fd < 0) || (path == NULL))
         return EX_NG;
 
     /* 書込権限の確認 */
@@ -279,7 +279,7 @@ close_fd(int *fd, ...)
     dbglog("start");
 
     /* 最初のファイルディスクリプタ */
-    if (fd != NULL && *fd >= 0) {
+    if ((fd != NULL) && (*fd >= 0)) {
         dbglog("%p fd=%d", (const void *)fd, *fd);
         retval = close(*fd);
         if (retval < 0) {
