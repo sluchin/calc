@@ -9,7 +9,6 @@
   `tests/lib/test_net.c` の `test_send_data_interrupted` `test_recv_data_interrupted` は, デバッグビルドでは, スキップしている.
 - [ ] テストのカバレッジの残りは, 分岐 (現在 95.7%). 行は 100% (`make coverage` で確認できる). `calc/func.c` の到達しない `default:` は, `GCOVR_EXCL_START` で, 集計から外している.
 - [ ] 標準出力をリダイレクトしている間にテストが失敗すると, メッセージが見えなくなる. (`tests/calcc/test_client.c` など)
-- [ ] `lib/log.c` の `free(strings)` (2 か所) を、`memfree()` にする。`memfree()` の中の `dbglog` が `log.c` を呼ぶので、ログ出力の途中で再帰しないようにしてから、置き換える。
 
 ## 対応済み
 
