@@ -80,12 +80,12 @@ void set_digit(long dgt);
 #ifdef UNITTEST
 /** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testcalc {
-    void (*readch)(calcinfo *calc);                   /**< 1文字読み込み */
-    double (*expression)(calcinfo *calc);             /**< 式 */
-    double (*term)(calcinfo *calc);                   /**< 項 */
-    double (*factor)(calcinfo *calc);                 /**< 因子 */
-    double (*token)(calcinfo *calc);                  /**< 数または関数 */
-    double (*number)(calcinfo *calc);                 /**< 文字列を数値に変換 */
+    void (*readch)(calcinfo *calc);                       /**< 1文字読み込み */
+    double (*expression)(calcinfo *calc);                 /**< 式 */
+    double (*term)(calcinfo *calc);                       /**< 項 */
+    double (*factor)(calcinfo *calc);                     /**< 因子 */
+    double (*token)(calcinfo *calc);                      /**< 数または関数 */
+    double (*number)(calcinfo *calc);                     /**< 文字列を数値に変換 */
     int (*get_strlen)(const double val, const char *fmt); /**< 文字数取得 */
 };
 /** 内部関数の関数ポインタ構造体型 (単体テスト用) */

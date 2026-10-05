@@ -61,7 +61,7 @@ TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (f
 typedef void (*atexit_func_t)(void);
 FAKE_VALUE_FUNC(int, atexit, atexit_func_t)
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
-extern void *__dso_handle; /**< 共有オブジェクトのハンドル (__cxa_atexit() に渡す) */
+extern void *__dso_handle;               /**< 共有オブジェクトのハンドル (__cxa_atexit() に渡す) */
 static struct test_inject inject_atexit; /**< atexit() に注入する失敗 */
 /**
  * atexit() の素通し (失敗を注入できる)

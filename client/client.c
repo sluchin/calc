@@ -144,7 +144,16 @@ connect_sock(void)
     }
 
     /* コネクト */
+    /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
+     * キャストが, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     retval = connect(sock, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (retval < 0) {
         outlog("connect=%d, sock=%d", retval, sock);
         /* ソケットクローズ */

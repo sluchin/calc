@@ -54,7 +54,7 @@ typedef struct _thread_data thread_data;
 int set_port_string(const char *port);
 
 /* ソケット接続 */
-int server_sock();
+int server_sock(void);
 
 /* 接続受付 */
 void server_loop(int sock);
