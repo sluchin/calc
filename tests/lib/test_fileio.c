@@ -416,6 +416,10 @@ test_redirect(void)
     TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: path=null");
 
     /* 書込権限なし */
+    /* root は, ファイルの権限に関係なく, access(W_OK) が成功するので, この確認は行わない */
+    if (geteuid() == 0)
+        PASS();
+
     if (test_tmpname(testfile) < 0) {
         TEST_FAIL("test_tmpname(%d)", errno);
     }
