@@ -40,7 +40,7 @@
 #include "fileio.h"
 #include "log.h"
 
-#define BUF_SIZE 2048u /**< バッファサイズ */
+#define BUF_SIZE 2048U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -139,7 +139,7 @@ startup(void)
     (void)memset(dump, 0, sizeof(dump));
 
     unsigned int i;
-    for (i = 0u; i < sizeof(dump); i++) {
+    for (i = 0U; i < sizeof(dump); i++) {
         dump[i] = hex++;
     }
 }
@@ -348,7 +348,7 @@ test_dump_log(void)
     TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
-    result_ok = dump_log(NULL, 0u, "%s[%d]: %s(%s)", "filename", 15, "function", "test");
+    result_ok = dump_log(NULL, 0U, "%s[%d]: %s(%s)", "filename", 15, "function", "test");
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
     PASS();
@@ -387,7 +387,7 @@ test_dump_sys(void)
 
     /* 異常系 */
     result_ok = dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function",
-                         NULL, 0u, "%s", "test");
+                         NULL, 0U, "%s", "test");
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
     PASS();
@@ -425,7 +425,7 @@ test_dump_file(void)
     TEST_ASSERT_INT_MSG(EX_OK, result_ok, "return value");
 
     /* 異常系 */
-    result_ok = dump_file("program", testfile, NULL, 0u);
+    result_ok = dump_file("program", testfile, NULL, 0U);
 
     TEST_ASSERT_INT_MSG(EX_NG, result_ok, "return value");
 
@@ -500,15 +500,15 @@ test_print_trace(void)
 static void
 set_print_hex(char *buf, size_t len)
 {
-    size_t length = 0u; /* 文字列長(一行) */
-    size_t total = 0u;  /* 文字列長(全て) */
+    size_t length = 0U; /* 文字列長(一行) */
+    size_t total = 0U;  /* 文字列長(全て) */
 
     unsigned int i;
-    for (i = 0u; i < NELEMS(print_hex); i++) {
+    for (i = 0U; i < NELEMS(print_hex); i++) {
         length = strlen(print_hex[i]);
-        strncat(buf, print_hex[i], len - total - 1u);
+        strncat(buf, print_hex[i], len - total - 1U);
         total += length;
-        strncat(buf, "\n", len - total - 1u);
+        strncat(buf, "\n", len - total - 1U);
         total += strlen("\n");
     }
     (void)strcat(buf, "\n");
@@ -536,7 +536,7 @@ match_print_hex_sys(const char *actual, const char *prefix)
     (void)snprintf(pattern, sizeof(pattern), "^%s$", prefix);
 
     unsigned int i;
-    for (i = 0u; i < NELEMS(print_hex); i++) {
+    for (i = 0U; i < NELEMS(print_hex); i++) {
         pos = strstr(line, print_hex[i]);
         if (pos == NULL)
             return 0;
@@ -672,7 +672,7 @@ test_dump_log_failure(void)
     TEST_ASSERT_INJECTED(vsnprintf);
 
     /* 16 バイトに満たない行を, 空白で埋める */
-    TEST_ASSERT_INT(EX_OK, dump_log(dump, 3u, "%s", "test"));
+    TEST_ASSERT_INT(EX_OK, dump_log(dump, 3U, "%s", "test"));
     PASS();
 }
 
@@ -692,7 +692,7 @@ test_dump_sys_failure(void)
 
     /* 16 バイトに満たない行を, 空白で埋める */
     TEST_ASSERT_INT(EX_OK, dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15,
-                                    "function", dump, 3u, "%s", "test"));
+                                    "function", dump, 3U, "%s", "test"));
     PASS();
 }
 
@@ -725,24 +725,24 @@ count_open_fds(void)
 TEST
 test_dump_file_failure(void)
 {
-    char big[BUF_SIZE * 4u]; /* stdio のバッファより大きいデータ */
+    char big[BUF_SIZE * 4U]; /* stdio のバッファより大きいデータ */
     int fds = 0;             /* オープンしているファイルディスクリプタの数 */
 
     quiet_stderr();
     (void)memset(big, 'a', sizeof(big));
 
     /* オープンできない */
-    TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file", "abc", 3u));
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/nonexistent/dir/file", "abc", 3U));
     /* 書込に失敗 (/dev/full は, 常に ENOSPC になる). ファイルは閉じる */
     fds = count_open_fds();
     TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/full", big, sizeof(big)));
     TEST_ASSERT_INT(fds, count_open_fds());
     /* バッファに収まるデータは, fwrite では失敗せず, fflush で失敗する
      * (ログを出力するだけで, 戻り値は変わらない) */
-    TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3u));
+    TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3U));
     /* fclose() に失敗 */
     TEST_INJECT(fclose, 0, 1, EOF, EIO);
-    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/null", "abc", 3u));
+    TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/null", "abc", 3U));
     TEST_ASSERT_INJECTED(fclose);
     PASS();
 }

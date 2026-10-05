@@ -42,7 +42,7 @@
 #include "fff.h"
 
 /** test_tmpname() に必要なバッファサイズ */
-#define TEST_TMPNAME_SIZE 64u
+#define TEST_TMPNAME_SIZE 64U
 
 /**
  * 一意な一時ファイル名を作る (tmpnam() の代わり. tmpnam() は, リンク時に警告される)
@@ -197,19 +197,19 @@ test_match(const char *pattern, const char *str)
     int retval = 0;
 
     char *pat = NULL;
-    size_t i = 0u, j = 0u;
+    size_t i = 0U, j = 0U;
 
     if ((pattern == NULL) || (str == NULL))
         return 0;
     /* "\n" は改行として扱う (POSIX の拡張正規表現には無いので置換) */
-    pat = (char *)malloc(strlen(pattern) + 1u);
+    pat = (char *)malloc(strlen(pattern) + 1U);
     if (pat == NULL)
         return 0;
     while (pattern[i] != '\0') {
-        if ((pattern[i] == '\\') && (pattern[i + 1u] == 'n')) {
+        if ((pattern[i] == '\\') && (pattern[i + 1U] == 'n')) {
             pat[j++] = '\n';
-            i += 2u;
-        } else if ((pattern[i] == '\\') && (pattern[i + 1u] != '\0')) {
+            i += 2U;
+        } else if ((pattern[i] == '\\') && (pattern[i + 1U] != '\0')) {
             pat[j++] = pattern[i++];
             pat[j++] = pattern[i++];
         } else {

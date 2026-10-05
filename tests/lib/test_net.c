@@ -43,7 +43,7 @@
 #include "fileio.h"
 #include "net.h"
 
-#define BUF_SIZE 2048u /**< バッファサイズ */
+#define BUF_SIZE 2048U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -110,7 +110,7 @@ TEST test_close_sock_failure(void);
 /* 内部変数 */
 static char sockfile[TEST_TMPNAME_SIZE] = {0}; /**< ソケットファイル */
 static struct sockaddr_un addr;                /**< sockaddr_un構造体 */
-static socklen_t addrlen = 0u;                 /**< addr構造体の長さ */
+static socklen_t addrlen = 0U;                 /**< addr構造体の長さ */
 static char command[] = "do send";             /**< コマンド */
 static int ssock = -1;                         /**< サーバソケット */
 static int csock = -1;                         /**< クライアントソケット */
@@ -142,7 +142,7 @@ startup(void)
     /* sockaddr_un構造体の設定 */
     (void)memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    (void)strncpy(addr.sun_path, sockfile, sizeof(addr.sun_path) - 1u);
+    (void)strncpy(addr.sun_path, sockfile, sizeof(addr.sun_path) - 1U);
     addrlen = (socklen_t)(sizeof(addr.sun_family) + strlen(addr.sun_path));
 }
 
@@ -159,8 +159,8 @@ setup(void *data)
     (void)memset(&inject_fcntl, 0, sizeof(inject_fcntl));
     TEST_PASSTHROUGH_RESET(recv);
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1u] = '\0';
-    sendbuf[sizeof(sendbuf) - 2u] = '\n';
+    sendbuf[sizeof(sendbuf) - 1U] = '\0';
+    sendbuf[sizeof(sendbuf) - 2U] = '\n';
 }
 
 /**
@@ -221,7 +221,7 @@ test_set_hostname(void)
 
     /* 正常系 */
     unsigned int i;
-    for (i = 0u; i < NELEMS(host); i++) {
+    for (i = 0U; i < NELEMS(host); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_hostname(&server, host[i]);
@@ -251,12 +251,12 @@ test_set_port(void)
 
     /* テストデータ */
     const char *port[] = {"1", "65534", "65535", "ftp"};  /* ポート文字列 */
-    const uint32_t portno[] = {1u, 65534u, 65535u, 21u};  /* ポート番号 */
+    const uint32_t portno[] = {1U, 65534U, 65535U, 21U};  /* ポート番号 */
     const char *err_port[] = {"0", "65536", "noservice"}; /* エラー */
 
     /* 正常系 */
     unsigned int i;
-    for (i = 0u; i < NELEMS(port); i++) {
+    for (i = 0U; i < NELEMS(port); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, port[i]);
@@ -266,7 +266,7 @@ test_set_port(void)
     }
 
     /* 異常系 */
-    for (i = 0u; i < NELEMS(err_port); i++) {
+    for (i = 0U; i < NELEMS(err_port); i++) {
         (void)memset(&server, 0, sizeof(struct sockaddr_in));
 
         retval = set_port(&server, err_port[i]);
@@ -331,7 +331,7 @@ TEST
 test_send_data(void)
 {
     int retval = 0;                /* 戻り値 */
-    size_t length = 0u;            /* バイト数 */
+    size_t length = 0U;            /* バイト数 */
     pid_t cpid = 0;                /* 子プロセスID */
     pid_t w = 0;                   /* wait戻り値 */
     int status = 0;                /* ステイタス */
@@ -390,7 +390,7 @@ TEST
 test_recv_data(void)
 {
     int retval = 0;                /* 戻り値 */
-    size_t length = 0u;            /* バイト数 */
+    size_t length = 0U;            /* バイト数 */
     ssize_t len = 0L;              /* 送信されたバイト数 */
     pid_t cpid = 0;                /* プロセスID */
     pid_t w = 0;                   /* wait戻り値 */
@@ -458,7 +458,7 @@ TEST
 test_recv_data_new(void)
 {
     int retval = 0;                /* 戻り値 */
-    size_t length = 0u;            /* バイト数 */
+    size_t length = 0U;            /* バイト数 */
     ssize_t len = 0L;              /* 送信されたバイト数 */
     pid_t cpid = 0;                /* プロセスID */
     pid_t w = 0;                   /* wait戻り値 */
@@ -596,7 +596,7 @@ test_close_sock(void)
 static int
 server_proc(int sockfd, char *readbuf, size_t length)
 {
-    socklen_t len = 0u; /* sockaddr構造体長さ */
+    socklen_t len = 0U; /* sockaddr構造体長さ */
     ssize_t rlen = 0L;  /* 受信された長さ */
     ssize_t wlen = 0L;  /* 送信された長さ */
     int retval = 0;     /* 戻り値 */
@@ -814,7 +814,7 @@ TEST
 test_send_data_failure(void)
 {
     int sv[2] = {-1, -1}; /* ソケットペア */
-    size_t length = 4u;   /* 送信バイト数 */
+    size_t length = 4U;   /* 送信バイト数 */
     void (*oldsig)(int);  /* 元のシグナルハンドラ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
@@ -838,7 +838,7 @@ TEST
 test_send_data_interrupted(void)
 {
     int sv[2] = {-1, -1};                 /* ソケットペア */
-    size_t length = 0u;                   /* 送信バイト数 */
+    size_t length = 0U;                   /* 送信バイト数 */
     char readbuf[8] = {0};                /* 受信バッファ */
     const int errnos[] = {EINTR, EAGAIN}; /* 注入する errno */
 
@@ -854,8 +854,8 @@ test_send_data_interrupted(void)
 
     /* 1 回目は失敗するが, やり直して, 送信できる */
     unsigned int i;
-    for (i = 0u; i < NELEMS(errnos); i++) {
-        length = 3u;
+    for (i = 0U; i < NELEMS(errnos); i++) {
+        length = 3U;
         (void)memset(readbuf, 0, sizeof(readbuf));
         RESET_FAKE(send);
         send_fake.custom_fake = pass_send;
@@ -878,7 +878,7 @@ TEST
 test_recv_data_failure(void)
 {
     int sv[2] = {-1, -1};  /* ソケットペア */
-    size_t length = 4u;    /* 受信バイト数 */
+    size_t length = 4U;    /* 受信バイト数 */
     char readbuf[8] = {0}; /* 受信バッファ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
@@ -892,7 +892,7 @@ test_recv_data_failure(void)
     (void)close(sv[0]);
 
     /* 不正なソケット */
-    length = 4u;
+    length = 4U;
     TEST_ASSERT_INT(EX_NG, recv_data(-1, readbuf, &length));
     PASS();
 }
@@ -904,7 +904,7 @@ TEST
 test_recv_data_interrupted(void)
 {
     int sv[2] = {-1, -1};                 /* ソケットペア */
-    size_t length = 0u;                   /* 受信バイト数 */
+    size_t length = 0U;                   /* 受信バイト数 */
     char readbuf[8] = {0};                /* 受信バッファ */
     const int errnos[] = {EINTR, EAGAIN}; /* 注入する errno */
 
@@ -920,10 +920,10 @@ test_recv_data_interrupted(void)
 
     /* 1 回目は失敗するが, やり直して, 受信できる */
     unsigned int i;
-    for (i = 0u; i < NELEMS(errnos); i++) {
-        length = 3u;
+    for (i = 0U; i < NELEMS(errnos); i++) {
+        length = 3U;
         (void)memset(readbuf, 0, sizeof(readbuf));
-        if (write(sv[1], "abc", 3u) != 3) {
+        if (write(sv[1], "abc", 3U) != 3) {
             TEST_FAIL("write(%d)", errno);
         }
         RESET_FAKE(recv);
@@ -946,7 +946,7 @@ TEST
 test_recv_data_new_failure(void)
 {
     int sv[2] = {-1, -1}; /* ソケットペア */
-    size_t length = 0u;   /* 受信バイト数 */
+    size_t length = 0U;   /* 受信バイト数 */
     void *data = NULL;    /* 受信データ */
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0) {
@@ -954,13 +954,13 @@ test_recv_data_new_failure(void)
     }
 
     /* メモリを確保できない */
-    length = SIZE_MAX / 2u;
+    length = SIZE_MAX / 2U;
     data = recv_data_new(sv[0], &length);
     TEST_ASSERT_NULL(data);
 
     /* 受信に失敗 (接続先がシャットダウンした) */
     (void)close(sv[1]);
-    length = 4u;
+    length = 4U;
     data = recv_data_new(sv[0], &length);
     TEST_ASSERT_NULL(data);
     TEST_ASSERT_INT(0, length);

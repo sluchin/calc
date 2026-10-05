@@ -29,7 +29,7 @@
 
 #include "def.h"
 
-#define FGETSBUF 1024u /**< バッファサイズ */
+#define FGETSBUF 1024U /**< バッファサイズ */
 
 /* 一行読込 */
 unsigned char *_readline(FILE *fp);

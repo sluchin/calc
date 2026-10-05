@@ -63,7 +63,7 @@ bool g_tflag = false;                    /**< tオプションフラグ */
 /* 内部変数 */
 static char hostname[HOST_SIZE];         /**< ホスト名 */
 static char portno[PORT_SIZE];           /**< ポート番号 */
-static unsigned int start_time = 0u;     /**< タイマ開始 */
+static unsigned int start_time = 0U;     /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
 static unsigned char *expr = NULL;       /**< 入力バッファ */
 static unsigned char *answer = NULL;     /**< 受信データ */
@@ -312,7 +312,7 @@ static st_client
 send_sock(int sock)
 {
     int retval = 0;     /* 戻り値 */
-    size_t length = 0u; /* 長さ */
+    size_t length = 0U; /* 長さ */
     ssize_t slen = 0L;  /* 送信するバイト数 */
 
     expr = _readline(stdin);
@@ -327,7 +327,7 @@ send_sock(int sock)
     if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
         return EX_QUIT;
 
-    length = strlen((char *)expr) + 1u;
+    length = strlen((char *)expr) + 1U;
     dbgdump(expr, length, "stdin: expr=%zu", length);
 
     if (g_tflag)
@@ -363,7 +363,7 @@ static st_client
 read_sock(int sock)
 {
     int retval = 0;     /* 戻り値 */
-    size_t length = 0u; /* 送信または受信する長さ */
+    size_t length = 0U; /* 送信または受信する長さ */
     struct header hd;   /* ヘッダ */
 
     dbglog("start");
@@ -390,7 +390,7 @@ read_sock(int sock)
     answer = (unsigned char *)recv_data_new(sock, &length);
     if (answer == NULL) /* メモリ確保できない */
         return EX_ALLOC_ERR;
-    if (length == 0u) /* 受信エラー */
+    if (length == 0U) /* 受信エラー */
         return EX_RECV_ERR;
     dbglog("answer=%p, length=%zu", answer, length);
 

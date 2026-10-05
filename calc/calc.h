@@ -36,7 +36,7 @@
 #endif                    /* _DEBUG */
 #define DEFAULT_DIGIT 12L /**< 有効桁数デフォルト値 */
 /** フォーマット ("%." + 桁数 (long の最大 20 文字) + "g" + NUL) のサイズ */
-#define FMT_SIZE      24u
+#define FMT_SIZE      24U
 
 /* 外部変数 */
 extern bool g_tflag; /**< tオプションフラグ */

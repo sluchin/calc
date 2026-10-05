@@ -256,7 +256,7 @@ server_proc(void *arg)
 {
     thread_data dt;                   /* スレッドデータ構造体 */
     int retval = 0;                   /* 戻り値 */
-    size_t length = 0u;               /* 長さ */
+    size_t length = 0U;               /* 長さ */
     ssize_t slen = 0L;                /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
     unsigned char *expr = NULL;       /* 受信データ */
@@ -301,12 +301,12 @@ server_proc(void *arg)
 
         pthread_cleanup_push(thread_memfree, &expr);
 
-        if (length == 0u) /* 受信エラー */
+        if (length == 0U) /* 受信エラー */
             pthread_exit((void *)EXIT_FAILURE);
 
         /* 式は文字列として解析されるので, 終端の NUL を保証する.
          * (終端のないデータは, 確保した領域の外を読んでしまう) */
-        expr[length - 1u] = '\0';
+        expr[length - 1U] = '\0';
 
         dbglog("expr=%p, length=%zu", expr, length);
 
@@ -322,7 +322,7 @@ server_proc(void *arg)
 
         pthread_cleanup_push(destroy_answer, &calc);
 
-        length = strlen((char *)calc.answer) + 1u; /* 文字列長保持 */
+        length = strlen((char *)calc.answer) + 1U; /* 文字列長保持 */
 
         dbgdump(calc.answer, length, "answer=%p, length=%zu", calc.answer, length);
 

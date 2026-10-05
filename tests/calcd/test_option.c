@@ -52,7 +52,7 @@ TEST_PASSTHROUGH(int,
 FAKE_VOID_FUNC(set_digit, long)
 FAKE_VALUE_FUNC(int, set_port_string, const char *)
 
-#define BUF_SIZE 1024u /**< バッファサイズ */
+#define BUF_SIZE 1024U /**< バッファサイズ */
 
 /** parse_args() の引数 */
 struct args {
@@ -158,7 +158,7 @@ test_parse_args_digit_failure(void)
     (void)snprintf(maxplus, sizeof(maxplus), "%ld", MAX_DIGIT + 1L);
 
     unsigned int i;
-    for (i = 0u; i < NELEMS(argvs); i++) {
+    for (i = 0U; i < NELEMS(argvs); i++) {
         TEST_ASSERT_INT_MSG(EXIT_FAILURE, exec_parse_args(out, sizeof(out), argcs[i], argvs[i]),
                             "argv[2]=%s", argvs[i][2]);
         TEST_ASSERT_MATCH("Digits is 1-[0-9]+\\.", out);

@@ -44,7 +44,7 @@ test_memfree(void)
 
     int i;
     for (i = 0; i < MAX; i++) {
-        mem[i] = (char *)malloc(5u * sizeof(char));
+        mem[i] = (char *)malloc(5U * sizeof(char));
         if (mem[i] == NULL) {
             TEST_FAIL("malloc");
         }
@@ -55,11 +55,11 @@ test_memfree(void)
     TEST_ASSERT_NULL(mem[MEM3]);
 
     /* 第二引数がNULLの場合 */
-    mem[MEM1] = (char *)malloc(5u * sizeof(char));
+    mem[MEM1] = (char *)malloc(5U * sizeof(char));
     if (mem[MEM1] == NULL) {
         TEST_FAIL("malloc");
     }
-    mem[MEM3] = (char *)malloc(5u * sizeof(char));
+    mem[MEM3] = (char *)malloc(5U * sizeof(char));
     if (mem[MEM3] == NULL) {
         TEST_FAIL("malloc");
     }

@@ -77,9 +77,9 @@ unsigned char *
 create_answer(calcinfo *calc, const unsigned char *expr)
 {
     double val = 0.0;        /* 値 */
-    size_t length = 0u;      /* 文字数 */
+    size_t length = 0U;      /* 文字数 */
     int retval = 0;          /* 戻り値 */
-    unsigned int start = 0u; /* タイマ開始 */
+    unsigned int start = 0U; /* タイマ開始 */
 
     dbglog("start");
 
@@ -126,7 +126,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
             return NULL;
         }
         dbglog("get_strlen=%d, INT_MAX=%d", retval, INT_MAX);
-        length = (size_t)retval + 1u; /* 文字数 + 1 */
+        length = (size_t)retval + 1U; /* 文字数 + 1 */
 
         /* メモリ確保 */
         calc->answer = (unsigned char *)malloc(length * sizeof(unsigned char));
@@ -426,8 +426,8 @@ token(calcinfo *calc)
 {
     double result = 0.0;             /* 結果 */
     int sign = '+';                  /* 単項+- */
-    char func[MAX_FUNC_STRING + 1u]; /* 関数文字列 */
-    unsigned int pos = 0u;           /* 配列位置 */
+    char func[MAX_FUNC_STRING + 1U]; /* 関数文字列 */
+    unsigned int pos = 0U;           /* 配列位置 */
 
     dbglog("start");
 
@@ -515,7 +515,7 @@ get_strlen(const double val, const char *fmt)
     /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので, 文字列リテラルではない */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
-    retval = snprintf(NULL, 0u, fmt, val);
+    retval = snprintf(NULL, 0U, fmt, val);
 #pragma GCC diagnostic pop
     return retval;
 }

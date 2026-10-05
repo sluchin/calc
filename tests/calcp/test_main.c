@@ -59,7 +59,7 @@ TEST_PASSTHROUGH(unsigned char *,
                  (calcinfo * calc, const unsigned char *expr),
                  (calc, expr))
 
-#define BUF_SIZE 1024u /**< バッファサイズ */
+#define BUF_SIZE 1024U /**< バッファサイズ */
 
 /** 親子プロセスで共有する情報 */
 struct shared {
@@ -260,9 +260,9 @@ run_main_sigint(void *arg)
 {
     pid_t ppid = getpid(); /* main() を実行するプロセス */
 
-    (void)alarm(10u); /* 終了しなかったときの保険 */
+    (void)alarm(10U); /* 終了しなかったときの保険 */
     if (fork() == 0) {
-        (void)usleep(300000u);
+        (void)usleep(300000U);
         (void)kill(ppid, SIGINT);
         _exit(EXIT_SUCCESS);
     }
@@ -296,7 +296,7 @@ test_main_failure(void)
 static void
 run_main_tty(void *arg)
 {
-    (void)alarm(10u); /* 終了しなかったときの保険 */
+    (void)alarm(10U); /* 終了しなかったときの保険 */
     run_main(arg);
 }
 
@@ -342,7 +342,7 @@ test_main_history(void)
     unsigned int i;
 
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < 101u; i++)
+    for (i = 0U; i < 101U; i++)
         (void)strcat(inbuf, "1+2\n");
     (void)strcat(inbuf, "quit\n");
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child_pty(run_main_tty, NULL, inbuf, out, sizeof(out)));

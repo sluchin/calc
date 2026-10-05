@@ -78,7 +78,7 @@ enum functype {
 /** 関数文字列構造体 */
 struct funcstring {
     enum functype type;                  /**< 関数種別 */
-    char funcname[MAX_FUNC_STRING + 1u]; /**< 関数名 */
+    char funcname[MAX_FUNC_STRING + 1U]; /**< 関数名 */
 };
 
 /** 関数文字列構造体初期化 */

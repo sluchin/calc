@@ -94,7 +94,7 @@ int
 set_port(struct sockaddr_in *addr, const char *port)
 {
     struct servent *sp = NULL; /* サービス情報構造体 */
-    uint16_t portno = 0u;      /* ポート番号 */
+    uint16_t portno = 0U;      /* ポート番号 */
     long value = 0L;           /* strtol戻り値 */
     const int base = 10;       /* 基数 */
 
@@ -186,7 +186,7 @@ int
 send_data(const int sock, const void *sdata, size_t *length)
 {
     ssize_t len = 0L;                /* send戻り値 */
-    size_t left = 0u;                /* 残りのバイト数 */
+    size_t left = 0U;                /* 残りのバイト数 */
     const unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: sdata=%p, length=%zu", sdata, *length);
@@ -194,7 +194,7 @@ send_data(const int sock, const void *sdata, size_t *length)
     ptr = (const unsigned char *)sdata;
     left = *length;
     /* 全て送信するまで繰り返す (send は, 少ないバイト数を返すことがある) */
-    while (left > 0u) {
+    while (left > 0U) {
         len = send(sock, ptr, left, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0L) {
@@ -229,14 +229,14 @@ int
 recv_data(const int sock, void *rdata, size_t *length)
 {
     ssize_t len = 0L;          /* recv戻り値 */
-    size_t left = 0u;          /* 残りのバイト数 */
+    size_t left = 0U;          /* 残りのバイト数 */
     unsigned char *ptr = NULL; /* ポインタ */
 
     dbglog("start: rdata=%p, length=%zu", rdata, *length);
 
     ptr = (unsigned char *)rdata;
     left = *length;
-    while (left > 0u) {
+    while (left > 0U) {
         len = recv(sock, ptr, left, 0);
         dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0L) { /* エラー */
@@ -293,7 +293,7 @@ recv_data_new(const int sock, size_t *length)
     /* データ受信 */
     retval = recv_data(sock, rdata, &len);
     if (retval < 0) { /* エラー */
-        *length = 0u;
+        *length = 0U;
         memfree(&rdata, NULL);
         return rdata;
     }
