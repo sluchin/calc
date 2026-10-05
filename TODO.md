@@ -10,10 +10,10 @@
 - [ ] テストのカバレッジの残りは, 分岐 (現在 95.7%). 行は 100% (`make coverage` で確認できる). `calc/func.c` の到達しない `default:` は, `GCOVR_EXCL_START` で, 集計から外している.
 - [ ] 標準出力をリダイレクトしている間にテストが失敗すると, メッセージが見えなくなる. (`tests/calcc/test_client.c` など)
 - [ ] `lib/log.c` の `free(strings)` (2 か所) を、`memfree()` にする。`memfree()` の中の `dbglog` が `log.c` を呼ぶので、ログ出力の途中で再帰しないようにしてから、置き換える。
-- [ ] `lib/test_fileio` が失敗する。(変更前のコードでも失敗する。原因は未調査)
 
 ## 対応済み
 
+- [x] `lib/test_fileio` が root で失敗していた. (「書込権限なし」の確認は, root では `access(W_OK)` が成功するので, root のときは行わない)
 - [x] cutter から greatest と FFF に移行し, テストを `tests/` 配下に移した.
 - [x] `main.c` と `option.c` のテストを追加した.
 - [x] libc の関数の失敗を, FFF のモックで注入して, エラー処理のテストを追加した. (行 82% → 99.5%)
