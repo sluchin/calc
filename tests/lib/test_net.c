@@ -604,7 +604,15 @@ server_proc(int sockfd, char *readbuf, size_t length)
     dbglog("start: sockfd=%d", sockfd);
 
     len = addrlen;
+    /* sockaddr_un / sockaddr_in を sockaddr にキャストする (BSD ソケットの API の仕様, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     acc = accept(sockfd, (struct sockaddr *)&addr, &len);
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (acc < 0) {
         outlog("accept: sockfd=%d(%d)", sockfd, errno);
         return EX_NG;
@@ -659,7 +667,15 @@ unix_sock_server(void)
         return EX_NG;
     }
 
+    /* sockaddr_un / sockaddr_in を sockaddr にキャストする (BSD ソケットの API の仕様, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     retval = bind(sockfd, (struct sockaddr *)&addr, addrlen);
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (retval < 0) {
         if (errno == EADDRINUSE)
             TEST_NOTIFY("Address already in use");
@@ -702,7 +718,15 @@ unix_sock_client(void)
         return EX_NG;
     }
 
+    /* sockaddr_un / sockaddr_in を sockaddr にキャストする (BSD ソケットの API の仕様, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     retval = connect(sockfd, (struct sockaddr *)&addr, addrlen);
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (retval < 0) {
         TEST_NOTIFY("connect=%d(%d)", sockfd, errno);
         return EX_NG;
