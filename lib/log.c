@@ -40,10 +40,10 @@
 #include "term.h"
 #include "log.h"
 
-#define MAX_HOST_SIZE 25u  /**< 最大ホスト文字列サイズ */
-#define MAX_MES_SIZE  256u /**< 最大メッセージサイズ */
-#define STACK_SIZE    100u /**< スタックサイズ */
-#define MAX_PROGNAME  25u  /**< 最大プログラム名文字列長 */
+#define MAX_HOST_SIZE 25U  /**< 最大ホスト文字列サイズ */
+#define MAX_MES_SIZE  256U /**< 最大メッセージサイズ */
+#define STACK_SIZE    100U /**< スタックサイズ */
+#define MAX_PROGNAME  25U  /**< 最大プログラム名文字列長 */
 
 /** syslog にメッセージを出力 (ファイル名, 行番号, 関数名, errno 付き) */
 #define SYSMSG(lv, fmt, ...) \
@@ -55,7 +55,7 @@
                   errno)
 
 /** エラーメッセージ用バッファのサイズ */
-#define ERRMSG_SIZE 64u
+#define ERRMSG_SIZE 64U
 
 /**
  * エラー番号のメッセージ取得 (スレッドセーフ)
@@ -106,9 +106,9 @@ set_progname(const char *name)
     if (progname[0] == '\0') { /* 一度のみ設定される */
         ptr = strrchr(name, '/');
         if (ptr != NULL)
-            (void)strncpy(progname, ptr + 1, sizeof(progname) - 1u);
+            (void)strncpy(progname, ptr + 1, sizeof(progname) - 1U);
         else
-            (void)strncpy(progname, name, sizeof(progname) - 1u);
+            (void)strncpy(progname, name, sizeof(progname) - 1U);
     }
 }
 
@@ -343,7 +343,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 {
     FILE *fp = stderr;                /* 標準エラー出力 */
     int retval = 0;                   /* 戻り値 */
-    unsigned int pt = 0u;             /* アドレス用変数 */
+    unsigned int pt = 0U;             /* アドレス用変数 */
     const unsigned char *p = NULL;    /* バッファポインタ */
     char message[MAX_MES_SIZE] = {0}; /* メッセージ用バッファ */
     va_list ap;                       /* va_list */
@@ -371,16 +371,16 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 
     /* 16 バイトごとに, アドレス, 16 進数 (2 バイトごとに空白), 文字を出力 */
     unsigned int i, j;
-    for (i = 0u; i < len;) {
+    for (i = 0U; i < len;) {
         (void)fprintf(fp, "%08X : ", pt);
-        for (j = 0u; j < 16u; j++) {
+        for (j = 0U; j < 16U; j++) {
             if ((i + j) >= len) /* 16 バイトに満たない分は, 空白で埋める */
-                (void)fprintf(fp, "  %s", (((j % 2u) == 1u) ? " " : ""));
+                (void)fprintf(fp, "  %s", (((j % 2U) == 1U) ? " " : ""));
             else
                 (void)fprintf(fp, "%02x%s", (unsigned int)*(p + i + j),
-                              (((j % 2u) == 1u) ? " " : ""));
+                              (((j % 2U) == 1U) ? " " : ""));
         }
-        for (j = 0u; (i < len) && (j < 16u); i++, j++) {
+        for (j = 0U; (i < len) && (j < 16U); i++, j++) {
             (void)fprintf(fp, "%c", (((*(p + i) < ' ') || ('~' < *(p + i))) ? '.' : *(p + i)));
         }
         (void)fprintf(fp, "\n");
@@ -419,7 +419,7 @@ dump_sys(const int level,
          ...)
 {
     int retval = 0;                   /* 戻り値 */
-    unsigned int pt = 0u;             /* アドレス用変数 */
+    unsigned int pt = 0U;             /* アドレス用変数 */
     const unsigned char *p = NULL;    /* バッファポインタ */
     char hexdump[68];                 /* ログ出力用バッファ */
     char tmp[4] = {0};                /* 一時バッファ */
@@ -445,28 +445,28 @@ dump_sys(const int level,
     }
 
     unsigned int i, j;
-    for (i = 0u; i < len;) {
+    for (i = 0U; i < len;) {
         /* 初期化 */
         (void)memset(hexdump, 0, hsize);
         (void)snprintf(hexdump, hsize, "%08X : ", pt);
         /* ダンプの表示 */
-        for (j = 0u; j < 16u; j++) {
+        for (j = 0U; j < 16U; j++) {
             (void)memset(tmp, 0, tsize);
             if ((i + j) >= len) {
-                (void)snprintf(tmp, tsize, "  %s", (((j % 2u) == 1u) ? " " : ""));
-                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1u));
+                (void)snprintf(tmp, tsize, "  %s", (((j % 2U) == 1U) ? " " : ""));
+                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
             } else {
                 (void)snprintf(tmp, tsize, "%02x%s", (unsigned int)*(p + i + j),
-                               (((j % 2u) == 1u) ? " " : ""));
-                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1u));
+                               (((j % 2U) == 1U) ? " " : ""));
+                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
             }
         }
         /* アスキー文字の表示 */
-        for (j = 0u; (i < len) && (j < 16u); i++, j++) {
+        for (j = 0U; (i < len) && (j < 16U); i++, j++) {
             (void)memset(tmp, 0, tsize);
             (void)snprintf(tmp, tsize, "%c",
                            (((*(p + i) < ' ') || ('~' < *(p + i))) ? '.' : *(p + i)));
-            (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1u));
+            (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
         }
         syslog(level, "%s[%d]: %s(%s): %s", fname, line, func, message, hexdump);
         pt += j;
@@ -491,7 +491,7 @@ int
 dump_file(const char *pname, const char *fname, const char *buf, const size_t len)
 {
     FILE *fp = NULL;  /* ファイルディスクリプタ */
-    size_t wret = 0u; /* fwrite戻り値 */
+    size_t wret = 0U; /* fwrite戻り値 */
     int retval = 0;   /* 戻り値 */
 
     /* シスログオープン */
@@ -506,8 +506,8 @@ dump_file(const char *pname, const char *fname, const char *buf, const size_t le
         return EX_NG;
     }
 
-    wret = fwrite(buf, len, 1u, fp);
-    if (wret != 1u) {
+    wret = fwrite(buf, len, 1U, fp);
+    if (wret != 1U) {
         SYSMSG(LOG_INFO, "fwrite");
         (void)fclose(fp); /* ファイルを閉じないと, ファイルポインタがリークする */
         return EX_NG;

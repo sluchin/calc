@@ -45,7 +45,7 @@
 #include "server.h"
 #include "calc.h"
 
-#define BUF_SIZE 30u /**< バッファサイズ */
+#define BUF_SIZE 30U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -123,12 +123,12 @@ TEST_PASSTHROUGH(int,
 extern void *__libc_malloc(size_t size);               /**< 本物の malloc() */
 extern void *__libc_calloc(size_t nmemb, size_t size); /**< 本物の calloc() */
 extern void __libc_free(void *ptr);                    /**< 本物の free() */
-static size_t fail_malloc_size = 0u;      /**< 失敗させる malloc() のサイズ (0 は無効) */
+static size_t fail_malloc_size = 0U;      /**< 失敗させる malloc() のサイズ (0 は無効) */
 static int fail_malloc_count = 0;         /**< 失敗させる回数 */
-static size_t track_size = 0u;            /**< 確保と解放を追跡するサイズ (0 は無効) */
+static size_t track_size = 0U;            /**< 確保と解放を追跡するサイズ (0 は無効) */
 static void *volatile tracked_ptr = NULL; /**< 追跡している, 確保したメモリ */
 static volatile int tracked_freed = 0;    /**< 追跡しているメモリが解放された */
-static size_t watch_size = 0u;            /**< 確保されたかを数えるサイズ (0 は無効) */
+static size_t watch_size = 0U;            /**< 確保されたかを数えるサイズ (0 は無効) */
 static volatile int watch_count = 0;      /**< watch_size で確保された回数 */
 
 /**
@@ -140,9 +140,9 @@ static volatile int watch_count = 0;      /**< watch_size で確保された回�
 static void
 record_alloc(void *ptr, size_t size)
 {
-    if ((track_size != 0u) && (size == track_size))
+    if ((track_size != 0U) && (size == track_size))
         tracked_ptr = ptr;
-    if ((watch_size != 0u) && (size == watch_size))
+    if ((watch_size != 0U) && (size == watch_size))
         watch_count++;
 }
 
@@ -549,7 +549,7 @@ send_client(int sockfd, unsigned char *sbuf, size_t length)
 static int
 recv_client(int sockfd, unsigned char *rbuf)
 {
-    size_t length = 0u; /* バイト数 */
+    size_t length = 0U; /* バイト数 */
     struct header hd;   /* ヘッダ構造体 */
     int retval = 0;     /* 戻り値 */
 
@@ -754,7 +754,7 @@ test_server_proc_failure(void)
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(4u);
+    hd.length = htonl(4U);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
     server_loop(ssock);
     close_sock(&csock);
@@ -763,7 +763,7 @@ test_server_proc_failure(void)
     /* データ長が 0 */
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
-    hd.length = htonl(0u);
+    hd.length = htonl(0U);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
     server_loop(ssock);
     close_sock(&csock);
@@ -840,7 +840,7 @@ test_server_proc_internal_failure(void)
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
     g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
 
-    for (i = 0u; i < 4u; i++) {
+    for (i = 0U; i < 4U; i++) {
         csock = inet_sock_client();
         TEST_ASSERT_NOT_INT(EX_NG, csock);
         TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
@@ -906,9 +906,9 @@ test_server_proc_length_limit(void)
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(MAX_DATA_LENGTH + 1u);
+    hd.length = htonl(MAX_DATA_LENGTH + 1U);
     TEST_ASSERT_INT(sizeof(hd), writen(csock, &hd, sizeof(hd)));
-    watch_size = MAX_DATA_LENGTH + 1u;
+    watch_size = MAX_DATA_LENGTH + 1U;
     server_loop(ssock);
     (void)usleep(THREAD_WAIT);
     close_sock(&csock);

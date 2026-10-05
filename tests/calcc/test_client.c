@@ -44,7 +44,7 @@
 #include "memfree.h"
 #include "client.h"
 
-#define BUF_SIZE 4100u /**< バッファサイズ */
+#define BUF_SIZE 4100U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -194,8 +194,8 @@ setup(void *data)
     g_tflag = false;
     g_sig_handled = 0;
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1u] = '\0';
-    sendbuf[sizeof(sendbuf) - 2u] = '\n';
+    sendbuf[sizeof(sendbuf) - 1U] = '\0';
+    sendbuf[sizeof(sendbuf) - 2U] = '\n';
 
     (void)memset(readbuf, 0, sizeof(readbuf));
 }
@@ -299,7 +299,7 @@ test_client_loop(void)
     ssize_t wlen = 0L;         /* write戻り値 */
     ssize_t rlen = 0L;         /* read戻り値 */
     int oldfd = 0;             /* 退避用 */
-    size_t sendlen = 0u;       /* 送信バイト数 */
+    size_t sendlen = 0U;       /* 送信バイト数 */
     int retval = 0;            /* 戻り値 */
     st_client st = EX_SUCCESS; /* ステータス */
 
@@ -366,7 +366,7 @@ test_client_loop(void)
         /* 送信と受信が終わるまでループを続け, 一定時間後に, SIGINT で終了する */
         (void)signal(SIGINT, on_sigint);
         if (fork() == 0) {
-            (void)usleep(800000u);
+            (void)usleep(800000U);
             (void)kill(getppid(), SIGINT);
             _exit(EXIT_SUCCESS);
         }
@@ -406,13 +406,13 @@ test_client_loop(void)
         }
 
         /* 改行削除 */
-        if (sendbuf[strlen((char *)sendbuf) - 1u] == '\n')
-            sendbuf[strlen((char *)sendbuf) - 1u] = '\0';
+        if (sendbuf[strlen((char *)sendbuf) - 1U] == '\n')
+            sendbuf[strlen((char *)sendbuf) - 1U] = '\0';
 
         TEST_ASSERT_MEM(sendbuf, sendlen, readbuf, sendlen);
 
         /* 送信 */
-        sendlen = strlen((char *)readbuf) + 1u;
+        sendlen = strlen((char *)readbuf) + 1U;
         retval = send_server(acc, readbuf, sendlen);
         if (retval < 0) {
             TEST_FAIL("send_server: acc=%d(%d)", acc, errno);
@@ -426,7 +426,7 @@ test_client_loop(void)
 
         /* 標準出力から受信 */
         (void)memset(readbuf, 0, sizeof(readbuf));
-        rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1u);
+        rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1U);
         if (rlen < 0L) {
             TEST_FAIL("read=%zd(%d)", rlen, errno);
         }
@@ -684,8 +684,8 @@ exec_send_sock(unsigned char *sbuf, size_t length)
             }
 
             /* 改行削除 */
-            if (sbuf[strlen((char *)sbuf) - 1u] == '\n')
-                sbuf[strlen((char *)sbuf) - 1u] = '\0';
+            if (sbuf[strlen((char *)sbuf) - 1U] == '\n')
+                sbuf[strlen((char *)sbuf) - 1U] = '\0';
 
             if (strcmp((char *)sbuf, (char *)rbuf) != 0) {
                 TEST_ERROR("expected=%s actual=%s", sbuf, rbuf);
@@ -718,7 +718,7 @@ accept_server(int sockfd)
 {
     int ready = 0;           /* pselect戻り値 */
     int accfd = -1;          /* アクセプト */
-    socklen_t addrlen = 0u;  /* addr構造体の長さ */
+    socklen_t addrlen = 0U;  /* addr構造体の長さ */
     fd_set fds, rfds;        /* selectマスク */
     struct timespec timeout; /* タイムアウト値 */
     sigset_t sigmask;        /* シグナルマスク */
@@ -778,7 +778,7 @@ accept_server(int sockfd)
 static int
 recv_server(int sockfd, unsigned char *rbuf)
 {
-    size_t length = 0u; /* バイト数 */
+    size_t length = 0U; /* バイト数 */
     struct header hd;   /* ヘッダ構造体 */
     int retval = 0;     /* 戻り値 */
 
@@ -973,19 +973,19 @@ child_read_sock(void *arg)
     case 0: /* 何も送らずに閉じる: ヘッダを受信できない */
         break;
     case 1: /* データ長が 4 のヘッダだけ送って閉じる: データを受信できない */
-        hd.length = htonl(4u);
+        hd.length = htonl(4U);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     case 5: /* データ長が上限を超えるヘッダ */
-        hd.length = htonl(MAX_DATA_LENGTH + 1u);
+        hd.length = htonl(MAX_DATA_LENGTH + 1U);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     case 2: /* データ長が 0 のヘッダ */
-        hd.length = htonl(0u);
+        hd.length = htonl(0U);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     default: /* 正常なデータ (4 は, 標準出力を閉じて, 出力に失敗する) */
-        len = set_server_data(&dt, (const unsigned char *)"42", 3u);
+        len = set_server_data(&dt, (const unsigned char *)"42", 3U);
         if (len < 0L)
             exit(CHILD_FAILED);
         (void)writen(sv[1], dt, (size_t)len);
@@ -1176,7 +1176,7 @@ child_client_loop_read_failure(void *arg)
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
         exit(CHILD_FAILED);
     (void)memset(&hd, 0, sizeof(hd));
-    hd.length = htonl(4u);
+    hd.length = htonl(4U);
     (void)writen(sv[1], &hd, sizeof(hd));
     (void)shutdown(sv[1], SHUT_WR); /* 読込側は開いているので, 送信は成功する */
 
@@ -1277,17 +1277,17 @@ child_client_loop_socket_only(void *arg)
 
     (void)arg;
     (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
-    (void)alarm(10u);               /* 終了しなかったときの保険 */
+    (void)alarm(10U);               /* 終了しなかったときの保険 */
     if ((pipe(idle) < 0) || (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0))
         exit(CHILD_FAILED);
     (void)dup2(idle[0], STDIN_FILENO);
-    len = set_server_data(&dt, (const unsigned char *)"42", 3u);
+    len = set_server_data(&dt, (const unsigned char *)"42", 3U);
     if ((len < 0L) || (writen(sv[1], dt, (size_t)len) < 0))
         exit(CHILD_FAILED);
 
     (void)signal(SIGINT, on_sigint);
     if (fork() == 0) {
-        (void)usleep(500000u);
+        (void)usleep(500000U);
         (void)kill(ppid, SIGINT);
         _exit(EXIT_SUCCESS);
     }
@@ -1347,7 +1347,7 @@ static void
 responder(int sock)
 {
     struct header hd;              /* ヘッダ */
-    size_t length = 0u;            /* バイト数 */
+    size_t length = 0U;            /* バイト数 */
     void *data = NULL;             /* 受信データ */
     struct server_data *dt = NULL; /* 送信データ */
     ssize_t len = 0L;              /* 送信データ長 */
@@ -1364,7 +1364,7 @@ responder(int sock)
         free(data);
         if (child_mode == 6) /* 答えを返さずに, 終了する */
             exit(EXIT_SUCCESS);
-        len = set_server_data(&dt, (const unsigned char *)"ok", 3u);
+        len = set_server_data(&dt, (const unsigned char *)"ok", 3U);
         if ((len < 0L) || (writen(sock, dt, (size_t)len) < 0))
             exit(EXIT_FAILURE);
         free(dt);
@@ -1385,7 +1385,7 @@ child_client_loop_drain(void *arg)
 
     (void)arg;
     (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
-    (void)alarm(10u);               /* 終了しなかったときの保険 */
+    (void)alarm(10U);               /* 終了しなかったときの保険 */
     (void)signal(SIGPIPE, SIG_IGN);
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
         exit(CHILD_FAILED);

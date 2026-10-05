@@ -51,7 +51,7 @@ TEST_PASSTHROUGH(int,
 FAKE_VALUE_FUNC(int, set_port_string, const char *)
 FAKE_VALUE_FUNC(int, set_host_string, const char *)
 
-#define BUF_SIZE 1024u /**< バッファサイズ */
+#define BUF_SIZE 1024U /**< バッファサイズ */
 
 /** parse_args() の引数 */
 struct args {
