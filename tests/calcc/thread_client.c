@@ -48,7 +48,7 @@
 #include "client.h"
 
 #define MAX_THREADS 1000 /**< スレッド数 */
-#define BUF_SIZE    30u  /**< バッファサイズ */
+#define BUF_SIZE    30U  /**< バッファサイズ */
 
 /** スレッドデータ構造体 */
 struct _thread_data {
@@ -194,7 +194,7 @@ client_thread(void *arg)
     /* スレッドデータ */
     thread_data *dt = (thread_data *)arg; /* スレッドデータ構造体 */
     int retval = 0;                       /* 戻り値 */
-    size_t length = 0u;                   /* 長さ */
+    size_t length = 0U;                   /* 長さ */
     ssize_t slen = 0L;                    /* 送信するバイト数 */
     struct header hd;                     /* ヘッダ */
 
@@ -207,7 +207,7 @@ client_thread(void *arg)
 
     pthread_cleanup_push(thread_cleanup, &dt);
 
-    length = strlen((char *)dt->expr) + 1u;
+    length = strlen((char *)dt->expr) + 1U;
 
     /* データ設定 */
     slen = set_client_data(&dt->sdata, dt->expr, length);
@@ -236,7 +236,7 @@ client_thread(void *arg)
 
     pthread_cleanup_push(thread_memfree, &dt->answer);
 
-    if (length == 0u) /* 受信エラー */
+    if (length == 0U) /* 受信エラー */
         pthread_exit((void *)EX_RECV_ERR);
     dbglog("answer=%p, length=%zu", dt->answer, length);
 
@@ -322,13 +322,13 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'i': /* IPアドレス指定 */
             if (set_host_string(optarg) < 0) {
-                fprintf(stderr, "Hostname string length %u", (HOST_SIZE - 1u));
+                fprintf(stderr, "Hostname string length %u", (HOST_SIZE - 1U));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             if (set_port_string(optarg) < 0) {
-                fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1u));
+                fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1U));
                 exit(EXIT_FAILURE);
             }
             break;

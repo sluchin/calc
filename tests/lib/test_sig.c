@@ -195,7 +195,7 @@ test_set_sigaction_failure(void)
     struct sigaction before; /* 失敗する前の sigaction構造体 */
     struct sigaction after;  /* 失敗したあとの sigaction構造体 */
     int retval = 0;          /* 戻り値 */
-    unsigned int calls = 0u; /* 呼び出し回数 */
+    unsigned int calls = 0U; /* 呼び出し回数 */
 
     retval = get_action(&before);
     TEST_ASSERT_INT(0, retval);

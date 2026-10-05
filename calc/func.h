@@ -29,7 +29,7 @@
 #include "calc.h"
 
 /** 関数最大文字数 */
-#define MAX_FUNC_STRING 4u
+#define MAX_FUNC_STRING 4U
 
 /* 関数実行 */
 double exec_func(calcinfo *calc, const char *func);

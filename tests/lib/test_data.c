@@ -71,14 +71,14 @@ startup(void)
 TEST
 test_set_client_data(void)
 {
-    size_t length = 0u; /* データ長 */
+    size_t length = 0U; /* データ長 */
     ssize_t len = 0L;   /* 送信データ長 */
     /* テストデータごとに, 実行して, 結果を確認する */
     struct client_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
-    for (i = 0u; i < NELEMS(test_data); i++) {
-        length = strlen(test_data[i]) + 1u;
+    for (i = 0U; i < NELEMS(test_data); i++) {
+        length = strlen(test_data[i]) + 1U;
         dbglog("length=%zu", length);
         len = set_client_data(&dt, (const unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
@@ -98,14 +98,14 @@ test_set_client_data(void)
 TEST
 test_set_server_data(void)
 {
-    size_t length = 0u; /* データ長 */
+    size_t length = 0U; /* データ長 */
     ssize_t len = 0L;   /* 送信データ長 */
     /* テストデータごとに, 実行して, 結果を確認する */
     struct server_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
-    for (i = 0u; i < NELEMS(test_data); i++) {
-        length = strlen(test_data[i]) + 1u;
+    for (i = 0U; i < NELEMS(test_data); i++) {
+        length = strlen(test_data[i]) + 1U;
         dbglog("length=%zu", length);
         len = set_server_data(&dt, (const unsigned char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
@@ -129,11 +129,11 @@ test_set_client_data_failure(void)
     unsigned char buf[] = "a";     /* 送受信バッファ */
 
     /* バッファがNULL */
-    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1u));
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1U));
     TEST_ASSERT_NULL(dt);
 
     /* メモリを確保できない (巨大なサイズ) */
-    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, buf, SIZE_MAX / 2u));
+    TEST_ASSERT_INT(EX_NG, set_client_data(&dt, buf, SIZE_MAX / 2U));
     TEST_ASSERT_NULL(dt);
     PASS();
 }
@@ -148,11 +148,11 @@ test_set_server_data_failure(void)
     unsigned char buf[] = "a";     /* 送受信バッファ */
 
     /* バッファがNULL */
-    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1u));
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1U));
     TEST_ASSERT_NULL(dt);
 
     /* メモリを確保できない (巨大なサイズ) */
-    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, buf, SIZE_MAX / 2u));
+    TEST_ASSERT_INT(EX_NG, set_server_data(&dt, buf, SIZE_MAX / 2U));
     TEST_ASSERT_NULL(dt);
     PASS();
 }

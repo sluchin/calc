@@ -36,7 +36,7 @@
 #include "log.h"
 #include "fileio.h"
 
-#define BUF_SIZE 4100u /**< バッファサイズ */
+#define BUF_SIZE 4100U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -90,7 +90,7 @@ startup(void)
 {
     set_sig_handler();
     (void)memset(sendbuf, 'a', sizeof(sendbuf));
-    sendbuf[sizeof(sendbuf) - 1u] = '\0';
+    sendbuf[sizeof(sendbuf) - 1U] = '\0';
 }
 
 /**
@@ -612,9 +612,9 @@ test_readn_failure(void)
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    TEST_ASSERT_INT(2, write(p[1], "ab", 2u));
+    TEST_ASSERT_INT(2, write(p[1], "ab", 2U));
     (void)close(p[1]);
-    TEST_ASSERT_INT(2, readn(p[0], readbuf, 4u));
+    TEST_ASSERT_INT(2, readn(p[0], readbuf, 4U));
     TEST_ASSERT_STR("ab", readbuf);
     (void)close(p[0]);
     PASS();
@@ -632,11 +632,11 @@ test_readn_interrupted(void)
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    TEST_ASSERT_INT(3, write(p[1], "abc", 3u));
+    TEST_ASSERT_INT(3, write(p[1], "abc", 3U));
 
     /* 1 回目は割り込まれるが, やり直して, 受信できる */
     TEST_INJECT(read, 0, 1, -1, EINTR);
-    TEST_ASSERT_INT(3, readn(p[0], readbuf, 3u));
+    TEST_ASSERT_INT(3, readn(p[0], readbuf, 3U));
     TEST_ASSERT_INT(2, read_fake.call_count);
     TEST_ASSERT_STR("abc", readbuf);
     (void)close(p[0]);
@@ -651,7 +651,7 @@ TEST
 test_writen_failure(void)
 {
     /* 不正なファイルディスクリプタ */
-    TEST_ASSERT_INT(EX_NG, writen(-1, "abc", 3u));
+    TEST_ASSERT_INT(EX_NG, writen(-1, "abc", 3U));
     PASS();
 }
 
@@ -670,7 +670,7 @@ test_writen_interrupted(void)
 
     /* 1 回目は割り込まれるが, やり直して, 送信できる */
     TEST_INJECT(write, 0, 1, -1, EINTR);
-    TEST_ASSERT_INT(3, writen(p[1], "abc", 3u));
+    TEST_ASSERT_INT(3, writen(p[1], "abc", 3U));
     TEST_ASSERT_INT(2, write_fake.call_count);
     TEST_ASSERT_INT(3, read(p[0], readbuf, sizeof(readbuf)));
     TEST_ASSERT_STR("abc", readbuf);

@@ -31,7 +31,7 @@
 #include "memfree.h"
 #include "term.h"
 
-#define BUF_SIZE 512u /**< バッファサイズ */
+#define BUF_SIZE 512U /**< バッファサイズ */
 
 /* 内部関数 */
 static char *get_termattr(const int fd, struct termios *mode);
@@ -226,7 +226,7 @@ get_termattr(const int fd, struct termios *mode)
     char buf[BUF_SIZE] = {0}; /* バッファ */
     char *ptr = NULL;         /* 戻り値ポインタ */
     int retval = 0;           /* 戻り値 */
-    size_t off = 0u;          /* オフセット */
+    size_t off = 0U;          /* オフセット */
 
     dbglog("start: fd=%d", fd);
 
@@ -256,8 +256,8 @@ get_termattr(const int fd, struct termios *mode)
     }
 
     /* 末尾の ", " を削る処理 */
-    if ((off >= 10u) && (buf[off - 2u] == ',') && (buf[off - 1u] == ' ')) {
-        off -= 2u;
+    if ((off >= 10U) && (buf[off - 2U] == ',') && (buf[off - 1U] == ' ')) {
+        off -= 2U;
         buf[off] = '\0';
     }
 
@@ -287,7 +287,7 @@ static void
 append_str(char *buf, const size_t size, size_t *off, const char *str)
 {
     size_t len = strlen(str);       /* 追記する長さ */
-    size_t room = size - 1u - *off; /* 追記できる長さ (NUL を除く) */
+    size_t room = size - 1U - *off; /* 追記できる長さ (NUL を除く) */
 
     if (len > room)
         len = room;

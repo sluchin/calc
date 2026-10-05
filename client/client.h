@@ -28,8 +28,8 @@
 #include <stdbool.h> /* bool */
 #include <signal.h>  /* sig_atomic_t sigaction */
 
-#define HOST_SIZE      48u         /**< ホスト名サイズ */
-#define PORT_SIZE      6u          /**< ポート名サイズ */
+#define HOST_SIZE      48U         /**< ホスト名サイズ */
+#define PORT_SIZE      6U          /**< ポート名サイズ */
 #define DEFAULT_IPADDR "127.0.0.1" /**< デフォルトのIPアドレス */
 #define DEFAULT_PORTNO "12345"     /**< デフォルトのポート番号 */
 

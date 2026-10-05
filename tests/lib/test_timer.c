@@ -32,7 +32,7 @@
 #include "fileio.h"
 #include "timer.h"
 
-#define BUF_SIZE 256u /**< バッファサイズ */
+#define BUF_SIZE 256U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -54,7 +54,7 @@ TEST test_stop_timer_wrap(void);
 TEST
 test_print_timer(void)
 {
-    unsigned int t = 0u, time = 0u; /* タイマ用変数 */
+    unsigned int t = 0U, time = 0U; /* タイマ用変数 */
     int fd = -1;                    /* ファイルディスクリプタ */
     ssize_t retval = 0L;            /* 戻り値 */
     char actual[BUF_SIZE] = {0};    /* 実際の文字列 */
@@ -90,7 +90,7 @@ error_handler:
 TEST
 test_start_timer(void)
 {
-    unsigned int t = 0u; /* タイマ用変数 */
+    unsigned int t = 0U; /* タイマ用変数 */
 
     start_timer(&t);
     TEST_ASSERT_NOT_INT(0, t);
@@ -103,11 +103,11 @@ test_start_timer(void)
 TEST
 test_stop_timer(void)
 {
-    unsigned int t = 0u, time = 0u; /* タイマ用変数 */
+    unsigned int t = 0U, time = 0U; /* タイマ用変数 */
 
     start_timer(&t);
     dbglog("t=%u", t);
-    (void)usleep(1000u); /* 最適化されると, 経過時間が 0 になることがあるので待つ */
+    (void)usleep(1000U); /* 最適化されると, 経過時間が 0 になることがあるので待つ */
     time = stop_timer(&t);
     dbglog("time=%u", time);
     ASSERT((time) > (0));
@@ -176,7 +176,7 @@ fake_gettimeofday(struct timeval *tv, void *tz)
 TEST
 test_stop_timer_wrap(void)
 {
-    unsigned int t = 0u; /* タイマ用変数 */
+    unsigned int t = 0U; /* タイマ用変数 */
 
     gettimeofday_fake.custom_fake = fake_gettimeofday;
 

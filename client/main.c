@@ -123,10 +123,10 @@ set_sig_handler(void)
          * (send() が EPIPE を返して, 送信エラーとして処理される) */
         {SIGPIPE, SIG_IGN,     0}
     };
-    unsigned int i = 0u; /* 繰り返し */
+    unsigned int i = 0U; /* 繰り返し */
     int retval = 0;      /* 戻り値 */
 
-    for (i = 0u; i < NELEMS(settings); i++) {
+    for (i = 0U; i < NELEMS(settings); i++) {
         retval = set_sigaction(settings[i].signo, settings[i].handler, settings[i].flags);
         if (retval < 0)
             outlog("set_sigaction: signo=%d", settings[i].signo);

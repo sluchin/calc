@@ -184,17 +184,17 @@ test_exec_func(void)
 {
     double result = 0.0;             /* 結果 */
     calcinfo calc;                   /* calcinfo構造体 */
-    char func[MAX_FUNC_STRING + 1u]; /* 関数文字列 */
-    unsigned int pos = 0u;           /* 配列位置 */
+    char func[MAX_FUNC_STRING + 1U]; /* 関数文字列 */
+    unsigned int pos = 0U;           /* 配列位置 */
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(func_data); i++) {
+    for (i = 0U; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, func_data[i].expr);
         st_calc.readch(&calc);
 
-        pos = 0u;
+        pos = 0U;
         (void)memset(func, 0, sizeof(func));
         while ((isalpha(calc.ch) != 0) && (calc.ch != '\0') && (pos <= MAX_FUNC_STRING)) {
             func[pos++] = (char)calc.ch;
@@ -224,7 +224,7 @@ test_get_pow(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(pow_data); i++) {
+    for (i = 0U; i < NELEMS(pow_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, pow_data[i].expr);
         st_calc.readch(&calc);
@@ -290,7 +290,7 @@ test_get_rad(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(rad_data); i++) {
+    for (i = 0U; i < NELEMS(rad_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, rad_data[i].expr);
         st_calc.readch(&calc);
@@ -313,7 +313,7 @@ test_get_deg(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(deg_data); i++) {
+    for (i = 0U; i < NELEMS(deg_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, deg_data[i].expr);
         st_calc.readch(&calc);
@@ -336,7 +336,7 @@ test_get_sqrt(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(sqrt_data); i++) {
+    for (i = 0U; i < NELEMS(sqrt_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, sqrt_data[i].expr);
         st_calc.readch(&calc);
@@ -362,7 +362,7 @@ test_get_ln(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(ln_data); i++) {
+    for (i = 0U; i < NELEMS(ln_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, ln_data[i].expr);
         st_calc.readch(&calc);
@@ -388,7 +388,7 @@ test_get_log(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(log_data); i++) {
+    for (i = 0U; i < NELEMS(log_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, log_data[i].expr);
         st_calc.readch(&calc);
@@ -414,7 +414,7 @@ test_get_factorial(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(factorial_data); i++) {
+    for (i = 0U; i < NELEMS(factorial_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factorial_data[i].expr);
         st_calc.readch(&calc);
@@ -440,7 +440,7 @@ test_get_permutation(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(permutation_data); i++) {
+    for (i = 0U; i < NELEMS(permutation_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, permutation_data[i].expr);
         st_calc.readch(&calc);
@@ -466,7 +466,7 @@ test_get_combination(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(combination_data); i++) {
+    for (i = 0U; i < NELEMS(combination_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, combination_data[i].expr);
         st_calc.readch(&calc);

@@ -77,10 +77,10 @@ snprintf(char *str, size_t size, const char *format, ...)
         fail = (strcmp(format, "%s%ld%s") == 0);
         break;
     case SNPRINTF_STRLEN:
-        fail = ((str == NULL) && (size == 0u));
+        fail = ((str == NULL) && (size == 0U));
         break;
     case SNPRINTF_ANSWER:
-        fail = ((str != NULL) && (strncmp(format, "%.", 2u) == 0));
+        fail = ((str != NULL) && (strncmp(format, "%.", 2U) == 0));
         break;
     case SNPRINTF_NONE:
     default:
@@ -99,7 +99,7 @@ snprintf(char *str, size_t size, const char *format, ...)
 }
 
 extern void *__libc_malloc(size_t size); /**< 本物の malloc() */
-static size_t fail_malloc_size = 0u;     /**< 失敗させる malloc() のサイズ (0 は無効) */
+static size_t fail_malloc_size = 0U;     /**< 失敗させる malloc() のサイズ (0 は無効) */
 static int fail_malloc_count = 0;        /**< 失敗させる回数 */
 /**
  * malloc() の置き換え
@@ -341,7 +341,7 @@ test_answer_four(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(four_data); i++) {
+    for (i = 0U; i < NELEMS(four_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
 
@@ -363,7 +363,7 @@ test_answer_func(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(func_data); i++) {
+    for (i = 0U; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
 
@@ -384,7 +384,7 @@ test_answer_four_func(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(four_func_data); i++) {
+    for (i = 0U; i < NELEMS(four_func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
 
@@ -405,7 +405,7 @@ test_answer_error(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(error_data); i++) {
+    for (i = 0U; i < NELEMS(error_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
 
@@ -506,7 +506,7 @@ test_expression(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(expression_data); i++) {
+    for (i = 0U; i < NELEMS(expression_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, expression_data[i].expr);
         st_calc.readch(&calc);
@@ -529,7 +529,7 @@ test_term(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(term_data); i++) {
+    for (i = 0U; i < NELEMS(term_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, term_data[i].expr);
         st_calc.readch(&calc);
@@ -555,7 +555,7 @@ test_factor(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(factor_data); i++) {
+    for (i = 0U; i < NELEMS(factor_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factor_data[i].expr);
         st_calc.readch(&calc);
@@ -581,7 +581,7 @@ test_token(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(token_data); i++) {
+    for (i = 0U; i < NELEMS(token_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, token_data[i].expr);
         st_calc.readch(&calc);
@@ -607,7 +607,7 @@ test_number(void)
 
     unsigned int i;
     /* テストデータごとに, 実行して, 結果を確認する */
-    for (i = 0u; i < NELEMS(number_data); i++) {
+    for (i = 0U; i < NELEMS(number_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, number_data[i].expr);
         st_calc.readch(&calc);

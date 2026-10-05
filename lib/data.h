@@ -30,7 +30,7 @@
 #include "def.h"
 
 /** 送受信するデータ長の上限 (これを超えるヘッダは, 不正として受け付けない) */
-#define MAX_DATA_LENGTH 65536u
+#define MAX_DATA_LENGTH 65536U
 
 /** ヘッダ構造体 */
 struct header {

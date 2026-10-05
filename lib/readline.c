@@ -46,8 +46,8 @@ unsigned char *
 _readline(FILE *fp)
 {
     char *fgetsp = NULL;         /* fgets戻り値 */
-    size_t length = 0u;          /* 文字列長 */
-    size_t total = 0u;           /* 文字列長全て */
+    size_t length = 0U;          /* 文字列長 */
+    size_t total = 0U;           /* 文字列長全て */
     unsigned char *alloc = NULL; /* reallocバッファ */
     unsigned char *tmp = NULL;   /* 一時ポインタ */
     unsigned char buf[FGETSBUF]; /* fgetsバッファ */
@@ -72,13 +72,13 @@ _readline(FILE *fp)
         length = strlen((char *)buf);
         dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
-        tmp = (unsigned char *)realloc(alloc, (total + length + 1u) * sizeof(unsigned char));
+        tmp = (unsigned char *)realloc(alloc, (total + length + 1U) * sizeof(unsigned char));
         if (tmp == NULL) {
-            outlog("realloc: total+length+1=%zu", total + length + 1u);
+            outlog("realloc: total+length+1=%zu", total + length + 1U);
             goto error_handler;
         }
         alloc = tmp;
-        (void)memset(alloc + total, 0, (length + 1u) * sizeof(unsigned char));
+        (void)memset(alloc + total, 0, (length + 1U) * sizeof(unsigned char));
 
         (void)memcpy(alloc + total, buf, length * sizeof(unsigned char));
 
@@ -86,11 +86,11 @@ _readline(FILE *fp)
         dbglog("alloc=%p, length=%zu, total=%zu", alloc + total, length * sizeof(unsigned char),
                total);
 
-    } while (!((total > 0u) && (*(alloc + total - 1u) == '\n')) && (feof(fp) == 0));
+    } while (!((total > 0U) && (*(alloc + total - 1U) == '\n')) && (feof(fp) == 0));
 
     /* 改行なしで終わった最後の行も, 返す. 何も読めなかったときは, NULL */
-    if ((alloc != NULL) && (total > 0u) && (*(alloc + total - 1u) == '\n'))
-        *(alloc + total - 1u) = '\0'; /* 改行削除 */
+    if ((alloc != NULL) && (total > 0U) && (*(alloc + total - 1U) == '\n'))
+        *(alloc + total - 1U) = '\0'; /* 改行削除 */
 
     return alloc;
 

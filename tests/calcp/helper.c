@@ -36,7 +36,7 @@
 
 /* 内部変数 */
 static char *strings[MAX_STRINGS]; /**< 確保した文字列 */
-static size_t nstrings = 0u;       /**< 確保した文字列数 */
+static size_t nstrings = 0U;       /**< 確保した文字列数 */
 
 /**
  * @brief 文字列設定
@@ -47,7 +47,7 @@ static size_t nstrings = 0u;       /**< 確保した文字列数 */
 void
 set_string(calcinfo *calc, const char *str)
 {
-    size_t length = 0u;         /* 文字列長 */
+    size_t length = 0U;         /* 文字列長 */
     unsigned char *expr = NULL; /* 式 */
     int retval = 0;             /* 戻り値 */
 
@@ -85,9 +85,9 @@ free_strings(void)
 {
     size_t i;
 
-    for (i = 0u; i < nstrings; i++) {
+    for (i = 0U; i < nstrings; i++) {
         free(strings[i]);
         strings[i] = NULL;
     }
-    nstrings = 0u;
+    nstrings = 0U;
 }

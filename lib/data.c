@@ -31,7 +31,7 @@
 #include "data.h"
 
 /* アライメント */
-#define ALIGN8(x) (((x) + 7u) & ~(size_t)7u) /**< アライメント 8byte */
+#define ALIGN8(x) (((x) + 7U) & ~(size_t)7U) /**< アライメント 8byte */
 
 /**
  * @brief クライアントデータ構造体設定
@@ -45,8 +45,8 @@
 ssize_t
 set_client_data(struct client_data **dt, const unsigned char *buf, const size_t len)
 {
-    size_t length = 0u;  /* 構造体バイト数 */
-    size_t datalen = 0u; /* データ長 */
+    size_t length = 0U;  /* 構造体バイト数 */
+    size_t datalen = 0U; /* データ長 */
 
     dbglog("start: len=%zu", len);
 
@@ -84,8 +84,8 @@ set_client_data(struct client_data **dt, const unsigned char *buf, const size_t 
 ssize_t
 set_server_data(struct server_data **dt, const unsigned char *buf, const size_t len)
 {
-    size_t length = 0u;  /* 構造体バイト数 */
-    size_t datalen = 0u; /* データ長 */
+    size_t length = 0U;  /* 構造体バイト数 */
+    size_t datalen = 0U; /* データ長 */
 
     dbglog("start: len=%zu", len);
 

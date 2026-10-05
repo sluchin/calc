@@ -33,7 +33,7 @@
 #include "fileio.h"
 #include "term.h"
 
-#define BUF_SIZE 2048u /**< バッファサイズ */
+#define BUF_SIZE 2048U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 

@@ -139,8 +139,8 @@ main_loop(void)
             memfree(&expr, NULL);
             continue;
         }
-        dbgdump(expr, strlen((char *)expr) + 1u, "stdin: expr=%p, strlen=%zu", expr,
-                strlen((char *)expr) + 1u);
+        dbgdump(expr, strlen((char *)expr) + 1U, "stdin: expr=%p, strlen=%zu", expr,
+                strlen((char *)expr) + 1U);
 
         if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
             break;
@@ -197,10 +197,10 @@ set_sig_handler(void)
 {
     /* ハンドラで補足するシグナル */
     static const int catch_signals[] = {SIGINT, SIGTERM, SIGQUIT};
-    unsigned int i = 0u; /* 繰り返し */
+    unsigned int i = 0U; /* 繰り返し */
     int retval = 0;      /* 戻り値 */
 
-    for (i = 0u; i < NELEMS(catch_signals); i++) {
+    for (i = 0U; i < NELEMS(catch_signals); i++) {
         retval = set_sigaction(catch_signals[i], sig_handler, 0);
         if (retval < 0)
             outlog("set_sigaction: signo=%d", catch_signals[i]);

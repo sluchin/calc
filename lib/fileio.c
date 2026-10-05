@@ -44,14 +44,14 @@
 ssize_t
 readn(int fd, void *vptr, size_t n)
 {
-    size_t nleft = 0u;  /* 受信する残りのバイト数 */
+    size_t nleft = 0U;  /* 受信する残りのバイト数 */
     ssize_t nread = 0L; /* 受信されたバイト数 */
     char *ptr = NULL;   /* ポインタ */
 
     ptr = (char *)vptr;
     nleft = n;
     /* n バイトを受信するまで繰り返す (read は, 少ないバイト数を返すことがある) */
-    while (nleft > 0u) {
+    while (nleft > 0U) {
         nread = read(fd, ptr, nleft);
         if (nread < 0L) {
             if (errno == EINTR) /* 割り込まれたので, やり直す */
@@ -79,14 +79,14 @@ readn(int fd, void *vptr, size_t n)
 ssize_t
 writen(int fd, const void *vptr, size_t n)
 {
-    size_t nleft = 0u;      /* 送信する残りのバイト数 */
+    size_t nleft = 0U;      /* 送信する残りのバイト数 */
     ssize_t nwritten = 0L;  /* 送信されたバイト数 */
     const char *ptr = NULL; /* ポインタ */
 
     ptr = (const char *)vptr;
     nleft = n;
     /* n バイトを送信するまで繰り返す (write は, 少ないバイト数を返すことがある) */
-    while (nleft > 0u) {
+    while (nleft > 0U) {
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0L) {
             if (errno == EINTR) /* 割り込まれたので, やり直す */

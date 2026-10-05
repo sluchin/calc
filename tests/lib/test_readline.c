@@ -36,7 +36,7 @@
 #include "readline.h"
 
 /* 端末の入力可能なバイト数(4096)より大きいサイズに設定 */
-#define BUF_SIZE 1100u /**< バッファサイズ */
+#define BUF_SIZE 1100U /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -77,8 +77,8 @@ setup(void *data)
     (void)data;
     TEST_PASSTHROUGH_RESET(realloc);
     (void)memset(test_data, 0x31, sizeof(test_data));
-    test_data[sizeof(test_data) - 1u] = '\0';
-    test_data[sizeof(test_data) - 2u] = '\n';
+    test_data[sizeof(test_data) - 1U] = '\0';
+    test_data[sizeof(test_data) - 2U] = '\n';
 }
 
 /**
@@ -106,8 +106,8 @@ test_readline(void)
     result = exec_readline(test_data, sizeof(test_data));
 
     /* 改行削除 */
-    if (test_data[strlen(test_data) - 1u] == '\n')
-        test_data[strlen(test_data) - 1u] = '\0';
+    if (test_data[strlen(test_data) - 1U] == '\n')
+        test_data[strlen(test_data) - 1U] = '\0';
 
     TEST_ASSERT_STR(test_data, (char *)result);
 
@@ -250,7 +250,7 @@ test_readline_failure(void)
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
-    if (write(p[1], "abc\n", 4u) != 4) {
+    if (write(p[1], "abc\n", 4U) != 4) {
         TEST_FAIL("write(%d)", errno);
     }
     (void)close(p[1]);

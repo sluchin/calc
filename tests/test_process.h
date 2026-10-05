@@ -60,7 +60,7 @@ test_run_child(test_child_func func, void *arg, const char *input, char *out, si
     int outpipe[2] = {-1, -1}; /* 出力用 */
     pid_t cpid = 0;            /* 子プロセスID */
     int status = 0;            /* ステータス */
-    size_t total = 0u;         /* 取得したバイト数 */
+    size_t total = 0U;         /* 取得したバイト数 */
     ssize_t len = 0L;          /* read戻り値 */
 
     if ((pipe(inpipe) < 0) || (pipe(outpipe) < 0))
@@ -89,10 +89,10 @@ test_run_child(test_child_func func, void *arg, const char *input, char *out, si
     /* 親プロセス */
     (void)close(inpipe[0]);
     (void)close(outpipe[1]);
-    if ((out != NULL) && (outsize > 0u)) {
+    if ((out != NULL) && (outsize > 0U)) {
         out[0] = '\0';
-        while (total < outsize - 1u) {
-            len = read(outpipe[0], out + total, outsize - 1u - total);
+        while (total < outsize - 1U) {
+            len = read(outpipe[0], out + total, outsize - 1U - total);
             if (len <= 0L)
                 break;
             total += (size_t)len;
@@ -135,7 +135,7 @@ test_run_child_pty(test_child_func func, void *arg, const char *input, char *out
     int master = -1;   /* 端末のマスタ側 */
     pid_t cpid = 0;    /* 子プロセスID */
     int status = 0;    /* ステータス */
-    size_t total = 0u; /* 取得したバイト数 */
+    size_t total = 0U; /* 取得したバイト数 */
     ssize_t len = 0L;  /* read戻り値 */
     char dummy[256];   /* 読み捨て用 */
 
@@ -155,13 +155,13 @@ test_run_child_pty(test_child_func func, void *arg, const char *input, char *out
         (void)close(master);
         return -1;
     }
-    if ((out != NULL) && (outsize > 0u))
+    if ((out != NULL) && (outsize > 0U))
         out[0] = '\0';
     /* 子プロセスが終了して, 端末を閉じるまで読む (Linux では, EIO が返る) */
     len = read(master, dummy, sizeof(dummy));
     while (len > 0L) {
-        if ((out != NULL) && (total < outsize - 1u)) {
-            size_t n = (((size_t)len < outsize - 1u - total) ? (size_t)len : outsize - 1u - total);
+        if ((out != NULL) && (total < outsize - 1U)) {
+            size_t n = (((size_t)len < outsize - 1U - total) ? (size_t)len : outsize - 1U - total);
             (void)memcpy(out + total, dummy, n);
             total += n;
             out[total] = '\0';

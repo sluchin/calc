@@ -86,7 +86,7 @@ parse_args(int argc, char *argv[])
         case 'p':
             retval = set_port_string(optarg);
             if (retval < 0) {
-                (void)fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1u));
+                (void)fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1U));
                 exit(EXIT_FAILURE);
             }
             break;
