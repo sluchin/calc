@@ -1,18 +1,18 @@
 name: CI
 
 # calc の CI.
-#   build   : リリースとデバッグのビルド. 警告が出たら失敗する
-#   test    : 単体テスト (greatest + FFF) を ctest で実行する
-#   analyze : 静的解析 (gcc -fanalyzer). 指摘があれば失敗する
+#   build   : リリースとデバッグのビルド. 警告が出たら失敗する. 実行ファイルとライブラリを artifact に保存する
+#   test    : 単体テスト (greatest + FFF) を ctest で実行する. 出力を artifact に保存する
+#   analyze : 静的解析 (gcc -fanalyzer). 指摘があれば失敗する. 出力を artifact に保存する
 #   coverage: カバレッジ (gcovr). 下限 (CMakeLists.txt の COVERAGE_MIN_LINE / COVERAGE_MIN_BRANCH) を下回ると失敗する
-#   docs    : Doxygen のドキュメント. 警告があれば失敗する. master への push のときは, GitHub Pages へ公開する
+#   docs    : Doxygen のドキュメント. 警告があれば失敗する. main への push のときは, GitHub Pages へ公開する
 #   format  : 整形の確認 (clang-format). 整形が必要なら失敗する
 
 on:
   push:
-    branches: [ master, ccr-* ]
+    branches: [ main, ccr-* ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   # 整形は, この版の clang-format で行う (.clang-format は, 新しい版の設定を使っている)
@@ -39,6 +39,18 @@ jobs:
             echo "::error::ビルドに警告があります (警告ゼロを維持する)"
             exit 1
           fi
+      - name: Upload the executables and the libraries
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: calc-${{ matrix.type }}
+          path: |
+            build/calcp
+            build/calcd
+            build/calcc
+            build/lib*.a
+            build.log
+          if-no-files-found: warn
 
   test:
     name: Unit tests
@@ -56,7 +68,17 @@ jobs:
             echo "::error::ビルドに警告があります (警告ゼロを維持する)"
             exit 1
           fi
-          cd build && ctest --output-on-failure
+          cd build && ctest --output-on-failure 2>&1 | tee ../ctest.log
+      - name: Upload the test output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-output
+          path: |
+            ctest.log
+            build.log
+            build/Testing
+          if-no-files-found: warn
 
   analyze:
     name: Static analysis
@@ -66,7 +88,16 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
       - name: Analyze
-        run: make analyze
+        run: |
+          set -o pipefail
+          make analyze 2>&1 | tee analyze.log
+      - name: Upload the analysis output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analyze-output
+          path: analyze.log
+          if-no-files-found: warn
 
   coverage:
     name: Coverage
@@ -112,17 +143,17 @@ jobs:
           if-no-files-found: error
 
       - name: Upload the documentation for GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/docs/html
 
-  # master への push のときだけ, 生成したドキュメントを GitHub Pages へ公開する.
+  # main への push のときだけ, 生成したドキュメントを GitHub Pages へ公開する.
   # リポジトリの Settings > Pages > Source を "GitHub Actions" にしておくこと.
   deploy-docs:
     name: Deploy the documentation
     needs: docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
