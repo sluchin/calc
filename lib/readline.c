@@ -80,10 +80,10 @@ _readline(FILE *fp)
         dbglog("alloc=%p, length=%zu, total=%zu", alloc + total, length * sizeof(unsigned char),
                total);
 
-    } while (!((total > 0u) && *(alloc + total - 1u) == '\n') && (feof(fp) == 0));
+    } while (!((total > 0u) && (*(alloc + total - 1u) == '\n')) && (feof(fp) == 0));
 
     /* 改行なしで終わった最後の行も, 返す. 何も読めなかったときは, NULL */
-    if ((alloc != NULL) && total > 0u && (*(alloc + total - 1u) == '\n'))
+    if ((alloc != NULL) && (total > 0u) && (*(alloc + total - 1u) == '\n'))
         *(alloc + total - 1u) = '\0'; /* 改行削除 */
 
     return alloc;

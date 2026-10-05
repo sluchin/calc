@@ -81,7 +81,7 @@ fcntl(int fd, int cmd, ...)
     arg = va_arg(ap, long);
     va_end(ap);
     /* F_SETFL のときだけ, 注入した失敗を返す */
-    if (cmd == F_SETFL && inject_fcntl.count > 0) {
+    if ((cmd == F_SETFL) && (inject_fcntl.count > 0)) {
         inject_fcntl.count--;
         errno = inject_fcntl.err;
         return (int)inject_fcntl.value;

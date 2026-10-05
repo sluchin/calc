@@ -162,7 +162,7 @@ test_str(const char *str)
 static inline int
 test_streq(const char *a, const char *b)
 {
-    if (a == NULL || b == NULL)
+    if ((a == NULL) || (b == NULL))
         return a == b;
     return strcmp(a, b) == 0;
 }
@@ -199,17 +199,17 @@ test_match(const char *pattern, const char *str)
     char *pat = NULL;
     size_t i = 0u, j = 0u;
 
-    if (pattern == NULL || str == NULL)
+    if ((pattern == NULL) || (str == NULL))
         return 0;
     /* "\n" は改行として扱う (POSIX の拡張正規表現には無いので置換) */
     pat = (char *)malloc(strlen(pattern) + 1u);
     if (pat == NULL)
         return 0;
     while (pattern[i] != '\0') {
-        if (pattern[i] == '\\' && pattern[i + 1u] == 'n') {
+        if ((pattern[i] == '\\') && (pattern[i + 1u] == 'n')) {
             pat[j++] = '\n';
             i += 2u;
-        } else if (pattern[i] == '\\' && pattern[i + 1u] != '\0') {
+        } else if ((pattern[i] == '\\') && (pattern[i + 1u] != '\0')) {
             pat[j++] = pattern[i++];
             pat[j++] = pattern[i++];
         } else {

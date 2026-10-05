@@ -602,7 +602,7 @@ unused_fd(void)
     int f; /* ファイルディスクリプタ */
 
     for (f = 100; f < 1000; f++) {
-        if (fcntl(f, F_GETFD) < 0 && errno == EBADF)
+        if ((fcntl(f, F_GETFD) < 0) && (errno == EBADF))
             return f;
     }
     return -1;

@@ -562,7 +562,7 @@ match_print_hex_sys(const char *actual, const char *prefix)
             return 0;
         /* 直前の改行の次から, ダンプ表示の前までがプレフィックス */
         lf = pos;
-        while (lf > actual && *(lf - 1) != '\n')
+        while ((lf > actual) && (*(lf - 1) != '\n'))
             lf--;
         if ((size_t)(pos - lf) >= sizeof(head))
             return 0;

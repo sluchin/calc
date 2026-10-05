@@ -77,10 +77,10 @@ snprintf(char *str, size_t size, const char *format, ...)
         fail = (strcmp(format, "%s%ld%s") == 0);
         break;
     case SNPRINTF_STRLEN:
-        fail = (str == NULL && size == 0u);
+        fail = ((str == NULL) && (size == 0u));
         break;
     case SNPRINTF_ANSWER:
-        fail = (str != NULL && strncmp(format, "%.", 2u) == 0);
+        fail = ((str != NULL) && (strncmp(format, "%.", 2u) == 0));
         break;
     case SNPRINTF_NONE:
     default:
@@ -110,7 +110,7 @@ static int fail_malloc_count = 0;    /**< 失敗させる回数 */
 void *
 malloc(size_t size)
 {
-    if (fail_malloc_count > 0 && size == fail_malloc_size) {
+    if ((fail_malloc_count > 0) && (size == fail_malloc_size)) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;
@@ -133,7 +133,7 @@ extern void *__libc_calloc(size_t nmemb, size_t size);
 void *
 calloc(size_t nmemb, size_t size)
 {
-    if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
+    if ((fail_malloc_count > 0) && (nmemb * size == fail_malloc_size)) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;

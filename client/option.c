@@ -94,14 +94,14 @@ parse_args(int argc, char *argv[])
         case 'i': /* IPアドレス指定 */
             retval = set_host_string(optarg);
             if (retval < 0) {
-                fprintf(stderr, "Hostname string length %u", (HOST_SIZE - 1u));
+                (void)fprintf(stderr, "Hostname string length %u", (HOST_SIZE - 1u));
                 exit(EXIT_FAILURE);
             }
             break;
         case 'p': /* ポート番号指定 */
             retval = set_port_string(optarg);
             if (retval < 0) {
-                fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1u));
+                (void)fprintf(stderr, "Portno string length %u", (PORT_SIZE - 1u));
                 exit(EXIT_FAILURE);
             }
             break;

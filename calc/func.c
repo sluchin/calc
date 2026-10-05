@@ -154,7 +154,7 @@ exec_func(calcinfo *calc, const char *func)
     clear_math_feexcept();
 
     int i;
-    for (i = 0, exec = false; i < MAXFUNC && !exec; i++) {
+    for (i = 0, exec = false; (i < MAXFUNC) && !exec; i++) {
         if (strcmp(fstring[i].funcname, func) == 0) {
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);

@@ -346,7 +346,7 @@ test_client_loop(void)
         dbglog("child");
 
         /* コネクト */
-        if (set_host_string(hostname) < 0 || set_port_string(port) < 0) {
+        if ((set_host_string(hostname) < 0) || (set_port_string(port) < 0)) {
             outlog("set_host_string/set_port_string");
             exit(CHILD_FAILED);
         }
@@ -519,7 +519,7 @@ test_read_sock(void)
     if (cpid == 0) { /* 子プロセス */
         dbglog("child");
 
-        if (set_host_string(hostname) < 0 || set_port_string(port) < 0) {
+        if ((set_host_string(hostname) < 0) || (set_port_string(port) < 0)) {
             outlog("set_host_string/set_port_string");
             exit(CHILD_FAILED);
         }
@@ -633,7 +633,7 @@ exec_send_sock(unsigned char *sbuf, size_t length)
     if (cpid == 0) { /* 子プロセス */
         dbglog("child");
 
-        if (set_host_string(hostname) < 0 || set_port_string(port) < 0) {
+        if ((set_host_string(hostname) < 0) || (set_port_string(port) < 0)) {
             outlog("set_host_string/set_port_string");
             exit(CHILD_FAILED);
         }
@@ -676,7 +676,7 @@ exec_send_sock(unsigned char *sbuf, size_t length)
         }
         dbglog("write=%zd", wlen);
 
-        if (strcmp((char *)sbuf, "quit\n") != 0 && strcmp((char *)sbuf, "exit\n") != 0) {
+        if ((strcmp((char *)sbuf, "quit\n") != 0) && (strcmp((char *)sbuf, "exit\n") != 0)) {
 
             /* 受信待ち */
             acc = accept_server(ssock);
@@ -1287,11 +1287,11 @@ child_client_loop_socket_only(void *arg)
     (void)arg;
     (void)signal(SIGALRM, SIG_DFL); /* startup() で無視している */
     (void)alarm(10u);               /* 終了しなかったときの保険 */
-    if (pipe(idle) < 0 || socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+    if ((pipe(idle) < 0) || (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0))
         exit(CHILD_FAILED);
     (void)dup2(idle[0], STDIN_FILENO);
     len = set_server_data(&dt, (const unsigned char *)"42", 3u);
-    if (len < 0L || writen(sv[1], dt, (size_t)len) < 0)
+    if ((len < 0L) || (writen(sv[1], dt, (size_t)len) < 0))
         exit(CHILD_FAILED);
 
     (void)signal(SIGINT, on_sigint);
@@ -1337,7 +1337,7 @@ count_line(const char *out, const char *line)
     const char *p = out;       /* 検索位置 */
 
     while (*p != '\0') {
-        if (strncmp(p, line, len) == 0 && (p[len] == '\n' || p[len] == '\0'))
+        if ((strncmp(p, line, len) == 0) && ((p[len] == '\n') || (p[len] == '\0')))
             count++;
         p = strchr(p, '\n');
         if (p == NULL)

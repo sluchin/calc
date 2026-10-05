@@ -156,7 +156,7 @@ malloc(size_t size)
 {
     void *ptr = NULL; /* 確保したメモリ */
 
-    if (fail_malloc_count > 0 && size == fail_malloc_size) {
+    if ((fail_malloc_count > 0) && (size == fail_malloc_size)) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;
@@ -182,7 +182,7 @@ calloc(size_t nmemb, size_t size)
 {
     void *ptr = NULL; /* 確保したメモリ */
 
-    if (fail_malloc_count > 0 && nmemb * size == fail_malloc_size) {
+    if ((fail_malloc_count > 0) && (nmemb * size == fail_malloc_size)) {
         fail_malloc_count--;
         errno = ENOMEM;
         return NULL;

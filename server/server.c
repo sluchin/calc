@@ -253,8 +253,7 @@ server_proc(void *arg)
 
     /* 引数は, server_loop() が malloc したものなので, 複製してすぐに解放する */
     (void)memcpy(&dt, arg, sizeof(thread_data));
-    free(arg);
-    arg = NULL;
+    memfree(&arg, NULL);
 
     dbglog("start: accept=%d sin_addr=%s sin_port=%d, len=%u", dt.sock, inet_ntoa(dt.addr.sin_addr),
            ntohs(dt.addr.sin_port), dt.len);
