@@ -25,7 +25,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        type: [ Release, Debug ]
+        include:
+          - type: Release
+            artifact: build_release
+          - type: Debug
+            artifact: build_debug
     steps:
       - uses: actions/checkout@v6
       - name: Install dependencies
@@ -43,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: calc-${{ matrix.type }}
+          name: ${{ matrix.artifact }}
           path: |
             build/calcp
             build/calcd
@@ -75,11 +79,10 @@ jobs:
         uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: test-output
+          name: test_log
           path: |
             ctest.log
             build.log
-            build/Testing
           if-no-files-found: warn
 
   analyze:
@@ -97,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: analyze-output
+          name: analyze_log
           path: analyze.log
           if-no-files-found: warn
 
