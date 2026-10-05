@@ -37,9 +37,7 @@
 static int sockfd = -1; /**< ソケット */
 
 /* 内部関数 */
-/** atexit登録関数 */
 static void exit_close_sock(void);
-/** シグナルハンドラ設定 */
 static void set_sig_handler(void);
 /* シグナルハンドラ */
 static void sig_handler(int signo);

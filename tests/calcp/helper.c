@@ -39,7 +39,7 @@ static char *strings[MAX_STRINGS]; /**< 確保した文字列 */
 static size_t nstrings = 0u;       /**< 確保した文字列数 */
 
 /**
- * 文字列設定
+ * @brief 文字列設定
  *
  * @param[in] calc calcinfo構造体
  * @param[in] str 文字列
@@ -78,7 +78,7 @@ set_string(calcinfo *calc, const char *str)
 }
 
 /**
- * set_string() で確保した文字列の解放
+ * @brief set_string() で確保した文字列の解放
  */
 void
 free_strings(void)

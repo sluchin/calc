@@ -2,11 +2,11 @@
  * @file  calc/calc.c
  * @brief 関数電卓インタプリタ
  *
- * 式とは、項を + または - でつないだものであり、項とは因子を * または / で\n
- * つないだものであり、因子とは数または ( ) で囲んだ式である.\n
+ * 式とは, 項を + または - でつないだものであり, 項とは因子を * または / で\n
+ * つないだものであり, 因子とは数または ( ) で囲んだ式である.\n
  * 再帰的下降構文解析を使用する.\n
- * 加減乗除 [+,-,*,/]、括弧 [(,)]、正負符号 [+,-]、べき乗[^]、\n
- * 関数 [abs,sqrt,sin,cos,tan,asin,acos,atan,exp,ln,log,deg,rad,n,nPr,nCr]、\n
+ * 加減乗除 [+,-,*,/], 括弧 [(,)], 正負符号 [+,-], べき乗[^], \n
+ * 関数 [abs,sqrt,sin,cos,tan,asin,acos,atan,exp,ln,log,deg,rad,n,nPr,nCr], \n
  * 定数 [pi,e] が使用できる.
  *
  * @author higashi
@@ -54,27 +54,18 @@ static const double EX_ERROR = 0.0; /**< エラー戻り値 */
 static long digit = DEFAULT_DIGIT;  /**< 桁数 */
 
 /* 内部関数 */
-/** バッファ読込 */
 static void readch(calcinfo *calc);
-/** 式 */
 static double expression(calcinfo *calc);
-/** 項 */
 static double term(calcinfo *calc);
-/** 単項 (符号つきのべき乗) */
 static double unary(calcinfo *calc);
-/** べき乗 */
 static double power(calcinfo *calc);
-/** 因子 */
 static double factor(calcinfo *calc);
-/** 数または関数 */
 static double token(calcinfo *calc);
-/** 文字列を数値に変換 */
 static double number(calcinfo *calc);
-/** 文字数取得 */
 static int get_strlen(const double val, const char *fmt);
 
 /**
- * 計算結果
+ * @brief 計算結果
  *
  * @param[in] calc calcinfo構造体
  * @param[in] expr 式
@@ -162,7 +153,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
 }
 
 /**
- * メモリ解放
+ * @brief メモリ解放
  *
  * @param[in] calc calcinfo構造体ポインタ
  */
@@ -175,7 +166,7 @@ destroy_answer(void *calc)
 }
 
 /**
- * 引数解析
+ * @brief 引数解析
  *
  * @param[in] calc calcinfo構造体
  * @param[out] x 値
@@ -231,7 +222,7 @@ parse_func_args(calcinfo *calc, double *x, ...)
 }
 
 /**
- * 桁数設定
+ * @brief 桁数設定
  *
  * @param[in] dgt 有効桁数
  */
@@ -531,7 +522,7 @@ get_strlen(const double val, const char *fmt)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] calc 関数構造体
  */

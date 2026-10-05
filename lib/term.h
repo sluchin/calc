@@ -30,7 +30,7 @@
 /** モードタイプ */
 enum mode_type { control = 0, input, output, local };
 
-/** ターミナル属性シスログ出力 */
+/* ターミナル属性シスログ出力 */
 void sys_print_termattr(const int level,
                         const int option,
                         const char *pname,
@@ -40,12 +40,15 @@ void sys_print_termattr(const int level,
                         int fd);
 
 #ifdef UNITTEST
+/** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testterm {
-    char *(*get_termattr)(const int fd, struct termios *mode);
-    tcflag_t *(*mode_type_flag)(const enum mode_type type, struct termios *mode);
+    char *(*get_termattr)(const int fd, struct termios *mode); /**< 端末属性の文字列化 */
+    tcflag_t *(*mode_type_flag)(const enum mode_type type, struct termios *mode); /**< フラグ取得 */
 };
+/** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testterm testterm;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_term(testterm *term);
 
 #endif /* UNITTEST */

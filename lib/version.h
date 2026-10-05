@@ -25,6 +25,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
+/** バージョン文字列 */
 #define VERSION "version 0.05"
 
 #endif /* VERSION_H */

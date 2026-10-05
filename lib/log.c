@@ -45,9 +45,11 @@
 #define STACK_SIZE    100u /**< スタックサイズ */
 #define MAX_PROGNAME  25u  /**< 最大プログラム名文字列長 */
 
+/** syslog にメッセージを出力 (ファイル名, 行番号, 関数名, errno 付き) */
 #define SYSMSG(lv, fmt, ...) \
     syslog(lv, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, __func__, ##__VA_ARGS__, errno)
 
+/** 標準エラー出力にメッセージを出力 (ファイル名, 行番号, 関数名, errno 付き) */
 #define LOGMSG(fmt, ...)                                                                          \
     (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, __func__, ##__VA_ARGS__, \
                   errno)
@@ -92,7 +94,7 @@ static char progname[MAX_PROGNAME] = {0}; /**< プログラム名 */
 /* 内部関数 */
 
 /**
- * プログラム名設定
+ * @brief プログラム名設定
  *
  * @param[in] name プログラム名
  */
@@ -111,7 +113,7 @@ set_progname(const char *name)
 }
 
 /**
- * プログラム名取得
+ * @brief プログラム名取得
  *
  * @return プログラム名
  */
@@ -122,7 +124,7 @@ get_progname(void)
 }
 
 /**
- * シスログ出力
+ * @brief シスログ出力
  *
  * @param[in] level ログレベル
  * @param[in] option オプション
@@ -178,7 +180,7 @@ system_log(const int level,
 }
 
 /**
- * シスログ出力(デバッグ用)
+ * @brief シスログ出力(デバッグ用)
  *
  * @param[in] level ログレベル
  * @param[in] option オプション
@@ -253,7 +255,7 @@ system_dbg_log(const int level,
 }
 
 /**
- * 標準エラー出力にログ出力
+ * @brief 標準エラー出力にログ出力
  *
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
@@ -328,7 +330,7 @@ stderr_log(
 }
 
 /**
- * 標準エラー出力にHEXダンプ
+ * @brief 標準エラー出力にHEXダンプ
  *
  * @param[in] buf ダンプ出力用バッファ
  * @param[in] len 長さ
@@ -390,7 +392,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
 }
 
 /**
- * シスログにHEXダンプ
+ * @brief シスログにHEXダンプ
  *
  * @param[in] level ログレベル
  * @param[in] option オプショ ン
@@ -477,7 +479,7 @@ dump_sys(const int level,
 }
 
 /**
- * ファイルにバイナリ出力
+ * @brief ファイルにバイナリ出力
  *
  * @param[in] pname プログラム名
  * @param[in] fname ファイル名
@@ -529,7 +531,7 @@ dump_file(const char *pname, const char *fname, const char *buf, const size_t le
 }
 
 /**
- * バックトレースシスログ出力
+ * @brief バックトレースシスログ出力
  *
  * @param[in] level ログレベル
  * @param[in] option オプション
@@ -583,7 +585,7 @@ systrace(const int level,
 #endif
 
 /**
- * バックトレース出力
+ * @brief バックトレース出力
  */
 #ifdef HAVE_EXECINFO
 void

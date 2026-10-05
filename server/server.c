@@ -47,20 +47,15 @@ static char portno[PORT_SIZE]; /**< ポート番号またはサービス名 */
 
 /** スレッドID構造体 */
 typedef struct _thread_id {
-    pthread_t tid;
-    struct _thread_id *next;
+    pthread_t tid;            /**< スレッドID */
+    struct _thread_id *next;  /**< 次の要素 */
 } thread_id;
 
 /* 内部関数 */
-/** サーバプロセス */
 static void *server_proc(void *arg);
-/** スレッドクリーンアップハンドラ */
 static void thread_cleanup(void *arg);
-/** スレッドメモリ解放ハンドラ */
 static void thread_memfree(void *arg);
-/** シグナルマスク取得 */
 static sigset_t get_sigmask(void);
-/** スレッドシグナルマスク設定 */
 static void set_thread_sigmask(sigset_t sigmask);
 
 /**
@@ -82,7 +77,7 @@ set_port_string(const char *port)
 }
 
 /**
- * ソケット接続
+ * @brief ソケット接続
  *
  * @return ソケット
  */
@@ -145,7 +140,7 @@ error_handler:
 }
 
 /**
- * 接続受付
+ * @brief 接続受付
  *
  * @param[in] sock ソケット
  */
@@ -434,7 +429,7 @@ set_thread_sigmask(sigset_t sigmask)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] server 関数構造体
  */

@@ -45,20 +45,16 @@ FAKE_VALUE_FUNC(void *, realloc, void *, size_t)
 TEST_PASSTHROUGH(void *, realloc, (void *ptr, size_t size), (ptr, size))
 
 /* プロトタイプ */
-/** readline() 関数テスト */
 TEST test_readline(void);
-/** readline() 関数テスト (失敗) */
 TEST test_readline_failure(void);
 
 /* 内部変数 */
-static int pfd[] = {-1, -1};         /* パイプ */
-static char test_data[BUF_SIZE];     /* テストデータ */
-static unsigned char *result = NULL; /* 結果文字列 */
+static int pfd[] = {-1, -1};         /**< パイプ */
+static char test_data[BUF_SIZE];     /**< テストデータ */
+static unsigned char *result = NULL; /**< 結果文字列 */
 
 /* 内部関数 */
-/** readline() 実行 */
 static unsigned char *exec_readline(char *data, size_t length);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /**

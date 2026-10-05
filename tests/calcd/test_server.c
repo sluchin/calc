@@ -77,6 +77,7 @@ FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *)
 TEST_PASSTHROUGH(int, accept, (int fd, struct sockaddr *addr, socklen_t *len), (fd, addr, len))
 #pragma GCC diagnostic pop
 /* FFF は, 関数ポインタの型を直接書けないので, typedef する */
+/** スレッド関数の型 */
 typedef void *(*thread_func_t)(void *);
 FAKE_VALUE_FUNC(int, pthread_create, pthread_t *, const pthread_attr_t *, thread_func_t, void *)
 TEST_PASSTHROUGH(int,
@@ -119,9 +120,9 @@ TEST_PASSTHROUGH(int,
  * ときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
  * 本物は __libc_malloc() で呼ぶ.
  */
-extern void *__libc_malloc(size_t size);
-extern void *__libc_calloc(size_t nmemb, size_t size);
-extern void __libc_free(void *ptr);
+extern void *__libc_malloc(size_t size);                /**< 本物の malloc() */
+extern void *__libc_calloc(size_t nmemb, size_t size); /**< 本物の calloc() */
+extern void __libc_free(void *ptr);                    /**< 本物の free() */
 static size_t fail_malloc_size = 0u;      /**< 失敗させる malloc() のサイズ (0 は無効) */
 static int fail_malloc_count = 0;         /**< 失敗させる回数 */
 static size_t track_size = 0u;            /**< 確保と解放を追跡するサイズ (0 は無効) */
@@ -216,11 +217,8 @@ struct send_data {
 };
 
 /* プロトタイプ */
-/** set_port_string() 関数テスト */
 TEST test_set_port_string(void);
-/** server_sock() 関数テスト */
 TEST test_server_sock(void);
-/** server_loop() 関数テスト */
 TEST test_server_loop(void);
 TEST test_server_sock_failure(void);
 TEST test_server_loop_failure(void);
@@ -243,13 +241,9 @@ static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 
 /* 内部関数 */
-/** 送信 */
 static int send_client(int sockfd, unsigned char *sbuf, size_t length);
-/** 受信 */
 static int recv_client(int sockfd, unsigned char *rbuf);
-/** ソケット生成 */
 static int inet_sock_client(void);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /**
@@ -583,6 +577,9 @@ recv_client(int sockfd, unsigned char *rbuf)
 
 /**
  * ソケット作成
+ *
+ * @return 接続したソケット
+ * @retval EX_NG エラー
  */
 static int
 inet_sock_client(void)

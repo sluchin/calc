@@ -69,15 +69,10 @@ static unsigned char *expr = NULL;       /**< 入力バッファ */
 static unsigned char *answer = NULL;     /**< 受信データ */
 
 /* 内部関数 */
-/** ソケット送信 */
 static st_client send_sock(int sock);
-/** ソケット受信 */
 static st_client read_sock(int sock);
-/** 送信済みで, 未受信の答えを受信 */
 static st_client drain_replies(int sock, int *pending, st_client status);
-/** シグナルマスク取得 */
 static sigset_t get_sigmask(void);
-/** atexit登録関数 */
 static void exit_memfree(void);
 
 /**
@@ -99,7 +94,7 @@ set_port_string(const char *port)
 }
 
 /**
- * ホスト名文字列設定
+ * @brief ホスト名文字列設定
  *
  * @param[in] host ホスト名
  * @retval EX_NG エラー
@@ -117,7 +112,7 @@ set_host_string(const char *host)
 }
 
 /**
- * ソケット接続
+ * @brief ソケット接続
  *
  * @return ソケット
  */
@@ -160,9 +155,11 @@ connect_sock(void)
 }
 
 /**
- * ソケット送受信
+ * @brief ソケット送受信
  *
  * @param[in] sock ソケット
+ * @return ステータス (EX_SUCCESS: 正常, EX_FAILURE: 異常, EX_QUIT: quit または exit,
+ *         EX_SEND_ERR: 送信エラー, EX_RECV_ERR: 受信エラー, EX_SIGNAL: シグナル受信)
  */
 st_client
 client_loop(int sock)
@@ -444,7 +441,7 @@ exit_memfree(void)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] client 関数構造体
  */

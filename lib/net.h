@@ -34,27 +34,28 @@ enum _blockmode {
     NONBLOCK = 0, /**< ノンブロッキングモード */
     BLOCKING      /**< ブロッキングモード */
 };
+/** ブロッキングモード型 */
 typedef enum _blockmode blockmode;
 
-/** ホスト名設定 */
+/* ホスト名設定 */
 int set_hostname(struct sockaddr_in *addr, const char *host);
 
-/** ポート番号設定 */
+/* ポート番号設定 */
 int set_port(struct sockaddr_in *addr, const char *port);
 
-/** ブロッキングモード設定 */
+/* ブロッキングモードの設定 */
 int set_block(int fd, blockmode mode);
 
-/** データ送信 */
+/* データ送信 */
 int send_data(const int sock, const void *sdata, size_t *length);
 
-/** データ受信 */
+/* データ受信 */
 int recv_data(const int sock, void *rdata, size_t *length);
 
-/** データ受信 */
+/* データ受信 */
 void *recv_data_new(const int sock, size_t *length);
 
-/** ソケットクローズ */
+/* ソケットクローズ */
 int close_sock(int *sock);
 
 #endif /* NET_H */

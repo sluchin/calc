@@ -30,7 +30,7 @@
 #include "readline.h"
 
 /**
- * 一行読込
+ * @brief 一行読込
  *
  * @param[in] fp ファイルポインタ
  * @return 文字列
