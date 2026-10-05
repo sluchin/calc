@@ -753,7 +753,15 @@ accept_server(int sockfd)
             if (FD_ISSET(sockfd, &rfds) != 0) {
                 /* アクセプト */
                 addrlen = (socklen_t)sizeof(struct sockaddr_in);
+                /* sockaddr_un / sockaddr_in を sockaddr にキャストする (BSD ソケットの API の仕様, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
                 accfd = accept(sockfd, (struct sockaddr *)&addr, &addrlen);
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
                 if (accfd < 0) {
                     TEST_NOTIFY("accept=%d(%d)", accfd, errno);
                     return EX_NG;
@@ -876,7 +884,15 @@ inet_sock_server(void)
     }
 
     /* ソケットにアドレスを指定 */
+    /* sockaddr_un / sockaddr_in を sockaddr にキャストする (BSD ソケットの API の仕様, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     retval = bind(sockfd, (struct sockaddr *)&addr, (socklen_t)sizeof(addr));
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (retval < 0) {
         if (errno == EADDRINUSE)
             TEST_NOTIFY("Address already in use\n");

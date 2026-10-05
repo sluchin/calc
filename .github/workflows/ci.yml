@@ -64,6 +64,8 @@ jobs:
           set -o pipefail
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
           cmake --build build 2>&1 | tee build.log
+          # テストのビルドは, ctest の build_tests でも行うが, ここで先に行い, 警告を確認する
+          cmake --build build --target unit_tests 2>&1 | tee -a build.log
           if grep -q "warning:" build.log; then
             echo "::error::ビルドに警告があります (警告ゼロを維持する)"
             exit 1
