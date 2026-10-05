@@ -27,7 +27,7 @@ jobs:
       matrix:
         type: [ Release, Debug ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
       - name: Build
@@ -40,7 +40,7 @@ jobs:
             exit 1
           fi
       - name: Upload the executables and the libraries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: calc-${{ matrix.type }}
@@ -56,7 +56,7 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
       - name: Test
@@ -70,7 +70,7 @@ jobs:
           fi
           cd build && ctest --output-on-failure 2>&1 | tee ../ctest.log
       - name: Upload the test output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-output
@@ -84,7 +84,7 @@ jobs:
     name: Static analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
       - name: Analyze
@@ -92,7 +92,7 @@ jobs:
           set -o pipefail
           make analyze 2>&1 | tee analyze.log
       - name: Upload the analysis output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: analyze-output
@@ -103,7 +103,7 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -111,7 +111,7 @@ jobs:
       - name: Coverage
         run: make coverage
       - name: Upload the report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: coverage
@@ -122,7 +122,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev doxygen graphviz
       - name: Generate
@@ -136,7 +136,7 @@ jobs:
             exit 1
           fi
       - name: Upload the documentation
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: docs
           path: build/docs/html
@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload the documentation for GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: build/docs/html
 
@@ -167,13 +167,13 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   format:
     name: Format check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install clang-format
         run: pip install "clang-format==${CLANG_FORMAT_VERSION}"
       - name: Check

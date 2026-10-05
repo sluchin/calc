@@ -4,7 +4,7 @@
 # 全体に付ける.
 include(CheckCCompilerFlag)
 
-file(STRINGS ${CMAKE_SOURCE_DIR}/warnings.txt WARNING_LINES)
+file(STRINGS ${CMAKE_SOURCE_DIR}/warnings.txt WARNING_LINES ENCODING UTF-8)
 set(WARNING_FLAGS "")
 foreach(line IN LISTS WARNING_LINES)
   string(REGEX REPLACE "#.*" "" flag "${line}")
