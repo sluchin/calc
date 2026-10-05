@@ -234,7 +234,9 @@ test_match(const char *pattern, const char *str)
 #define TEST_ASSERT_MATCH_MSG(pattern, str, ...) \
     TEST_ASSERT_MSG(test_match((pattern), (str)), __VA_ARGS__)
 
+/** ポインタが NULL */
 #define TEST_ASSERT_NULL(ptr)     ASSERT_EQ(NULL, (ptr))
+/** ポインタが NULL でない */
 #define TEST_ASSERT_NOT_NULL(ptr) ASSERT_NEQ(NULL, (ptr))
 
 /** 障害を注入する設定 */
@@ -312,6 +314,7 @@ struct test_inject {
         (void)setvbuf(stdout, NULL, _IONBF, 0); \
         GREATEST_MAIN_BEGIN();                  \
     } while (0)
+/** テストの main() の終了処理 */
 #define TEST_MAIN_END() GREATEST_MAIN_END()
 
 #endif /* TEST_HELPER_H */

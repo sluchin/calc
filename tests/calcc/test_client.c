@@ -98,6 +98,7 @@ TEST_PASSTHROUGH(ssize_t,
  */
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
 static struct test_inject inject_cxa_atexit; /**< __cxa_atexit() に注入する失敗 */
+/** 本物の __cxa_atexit() */
 static int (*real_cxa_atexit)(void (*)(void *), void *, void *) = NULL;
 /**
  * __cxa_atexit() の置き換え (atexit() が呼ぶ)
@@ -123,17 +124,11 @@ __cxa_atexit(void (*func)(void *), void *arg, void *dso)
 }
 
 /* プロトタイプ */
-/** set_port_string() 関数テスト */
 TEST test_set_port_string(void);
-/** set_host_string() 関数テスト */
 TEST test_set_host_string(void);
-/** connect_sock() 関数テスト */
 TEST test_connect_sock(void);
-/** client_loop() 関数テスト */
 TEST test_client_loop(void);
-/** send_sock() 関数テスト */
 TEST test_send_sock(void);
-/** read_sock() 関数テスト */
 TEST test_read_sock(void);
 TEST test_connect_sock_failure(void);
 TEST test_client_loop_failure(void);
@@ -149,17 +144,11 @@ TEST test_send_sock_alloc_failure(void);
 
 /* 内部関数 */
 static void on_sigint(int signo);
-/** send_sock() 関数実行 */
 static int exec_send_sock(unsigned char *sbuf, size_t length);
-/** アクセプト */
 static int accept_server(int sockfd);
-/** 受信 */
 static int recv_server(int sockfd, unsigned char *rbuf);
-/** 送信 */
 static int send_server(int sockfd, unsigned char *sbuf, size_t length);
-/** ソケット生成 */
 static int inet_sock_server(void);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /**
@@ -586,6 +575,8 @@ test_read_sock(void)
  *
  * @param[in] sbuf 送信データ
  * @param[in] length バイト数
+ * @retval EX_OK 成功
+ * @retval EX_NG エラー
  */
 static int
 exec_send_sock(unsigned char *sbuf, size_t length)

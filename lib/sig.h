@@ -25,7 +25,7 @@
 #ifndef SIG_H
 #define SIG_H
 
-/** シグナルのハンドラ設定 */
+/* シグナルのハンドラ設定 */
 int set_sigaction(const int signo, void (*handler)(int), const int flags);
 
 #endif /* SIG_H */

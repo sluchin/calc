@@ -42,7 +42,7 @@
 #include "net.h"
 
 /**
- * ホスト名設定
+ * @brief ホスト名設定
  *
  * @param[out] addr sockaddr_in構造体
  * @param[in] host ホスト名またはIPアドレス
@@ -84,7 +84,7 @@ set_hostname(struct sockaddr_in *addr, const char *host)
 }
 
 /**
- * ポート番号設定
+ * @brief ポート番号設定
  *
  * @param[out] addr sockaddr_in構造体
  * @param[in] port ポート番号またはサービス名
@@ -128,7 +128,7 @@ set_port(struct sockaddr_in *addr, const char *port)
 }
 
 /**
- * ブロッキングモードの設定
+ * @brief ブロッキングモードの設定
  *
  * @param[in] fd ファイルディスクリプタ
  * @param[in] mode ブロッキングモード
@@ -175,7 +175,7 @@ set_block(int fd, blockmode mode)
 }
 
 /**
- * データ送信
+ * @brief データ送信
  *
  * @param[in] sock ソケット
  * @param[in] sdata データ
@@ -218,7 +218,7 @@ error_handler:
 }
 
 /**
- * データ受信
+ * @brief データ受信
  *
  * @param[in] sock ソケット
  * @param[out] rdata データ
@@ -264,7 +264,7 @@ error_handler:
 }
 
 /**
- * データ受信
+ * @brief データ受信
  *
  * 新たに領域確保し, データを受信する.
  *
@@ -303,7 +303,7 @@ recv_data_new(const int sock, size_t *length)
 }
 
 /**
- * ソケットクローズ
+ * @brief ソケットクローズ
  *
  * シャットダウン後, クローズする.
  * @param[in] sock ソケット

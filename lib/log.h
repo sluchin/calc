@@ -30,13 +30,19 @@
 
 #include "term.h"
 
+/** syslog のファシリティ */
 #define SYS_FACILITY LOG_SYSLOG
+/** ログ関数に渡す共通の引数 (プログラム名, ファイル名, 行番号, 関数名) */
 #define LOGARGS      get_progname(), __FILE__, __LINE__, __func__
+/** syslog 用のログ関数に渡す共通の引数 (レベル, オプション, LOGARGS) */
 #define SYSARGS      LOG_INFO, LOG_PID, LOGARGS
 
 /* エラー時ログメッセージ出力 */
+/** エラーメッセージを syslog に出力 */
 #define outlog(fmt, ...)        system_log(SYSARGS, fmt, ##__VA_ARGS__)
+/** エラーメッセージを標準エラー出力に出力 */
 #define outstd(fmt, ...)        stderr_log(LOGARGS, fmt, ##__VA_ARGS__)
+/** バッファのダンプを syslog に出力 */
 #define outdump(a, b, fmt, ...) dump_sys(SYSARGS, a, b, fmt, ##__VA_ARGS__)
 /* デバッグ用ログメッセージ */
 #ifdef _DEBUG
@@ -53,21 +59,27 @@
 #  endif
 #  define dbgterm(fd) sys_print_termattr(SYSARGS, fd)
 #else
+/** デバッグ用メッセージを syslog に出力 (_DEBUG のときだけ有効) */
 #  define dbglog(fmt, ...) \
       do {                 \
       } while (0)
+/** デバッグ用メッセージを標準エラー出力に出力 (_DEBUG のときだけ有効) */
 #  define stdlog(fmt, ...) \
       do {                 \
       } while (0)
+/** バッファのダンプを syslog に出力 (_DEBUG のときだけ有効) */
 #  define dbgdump(a, b, fmt, ...) \
       do {                        \
       } while (0)
+/** バッファのダンプを標準エラー出力に出力 (_DEBUG のときだけ有効) */
 #  define stddump(a, b, fmt, ...) \
       do {                        \
       } while (0)
+/** バックトレースを syslog に出力 (_DEBUG のときだけ有効) */
 #  define dbgtrace() \
       do {           \
       } while (0)
+/** 端末属性を syslog に出力 (_DEBUG のときだけ有効) */
 #  define dbgterm(fd) \
       do {            \
       } while (0)
@@ -84,13 +96,13 @@
 #  define LOG_FORMAT(fmt, first)
 #endif
 
-/** プログラム名設定 */
+/* プログラム名設定 */
 void set_progname(const char *name);
 
-/** プログラム名取得 */
+/* プログラム名取得 */
 char *get_progname(void);
 
-/** シスログ出力 */
+/* シスログ出力 */
 void system_log(const int level,
                 const int option,
                 const char *pname,
@@ -100,7 +112,7 @@ void system_log(const int level,
                 const char *format,
                 ...) LOG_FORMAT(7, 8);
 
-/** シスログ出力(デバッグ用) */
+/* シスログ出力(デバッグ用) */
 void system_dbg_log(const int level,
                     const int option,
                     const char *pname,
@@ -110,15 +122,15 @@ void system_dbg_log(const int level,
                     const char *format,
                     ...) LOG_FORMAT(7, 8);
 
-/** 標準エラー出力にログ出力 */
+/* 標準エラー出力にログ出力 */
 void stderr_log(
     const char *pname, const char *fname, const int line, const char *func, const char *format, ...)
     LOG_FORMAT(5, 6);
 
-/** 標準エラー出力にHEXダンプ */
+/* 標準エラー出力にHEXダンプ */
 int dump_log(const void *buf, const size_t len, const char *format, ...) LOG_FORMAT(3, 4);
 
-/** シスログにHEXダンプ */
+/* シスログにHEXダンプ */
 int dump_sys(const int level,
              const int option,
              const char *pname,
@@ -130,10 +142,10 @@ int dump_sys(const int level,
              const char *format,
              ...) LOG_FORMAT(9, 10);
 
-/** ファイルにバイナリ出力 */
+/* ファイルにバイナリ出力 */
 int dump_file(const char *pname, const char *fname, const char *buf, const size_t len);
 
-/** バックトレースシスログ出力 */
+/* バックトレースシスログ出力 */
 void systrace(const int level,
               const int option,
               const char *pname,
@@ -141,7 +153,7 @@ void systrace(const int level,
               const int line,
               const char *func);
 
-/** バックトレース出力 */
+/* バックトレース出力 */
 void print_trace(void);
 
 #endif /* OUTPUTLOG_H */

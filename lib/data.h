@@ -50,10 +50,10 @@ struct server_data {
     unsigned char answer[1]; /**< データバッファ */
 };
 
-/** クライアントデータ構造体設定 */
+/* クライアントデータ構造体設定 */
 ssize_t set_client_data(struct client_data **dt, const unsigned char *buf, const size_t len);
 
-/** サーバデータ構造体設定 */
+/* サーバデータ構造体設定 */
 ssize_t set_server_data(struct server_data **dt, const unsigned char *buf, const size_t len);
 
 #endif /* DATA_H */

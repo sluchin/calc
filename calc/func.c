@@ -40,27 +40,16 @@ static const double DEF_PI = 3.14159265358979323846264338327950288;
 static const double DEF_E = 2.71828182845904523536028747135266249;
 
 /* 内部関数 */
-/** 関数情報構造体初期化 */
 static void init_func(void) __attribute__((constructor));
-/** Pi取得 */
 static double get_pi(calcinfo *calc);
-/** ネイピア数(オイラー数)取得 */
 static double get_e(calcinfo *calc);
-/** 角度をラジアンに変換 */
 static double get_rad(calcinfo *calc, double x);
-/** ラジアンを角度に変換 */
 static double get_deg(calcinfo *calc, double x);
-/** 平方根 */
 static double get_sqrt(calcinfo *calc, double x);
-/** 自然対数 */
 static double get_ln(calcinfo *calc, double x);
-/** 常用対数 */
 static double get_log(calcinfo *calc, double x);
-/** 階乗取得 */
 static double get_factorial(calcinfo *calc, double n);
-/** 順列(nPr) */
 static double get_permutation(calcinfo *calc, double n, double r);
-/** 組み合わせ(nCr) */
 static double get_combination(calcinfo *calc, double n, double r);
 
 /** 関数種別 */
@@ -88,8 +77,8 @@ enum functype {
 
 /** 関数文字列構造体 */
 struct funcstring {
-    enum functype type;
-    char funcname[MAX_FUNC_STRING + 1u];
+    enum functype type;                  /**< 関数種別 */
+    char funcname[MAX_FUNC_STRING + 1u]; /**< 関数名 */
 };
 
 /** 関数文字列構造体初期化 */
@@ -116,10 +105,10 @@ static struct funcstring fstring[] = {
 
 /** 関数共用体 */
 union func {
-    double (*func0)(calcinfo *calc);
-    double (*func1)(calcinfo *calc, double x);
-    double (*func2)(calcinfo *calc, double x, double y);
-    double (*math)(double x);
+    double (*func0)(calcinfo *calc);                     /**< 引数なしの関数 */
+    double (*func1)(calcinfo *calc, double x);           /**< 引数1つの関数 */
+    double (*func2)(calcinfo *calc, double x, double y); /**< 引数2つの関数 */
+    double (*math)(double x);                            /**< 標準ライブラリの数学関数 */
 };
 
 /** 関数種別列挙体 */
@@ -127,15 +116,15 @@ enum uniontype { FUNC0, FUNC1, FUNC2, MATH };
 
 /** 関数情報構造体 */
 struct funcinfo {
-    enum uniontype type;
-    union func func;
+    enum uniontype type; /**< 共用体の種別 */
+    union func func;     /**< 関数ポインタ */
 };
 
 /** 関数情報構造体配列 */
 static struct funcinfo finfo[MAXFUNC];
 
 /**
- * 関数実行
+ * @brief 関数実行
  *
  * @param[in] calc calcinfo構造体
  * @param[in] func 関数名
@@ -195,7 +184,7 @@ exec_func(calcinfo *calc, const char *func)
 }
 
 /**
- * 指数取得
+ * @brief 指数取得
  *
  * @param[in] calc calcinfo構造体
  * @param[in] x 値
@@ -587,7 +576,7 @@ get_combination(calcinfo *calc, double n, double r)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] func 関数構造体
  */

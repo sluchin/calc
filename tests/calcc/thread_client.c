@@ -59,6 +59,7 @@ struct _thread_data {
     size_t len;                        /**< 送信データ長 */
     int sock;                          /**< ソケット */
 };
+/** スレッドデータ型 */
 typedef struct _thread_data thread_data;
 
 /* 内部変数 */
@@ -78,23 +79,14 @@ static struct option longopts[] = {
 static const char *shortopts = "p:i:t:hV";
 
 /* 内部関数 */
-/** スレッド生成 */
 static void create_threads(void);
-/** スレッド処理 */
 static void *client_thread(void *arg);
-/** スレッドクリーンアップハンドラ */
 static void thread_cleanup(void *arg);
-/** スレッドメモリ解放ハンドラ */
 static void thread_memfree(void *arg);
-/** オプション引数 */
 static void parse_args(int argc, char *argv[]);
-/** ヘルプの表示 */
 static void print_help(const char *progname);
-/** バージョン情報表示 */
 static void print_version(const char *progname);
-/** getoptエラー表示 */
 static void parse_error(const int c, const char *msg);
-/** シグナルハンドラ設定 */
 static void set_sig_handler(void);
 
 /**
@@ -194,6 +186,7 @@ create_threads(void)
  * スレッド処理
  *
  * @param[in] arg 使用しない
+ * @return (void *)EX_SUCCESS (エラーのときは, pthread_exit() で, (void *)EX_xxx_ERR を返す)
  */
 static void *
 client_thread(void *arg)

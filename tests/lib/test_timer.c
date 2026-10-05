@@ -32,7 +32,7 @@
 #include "fileio.h"
 #include "timer.h"
 
-#define BUF_SIZE 256u
+#define BUF_SIZE 256u /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -41,17 +41,11 @@ FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *)
 TEST_PASSTHROUGH(int, gettimeofday, (struct timeval * tv, void *tz), (tv, tz))
 
 /* プロトタイプ */
-/** print_timer() 関数テスト */
 TEST test_print_timer(void);
-/** start_timer() 関数テスト */
 TEST test_start_timer(void);
-/** stop_timer() 関数テスト */
 TEST test_stop_timer(void);
-/** get_time() 関数テスト */
 TEST test_get_time(void);
-/** get_time() 関数テスト (失敗) */
 TEST test_get_time_failure(void);
-/** stop_timer() 関数テスト (時刻が一周する) */
 TEST test_stop_timer_wrap(void);
 
 /**

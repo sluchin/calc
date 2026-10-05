@@ -51,6 +51,7 @@ enum _ER {
     E_INFINITY,  /**< 極エラーまたは範囲エラー */
     MAXERROR     /**< エラーコード最大数 */
 };
+/** エラーコード型 */
 typedef enum _ER ER;
 
 /** calc情報構造体 */
@@ -61,32 +62,36 @@ struct _calcinfo {
     char fmt[FMT_SIZE];       /**< フォーマット */
     ER errorcode;             /**< エラーコード */
 };
+/** calc情報構造体型 */
 typedef struct _calcinfo calcinfo;
 
-/** 計算結果 */
+/* 計算結果 */
 unsigned char *create_answer(calcinfo *calc, const unsigned char *expr);
 
-/** メモリ解放 */
+/* メモリ解放 */
 void destroy_answer(void *calc);
 
-/** 引数解析 */
+/* 引数解析 */
 void parse_func_args(calcinfo *calc, double *x, ...);
 
-/** 桁数設定 */
-void set_digit(long digit);
+/* 桁数設定 */
+void set_digit(long dgt);
 
 #ifdef UNITTEST
+/** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testcalc {
-    void (*readch)(calcinfo *calc);
-    double (*expression)(calcinfo *calc);
-    double (*term)(calcinfo *calc);
-    double (*factor)(calcinfo *calc);
-    double (*token)(calcinfo *calc);
-    double (*number)(calcinfo *calc);
-    int (*get_strlen)(const double val, const char *fmt);
+    void (*readch)(calcinfo *calc);                   /**< 1文字読み込み */
+    double (*expression)(calcinfo *calc);             /**< 式 */
+    double (*term)(calcinfo *calc);                   /**< 項 */
+    double (*factor)(calcinfo *calc);                 /**< 因子 */
+    double (*token)(calcinfo *calc);                  /**< 数または関数 */
+    double (*number)(calcinfo *calc);                 /**< 文字列を数値に変換 */
+    int (*get_strlen)(const double val, const char *fmt); /**< 文字数取得 */
 };
+/** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testcalc testcalc;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_calc(testcalc *calc);
 #endif /* UNITTEST */
 

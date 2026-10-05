@@ -29,7 +29,6 @@
 #include "log.h"
 #include "memfree.h"
 
-/** ポインタ変数のアドレスから, ポインタを解放して, NULL を代入する */
 static void free_pointer(void *addr);
 
 /**
@@ -55,7 +54,7 @@ free_pointer(void *addr)
 }
 
 /**
- * メモリ解放
+ * @brief メモリ解放
  *
  * freeした後, NULLを代入する.
  * 例: memfree(&pointer, NULL);

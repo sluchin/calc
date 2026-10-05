@@ -47,23 +47,27 @@ struct _thread_data {
     socklen_t len;           /**< 長さ */
     sigset_t sigmask;        /**< シグナルマスク */
 };
+/** スレッドデータ型 */
 typedef struct _thread_data thread_data;
 
-/** ポート番号文字列設定 */
+/* ポート番号文字列設定 */
 int set_port_string(const char *port);
 
-/** ソケット接続 */
+/* ソケット接続 */
 int server_sock();
 
-/** 接続受付 */
+/* 接続受付 */
 void server_loop(int sock);
 
 #ifdef UNITTEST
+/** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testserver {
-    void *(*server_proc)(void *arg);
+    void *(*server_proc)(void *arg); /**< スレッド関数 */
 };
+/** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testserver testserver;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_server(testserver *server);
 #endif /* UNITTEST */
 

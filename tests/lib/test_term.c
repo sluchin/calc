@@ -45,17 +45,11 @@ FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
 /* プロトタイプ */
-/** sys_print_termattr() 関数テスト */
 TEST test_sys_print_termattr(void);
-/** get_termattr() 関数テスト */
 TEST test_get_termattr(void);
-/** mode_type_flag() 関数テスト */
 TEST test_mode_type_flag(void);
-/** sys_print_termattr() 関数テスト (失敗) */
 TEST test_sys_print_termattr_failure(void);
-/** get_termattr() 関数テスト (失敗) */
 TEST test_get_termattr_failure(void);
-/** sys_print_termattr() 関数テスト (指定したファイルディスクリプタ) */
 TEST test_sys_print_termattr_fd(void);
 
 /* 内部変数 */

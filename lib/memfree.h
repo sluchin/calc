@@ -25,7 +25,7 @@
 #ifndef MEMFREE_H
 #define MEMFREE_H
 
-/** メモリ解放 */
+/* メモリ解放 */
 void memfree(void *ptr, ...);
 
 #endif /* MEMFREE_H */

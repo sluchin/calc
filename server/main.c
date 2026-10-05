@@ -23,7 +23,7 @@
  */
 
 #ifndef _GNU_SOURCE
-#  define _GNU_SOURCE /* execvpe */
+#  define _GNU_SOURCE /**< execvpe を使うために必要 */
 #endif
 #include <stdlib.h> /* exit EXIT_SUCCESS realpath */
 #include <limits.h> /* PATH_MAX */
@@ -44,9 +44,7 @@ static volatile sig_atomic_t hupflag = 0; /**< シグナル種別 */
 static int sockfd = -1;                   /**< ソケット */
 
 /* 内部関数 */
-/** シグナルハンドラ設定 */
 static void set_sig_handler(void);
-/** シグナルハンドラ */
 static void sig_handler(int signo);
 
 /**

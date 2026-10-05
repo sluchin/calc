@@ -34,11 +34,8 @@
 #define BUF_SIZE 512u /**< バッファサイズ */
 
 /* 内部関数 */
-/** ターミナル属性文字列取得 */
 static char *get_termattr(const int fd, struct termios *mode);
-/** バッファへの文字列追記 */
 static void append_str(char *buf, const size_t size, size_t *off, const char *str);
-/** モードからフラグ取得 */
 static tcflag_t *mode_type_flag(const enum mode_type type, struct termios *mode);
 /** モード情報構造体 */
 struct _mode_info {
@@ -176,7 +173,7 @@ static const struct _mode_info mode_info[] = {
 };
 
 /**
- * ターミナル属性シスログ出力
+ * @brief ターミナル属性シスログ出力
  *
  * @param[in] level ログレベル
  * @param[in] option オプション
@@ -327,7 +324,7 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] term 関数構造体
  */

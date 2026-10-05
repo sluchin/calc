@@ -25,7 +25,7 @@
 #ifndef OPTION_H
 #define OPTION_H
 
-/** オプション引数 */
+/* オプション引数 */
 void parse_args(int argc, char *argv[]);
 
 #endif /* OPTION_H */

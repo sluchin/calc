@@ -34,7 +34,7 @@
 #define ALIGN8(x) (((x) + 7u) & ~(size_t)7u) /**< アライメント 8byte */
 
 /**
- * クライアントデータ構造体設定
+ * @brief クライアントデータ構造体設定
  *
  * @param[out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ
@@ -74,7 +74,7 @@ set_client_data(struct client_data **dt, const unsigned char *buf, const size_t 
 }
 
 /**
- * サーバデータ構造体設定
+ * @brief サーバデータ構造体設定
  *
  * @param[out] dt 送受信データ構造体
  * @param[in] buf 送受信バッファ

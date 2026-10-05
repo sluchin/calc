@@ -37,7 +37,7 @@ static const char *errormsg[] = {
     NULL, "Divide by zero.", "Syntax error.", "Function not defined.", "NaN.", "Infinity."};
 
 /**
- * エラーメッセージ取得
+ * @brief エラーメッセージ取得
  *
  * @param[in] calc calcinfo構造体
  * @return エラーメッセージ
@@ -69,7 +69,7 @@ get_errormsg(calcinfo *calc)
 }
 
 /**
- * エラーコード設定
+ * @brief エラーコード設定
  *
  * @param[in] calc calcinfo構造体
  * @param[in] error エラー種別
@@ -84,7 +84,7 @@ set_errorcode(calcinfo *calc, ER error)
 }
 
 /**
- * エラークリア
+ * @brief エラークリア
  *
  * @param[in] calc calcinfo構造体
  */
@@ -96,7 +96,7 @@ clear_error(calcinfo *calc)
 }
 
 /**
- * エラー判定
+ * @brief エラー判定
  *
  * @param[in] calc calcinfo構造体
  * @retval true エラー
@@ -113,7 +113,7 @@ is_error(calcinfo *calc)
 }
 
 /**
- * 数値の妥当性チェック
+ * @brief 数値の妥当性チェック
  *
  * @param[in] calc calcinfo構造体
  * @param[in] val 値
@@ -132,7 +132,7 @@ check_validate(calcinfo *calc, double val)
 }
 
 /**
- * 浮動小数点例外チェック
+ * @brief 浮動小数点例外チェック
  *
  * @param[in] calc calcinfo構造体
  */
@@ -155,7 +155,7 @@ check_math_feexcept(calcinfo *calc)
 }
 
 /**
- * 浮動小数点例外チェッククリア
+ * @brief 浮動小数点例外チェッククリア
  *
  * 浮動小数点例外をチェックする前に必ずクリアする.
  */
@@ -172,7 +172,7 @@ clear_math_feexcept(void)
 
 #ifdef UNITTEST
 /**
- * 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
  *
  * @param[out] error 関数構造体
  */

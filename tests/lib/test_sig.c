@@ -44,11 +44,8 @@ FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
 TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
 
 /* プロトタイプ */
-/** set_sigaction() 関数テスト */
 TEST test_set_sigaction(void);
-/** set_sigaction() 関数テスト (無視, フラグの追加) */
 TEST test_set_sigaction_ignore_and_flags(void);
-/** set_sigaction() 関数テスト (失敗) */
 TEST test_set_sigaction_failure(void);
 
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */

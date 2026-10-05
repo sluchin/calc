@@ -49,15 +49,12 @@ static const int MAX_HISTORY = 100; /**< 最大履歴数 */
 #endif                              /* HAVE_READLINE */
 
 /* 内部関数 */
-/** ループ処理 */
 static void main_loop(void);
 #ifdef HAVE_READLINE
 /* イベントフック */
 static int check_state(void);
 #endif /* HAVE_READLINE */
-/** シグナルハンドラ設定 */
 static void set_sig_handler(void);
-/** シグナルハンドラ */
 static void sig_handler(int signo);
 
 /**

@@ -57,31 +57,18 @@ FAKE_VALUE_FUNC(int, dup2, int, int)
 TEST_PASSTHROUGH(int, dup2, (int oldfd, int newfd), (oldfd, newfd))
 
 /* プロトタイプ */
-/** readn() 関数テスト */
 TEST test_readn(void);
-/** writen() 関数テスト */
 TEST test_writen(void);
-/** pipe_fd() 関数テスト */
 TEST test_pipe_fd(void);
-/** redirect() 関数テスト */
 TEST test_redirect(void);
-/** close_fd() 関数テスト */
 TEST test_close_fd(void);
-/** readn() 関数テスト (失敗) */
 TEST test_readn_failure(void);
-/** readn() 関数テスト (EINTR) */
 TEST test_readn_interrupted(void);
-/** writen() 関数テスト (失敗) */
 TEST test_writen_failure(void);
-/** writen() 関数テスト (EINTR) */
 TEST test_writen_interrupted(void);
-/** pipe_fd() 関数テスト (失敗) */
 TEST test_pipe_fd_failure(void);
-/** pipe_fd2() 関数テスト (失敗) */
 TEST test_pipe_fd2_failure(void);
-/** redirect() 関数テスト (失敗) */
 TEST test_redirect_failure(void);
-/** close_fd() 関数テスト (失敗) */
 TEST test_close_fd_failure(void);
 
 /* 内部変数 */
@@ -91,11 +78,8 @@ static int pfd[] = {-1, -1};                   /**< パイプ */
 static char sendbuf[BUF_SIZE];                 /**< 送信バッファ */
 
 /* 内部関数 */
-/** 受信プロセス起動 */
 static int read_child_process(char *readbuf, char *senddata, size_t len);
-/** 送信プロセス起動 */
 static int write_child_process(char *buf, size_t len);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /**

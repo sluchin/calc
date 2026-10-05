@@ -57,10 +57,11 @@ TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (f
  * 本物は, __cxa_atexit() で呼ぶ. テストの実行ファイルにある main.c の呼び出しだけが,
  * このモックになる (共有ライブラリの中の呼び出しは, 置き換えられない).
  */
+/** atexit() に登録する関数の型 */
 typedef void (*atexit_func_t)(void);
 FAKE_VALUE_FUNC(int, atexit, atexit_func_t)
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
-extern void *__dso_handle;
+extern void *__dso_handle; /**< 共有オブジェクトのハンドル (__cxa_atexit() に渡す) */
 static struct test_inject inject_atexit; /**< atexit() に注入する失敗 */
 /**
  * atexit() の素通し (失敗を注入できる)

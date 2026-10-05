@@ -45,11 +45,8 @@
         (void)fprintf(stderr, "time of %s: %f[msec]\n", #te, te * 1.0e-3); \
     }
 
-/** タイマースタート */
 static inline void start_timer(unsigned int *start_time);
-/** タイマーストップ */
 static inline unsigned int stop_timer(unsigned int *start_time);
-/** 時刻取得 */
 static inline unsigned long long get_time(void);
 
 /**

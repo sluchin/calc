@@ -31,27 +31,30 @@
 /** 関数最大文字数 */
 #define MAX_FUNC_STRING 4u
 
-/** 関数実行 */
+/* 関数実行 */
 double exec_func(calcinfo *calc, const char *func);
 
-/** 指数取得 */
+/* 指数取得 */
 double get_pow(calcinfo *calc, double x, double y);
 
 #ifdef UNITTEST
+/** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testfunc {
-    double (*get_pi)(calcinfo *calc);
-    double (*get_e)(calcinfo *calc);
-    double (*get_rad)(calcinfo *calc, double x);
-    double (*get_deg)(calcinfo *calc, double x);
-    double (*get_sqrt)(calcinfo *calc, double x);
-    double (*get_ln)(calcinfo *calc, double x);
-    double (*get_log)(calcinfo *calc, double x);
-    double (*get_factorial)(calcinfo *calc, double n);
-    double (*get_permutation)(calcinfo *calc, double n, double r);
-    double (*get_combination)(calcinfo *calc, double n, double r);
+    double (*get_pi)(calcinfo *calc);                              /**< 円周率 */
+    double (*get_e)(calcinfo *calc);                               /**< ネイピア数 */
+    double (*get_rad)(calcinfo *calc, double x);                   /**< 角度をラジアンに変換 */
+    double (*get_deg)(calcinfo *calc, double x);                   /**< ラジアンを角度に変換 */
+    double (*get_sqrt)(calcinfo *calc, double x);                  /**< 平方根 */
+    double (*get_ln)(calcinfo *calc, double x);                    /**< 自然対数 */
+    double (*get_log)(calcinfo *calc, double x);                   /**< 常用対数 */
+    double (*get_factorial)(calcinfo *calc, double n);             /**< 階乗 */
+    double (*get_permutation)(calcinfo *calc, double n, double r); /**< 順列 */
+    double (*get_combination)(calcinfo *calc, double n, double r); /**< 組み合わせ */
 };
+/** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testfunc testfunc;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_func(testfunc *func);
 #endif /* UNITTEST */
 

@@ -43,7 +43,7 @@
 #include "fileio.h"
 #include "net.h"
 
-#define BUF_SIZE 2048u
+#define BUF_SIZE 2048u /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -90,37 +90,21 @@ fcntl(int fd, int cmd, ...)
 }
 
 /* プロトタイプ */
-/** set_hostname() 関数テスト */
 TEST test_set_hostname(void);
-/** set_port() 関数テスト */
 TEST test_set_port(void);
-/** set_block() 関数テスト */
 TEST test_set_block(void);
-/** send_data() 関数テスト */
 TEST test_send_data(void);
-/** recv_data() 関数テスト */
 TEST test_recv_data(void);
-/** recv_data_new() 関数テスト */
 TEST test_recv_data_new(void);
-/** close_sock() 関数テスト */
 TEST test_close_sock(void);
-/** set_hostname() 関数テスト (失敗) */
 TEST test_set_hostname_failure(void);
-/** set_port() 関数テスト (失敗) */
 TEST test_set_port_failure(void);
-/** set_block() 関数テスト (失敗) */
 TEST test_set_block_failure(void);
-/** send_data() 関数テスト (失敗) */
 TEST test_send_data_failure(void);
-/** send_data() 関数テスト (EINTR, EAGAIN) */
 TEST test_send_data_interrupted(void);
-/** recv_data() 関数テスト (失敗) */
 TEST test_recv_data_failure(void);
-/** recv_data() 関数テスト (EINTR, EAGAIN) */
 TEST test_recv_data_interrupted(void);
-/** recv_data_new() 関数テスト (失敗) */
 TEST test_recv_data_new_failure(void);
-/** close_sock() 関数テスト (失敗) */
 TEST test_close_sock_failure(void);
 
 /* 内部変数 */
@@ -136,13 +120,9 @@ static char *readnew = NULL;                   /**< クライアント受信用�
 static char sendbuf[BUF_SIZE];                 /**< 送信バッファ */
 
 /* 内部関数 */
-/** サーバプロセス */
 static int server_proc(int sockfd, char *readbuf, size_t length);
-/** サーバソケット生成 */
 static int unix_sock_server(void);
-/** クライアントソケット生成 */
 static int unix_sock_client(void);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /**
