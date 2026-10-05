@@ -50,44 +50,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 
 ## コーディング規約
 
-`README.md` の「コーディングのコンセプト」に従う。
-MISRA-C への対応方針および例外事項 (Deviations) については、[MISRA.md](MISRA.md) を参照。
-
-1. 戻り値を返す関数は、必ず戻り値をチェックして、ログを出力する。
-2. 戻り値を返す標準関数で、あえて戻り値をチェックしない場合は、`void` でキャストする (`(void)memset(...)`)。
-3. 見映えを揃えるために、決まった場所に必ずコメントを入れる。
-4. エラーハンドラでは、`goto` 文を積極的に使用する。
-5. メモリ解放後は、`NULL` を代入する。
-6. ソケットのクローズ後は、`-1` を代入する。
-
-既存のコードに合わせる。
-
-- **バッファの安全性**: `strcpy` `sprintf` `strcat` などの、長さを見ない関数は使わない。`snprintf` や、長さを指定する関数を使い、サイズや境界を必ず確認する。
-- **ネットワーク**: 送受信の長さは、ネットワークバイトオーダー (`htonl` / `ntohl`) で扱う。`send` / `recv` は、部分的な送受信と `EINTR` を考慮する。
-- **条件式**: 条件式は bool だけにする。整数やポインタは、比較して bool にする (`if (retval < 0)`、`if (ptr == NULL)`)。bool の値は、そのまま書き、`== true` / `== false` とは比較しない (`if (g_tflag)`、`if (!exec)`)。
-- **論理演算子の前後の括弧**: `&&` や `||` でつなぐ、それぞれの比較は、括弧で囲む (MISRA C:2012 Rule 12.1)。`if ((aaa == 0) && (bbb == 1))` のように書き、`if (aaa == 0 && bbb == 1)` とは書かない。
-- **条件式の中の関数呼び出し**: 判定だけをする関数 (状態を調べるだけで、何も変えない関数) は、条件式に、そのまま書いてよい。副作用のある関数 (状態を変える、書き込む、開く・閉じる、設定する関数) は、先に呼び出して、戻り値を変数に入れてから、判定する。
-  - 条件式に書いてよい関数: `is_error()` (`bool` を返す判定関数)、`isdigit()` `isalpha()` `isblank()` などの `is*()`、`isless()` `isgreater()` `isnan()` `isinf()` `fpclassify()`、`strcmp()` `strncmp()` (文字列が同じかの判定)、`strchr()` `strlen()`、`feof()` `ferror()`、`isatty()`、`access()`、`fetestexcept()`、`FD_ISSET()`。
-  - 変数に入れる関数の例: `sigaction()` `close()` `dup2()` `setvbuf()` `atexit()` `gettimeofday()` `localtime_r()` `set_port()` `create_answer()` `readch()`。
-    - NG: `if (close(fd) < 0)`、`while (readch(calc), isdigit(calc->ch) != 0)`
-    - OK: `retval = close(fd);` の次の行に `if (retval < 0)`。`readch(calc);` を、ループの前と、ループの本体の最後に書く。
-  - 厳密には、判定関数も、変数に入れてから判定するべきだが、変数が増えて、かえって読みにくくなるので、許容する。
-  - 単体テスト (`tests/`) のコードは、この規約の対象外とする (テスト環境の準備の、短い呼び出しが多いため)。
-- **ログ**: `lib/log.h` のマクロを使う。エラーは `outlog`、デバッグ用は `dbglog` / `dbgdump` (`_DEBUG` のときだけ有効)、標準エラー出力は `outstd` / `stdlog`。`printf` でログを出さない。
-- **ファイル先頭のコメント**: Doxygen 形式の `@file` `@brief` `@author` `@date` `@version` と、Copyright、GPL のライセンス表記 (GPLv3 以降。文面は既存ファイルと同じ。全文は `COPYING`) を付ける。新規ファイルも、既存ファイルに合わせる。
-- **関数のコメント**: 全ての関数に、Doxygen 形式で `@param[in/out]` を書く。値を返す関数には、`@return` (必要なら `@retval`) も書く。値を返さない (`void`) 関数には、`@return なし` を書かない。
-- **書式**: インデントは空白 4 つ。関数の戻り型は、関数名と別の行に書く。中括弧は、関数定義では次の行、制御構文では同じ行に置く。ローカル変数は、宣言時に初期化して、行末にコメントを付ける。**書式は clang-format (`.clang-format`) で整える**: ソースを直したら、`cmake --build build --target format` で整形する (整形の確認だけなら `--target format-check`。GNU make でも、`make format` / `make format-check`。`tests/third_party` は対象外)。
-- **コメントの対象**: コメントは日本語で書く。関数に加えて、マクロとグローバル変数・静的変数にも、Doxygen 形式 (`/** ... */`、または行末の `/**< ... */`) で説明を付ける。
-- **整数リテラルの `u`**: 符号なし型 (`size_t` `unsigned int` `uint16_t` など。`unsigned long` と `unsigned long long` は、次の項) の変数への代入・初期化、比較、演算に使う整数リテラルには、小文字の `u` を付ける (`size_t len = 0u;`、`len - 1u`、`off >= 10u`)。サイズを表すマクロ (`HOST_SIZE` `BUF_SIZE` など) も `u` を付ける。符号付きの文脈 (`int` `ssize_t` `long`、戻り値の比較 `retval < 0`、`memset` の値、`errno` など) のリテラルには付けない。ビットマスクの反転は、`~(size_t)7u` のように、幅を合わせてから反転する (`~7u` は 32 ビットなので、64 ビットの `size_t` では上位ビットが落ちる)。
-- **`unsigned long` と `unsigned long long` のリテラル**: `unsigned long` の変数への代入・初期化、比較、演算に使う整数リテラルには、`UL` を付ける (`unsigned long mask = 0UL;`)。`unsigned long long` には、`ULL` を付ける (`* 1000000ULL`)。`u` や小文字の `ul` は使わない。
-- **`long` 系のリテラルの `L`**: `long` と `ssize_t` の変数への代入・初期化、比較、演算に使う整数リテラルには、大文字の `L` を付ける (`ssize_t len = 0L;`、`len < 0L`)。`long long` には `LL` を付ける。小文字の `l` は、`1` と見分けにくいので使わない (MISRA C:2012 Rule 7.3)。`int` の文脈 (`retval < 0` など) と、`unsigned long` (`UL` を付ける) には付けない。
-- **三項演算子**: 式全体を、括弧で囲む (`(x != NULL) ? x : y` ではなく、`((x != NULL) ? x : y)`)。条件も、比較にして、整数やポインタをそのまま使わない (`(tid != 0)`、`(str != NULL)`)。
-- **「最大のサイズ」の指定**: 巨大な `size_t` が必要なときは、`(size_t)-1` のようにキャストせず、`SIZE_MAX` (`<stdint.h>`) を使う。
-- **行末コメントの桁**: 型やサフィックス (`u` `L` `UL`) を足して、コードの長さが変わったら、整形 (`--target format`) で、連続する行の行末コメントの桁を揃え直す。
-- **戻り値のリテラル**: `return 0;` / `return -1;` のようにリテラルを直書きしない。`EX_OK` / `EX_NG` などの名前付き定数を使う。
-- **`extern` 宣言**: `.c` ファイルに `extern` 宣言を書かない。宣言はヘッダに置き、利用側で `#include` する。
-- **ヘッダ**: インクルードガードは、ファイル名を大文字にして、`.` を `_` にした形式 (`def.h` → `DEF_H`) にする。アンダースコアで始めない (予約済み識別子を避ける。MISRA C:2012 Rule 21.1 / 21.2)。他のライブラリのヘッダと名前が衝突するときだけ、接頭辞を付ける (`CALCUTIL_READLINE_H`)。標準ヘッダには、使う関数をコメントで添える (`#include <string.h> /* memset memcpy */`)。
-- **移植性**: 古い環境 (gcc 4.6 など) でもビルドできる、標準的な C (GNU 拡張は既存のものだけ) で書く。
+@../CODING_RULES.md
 
 ## テストの規約
 
