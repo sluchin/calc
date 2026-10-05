@@ -53,11 +53,8 @@ static struct option longopts[] = {
 static const char *shortopts = "p:d:hVg";
 
 /* 内部関数 */
-/** ヘルプ表示 */
 static void print_help(const char *progname);
-/** バージョン情報表示 */
 static void print_version(const char *progname);
-/** getoptエラー表示 */
 static void parse_error(const int c, const char *msg);
 
 /**

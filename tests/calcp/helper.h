@@ -29,9 +29,9 @@
 
 #define MAX_STRING 32 /**< 最大文字列 */
 
-/** 文字列設定 */
+/* 文字列設定 */
 void set_string(calcinfo *calc, const char *str);
-/** set_string() で確保した文字列の解放 */
+/* set_string() で確保した文字列の解放 */
 void free_strings(void);
 
 #endif /* HELPER_H */

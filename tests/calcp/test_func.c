@@ -34,31 +34,18 @@
 #include "helper.h"
 
 /* プロトタイプ */
-/** exec_func() 関数テスト */
 TEST test_exec_func(void);
-/** 全ての関数テスト (エラー状態) */
 TEST test_func_error_state(void);
-/** get_pi() 関数テスト */
 TEST test_get_pi(void);
-/** get_e() 関数テスト */
 TEST test_get_e(void);
-/** get_rad() 関数テスト */
 TEST test_get_rad(void);
-/** get_deg() 関数テスト */
 TEST test_get_deg(void);
-/** get_pow() 関数テスト */
 TEST test_get_pow(void);
-/** get_sqrt() 関数テスト */
 TEST test_get_sqrt(void);
-/** get_ln() 関数テスト */
 TEST test_get_ln(void);
-/** get_log() 関数テスト */
 TEST test_get_log(void);
-/** get_factorial() 関数テスト */
 TEST test_get_factorial(void);
-/** get_permutation() 関数テスト */
 TEST test_get_permutation(void);
-/** get_combination() 関数テスト */
 TEST test_get_combination(void);
 
 /* 内部変数 */
@@ -69,12 +56,12 @@ static testfunc st_func; /**< func関数構造体 */
 
 /** テストデータ構造体 */
 struct test_data {
-    char expr[MAX_STRING];
-    double answer;
-    double x;
-    double y;
-    ER errorcode;
-    double error;
+    char expr[MAX_STRING]; /**< 式 */
+    double answer;         /**< 期待する結果 */
+    double x;              /**< 第1引数 */
+    double y;              /**< 第2引数 */
+    ER errorcode;          /**< 期待するエラーコード */
+    double error;          /**< 許容する誤差 */
 };
 
 /** exec_func() 関数テスト用データ */

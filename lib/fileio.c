@@ -33,7 +33,7 @@
 #include "fileio.h"
 
 /**
- * 受信
+ * @brief 受信
  *
  * @param[in] fd ソケット
  * @param[in] vptr 受信バッファ
@@ -68,7 +68,7 @@ readn(int fd, void *vptr, size_t n)
 }
 
 /**
- * 送信
+ * @brief 送信
  *
  * @param[in] fd ソケット
  * @param[in] vptr 送信バッファ
@@ -101,7 +101,7 @@ writen(int fd, const void *vptr, size_t n)
 }
 
 /**
- * パイプ複製
+ * @brief パイプ複製
  *
  * @param[in] fd ファイルディスクリプタ
  * @retval EX_NG エラー
@@ -156,7 +156,7 @@ pipe_fd(const int fd)
 }
 
 /**
- * パイプ複製 2
+ * @brief パイプ複製 2
  *
  * @param[in] pipefd パイプ
  * @param[in] oldfd コピー元
@@ -199,7 +199,7 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
 }
 
 /**
- * リダイレクト
+ * @brief リダイレクト
  *
  * この関数は, fd だけを扱い, フラッシュはしない.
  * fd から FILE は分からないので, 書き出されていない出力 (fprintf などで,
@@ -261,7 +261,7 @@ redirect(int fd, const char *path)
 #endif
 
 /**
- * クローズ
+ * @brief クローズ
  *
  * @param[in,out] fd ファイルディスクリプタ
  * @param[in] ... 可変引数

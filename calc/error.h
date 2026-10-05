@@ -31,33 +31,36 @@
 #include "calc.h"
 #include "func.h"
 
-/** エラーメッセージ取得 */
+/* エラーメッセージ取得 */
 unsigned char *get_errormsg(calcinfo *calc);
 
-/** エラーコード設定 */
+/* エラーコード設定 */
 void set_errorcode(calcinfo *calc, ER error);
 
-/** エラークリア */
+/* エラークリア */
 void clear_error(calcinfo *calc);
 
-/** エラー判定 */
+/* エラー判定 */
 bool is_error(calcinfo *calc);
 
-/** 数値の妥当性チェック */
+/* 数値の妥当性チェック */
 void check_validate(calcinfo *calc, double val);
 
-/** 浮動小数点例外チェック */
+/* 浮動小数点例外チェック */
 void check_math_feexcept(calcinfo *calc);
 
-/** 浮動小数点例外チェッククリア */
+/* 浮動小数点例外チェッククリア */
 void clear_math_feexcept(void);
 
 #ifdef UNITTEST
+/** 内部変数の構造体 (単体テスト用) */
 struct _testerror {
-    const char **errormsg;
+    const char **errormsg; /**< エラーメッセージ配列 */
 };
+/** 内部変数の構造体型 (単体テスト用) */
 typedef struct _testerror testerror;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_error(testerror *error);
 #endif /* UNITTEST */
 

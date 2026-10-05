@@ -36,12 +36,14 @@ PREDEFINED             = UNITTEST \
                          "FAKE_VALUE_FUNC(...)=" \
                          "FAKE_VOID_FUNC(...)=" \
                          "TEST_PASSTHROUGH(...)=" \
-                         "GREATEST_MAIN_DEFS()="
+                         "GREATEST_MAIN_DEFS()=" \
+                         "TEST=void" \
+                         "LOG_FORMAT(a,b)="
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 
-# static の関数や, ソースにない情報も, 出力する
-EXTRACT_ALL            = YES
+# static の関数も出力する (ドキュメントのないものは, 警告にする)
+EXTRACT_ALL            = NO
 EXTRACT_STATIC         = YES
 EXTRACT_PRIVATE        = YES
 SOURCE_BROWSER         = YES
@@ -51,7 +53,7 @@ GENERATE_TODOLIST      = YES
 
 # 警告
 WARNINGS               = YES
-WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_UNDOCUMENTED   = YES
 WARN_IF_DOC_ERROR      = YES
 WARN_NO_PARAMDOC       = NO
 

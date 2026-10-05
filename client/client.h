@@ -41,38 +41,42 @@ extern bool g_tflag;                        /**< tオプションフラグ */
 
 /** ステータス */
 enum _st_client {
-    EX_SUCCESS = 0, /* 正常 */
-    EX_FAILURE,     /* 異常 */
-    EX_EMPTY,       /* 空の文字列 */
-    EX_QUIT,        /* quitまたはexit文字列 */
-    EX_CONNECT_ERR, /* 接続できない */
-    EX_ALLOC_ERR,   /* メモリ不足 */
-    EX_SEND_ERR,    /* 送信エラー */
-    EX_RECV_ERR,    /* 受信エラー */
-    EX_SIGNAL,      /* シグナル受信した */
+    EX_SUCCESS = 0, /**< 正常 */
+    EX_FAILURE,     /**< 異常 */
+    EX_EMPTY,       /**< 空の文字列 */
+    EX_QUIT,        /**< quitまたはexit文字列 */
+    EX_CONNECT_ERR, /**< 接続できない */
+    EX_ALLOC_ERR,   /**< メモリ不足 */
+    EX_SEND_ERR,    /**< 送信エラー */
+    EX_RECV_ERR,    /**< 受信エラー */
+    EX_SIGNAL,      /**< シグナル受信した */
 };
+/** クライアントの状態型 */
 typedef enum _st_client st_client;
 
-/** ポート番号文字列設定 */
+/* ポート番号文字列設定 */
 int set_port_string(const char *port);
 
-/** ホスト名文字列設定 */
+/* ホスト名文字列設定 */
 int set_host_string(const char *host);
 
-/** ソケット接続 */
+/* ソケット接続 */
 int connect_sock(void);
 
-/** ソケット送受信 */
+/* ソケット送受信 */
 st_client client_loop(int sock);
 
 #endif /* CLIENT_H */
 
 #ifdef UNITTEST
+/** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testclient {
-    st_client (*send_sock)(int sock);
-    st_client (*read_sock)(int sock);
+    st_client (*send_sock)(int sock); /**< 標準入力から読んで送信 */
+    st_client (*read_sock)(int sock); /**< 受信して標準出力に出力 */
 };
+/** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testclient testclient;
 
+/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
 void test_init_client(testclient *client);
 #endif /* UNITTEST */

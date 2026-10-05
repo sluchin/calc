@@ -40,7 +40,7 @@
 #include "fileio.h"
 #include "log.h"
 
-#define BUF_SIZE 2048u
+#define BUF_SIZE 2048u /**< バッファサイズ */
 
 DEFINE_FFF_GLOBALS
 
@@ -73,42 +73,25 @@ TEST_PASSTHROUGH(char **, backtrace_symbols, (void *const *buffer, int size), (b
 #endif
 
 /* プロトタイプ */
-/** set_progname() 関数テスト */
 TEST test_set_progname(void);
-/** get_progname() 関数テスト */
 TEST test_get_progname(void);
-/** system_log() 関数テスト */
 TEST test_system_log(void);
-/** system_dbg_log() 関数テスト */
 TEST test_system_dbg_log(void);
-/** stderr_log() 関数テスト */
 TEST test_stderr_log(void);
-/** dump_log() 関数テスト */
 TEST test_dump_log(void);
-/** dump_sys() 関数テスト */
 TEST test_dump_sys(void);
-/** dump_file() 関数テスト */
 TEST test_dump_file(void);
-/** system_log() 関数テスト (失敗) */
 TEST test_system_log_failure(void);
-/** system_dbg_log() 関数テスト (失敗) */
 TEST test_system_dbg_log_failure(void);
-/** stderr_log() 関数テスト (失敗) */
 TEST test_stderr_log_failure(void);
-/** dump_log() 関数テスト (失敗) */
 TEST test_dump_log_failure(void);
-/** dump_sys() 関数テスト (失敗) */
 TEST test_dump_sys_failure(void);
-/** dump_file() 関数テスト (失敗) */
 TEST test_dump_file_failure(void);
 #ifdef HAVE_EXECINFO
-/** systrace() 関数テスト (失敗) */
 TEST test_systrace_failure(void);
 #endif
 #ifdef HAVE_EXECINFO
-/** systrace() 関数テスト */
 TEST test_systrace(void);
-/** print_trace() 関数テスト */
 TEST test_print_trace(void);
 #endif
 
@@ -118,11 +101,8 @@ static int fd = -1;                            /**< ファイルディスクリ�
 static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
 
 /* 内部関数 */
-/** 標準エラー出力用文字列設定 */
-static void set_print_hex(char *data, size_t len);
-/** シスログ出力の確認 */
+static void set_print_hex(char *buf, size_t len);
 static int match_print_hex_sys(const char *actual, const char *prefix);
-/** シグナル設定 */
 static void set_sig_handler(void);
 
 /** ダンプ表示文字列 */

@@ -31,17 +31,17 @@ enum {
     PIPE_W = 1  /**< ライト */
 };
 
-/** 受信 */
+/* 受信 */
 ssize_t readn(int fd, void *vptr, size_t n);
-/** 送信 */
+/* 送信 */
 ssize_t writen(int fd, const void *vptr, size_t n);
-/** パイプ */
+/* パイプ複製 */
 int pipe_fd(const int fd);
-/** ファイルディスクリプタ複製 */
+/* パイプ複製 2 */
 int pipe_fd2(int *pipefd, int *oldfd, const int newfd);
-/** リダイレクト (フラッシュは, 呼び出し側の責務. 呼ぶ前に, FILE に fflush() すること) */
+/* リダイレクト */
 int redirect(int fd, const char *path);
-/** クローズ */
+/* クローズ */
 int close_fd(int *fd, ...);
 
 #endif /* FILEIO_H */

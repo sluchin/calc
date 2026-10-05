@@ -30,7 +30,7 @@
 #include "log.h"
 #include "data.h"
 
-/* ALIGNOF() は、dbglog() の引数にだけ使う (_DEBUG でなければ、dbglog() は何も出力しない) */
+/* ALIGNOF() は, dbglog() の引数にだけ使う (_DEBUG でなければ, dbglog() は何も出力しない) */
 #ifdef _DEBUG
 #  define ALIGNOF(type) \
       offsetof(         \
@@ -42,17 +42,14 @@
 #endif
 #define ALIGN 8 /**< アライメント */
 
+/** テストデータ (長さの異なる文字列) */
 static const char *test_data[] = {"a",     "aa",     "aaa",     "aaaa",
                                   "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa"};
 
 /* プロトタイプ */
-/** set_client_data() 関数テスト */
 TEST test_set_client_data(void);
-/** set_server_data() 関数テスト */
 TEST test_set_server_data(void);
-/** set_client_data() 関数テスト (失敗) */
 TEST test_set_client_data_failure(void);
-/** set_server_data() 関数テスト (失敗) */
 TEST test_set_server_data_failure(void);
 
 /**

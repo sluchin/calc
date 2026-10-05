@@ -31,7 +31,6 @@
 #include "memfree.h"
 
 /* プロトタイプ */
-/** memfree() 関数テスト */
 TEST test_memfree(void);
 
 /**

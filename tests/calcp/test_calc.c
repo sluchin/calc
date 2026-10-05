@@ -98,7 +98,7 @@ snprintf(char *str, size_t size, const char *format, ...)
     return retval;
 }
 
-extern void *__libc_malloc(size_t size);
+extern void *__libc_malloc(size_t size); /**< 本物の malloc() */
 static size_t fail_malloc_size = 0u; /**< 失敗させる malloc() のサイズ (0 は無効) */
 static int fail_malloc_count = 0;    /**< 失敗させる回数 */
 /**
@@ -122,7 +122,7 @@ malloc(size_t size)
  * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
  * 同じように置き換える.
  */
-extern void *__libc_calloc(size_t nmemb, size_t size);
+extern void *__libc_calloc(size_t nmemb, size_t size); /**< 本物の calloc() */
 /**
  * calloc() の置き換え
  *
@@ -142,59 +142,41 @@ calloc(size_t nmemb, size_t size)
 }
 
 /* プロトタイプ */
-/** create_answer() 関数テスト (失敗) */
 TEST test_answer_failure(void);
-/** 式を解析する関数テスト (エラー状態) */
 TEST test_calc_error_state(void);
-/** parse_func_args() 関数テスト (失敗) */
 TEST test_parse_func_args_failure(void);
-/** create_answer() 関数テスト (処理時間の表示) */
 TEST test_answer_timer(void);
-/** 四則演算テスト */
 TEST test_answer_four(void);
-/** 関数テスト */
 TEST test_answer_func(void);
-/** 四則演算と関数の組み合わせテスト */
 TEST test_answer_four_func(void);
-/** 関数エラー時テスト */
 TEST test_answer_error(void);
-/** parse_func_args() 関数テスト */
 TEST test_parse_func_args(void);
-/** set_digit() 関数テスト */
 TEST test_set_digit(void);
-/** readch() 関数テスト */
 TEST test_readch(void);
-/** expression() 関数テスト */
 TEST test_expression(void);
-/** term() 関数テスト */
 TEST test_term(void);
-/** factor() 関数テスト */
 TEST test_factor(void);
-/** token() 関数テスト */
 TEST test_token(void);
-/** number() 関数テスト */
 TEST test_number(void);
-/** get_strlen() 関数テスト */
 TEST test_get_strlen(void);
 
 /* 内部変数 */
 static testcalc st_calc; /**< 関数構造体 */
 
 /* 内部関数 */
-/** バッファセット */
 static void exec_calc(calcinfo *calc, const char *str);
 
 /** テストデータ構造体(answer char) */
 struct test_data_char {
-    char expr[MAX_STRING];
-    char answer[MAX_STRING];
+    char expr[MAX_STRING];   /**< 式 */
+    char answer[MAX_STRING]; /**< 期待する結果の文字列 */
 };
 
 /** テストデータ構造体(answer double) */
 struct test_data_double {
-    char expr[MAX_STRING];
-    double answer;
-    ER errorcode;
+    char expr[MAX_STRING]; /**< 式 */
+    double answer;         /**< 期待する結果 */
+    ER errorcode;          /**< 期待するエラーコード */
 };
 
 /** 四則演算テスト用データ */
