@@ -575,6 +575,7 @@ systrace(const int level,
     /* シスログクローズ */
     closelog();
 
+    /* memfree() は, デバッグ版で systrace() を呼ぶので, 再帰しないよう, free() を使う */
     if (strings != NULL)
         free(strings);
     strings = NULL;
@@ -602,6 +603,7 @@ print_trace(void)
     for (i = 0; i < size; i++)
         (void)fprintf(stderr, "%s\n", strings[i]);
 
+    /* memfree() は, デバッグ版で systrace() を呼ぶので, 再帰しないよう, free() を使う */
     if (strings != NULL)
         free(strings);
     strings = NULL;
