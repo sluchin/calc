@@ -120,7 +120,7 @@ TEST_PASSTHROUGH(int,
  * ときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
  * 本物は __libc_malloc() で呼ぶ.
  */
-extern void *__libc_malloc(size_t size);                /**< 本物の malloc() */
+extern void *__libc_malloc(size_t size);               /**< 本物の malloc() */
 extern void *__libc_calloc(size_t nmemb, size_t size); /**< 本物の calloc() */
 extern void __libc_free(void *ptr);                    /**< 本物の free() */
 static size_t fail_malloc_size = 0u;      /**< 失敗させる malloc() のサイズ (0 は無効) */

@@ -38,6 +38,8 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
   - 指摘が、意図した書き方による誤検知のとき (例: `dup2` で、直前に閉じた番号に複製する) だけ、`#pragma GCC diagnostic ignored "-Wanalyzer-..."` で抑える。理由をコメントに書き、gcc 10 未満では `#if` で無効にする。
 - ドキュメント: `build/` で `make doc` (doxygen が必要。`build/docs/html/index.html` に出力。`make clean` で削除される)。`make clean` は、`docs` `coverage` `coverage-build` `Testing` と、`tests/` の実行ファイルのディレクトリを、ディレクトリごと削除する (CMake 3.15 以降。`tests/` 自体は、ビルドに必要な生成ファイルがあるので残す。実行ファイルのディレクトリは、リンカが作らないので、リンクの前に作る)。設定は `Doxyfile` (標準と異なる項目だけを書く。`cmake/doxygen.cmake` が、出力先と `HAVE_DOT` を追加して上書きする)
 
+- CI: `.github/workflows/ci.yml` (GitHub Actions)。`build` (リリースとデバッグ。警告があれば失敗)、`test`、`analyze`、`coverage` (`CMakeLists.txt` の `COVERAGE_MIN_LINE` と `COVERAGE_MIN_BRANCH` を下回ると失敗)、`docs` (警告があれば失敗)、`format` (整形が必要なら失敗) の各ジョブ。ローカルでも、同じコマンド (`make analyze` `make coverage` `make format-check` など) で確認できる。
+
 ## プロジェクト構成
 
 - `lib/`: 共通ライブラリ `libcalcutil` (ログ `log`、ネットワーク `net`、送受信データ `data`、ファイル `fileio`、端末 `term`、シグナル設定 `sig`、`readline`、`memfree`、`timer.h`)。他のディレクトリから使われる。`lib` は他に依存しない。

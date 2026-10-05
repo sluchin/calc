@@ -29,6 +29,12 @@
 #include "memfree.h"
 #include "readline.h"
 
+/* gcc 13 以降の -fanalyzer が, total が 0 のとき (alloc が確保した大きさより前) を読むと誤検知する.
+ * total > 0u を確認してから読み書きしているので, この関数の中だけ, 抑える. */
+#if defined(__GNUC__) && __GNUC__ >= 13
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wanalyzer-out-of-bounds"
+#endif
 /**
  * @brief 一行読込
  *
@@ -92,3 +98,6 @@ error_handler:
     memfree(&alloc, NULL); /* それまでに読んだ分を解放する */
     return NULL;
 }
+#if defined(__GNUC__) && __GNUC__ >= 13
+#  pragma GCC diagnostic pop
+#endif

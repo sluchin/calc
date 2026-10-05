@@ -99,8 +99,8 @@ snprintf(char *str, size_t size, const char *format, ...)
 }
 
 extern void *__libc_malloc(size_t size); /**< 本物の malloc() */
-static size_t fail_malloc_size = 0u; /**< 失敗させる malloc() のサイズ (0 は無効) */
-static int fail_malloc_count = 0;    /**< 失敗させる回数 */
+static size_t fail_malloc_size = 0u;     /**< 失敗させる malloc() のサイズ (0 は無効) */
+static int fail_malloc_count = 0;        /**< 失敗させる回数 */
 /**
  * malloc() の置き換え
  *

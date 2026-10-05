@@ -1,0 +1,149 @@
+name: CI
+
+# calc の CI.
+#   build   : リリースとデバッグのビルド. 警告が出たら失敗する
+#   test    : 単体テスト (greatest + FFF) を ctest で実行する
+#   analyze : 静的解析 (gcc -fanalyzer). 指摘があれば失敗する
+#   coverage: カバレッジ (gcovr). 下限 (CMakeLists.txt の COVERAGE_MIN_LINE / COVERAGE_MIN_BRANCH) を下回ると失敗する
+#   docs    : Doxygen のドキュメント. 警告があれば失敗する. master への push のときは, GitHub Pages へ公開する
+#   format  : 整形の確認 (clang-format). 整形が必要なら失敗する
+
+on:
+  push:
+    branches: [ master, ccr-* ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  # 整形は, この版の clang-format で行う (.clang-format は, 新しい版の設定を使っている)
+  CLANG_FORMAT_VERSION: "23.*"
+
+jobs:
+  build:
+    name: Build (${{ matrix.type }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        type: [ Release, Debug ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
+      - name: Build
+        run: |
+          set -o pipefail
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DBUILD_TESTS=OFF
+          cmake --build build 2>&1 | tee build.log
+          if grep -q "warning:" build.log; then
+            echo "::error::ビルドに警告があります (警告ゼロを維持する)"
+            exit 1
+          fi
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
+      - name: Test
+        run: |
+          set -o pipefail
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build 2>&1 | tee build.log
+          if grep -q "warning:" build.log; then
+            echo "::error::ビルドに警告があります (警告ゼロを維持する)"
+            exit 1
+          fi
+          cd build && ctest --output-on-failure
+
+  analyze:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
+      - name: Analyze
+        run: make analyze
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake libreadline-dev gcovr
+      - name: Coverage
+        run: make coverage
+      - name: Upload the report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: build-coverage/coverage
+          if-no-files-found: warn
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev doxygen graphviz
+      - name: Generate
+        run: |
+          set -o pipefail
+          cmake -S . -B build
+          cmake --build build --target doc 2>&1 | tee doc.log
+          # Doxygen の日本語の出力には, 内容と関係のない警告が, 必ず出るので, それだけは除く
+          if grep "warning:" doc.log | grep -v "selected output language"; then
+            echo "::error::ドキュメントに警告があります (警告ゼロを維持する)"
+            exit 1
+          fi
+      - name: Upload the documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: build/docs/html
+          if-no-files-found: error
+
+      - name: Upload the documentation for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/docs/html
+
+  # master への push のときだけ, 生成したドキュメントを GitHub Pages へ公開する.
+  # リポジトリの Settings > Pages > Source を "GitHub Actions" にしておくこと.
+  deploy-docs:
+    name: Deploy the documentation
+    needs: docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  format:
+    name: Format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: pip install "clang-format==${CLANG_FORMAT_VERSION}"
+      - name: Check
+        run: make format-check

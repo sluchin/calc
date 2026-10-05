@@ -47,8 +47,8 @@ static char portno[PORT_SIZE]; /**< ポート番号またはサービス名 */
 
 /** スレッドID構造体 */
 typedef struct _thread_id {
-    pthread_t tid;            /**< スレッドID */
-    struct _thread_id *next;  /**< 次の要素 */
+    pthread_t tid;           /**< スレッドID */
+    struct _thread_id *next; /**< 次の要素 */
 } thread_id;
 
 /* 内部関数 */
@@ -117,7 +117,16 @@ server_sock(void)
     }
 
     /* ソケットにアドレスを指定 */
+    /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
+     * キャストが, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     retval = bind(sock, (struct sockaddr *)&addr, (socklen_t)sizeof(addr));
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
     if (retval < 0) {
         if (errno == EADDRINUSE)
             (void)fprintf(stderr, "Address already in use\n");
@@ -198,7 +207,16 @@ server_loop(int sock)
                 /* addrlenは入出力なのでここで初期化する */
                 dt->len = (socklen_t)sizeof(dt->addr);
                 dt->sigmask = sigmask;
+                /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
+                 * キャストが, strict-aliasing の誤検知になる) */
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
                 dt->sock = accept(sock, (struct sockaddr *)&dt->addr, &dt->len);
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  pragma GCC diagnostic pop
+#endif
                 if (dt->sock < 0) {
                     outlog("accept: sin_addr=%s sin_port=%d", inet_ntoa(dt->addr.sin_addr),
                            ntohs(dt->addr.sin_port));
