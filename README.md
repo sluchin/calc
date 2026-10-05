@@ -115,7 +115,7 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 
 ## 結合テスト
 
-`calcp` `calcd` `calcc` を, 実際に動かして確認する項目は, [INTEGRATION_TESTS.md](INTEGRATION_TESTS.md) にある.
+`calcp` `calcd` `calcc` を, 実際に動かして確認する項目は, `INTEGRATION_TESTS.md` にある.
 
 ## カバレッジ
 
