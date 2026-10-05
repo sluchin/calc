@@ -309,9 +309,10 @@ stderr_log(
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld "
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
-                  ((0 <= t.tm_mon && t.tm_mon < (int)NELEMS(mon)) ? mon[t.tm_mon] : ""), t.tm_mday,
-                  t.tm_hour, t.tm_min, t.tm_sec, tv.tv_usec, h_buf, ((pname != NULL) ? pname : ""),
-                  getpid(), fname, line, getppid(), ((tid != 0) ? t_buf : ""), func);
+                  (((0 <= t.tm_mon) && (t.tm_mon < (int)NELEMS(mon))) ? mon[t.tm_mon] : ""),
+                  t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, tv.tv_usec, h_buf,
+                  ((pname != NULL) ? pname : ""), getpid(), fname, line, getppid(),
+                  ((tid != 0) ? t_buf : ""), func);
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);

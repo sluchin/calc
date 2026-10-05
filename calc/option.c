@@ -78,7 +78,7 @@ parse_args(int argc, char *argv[])
         switch (opt) {
         case 'd': /* 有効桁数設定 */
             digit = strtol(optarg, NULL, base);
-            if (digit <= 0L || MAX_DIGIT < digit) {
+            if ((digit <= 0L) || (MAX_DIGIT < digit)) {
                 (void)fprintf(stderr, "Digits is 1-%ld.\n", MAX_DIGIT);
                 exit(EXIT_FAILURE);
             }

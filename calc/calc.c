@@ -357,7 +357,7 @@ unary(calcinfo *calc)
     if (is_error(calc))
         return EX_ERROR;
 
-    if (calc->ch == '+' || calc->ch == '-') {
+    if ((calc->ch == '+') || (calc->ch == '-')) {
         sign = calc->ch;
         readch(calc);
     }
@@ -446,7 +446,7 @@ token(calcinfo *calc)
     /* 初期化 */
     (void)memset(func, 0, sizeof(func));
 
-    if (calc->ch == '+' || calc->ch == '-') { /* 単項+- */
+    if ((calc->ch == '+') || (calc->ch == '-')) { /* 単項+- */
         sign = calc->ch;
         readch(calc);
     }

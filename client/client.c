@@ -284,7 +284,7 @@ drain_replies(int sock, int *pending, st_client status)
     st_client st = EX_SUCCESS; /* 受信のステータス */
 
     /* quit と, 入力の終わり (EX_ALLOC_ERR) のときだけ, 受信する */
-    if (status != EX_QUIT && status != EX_ALLOC_ERR)
+    if ((status != EX_QUIT) && (status != EX_ALLOC_ERR))
         return status;
 
     while (*pending > 0) {
@@ -318,7 +318,7 @@ send_sock(int sock)
         return EX_EMPTY;
     }
 
-    if (strcmp((char *)expr, "quit") == 0 || strcmp((char *)expr, "exit") == 0)
+    if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
         return EX_QUIT;
 
     length = strlen((char *)expr) + 1u;

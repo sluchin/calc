@@ -160,7 +160,7 @@ test_run_child_pty(test_child_func func, void *arg, const char *input, char *out
     /* 子プロセスが終了して, 端末を閉じるまで読む (Linux では, EIO が返る) */
     len = read(master, dummy, sizeof(dummy));
     while (len > 0L) {
-        if (out != NULL && total < outsize - 1u) {
+        if ((out != NULL) && (total < outsize - 1u)) {
             size_t n = (((size_t)len < outsize - 1u - total) ? (size_t)len : outsize - 1u - total);
             (void)memcpy(out + total, dummy, n);
             total += n;
