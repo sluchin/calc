@@ -216,6 +216,28 @@ get_pow(calcinfo *calc, double x, double y)
     return result;
 }
 
+#ifdef UNITTEST
+/**
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
+ *
+ * @param[out] func 関数構造体
+ */
+void
+test_init_func(testfunc *func)
+{
+    func->get_pi = get_pi;
+    func->get_e = get_e;
+    func->get_rad = get_rad;
+    func->get_deg = get_deg;
+    func->get_sqrt = get_sqrt;
+    func->get_ln = get_ln;
+    func->get_log = get_log;
+    func->get_factorial = get_factorial;
+    func->get_permutation = get_permutation;
+    func->get_combination = get_combination;
+}
+#endif /* UNITTEST */
+
 /**
  * 関数情報構造体初期化
  */
@@ -573,25 +595,3 @@ get_combination(calcinfo *calc, double n, double r)
     dbglog("%g", result);
     return result;
 }
-
-#ifdef UNITTEST
-/**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
- *
- * @param[out] func 関数構造体
- */
-void
-test_init_func(testfunc *func)
-{
-    func->get_pi = get_pi;
-    func->get_e = get_e;
-    func->get_rad = get_rad;
-    func->get_deg = get_deg;
-    func->get_sqrt = get_sqrt;
-    func->get_ln = get_ln;
-    func->get_log = get_log;
-    func->get_factorial = get_factorial;
-    func->get_permutation = get_permutation;
-    func->get_combination = get_combination;
-}
-#endif /* UNITTEST */

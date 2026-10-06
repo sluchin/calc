@@ -57,33 +57,6 @@
 /** エラーメッセージ用バッファのサイズ */
 #define ERRMSG_SIZE 64U
 
-/**
- * エラー番号のメッセージ取得 (スレッドセーフ)
- *
- * strerror() は静的なバッファを使うことがあり, スレッドセーフではない.
- * strerror_r() には, 戻り値が違う 2 つの版がある (GNU 版: char * を返す, XSI 版: int を返す)
- * ので_GNU_SOURCE が有効な glibc では GNU 版, そのほかでは XSI 版として扱う.
- *
- * @param[in] errnum エラー番号
- * @param[out] buf メッセージを書き込むバッファ
- * @param[in] size バッファのサイズ
- * @return メッセージ (buf と同じとは限らない)
- */
-static const char *
-get_errmsg(const int errnum, char *buf, const size_t size)
-{
-#if defined(__GLIBC__) && defined(_GNU_SOURCE)
-    return strerror_r(errnum, buf, size);
-#else
-    int retval = 0; /* 戻り値 */
-
-    retval = strerror_r(errnum, buf, size);
-    if (retval != 0)
-        (void)snprintf(buf, size, "Unknown error %d", errnum);
-    return buf;
-#endif
-}
-
 /** 月省略名配列 */
 static const char *mon[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -92,6 +65,8 @@ static const char *mon[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 static char progname[MAX_PROGNAME] = {0}; /**< プログラム名 */
 
 /* 内部関数 */
+
+static const char *get_errmsg(const int errnum, char *buf, const size_t size);
 
 /**
  * @brief プログラム名設定
@@ -611,3 +586,30 @@ print_trace(void)
     strings = NULL;
 }
 #endif
+
+/**
+ * エラー番号のメッセージ取得 (スレッドセーフ)
+ *
+ * strerror() は静的なバッファを使うことがあり, スレッドセーフではない.
+ * strerror_r() には, 戻り値が違う 2 つの版がある (GNU 版: char * を返す, XSI 版: int を返す)
+ * ので_GNU_SOURCE が有効な glibc では GNU 版, そのほかでは XSI 版として扱う.
+ *
+ * @param[in] errnum エラー番号
+ * @param[out] buf メッセージを書き込むバッファ
+ * @param[in] size バッファのサイズ
+ * @return メッセージ (buf と同じとは限らない)
+ */
+static const char *
+get_errmsg(const int errnum, char *buf, const size_t size)
+{
+#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+    return strerror_r(errnum, buf, size);
+#else
+    int retval = 0; /* 戻り値 */
+
+    retval = strerror_r(errnum, buf, size);
+    if (retval != 0)
+        (void)snprintf(buf, size, "Unknown error %d", errnum);
+    return buf;
+#endif
+}
