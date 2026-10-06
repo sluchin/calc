@@ -245,6 +245,19 @@ server_loop(int sock)
     } while (g_sig_handled == 0);
 }
 
+#ifdef UNITTEST
+/**
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
+ *
+ * @param[out] server 関数構造体
+ */
+void
+test_init_server(testserver *server)
+{
+    server->server_proc = server_proc;
+}
+#endif /* UNITTEST */
+
 /**
  * サーバプロセス
  *
@@ -444,16 +457,3 @@ set_thread_sigmask(sigset_t sigmask)
     dbglog("newmask=%p", (const void *)&newmask);
 #endif /* _DEBUG */
 }
-
-#ifdef UNITTEST
-/**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
- *
- * @param[out] server 関数構造体
- */
-void
-test_init_server(testserver *server)
-{
-    server->server_proc = server_proc;
-}
-#endif /* UNITTEST */

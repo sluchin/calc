@@ -232,6 +232,25 @@ set_digit(long dgt)
     digit = dgt;
 }
 
+#ifdef UNITTEST
+/**
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
+ *
+ * @param[out] calc 関数構造体
+ */
+void
+test_init_calc(testcalc *calc)
+{
+    calc->expression = expression;
+    calc->term = term;
+    calc->factor = factor;
+    calc->token = token;
+    calc->number = number;
+    calc->get_strlen = get_strlen;
+    calc->readch = readch;
+}
+#endif /* UNITTEST */
+
 /**
  * バッファ読込
  *
@@ -519,22 +538,3 @@ get_strlen(const double val, const char *fmt)
 #pragma GCC diagnostic pop
     return retval;
 }
-
-#ifdef UNITTEST
-/**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
- *
- * @param[out] calc 関数構造体
- */
-void
-test_init_calc(testcalc *calc)
-{
-    calc->expression = expression;
-    calc->term = term;
-    calc->factor = factor;
-    calc->token = token;
-    calc->number = number;
-    calc->get_strlen = get_strlen;
-    calc->readch = readch;
-}
-#endif /* UNITTEST */

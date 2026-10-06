@@ -32,28 +32,6 @@
 static void free_pointer(void *addr);
 
 /**
- * ポインタを解放して, NULL を代入する
- *
- * ポインタ変数の型 (char * や struct xxx * など) は, 呼び出し側ごとに違う.
- * void ** にキャストして読み書きすると, 別の型で参照することになる (厳密なエイリアス規則
- * に反する) ので memcpy() で読み書きする.
- *
- * @param[in,out] addr ポインタ変数のアドレス
- */
-static void
-free_pointer(void *addr)
-{
-    void *mem = NULL; /* ポインタ */
-
-    (void)memcpy(&mem, addr, sizeof(mem));
-    dbglog("mem=%p", mem);
-    if (mem != NULL)
-        free(mem);
-    mem = NULL;
-    (void)memcpy(addr, &mem, sizeof(mem));
-}
-
-/**
  * @brief メモリ解放
  *
  * freeした後, NULLを代入する.
@@ -86,4 +64,26 @@ memfree(void *ptr, ...)
     }
 
     va_end(ap);
+}
+
+/**
+ * ポインタを解放して, NULL を代入する
+ *
+ * ポインタ変数の型 (char * や struct xxx * など) は, 呼び出し側ごとに違う.
+ * void ** にキャストして読み書きすると, 別の型で参照することになる (厳密なエイリアス規則
+ * に反する) ので memcpy() で読み書きする.
+ *
+ * @param[in,out] addr ポインタ変数のアドレス
+ */
+static void
+free_pointer(void *addr)
+{
+    void *mem = NULL; /* ポインタ */
+
+    (void)memcpy(&mem, addr, sizeof(mem));
+    dbglog("mem=%p", mem);
+    if (mem != NULL)
+        free(mem);
+    mem = NULL;
+    (void)memcpy(addr, &mem, sizeof(mem));
 }
