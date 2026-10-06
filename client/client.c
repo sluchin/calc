@@ -69,9 +69,9 @@ static unsigned char *expr = NULL;       /**< 入力バッファ */
 static unsigned char *answer = NULL;     /**< 受信データ */
 
 /* 内部関数 */
+static st_client drain_replies(int sock, int *pending, st_client status);
 static st_client send_sock(int sock);
 static st_client read_sock(int sock);
-static st_client drain_replies(int sock, int *pending, st_client status);
 static sigset_t get_sigmask(void);
 static void exit_memfree(void);
 
@@ -273,6 +273,20 @@ client_loop(int sock)
     return EX_SIGNAL;
 }
 
+#ifdef UNITTEST
+/**
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
+ *
+ * @param[out] client 関数構造体
+ */
+void
+test_init_client(testclient *client)
+{
+    client->send_sock = send_sock;
+    client->read_sock = read_sock;
+}
+#endif /* UNITTEST */
+
 /**
  * 送信済みで未受信の答えを受信
  * 標準入力から続けて入力する (パイプやファイル) と, 答えを受信する前に quit や入力の
@@ -447,17 +461,3 @@ exit_memfree(void)
 {
     memfree(&expr, &sdata, &answer, NULL);
 }
-
-#ifdef UNITTEST
-/**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
- *
- * @param[out] client 関数構造体
- */
-void
-test_init_client(testclient *client)
-{
-    client->send_sock = send_sock;
-    client->read_sock = read_sock;
-}
-#endif /* UNITTEST */

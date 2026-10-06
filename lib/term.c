@@ -33,10 +33,6 @@
 
 #define BUF_SIZE 512U /**< バッファサイズ */
 
-/* 内部関数 */
-static char *get_termattr(const int fd, struct termios *mode);
-static void append_str(char *buf, const size_t size, size_t *off, const char *str);
-static tcflag_t *mode_type_flag(const enum mode_type type, struct termios *mode);
 /** モード情報構造体 */
 struct _mode_info {
     const char *name;    /**< モード名 */
@@ -172,6 +168,11 @@ static const struct _mode_info mode_info[] = {
     {NULL,      control, 0UL,     0UL   }
 };
 
+/* 内部関数 */
+static char *get_termattr(const int fd, struct termios *mode);
+static void append_str(char *buf, const size_t size, size_t *off, const char *str);
+static tcflag_t *mode_type_flag(const enum mode_type type, struct termios *mode);
+
 /**
  * @brief ターミナル属性シスログ出力
  *
@@ -209,6 +210,20 @@ sys_print_termattr(const int level,
 
     memfree(&result, NULL);
 }
+
+#ifdef UNITTEST
+/**
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
+ *
+ * @param[out] term 関数構造体
+ */
+void
+test_init_term(testterm *term)
+{
+    term->get_termattr = get_termattr;
+    term->mode_type_flag = mode_type_flag;
+}
+#endif
 
 /**
  * ターミナル属性文字列取得
@@ -321,17 +336,3 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
         return NULL;
     }
 }
-
-#ifdef UNITTEST
-/**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
- *
- * @param[out] term 関数構造体
- */
-void
-test_init_term(testterm *term)
-{
-    term->get_termattr = get_termattr;
-    term->mode_type_flag = mode_type_flag;
-}
-#endif

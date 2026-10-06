@@ -48,12 +48,13 @@ static volatile sig_atomic_t sig_handled = 0; /**< シグナル */
 static const int MAX_HISTORY = 100; /**< 最大履歴数 */
 #endif                              /* HAVE_READLINE */
 
-/* 内部関数 */
-static void main_loop(void);
 #ifdef HAVE_READLINE
 /* イベントフック */
+/* 内部関数 */
 static int check_state(void);
 #endif /* HAVE_READLINE */
+
+static void main_loop(void);
 static void set_sig_handler(void);
 static void sig_handler(int signo);
 
@@ -93,6 +94,28 @@ main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
     return EXIT_SUCCESS;
 }
+
+#ifdef HAVE_READLINE
+/**
+ * イベントフック
+ *
+ * readline 内から定期的に呼ばれる関数
+ * @return 常にEX_OK
+ */
+static int
+check_state(void)
+{
+    if (sig_handled != 0) {
+        /* 入力中のテキストを破棄 */
+        rl_delete_text(0, rl_end);
+
+        /* readlineをreturnさせる */
+        rl_done = 1;
+    }
+    return EX_OK;
+}
+
+#endif /* HAVE_READLINE */
 
 /**
  * ループ処理
@@ -166,28 +189,6 @@ main_loop(void)
 
     } while (sig_handled == 0);
 }
-
-#ifdef HAVE_READLINE
-/**
- * イベントフック
- *
- * readline 内から定期的に呼ばれる関数
- * @return 常にEX_OK
- */
-static int
-check_state(void)
-{
-    if (sig_handled != 0) {
-        /* 入力中のテキストを破棄 */
-        rl_delete_text(0, rl_end);
-
-        /* readlineをreturnさせる */
-        rl_done = 1;
-    }
-    return EX_OK;
-}
-
-#endif /* HAVE_READLINE */
 
 /**
  * シグナルハンドラ設定
