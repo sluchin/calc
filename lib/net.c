@@ -193,7 +193,7 @@ send_data(const int sock, const void *sdata, size_t *length)
 
     ptr = (const unsigned char *)sdata;
     left = *length;
-    /* 全て送信するまで繰り返す (send は, 少ないバイト数を返すことがある) */
+    /* 全て送信するまで繰り返す (send は少ないバイト数を返すことがある) */
     while (left > 0U) {
         len = send(sock, ptr, left, 0);
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);

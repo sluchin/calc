@@ -145,7 +145,7 @@ connect_sock(void)
 
     /* コネクト */
     /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
-     * キャストが, strict-aliasing の誤検知になる) */
+     * キャストが strict-aliasing の誤検知になる) */
 #if defined(__GNUC__) && __GNUC__ >= 4
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -178,7 +178,7 @@ client_loop(int sock)
     struct timespec timeout;       /* タイムアウト値 */
     sigset_t sigmask;              /* シグナルマスク */
     st_client status = EX_SUCCESS; /* ステータス */
-    int pending = 0;               /* 送信済みで, 未受信の答えの数 */
+    int pending = 0;               /* 送信済みで未受信の答えの数 */
 #ifdef _USE_SELECT
     fd_set fds, rfds; /* selectマスク */
 #else
@@ -274,15 +274,15 @@ client_loop(int sock)
 }
 
 /**
- * 送信済みで, 未受信の答えを受信
- * 標準入力から続けて入力する (パイプやファイル) と, 答えを受信する前に, quit や入力の
- * 終わりになるので, 終了する前に, 未受信の答えを全て受信して, 出力する.
- * 送信に失敗して終了する場合は, サーバとの通信ができないので, 受信しない.
+ * 送信済みで未受信の答えを受信
+ * 標準入力から続けて入力する (パイプやファイル) と, 答えを受信する前に quit や入力の
+ * 終わりになるので終了する前に, 未受信の答えを全て受信して, 出力する.
+ * 送信に失敗して終了する場合は, サーバとの通信ができないので受信しない.
  *
  * @param[in] sock ソケット
  * @param[in,out] pending 送信済みで, 未受信の答えの数
  * @param[in] status 終了する理由のステータス
- * @return status, または, 受信に失敗したときは, そのステータス
+ * @return status, または受信に失敗したときは, そのステータス
  */
 static st_client
 drain_replies(int sock, int *pending, st_client status)
@@ -450,7 +450,7 @@ exit_memfree(void)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] client 関数構造体
  */

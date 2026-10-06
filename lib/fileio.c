@@ -50,11 +50,11 @@ readn(int fd, void *vptr, size_t n)
 
     ptr = (char *)vptr;
     nleft = n;
-    /* n バイトを受信するまで繰り返す (read は, 少ないバイト数を返すことがある) */
+    /* n バイトを受信するまで繰り返す (read は少ないバイト数を返すことがある) */
     while (nleft > 0U) {
         nread = read(fd, ptr, nleft);
         if (nread < 0L) {
-            if (errno == EINTR) /* 割り込まれたので, やり直す */
+            if (errno == EINTR) /* 割り込まれたのでやり直す */
                 nread = 0L;
             else
                 return EX_NG;
@@ -85,11 +85,11 @@ writen(int fd, const void *vptr, size_t n)
 
     ptr = (const char *)vptr;
     nleft = n;
-    /* n バイトを送信するまで繰り返す (write は, 少ないバイト数を返すことがある) */
+    /* n バイトを送信するまで繰り返す (write は少ないバイト数を返すことがある) */
     while (nleft > 0U) {
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0L) {
-            if (errno == EINTR) /* 割り込まれたので, やり直す */
+            if (errno == EINTR) /* 割り込まれたのでやり直す */
                 nwritten = 0L;
             else
                 return EX_NG;
@@ -124,7 +124,7 @@ pipe_fd(const int fd)
         return EX_NG;
     }
 
-    /* fd を閉じて, 書込側を fd に複製する (fd への書込が, パイプに送られる) */
+    /* fd を閉じて, 書込側を fd に複製する (fd への書込がパイプに送られる) */
     retval = close(fd);
     if (retval < 0) {
         outlog("close: fd=%d", fd);
@@ -133,7 +133,7 @@ pipe_fd(const int fd)
         return EX_NG;
     }
 
-    /* fd は, 直前に閉じたので, 無効に見えるが, 書込側を, その番号に複製するのが目的 */
+    /* fd は直前に閉じたので無効に見えるが, 書込側をその番号に複製するのが目的 */
 #if defined(__GNUC__) && __GNUC__ >= 10
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wanalyzer-fd-use-without-check"
@@ -150,7 +150,7 @@ pipe_fd(const int fd)
     }
     dbglog("newfd=%d, pfd[PIPE_W]=%d, fd=%d", newfd, pfd[PIPE_W], fd);
 
-    (void)close(pfd[PIPE_W]); /* 書込側は, fd に複製したので, 閉じる */
+    (void)close(pfd[PIPE_W]); /* 書込側は fd に複製したので, 閉じる */
 
     return pfd[PIPE_R];
 }
@@ -173,12 +173,12 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
     /* 使わない側を閉じる */
     close_fd(pipefd, NULL);
 
-    /* newfd を閉じて, oldfd を newfd に複製する (newfd が, oldfd の指すパイプになる) */
+    /* newfd を閉じて, oldfd を newfd に複製する (newfd が oldfd の指すパイプになる) */
     retval = close(newfd);
     if (retval < 0)
         outlog("close=%d", retval);
 
-    /* newfd は, 直前に閉じたので, 無効に見えるが, oldfd を, その番号に複製するのが目的 */
+    /* newfd は直前に閉じたので, 無効に見えるが oldfd を, その番号に複製するのが目的 */
 #if defined(__GNUC__) && __GNUC__ >= 10
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wanalyzer-fd-use-without-check"
@@ -201,10 +201,10 @@ pipe_fd2(int *pipefd, int *oldfd, const int newfd)
 /**
  * @brief リダイレクト
  *
- * この関数は, fd だけを扱い, フラッシュはしない.
+ * この関数は fd だけを扱い, フラッシュはしない.
  * fd から FILE は分からないので, 書き出されていない出力 (fprintf などで,
- * FILE にためたもの) は, 呼び出し側が, この関数を呼ぶ前に, fflush すること.
- * fflush しない場合, あとで書き出されるときに, リダイレクト先に出力される
+ * FILE にためたもの) は, 呼び出し側がこの関数を呼ぶ前に, fflush すること.
+ * fflush しない場合, あとで書き出されるときにリダイレクト先に出力される
  *
  * @param[in] fd ファイルディスクリプタ
  * @param[in] path ファイルパス
@@ -236,7 +236,7 @@ redirect(int fd, const char *path)
     if (retval < 0)
         outlog("close: fd=%d", fd);
 
-    /* fd は, 直前に閉じたので, 無効に見える. 複製された fd は, リダイレクト先として,
+    /* fd は直前に閉じたので無効に見える. 複製された fd は, リダイレクト先として,
      * 開いたままにする (閉じない) */
 #if defined(__GNUC__) && __GNUC__ >= 10
 #  pragma GCC diagnostic push

@@ -149,7 +149,7 @@ fake_daemon(int nochdir, int noclose)
 static void
 setup(void *data)
 {
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     (void)data;
     RESET_FAKE(parse_args);
     TEST_PASSTHROUGH_RESET(sigaction);
@@ -290,14 +290,14 @@ test_main_sighup(void)
 
 /**
  * 失敗を注入して, main() を子プロセスで実行するための関数
- * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ * (注入は親プロセスの test_run_child() が消費しないように子プロセスで行う)
  *
  * @param[in] arg argv (NULL終端)
  */
 static void
 run_main_failure(void *arg)
 {
-    /* シグナルハンドラの設定 (get 側と set 側で, 11 のシグナル分) */
+    /* シグナルハンドラの設定 (get 側と set 側で 11 のシグナル分) */
     TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigaction, 0, 22, -1, EINVAL);
@@ -312,7 +312,7 @@ test_main_failure(void)
 {
     char *argv[] = {"calcd", NULL}; /* 引数 */
 
-    /* 失敗しても, 続行する */
+    /* 失敗しても続行する */
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_failure, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->loop_count);
     PASS();
@@ -321,7 +321,7 @@ test_main_failure(void)
 /**
  * カレントディレクトリを変えて, main() を子プロセスで実行するための関数
  * 再起動 (SIGHUP) するとき, 相対パスの argv[0] を, daemon() (カレントディレクトリを
- * / にする) のあとでも, 実行できる必要がある.
+ * / にする) のあとでも実行できる必要がある.
  *
  * @param[in] arg argv (NULL終端)
  */
@@ -334,12 +334,12 @@ run_main_relative(void *arg)
 
 /**
  * main() 関数テスト (相対パスで起動して, SIGHUP で再起動する)
- * (デバッグビルドは daemon() を呼ばないので, 修正前でも通る)
+ * (デバッグビルドは daemon() を呼ばないので修正前でも通る)
  */
 TEST
 test_main_sighup_relative(void)
 {
-    /* /bin/sh を, 相対パスで再実行し, sh に 42 で終了させる */
+    /* /bin/sh を相対パスで再実行し, sh に 42 で終了させる */
     char *argv[] = {"./sh", "-c", "exit 42", NULL}; /* 引数 (-c exit 42) */
 
     raise_signo = SIGHUP;
@@ -355,11 +355,11 @@ test_main_sighup_failure(void)
 {
     char *argv[] = {"/nonexistent/calcd", NULL}; /* 引数 */
 
-    /* 再実行できなければ, 異常終了する (以前は, ログもなく, 正常終了した) */
+    /* 再実行できなければ, 異常終了する (以前はログもなく, 正常終了した) */
     raise_signo = SIGHUP;
     TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));
 
-    /* 存在するが, 実行できないファイル (絶対パスに解決される) も, 同じ.
+    /* 存在するが実行できないファイル (絶対パスに解決される) も同じ.
      * 再実行に成功すると, カバレッジの記録が失われるので, 失敗する場合でも確認する */
     argv[0] = "/etc/passwd";
     TEST_ASSERT_INT(EXIT_FAILURE, test_run_child(run_main, argv, NULL, NULL, 0));

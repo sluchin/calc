@@ -53,8 +53,8 @@ FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t)
 TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (fp, buf, mode, size))
 
 /*
- * atexit() は, libc の共有ライブラリには無い (静的ライブラリの関数) ので,
- * 本物は, __cxa_atexit() で呼ぶ. テストの実行ファイルにある main.c の呼び出しだけが,
+ * atexit() は libc の共有ライブラリには無い (静的ライブラリの関数) ので,
+ * 本物は__cxa_atexit() で呼ぶ. テストの実行ファイルにある main.c の呼び出しだけが,
  * このモックになる (共有ライブラリの中の呼び出しは, 置き換えられない).
  */
 /** atexit() に登録する関数の型 */
@@ -160,7 +160,7 @@ fake_close_sock(int *sock)
 static void
 setup(void *data)
 {
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     (void)data;
     RESET_FAKE(parse_args);
     TEST_PASSTHROUGH_RESET(sigaction);
@@ -220,7 +220,7 @@ test_main_success(void)
     TEST_ASSERT_INT(1, shm->parse_count);
     TEST_ASSERT_INT(1, shm->loop_count);
     TEST_ASSERT_INT(SOCKFD, shm->loop_sock);
-    /* 終了時に, ソケットをクローズしている (atexit) */
+    /* 終了時にソケットをクローズしている (atexit) */
     TEST_ASSERT_INT(1, shm->close_count);
     TEST_ASSERT_INT(SOCKFD, shm->close_sock);
     /* SIGPIPE を無視している (送信エラーとして処理できる) */
@@ -254,7 +254,7 @@ test_main_connect_failure(void)
     TEST_ASSERT_INT(EX_CONNECT_ERR, test_run_child(run_main, NULL, NULL, out, sizeof(out)));
     TEST_ASSERT_STR("Connect error\n", out);
     TEST_ASSERT_INT(0, shm->loop_count);
-    /* 接続できなくても, atexit で close_sock() が呼ばれる */
+    /* 接続できなくても atexit で close_sock() が呼ばれる */
     TEST_ASSERT_INT(1, shm->close_count);
     PASS();
 }
@@ -274,14 +274,14 @@ test_main_signal(void)
 
 /**
  * 失敗を注入して, main() を子プロセスで実行するための関数
- * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ * (注入は親プロセスの test_run_child() が消費しないように子プロセスで行う)
  *
  * @param[in] arg 使用しない
  */
 static void
 run_main_failure(void *arg)
 {
-    /* シグナルハンドラの設定 (get 側と set 側で, 4 つのシグナル分) */
+    /* シグナルハンドラの設定 (get 側と set 側で 4 つのシグナル分) */
     TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigaction, 0, 8, -1, EINVAL);
@@ -291,7 +291,7 @@ run_main_failure(void *arg)
 }
 
 /**
- * atexit() に失敗する main() を, 子プロセスで実行するための関数
+ * atexit() に失敗する main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
  */

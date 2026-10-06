@@ -45,7 +45,7 @@
 #define TEST_TMPNAME_SIZE 64U
 
 /**
- * 一意な一時ファイル名を作る (tmpnam() の代わり. tmpnam() は, リンク時に警告される)
+ * 一意な一時ファイル名を作る (tmpnam() の代わり. tmpnam() はリンク時に警告される)
  * mkstemp() でファイルを作って, 名前だけ残して, ファイルは削除する.
  *
  * @param[out] buf 一時ファイル名 (TEST_TMPNAME_SIZE バイト以上)
@@ -241,17 +241,17 @@ test_match(const char *pattern, const char *str)
 
 /** 障害を注入する設定 */
 struct test_inject {
-    int skip;        /**< 呼び出しを, 何回見送るか (その間は本物を呼ぶ) */
-    int count;       /**< 見送ったあとで, 何回, 失敗させるか */
+    int skip;        /**< 呼び出しを何回見送るか (その間は本物を呼ぶ) */
+    int count;       /**< 見送ったあとで何回, 失敗させるか */
     long long value; /**< 失敗のときの戻り値 */
     int err;         /**< 失敗のときの errno */
 };
 
 /**
  * libc の関数を FFF のモックにして, 通常は本物の関数を呼ぶ (素通し).
- * 必要なテストだけが, TEST_INJECT() で, 失敗を返させる.
+ * 必要なテストだけが TEST_INJECT() で失敗を返させる.
  * テストの実行ファイルに同名の関数を定義するので, 共有ライブラリの中の呼び出し
- * も, このモックになる. 本物の関数は dlsym(RTLD_NEXT) で探す.
+ * もこのモックになる. 本物の関数は dlsym(RTLD_NEXT) で探す.
  *
  * FAKE_VALUE_FUNC(ret, name, ...) の直後に書く.
  * 例: TEST_PASSTHROUGH(ssize_t, send,
@@ -280,7 +280,7 @@ struct test_inject {
         return real_##name args;                             \
     }
 
-/** TEST_PASSTHROUGH() のモックを, 初期状態 (素通し) に戻す. setup で呼ぶ */
+/** TEST_PASSTHROUGH() のモックを初期状態 (素通し) に戻す. setup で呼ぶ */
 #define TEST_PASSTHROUGH_RESET(name)                            \
     do {                                                        \
         RESET_FAKE(name);                                       \
@@ -289,8 +289,8 @@ struct test_inject {
     } while (0)
 
 /**
- * 関数を失敗させる. skipn 回は本物を呼び, 次の countn 回を, retval と errnum
- * で失敗させる. それ以降は, また本物を呼ぶ.
+ * 関数を失敗させる. skipn 回は本物を呼び, 次の countn 回を retval と errnum
+ * で失敗させる. それ以降はまた本物を呼ぶ.
  */
 #define TEST_INJECT(name, skipn, countn, retval, errnum) \
     do {                                                 \
@@ -300,13 +300,13 @@ struct test_inject {
         inject_##name.err = (errnum);                    \
     } while (0)
 
-/** TEST_INJECT() で仕込んだ失敗が, 全て使われた (関数が呼ばれた) ことを確認 */
+/** TEST_INJECT() で仕込んだ失敗が全て使われた (関数が呼ばれた) ことを確認 */
 #define TEST_ASSERT_INJECTED(name) \
     TEST_ASSERT_MSG(inject_##name.count == 0, "%s() was not called", #name)
 
 /**
  * 実行 (greatest)
- * fork した子プロセスが, 親のバッファを二重に出力しないように, 標準出力は
+ * fork した子プロセスが親のバッファを二重に出力しないように, 標準出力は
  * バッファリングしない.
  */
 #define TEST_MAIN_BEGIN()                       \

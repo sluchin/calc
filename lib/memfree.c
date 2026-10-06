@@ -36,7 +36,7 @@ static void free_pointer(void *addr);
  *
  * ポインタ変数の型 (char * や struct xxx * など) は, 呼び出し側ごとに違う.
  * void ** にキャストして読み書きすると, 別の型で参照することになる (厳密なエイリアス規則
- * に反する) ので, memcpy() で読み書きする.
+ * に反する) ので memcpy() で読み書きする.
  *
  * @param[in,out] addr ポインタ変数のアドレス
  */
@@ -58,7 +58,7 @@ free_pointer(void *addr)
  *
  * freeした後, NULLを代入する.
  * 例: memfree(&pointer, NULL);
- * 引数は, ポインタ変数のアドレス (どの型のポインタでも, キャストは要らない).
+ * 引数はポインタ変数のアドレス (どの型のポインタでもキャストは要らない).
  *
  * @param[in,out] ptr freeするポインタ変数のアドレス
  * @param[in,out] ... 可変引数 (ポインタ変数のアドレス)

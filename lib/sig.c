@@ -33,10 +33,10 @@
  * @brief シグナルのハンドラ設定
  *
  * 現在の設定を取得して, ハンドラとフラグだけを変更する.
- * ハンドラの実行中は, 全てのシグナルをブロックする.
+ * ハンドラの実行中は全てのシグナルをブロックする.
  *
  * @param[in] signo シグナル番号 (SIGINT など)
- * @param[in] handler ハンドラ (SIG_IGN で, 無視する)
+ * @param[in] handler ハンドラ (SIG_IGN で無視する)
  * @param[in] flags 追加するフラグ (SA_NOCLDWAIT, SA_NODEFER など. 不要なら 0)
  * @retval EX_OK 正常
  * @retval EX_NG エラー (設定は変わらない)
@@ -52,7 +52,7 @@ set_sigaction(const int signo, void (*handler)(int), const int flags)
 
     (void)memset(&sa, 0, sizeof(struct sigaction));
 
-    /* ハンドラの実行中は, 全てのシグナルを受け付けない */
+    /* ハンドラの実行中は全てのシグナルを受け付けない */
     retval = sigfillset(&sigmask);
     if (retval < 0) {
         outlog("sigfillset: signo=%d", signo);

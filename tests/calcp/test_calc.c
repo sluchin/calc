@@ -38,13 +38,13 @@
 
 DEFINE_FFF_GLOBALS
 
-/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
 /*
- * snprintf() と malloc() は, ほとんどの関数が使うので, FFF のモックにはせず,
- * 必要なときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
+ * snprintf() と malloc() はほとんどの関数が使うので, FFF のモックにはせず,
+ * 必要なときだけ失敗させる (FFF のモックは main() より前の呼び出しでも使われる).
  */
 /** snprintf() を失敗させる呼び出しの種類 */
 enum snprintf_target {
@@ -56,8 +56,8 @@ enum snprintf_target {
 static enum snprintf_target fail_snprintf = SNPRINTF_NONE; /**< 失敗させる種類 */
 /**
  * snprintf() の置き換え
- * デバッグビルドでは, dbglog() (ログ出力) も snprintf() を呼ぶので, 呼び出しの回数ではなく,
- * 呼び出しの種類で, 失敗させる.
+ * デバッグビルドでは, dbglog() (ログ出力) も snprintf() を呼ぶので呼び出しの回数ではなく,
+ * 呼び出しの種類で失敗させる.
  *
  * @param[out] str 出力先
  * @param[in] size サイズ
@@ -71,7 +71,7 @@ snprintf(char *str, size_t size, const char *format, ...)
     int retval = 0;    /* 戻り値 */
     bool fail = false; /* 失敗させるか */
 
-    /* 失敗させる種類ごとに, 今回の呼び出しが対象か判定する */
+    /* 失敗させる種類ごとに今回の呼び出しが対象か判定する */
     switch (fail_snprintf) {
     case SNPRINTF_FORMAT:
         fail = (strcmp(format, "%s%ld%s") == 0);
@@ -119,7 +119,7 @@ malloc(size_t size)
 }
 
 /*
- * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
+ * malloc() のあとに memset(0) するコードは最適化で calloc() になるので calloc() も
  * 同じように置き換える.
  */
 extern void *__libc_calloc(size_t nmemb, size_t size); /**< 本物の calloc() */
@@ -340,7 +340,7 @@ test_answer_four(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(four_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
@@ -362,7 +362,7 @@ test_answer_func(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
@@ -383,7 +383,7 @@ test_answer_four_func(void)
     calcinfo calc; /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(four_func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
@@ -404,7 +404,7 @@ test_answer_error(void)
     calcinfo calc; /* calc情報構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(error_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
@@ -505,7 +505,7 @@ test_expression(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(expression_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, expression_data[i].expr);
@@ -528,7 +528,7 @@ test_term(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(term_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, term_data[i].expr);
@@ -554,7 +554,7 @@ test_factor(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(factor_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factor_data[i].expr);
@@ -580,7 +580,7 @@ test_token(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(token_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, token_data[i].expr);
@@ -606,7 +606,7 @@ test_number(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(number_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, number_data[i].expr);
@@ -767,7 +767,7 @@ test_answer_failure(void)
 }
 
 /**
- * 式を解析する関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
+ * 式を解析する関数テスト (エラー状態のときは計算せずに EX_ERROR を返す)
  */
 TEST
 test_calc_error_state(void)
@@ -821,7 +821,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
