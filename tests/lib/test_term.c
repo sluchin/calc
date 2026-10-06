@@ -40,7 +40,7 @@ DEFINE_FFF_GLOBALS
 /* 端末が無くても実行できるように, tcgetattr() は FFF でモックにする */
 FAKE_VALUE_FUNC(int, tcgetattr, int, struct termios *)
 
-/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
@@ -158,7 +158,7 @@ test_get_termattr(void)
     ptr = term.get_termattr(STDIN_FILENO, &mode);
 
     TEST_ASSERT_MATCH("tcgetattr(.*)", ptr);
-    /* tcgetattr() が, 指定したファイルディスクリプタで 1 回呼ばれた */
+    /* tcgetattr() が指定したファイルディスクリプタで 1 回呼ばれた */
     ASSERT_EQ(1, (int)tcgetattr_fake.call_count);
     ASSERT_EQ(STDIN_FILENO, tcgetattr_fake.arg0_val);
     ASSERT_EQ(&mode, tcgetattr_fake.arg1_val);
@@ -271,7 +271,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

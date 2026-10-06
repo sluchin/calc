@@ -188,7 +188,7 @@ test_exec_func(void)
     unsigned int pos = 0U;           /* 配列位置 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(func_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, func_data[i].expr);
@@ -223,7 +223,7 @@ test_get_pow(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(pow_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, pow_data[i].expr);
@@ -289,7 +289,7 @@ test_get_rad(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(rad_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, rad_data[i].expr);
@@ -312,7 +312,7 @@ test_get_deg(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(deg_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, deg_data[i].expr);
@@ -335,7 +335,7 @@ test_get_sqrt(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(sqrt_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, sqrt_data[i].expr);
@@ -361,7 +361,7 @@ test_get_ln(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(ln_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, ln_data[i].expr);
@@ -387,7 +387,7 @@ test_get_log(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(log_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, log_data[i].expr);
@@ -413,7 +413,7 @@ test_get_factorial(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(factorial_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, factorial_data[i].expr);
@@ -439,7 +439,7 @@ test_get_permutation(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(permutation_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, permutation_data[i].expr);
@@ -465,7 +465,7 @@ test_get_combination(void)
     calcinfo calc;       /* calcinfo構造体 */
 
     unsigned int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < NELEMS(combination_data); i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, combination_data[i].expr);
@@ -494,7 +494,7 @@ teardown(void *data)
 }
 
 /**
- * 全ての関数テスト (エラー状態のときは, 計算せずに EX_ERROR を返す)
+ * 全ての関数テスト (エラー状態のときは計算せずに EX_ERROR を返す)
  */
 TEST
 test_func_error_state(void)
@@ -536,7 +536,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_TEARDOWN(teardown, NULL);

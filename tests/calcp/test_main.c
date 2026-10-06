@@ -99,7 +99,7 @@ fake_parse_args(int argc, char **argv)
 static void
 setup(void *data)
 {
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     (void)data;
     RESET_FAKE(parse_args);
     TEST_PASSTHROUGH_RESET(sigaction);
@@ -156,7 +156,7 @@ test_main_calc(void)
     TEST_ASSERT_MSG(strstr(out, "300") != NULL, "out=%s", out);
     TEST_ASSERT_MSG(strstr(out, "14") != NULL, "out=%s", out);
 
-    /* parse_args() は, argc と argv で 1 回呼ばれる */
+    /* parse_args() は argc と argv で 1 回呼ばれる */
     TEST_ASSERT_INT(1, shm->parse_count);
     TEST_ASSERT_INT(1, shm->parse_argc);
     TEST_ASSERT_STR("calcp", shm->parse_argv0);
@@ -192,7 +192,7 @@ test_main_error(void)
 {
     char out[BUF_SIZE] = {0}; /* 出力 */
 
-    /* エラーになっても, 次の式を実行する */
+    /* エラーになっても次の式を実行する */
     TEST_ASSERT_INT(EXIT_SUCCESS,
                     test_run_child(run_main, NULL, "1/0\n100*3\nquit\n", out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "Divide by zero") != NULL, "out=%s", out);
@@ -218,14 +218,14 @@ test_main_signal(void)
 
 /**
  * 失敗を注入して, main() を子プロセスで実行するための関数
- * (注入は, 親プロセスの test_run_child() が消費しないように, 子プロセスで行う)
+ * (注入は親プロセスの test_run_child() が消費しないように子プロセスで行う)
  *
  * @param[in] arg 使用しない
  */
 static void
 run_main_failure(void *arg)
 {
-    /* シグナルハンドラの設定 (get 側と set 側で, 3 つのシグナル分) */
+    /* シグナルハンドラの設定 (get 側と set 側で 3 つのシグナル分) */
     TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigaction, 0, 6, -1, EINVAL);
@@ -277,19 +277,19 @@ test_main_failure(void)
 {
     char out[BUF_SIZE] = {0}; /* 出力 */
 
-    /* 失敗しても, 最初の計算に失敗した以外は, 続行する */
+    /* 失敗しても最初の計算に失敗した以外は, 続行する */
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_failure, NULL, "100*3\n200*3\nquit\n",
                                                  out, sizeof(out)));
     TEST_ASSERT_MSG(strstr(out, "600") != NULL, "out=%s", out);
 
-    /* 標準出力に書き込めなくても, 続行する */
+    /* 標準出力に書き込めなくても続行する */
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main_closed_stdout, NULL, "100*3\nquit\n", out,
                                                  sizeof(out)));
     PASS();
 }
 
 /**
- * 標準入力が端末のとき (readline) の main() を, 子プロセスで実行するための関数
+ * 標準入力が端末のとき (readline) の main() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
  */
@@ -341,7 +341,7 @@ test_main_history(void)
     char inbuf[1024] = {0};        /* 入力 */
     unsigned int i;
 
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0U; i < 101U; i++)
         (void)strcat(inbuf, "1+2\n");
     (void)strcat(inbuf, "quit\n");
@@ -350,7 +350,7 @@ test_main_history(void)
 }
 
 /**
- * main() 関数テスト (入力待ちのときに, シグナルを受け取る)
+ * main() 関数テスト (入力待ちのときにシグナルを受け取る)
  * 端末の入力を待つ readline は, イベントフックを呼び続けるので, SIGINT で,
  * フックが readline を終了させる.
  */

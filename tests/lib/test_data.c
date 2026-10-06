@@ -30,7 +30,7 @@
 #include "log.h"
 #include "data.h"
 
-/* ALIGNOF() は, dbglog() の引数にだけ使う (_DEBUG でなければ, dbglog() は何も出力しない) */
+/* ALIGNOF() は dbglog() の引数にだけ使う (_DEBUG でなければ, dbglog() は何も出力しない) */
 #ifdef _DEBUG
 #  define ALIGNOF(type) \
       offsetof(         \
@@ -73,7 +73,7 @@ test_set_client_data(void)
 {
     size_t length = 0U; /* データ長 */
     ssize_t len = 0L;   /* 送信データ長 */
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     struct client_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
@@ -100,7 +100,7 @@ test_set_server_data(void)
 {
     size_t length = 0U; /* データ長 */
     ssize_t len = 0L;   /* 送信データ長 */
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     struct server_data *dt = NULL; /* 送受信データ構造体 */
 
     unsigned int i;
@@ -172,7 +172,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* テストの実行 */
     RUN_TEST(test_set_client_data);

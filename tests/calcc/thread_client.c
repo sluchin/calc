@@ -186,7 +186,7 @@ create_threads(void)
  * スレッド処理
  *
  * @param[in] arg 使用しない
- * @return (void *)EX_SUCCESS (エラーのときは, pthread_exit() で, (void *)EX_xxx_ERR を返す)
+ * @return (void *)EX_SUCCESS (エラーのときは pthread_exit() で (void *)EX_xxx_ERR を返す)
  */
 static void *
 client_thread(void *arg)

@@ -152,7 +152,7 @@ startup(void)
 static void
 setup(void *data)
 {
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     (void)data;
     TEST_PASSTHROUGH_RESET(vsnprintf);
     TEST_PASSTHROUGH_RESET(vfprintf);
@@ -671,7 +671,7 @@ test_dump_log_failure(void)
     TEST_ASSERT_INT(EX_NG, dump_log(dump, sizeof(dump), "%s", "test"));
     TEST_ASSERT_INJECTED(vsnprintf);
 
-    /* 16 バイトに満たない行を, 空白で埋める */
+    /* 16 バイトに満たない行を空白で埋める */
     TEST_ASSERT_INT(EX_OK, dump_log(dump, 3U, "%s", "test"));
     PASS();
 }
@@ -690,7 +690,7 @@ test_dump_sys_failure(void)
                                     "function", dump, sizeof(dump), "%s", "test"));
     TEST_ASSERT_INJECTED(vsnprintf);
 
-    /* 16 バイトに満たない行を, 空白で埋める */
+    /* 16 バイトに満たない行を空白で埋める */
     TEST_ASSERT_INT(EX_OK, dump_sys(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15,
                                     "function", dump, 3U, "%s", "test"));
     PASS();
@@ -738,7 +738,7 @@ test_dump_file_failure(void)
     TEST_ASSERT_INT(EX_NG, dump_file("program", "/dev/full", big, sizeof(big)));
     TEST_ASSERT_INT(fds, count_open_fds());
     /* バッファに収まるデータは, fwrite では失敗せず, fflush で失敗する
-     * (ログを出力するだけで, 戻り値は変わらない) */
+     * (ログを出力するだけで戻り値は変わらない) */
     TEST_ASSERT_INT(EX_OK, dump_file("program", "/dev/full", "abc", 3U));
     /* fclose() に失敗 */
     TEST_INJECT(fclose, 0, 1, EOF, EIO);
@@ -779,7 +779,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

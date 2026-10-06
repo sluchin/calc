@@ -137,7 +137,7 @@ create_answer(calcinfo *calc, const unsigned char *expr)
         (void)memset(calc->answer, 0, length * sizeof(unsigned char));
 
         /* 値を文字列に変換 */
-        /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので, 文字列リテラルではない */
+        /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので文字列リテラルではない */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
         retval = snprintf((char *)calc->answer, length, calc->fmt, val);
@@ -197,7 +197,7 @@ parse_func_args(calcinfo *calc, double *x, ...)
 
     va_start(ap, x);
 
-    /* 2 つ目以降の引数は, ',' で区切られる */
+    /* 2 つ目以降の引数は',' で区切られる */
     val = va_arg(ap, double *);
     while (val != NULL) {
         if (calc->ch != ',') {
@@ -274,7 +274,7 @@ expression(calcinfo *calc)
     x = term(calc);
     dbglog("%.*g", (int)digit, x);
 
-    /* 続く項を, '+' '-' で, 左から順に加減算する */
+    /* 続く項を'+' '-' で, 左から順に加減算する */
     while (true) {
         if (calc->ch == '+') {
             readch(calc);
@@ -332,7 +332,7 @@ term(calcinfo *calc)
 
 /**
  * 単項
- * 符号は, べき乗より, 弱く結合する. (-2^2 は -(2^2))
+ * 符号はべき乗より, 弱く結合する. (-2^2 は -(2^2))
  *
  * @param[in] calc calcinfo構造体
  * @return 値
@@ -370,13 +370,13 @@ power(calcinfo *calc)
 
     dbglog("start");
 
-    /* unary() が, エラー状態を確認してから呼ぶので, ここでは確認しない */
+    /* unary() がエラー状態を確認してから呼ぶので, ここでは確認しない */
     x = factor(calc);
     dbglog("%.*g", (int)digit, x);
 
     while (calc->ch == '^') {
         readch(calc);
-        y = factor(calc); /* 指数の符号は, token() が処理する (2^-1) */
+        y = factor(calc); /* 指数の符号は token() が処理する (2^-1) */
         x = get_pow(calc, x, y);
     }
     dbglog("%.*g", (int)digit, x);
@@ -512,7 +512,7 @@ get_strlen(const double val, const char *fmt)
 {
     int retval = 0; /* 戻り値 */
 
-    /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので, 文字列リテラルではない */
+    /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので文字列リテラルではない */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
     retval = snprintf(NULL, 0U, fmt, val);
@@ -522,7 +522,7 @@ get_strlen(const double val, const char *fmt)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] calc 関数構造体
  */
