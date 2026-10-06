@@ -52,7 +52,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 
 ## コーディング規約
 
-@../CODING_RULES.md
+@../CODING_STYLE.md
 
 ## テストの規約
 
