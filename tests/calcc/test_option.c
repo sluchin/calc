@@ -36,7 +36,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* getopt_long() は, モックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
+/* getopt_long() はモックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
 FAKE_VALUE_FUNC(int, getopt_long, int, char *const *, const char *, const struct option *, int *)
 TEST_PASSTHROUGH(int,
                  getopt_long,
@@ -192,7 +192,7 @@ test_parse_args_ipaddress(void)
     char *argv1[] = {"testprog", "-i", "192.168.0.1", NULL};     /* 引数 (-i 192.168.0.1) */
     char *argv2[] = {"testprog", "--ipaddress=localhost", NULL}; /* 引数 (--ipaddress=localhost) */
 
-    /* 指定しない場合は, デフォルトのIPアドレス */
+    /* 指定しない場合はデフォルトのIPアドレス */
     parse_args(1, argv0);
     TEST_ASSERT_INT(1, set_host_string_fake.call_count);
     TEST_ASSERT_STR(DEFAULT_IPADDR, set_host_string_fake.arg0_history[0]);
@@ -250,7 +250,7 @@ test_parse_args_port(void)
     char *argv3[] = {"testprog", "-p", "1234567", NULL}; /* 引数 (-p 1234567) */
     int seq[] = {0, -1};                                 /* デフォルトは成功, -p の指定は失敗 */
 
-    /* 指定しない場合は, デフォルトのポート番号 */
+    /* 指定しない場合はデフォルトのポート番号 */
     parse_args(1, argv0);
     TEST_ASSERT_INT(1, set_port_string_fake.call_count);
     TEST_ASSERT_STR(DEFAULT_PORTNO, set_port_string_fake.arg0_history[0]);
@@ -267,7 +267,7 @@ test_parse_args_port(void)
     TEST_ASSERT_INT(5, set_port_string_fake.call_count);
     TEST_ASSERT_STR("http", set_port_string_fake.arg0_history[4]);
 
-    /* 設定に失敗 (戻り値の列は, 呼び出し回数を基準にするので, 初期化する) */
+    /* 設定に失敗 (戻り値の列は呼び出し回数を基準にするので, 初期化する) */
     RESET_FAKE(set_port_string);
     SET_RETURN_SEQ(set_port_string, seq, 2);
     TEST_ASSERT_INT(EXIT_FAILURE, exec_parse_args(out, sizeof(out), 3, argv3));
@@ -347,7 +347,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

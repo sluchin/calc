@@ -37,7 +37,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* getopt_long() は, モックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
+/* getopt_long() はモックにして, 通常は本物を呼ぶ (想定外の値を返させる) */
 FAKE_VALUE_FUNC(int, getopt_long, int, char *const *, const char *, const struct option *, int *)
 TEST_PASSTHROUGH(int,
                  getopt_long,
@@ -246,7 +246,7 @@ test_parse_args_port(void)
     char *argv1[] = {"testprog", "-p", "8080", NULL};  /* 引数 (-p 8080) */
     char *argv2[] = {"testprog", "--port=http", NULL}; /* 引数 (--port=http) */
 
-    /* 指定しない場合は, デフォルトのポート番号 */
+    /* 指定しない場合はデフォルトのポート番号 */
     parse_args(1, argv0);
     TEST_ASSERT_INT(1, set_port_string_fake.call_count);
     TEST_ASSERT_STR(DEFAULT_PORTNO, set_port_string_fake.arg0_history[0]);
@@ -338,7 +338,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

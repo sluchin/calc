@@ -88,7 +88,7 @@ _readline(FILE *fp)
 
     } while (!((total > 0U) && (*(alloc + total - 1U) == '\n')) && (feof(fp) == 0));
 
-    /* 改行なしで終わった最後の行も, 返す. 何も読めなかったときは, NULL */
+    /* 改行なしで終わった最後の行も返す. 何も読めなかったときは, NULL */
     if ((alloc != NULL) && (total > 0U) && (*(alloc + total - 1U) == '\n'))
         *(alloc + total - 1U) = '\0'; /* 改行削除 */
 

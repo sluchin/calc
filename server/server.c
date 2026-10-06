@@ -118,7 +118,7 @@ server_sock(void)
 
     /* ソケットにアドレスを指定 */
     /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
-     * キャストが, strict-aliasing の誤検知になる) */
+     * キャストが strict-aliasing の誤検知になる) */
 #if defined(__GNUC__) && __GNUC__ >= 4
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -208,7 +208,7 @@ server_loop(int sock)
                 dt->len = (socklen_t)sizeof(dt->addr);
                 dt->sigmask = sigmask;
                 /* sockaddr_in を sockaddr として渡すのは, ソケット API の使い方 (glibc の transparent union への
-                 * キャストが, strict-aliasing の誤検知になる) */
+                 * キャストが strict-aliasing の誤検知になる) */
 #if defined(__GNUC__) && __GNUC__ >= 4
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -232,7 +232,7 @@ server_loop(int sock)
                     memfree(&dt, NULL);
                     continue;
                 }
-                /* スレッドが dt を解放するので, これ以降は, dt を使わない */
+                /* スレッドが dt を解放するので, これ以降は dt を使わない */
                 dbglog("pthread_create=%lu", (unsigned long)tid);
 
                 retval = pthread_detach(tid);
@@ -264,7 +264,7 @@ server_proc(void *arg)
     calcinfo calc;                    /* calc情報構造体 */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
 
-    /* 引数は, server_loop() が malloc したものなので, 複製してすぐに解放する */
+    /* 引数は server_loop() が malloc したものなので, 複製してすぐに解放する */
     (void)memcpy(&dt, arg, sizeof(thread_data));
     memfree(&arg, NULL);
 
@@ -305,7 +305,7 @@ server_proc(void *arg)
             pthread_exit((void *)EXIT_FAILURE);
 
         /* 式は文字列として解析されるので, 終端の NUL を保証する.
-         * (終端のないデータは, 確保した領域の外を読んでしまう) */
+         * (終端のないデータは確保した領域の外を読んでしまう) */
         expr[length - 1U] = '\0';
 
         dbglog("expr=%p, length=%zu", expr, length);
@@ -447,7 +447,7 @@ set_thread_sigmask(sigset_t sigmask)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] server 関数構造体
  */

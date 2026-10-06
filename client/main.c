@@ -112,14 +112,14 @@ set_sig_handler(void)
     /* シグナルの設定 */
     struct sig_setting {
         int signo;            /* シグナル番号 */
-        void (*handler)(int); /* ハンドラ (SIG_IGN で, 無視する) */
+        void (*handler)(int); /* ハンドラ (SIG_IGN で無視する) */
         int flags;            /* 追加するフラグ */
     };
     static const struct sig_setting settings[] = {
         {SIGINT,  sig_handler, 0},
         {SIGTERM, sig_handler, 0},
         {SIGQUIT, sig_handler, 0},
-        /* 接続先が閉じたあとの send() で, プロセスが終了しないように, SIGPIPE を無視する.
+        /* 接続先が閉じたあとの send() でプロセスが終了しないように, SIGPIPE を無視する.
          * (send() が EPIPE を返して, 送信エラーとして処理される) */
         {SIGPIPE, SIG_IGN,     0}
     };

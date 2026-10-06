@@ -35,11 +35,11 @@
 
 DEFINE_FFF_GLOBALS
 
-/* strdup() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(char *, strdup, const char *)
 TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
 
-/* feclearexcept() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* feclearexcept() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(int, feclearexcept, int)
 TEST_PASSTHROUGH(int, feclearexcept, (int excepts), (excepts))
 
@@ -84,7 +84,7 @@ test_get_errormsg(void)
     calcinfo calc; /* calcinfo構造体 */
 
     int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0; i < MAXERROR; i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, "dammy");
@@ -108,7 +108,7 @@ test_set_errorcode(void)
     calcinfo calc; /* calcinfo構造体 */
 
     int i;
-    /* テストデータごとに, 実行して, 結果を確認する */
+    /* テストデータごとに実行して, 結果を確認する */
     for (i = 0; i < MAXERROR; i++) {
         (void)memset(&calc, 0, sizeof(calcinfo));
         set_string(&calc, "dammy");
@@ -227,7 +227,7 @@ test_check_math_feexcept(void)
     TEST_ASSERT_INT_MSG((int)E_INFINITY, (int)calc.errorcode, "Infinity: log(0)=%g", result);
     clear_error(&calc);
 
-    /* アンダーフローは, エラーではない */
+    /* アンダーフローはエラーではない */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
@@ -321,7 +321,7 @@ test_get_errormsg_failure(void)
 TEST
 test_clear_math_feexcept_failure(void)
 {
-    /* 失敗しても, ログを出力するだけ */
+    /* 失敗してもログを出力するだけ */
     TEST_INJECT(feclearexcept, 0, 1, -1, EINVAL);
     clear_math_feexcept();
     TEST_ASSERT_INJECTED(feclearexcept);
@@ -343,7 +343,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

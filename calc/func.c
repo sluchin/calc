@@ -33,7 +33,7 @@
 /* 内部変数 */
 /** エラー戻り値 */
 static const double EX_ERROR = 0.0;
-static const double MAX_FACTORIAL = 170.0; /**< 階乗が, 倍精度で表せる最大の数 */
+static const double MAX_FACTORIAL = 170.0; /**< 階乗が倍精度で表せる最大の数 */
 /** pi(4*atan(1)) */
 static const double DEF_PI = 3.14159265358979323846264338327950288;
 /** ネイピア数(オイラー数) */
@@ -128,7 +128,7 @@ static struct funcinfo finfo[MAXFUNC];
  *
  * @param[in] calc calcinfo構造体
  * @param[in] func 関数名
- * @return 関数の計算結果 (エラーのときは, 0 でエラーコードを設定する)
+ * @return 関数の計算結果 (エラーのときは 0 でエラーコードを設定する)
  */
 double
 exec_func(calcinfo *calc, const char *func)
@@ -476,7 +476,7 @@ get_factorial(calcinfo *calc, double n)
     }
 
     /* 170! (約 7.3e306) を超えると, 結果は無限大になる.
-     * n が 2^53 以上だと, n-- で値が変わらず, ループが終わらないので, 先に判定する. */
+     * n が 2^53 以上だと, n-- で値が変わらず, ループが終わらないので先に判定する. */
     if (isgreater(n, MAX_FACTORIAL) != 0) {
         set_errorcode(calc, E_INFINITY);
         return EX_ERROR;
@@ -576,7 +576,7 @@ get_combination(calcinfo *calc, double n, double r)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] func 関数構造体
  */

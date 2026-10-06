@@ -58,7 +58,7 @@ get_errormsg(calcinfo *calc)
 
     dbglog("errormsg=%s, errorcode=%d", errormsg[calc->errorcode], (int)calc->errorcode);
 
-    /* 呼び出し元が解放できるように, 複製する */
+    /* 呼び出し元が解放できるように複製する */
     msg = (unsigned char *)strdup(errormsg[calc->errorcode]);
     if (msg == NULL) {
         outlog("strdup");
@@ -141,7 +141,7 @@ check_math_feexcept(calcinfo *calc)
 {
     dbglog("start");
 
-    /* アンダーフロー (exp(-1000) など) は, 結果が 0 に近いだけで, エラーではない */
+    /* アンダーフロー (exp(-1000) など) は, 結果が 0 に近いだけでエラーではない */
     if (fetestexcept(FE_DIVBYZERO | FE_OVERFLOW) != 0) {
         set_errorcode(calc, E_INFINITY);
     } else {
@@ -172,7 +172,7 @@ clear_math_feexcept(void)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] error 関数構造体
  */

@@ -76,8 +76,8 @@ main(int argc, char *argv[], char *envp[])
     /* オプション引数 */
     parse_args(argc, argv);
 
-    /* daemon() は, カレントディレクトリを / に変えるので, 再起動 (SIGHUP) のために,
-     * 実行ファイルのパスを, 前もって絶対パスにする. (/ を含まないときは, PATH から探す) */
+    /* daemon() はカレントディレクトリを / に変えるので, 再起動 (SIGHUP) のために,
+     * 実行ファイルのパスを前もって絶対パスにする. (/ を含まないときは PATH から探す) */
     if (strchr(argv[0], '/') != NULL) {
         resolved = realpath(argv[0], exepath);
         if (resolved != NULL)
@@ -125,7 +125,7 @@ set_sig_handler(void)
     /* シグナルの設定 */
     struct sig_setting {
         int signo;            /* シグナル番号 */
-        void (*handler)(int); /* ハンドラ (SIG_IGN で, 無視する) */
+        void (*handler)(int); /* ハンドラ (SIG_IGN で無視する) */
         int flags;            /* 追加するフラグ */
     };
     static const struct sig_setting settings[] = {

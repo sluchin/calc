@@ -276,7 +276,7 @@ get_termattr(const int fd, struct termios *mode)
 /**
  * バッファへの文字列追記
  *
- * 入り切らない分は, 切り捨てる. 常に, NUL 終端する (*off は, size - 1 以下).
+ * 入り切らない分は切り捨てる. 常に NUL 終端する (*off は size - 1 以下).
  *
  * @param[in,out] buf バッファ
  * @param[in] size バッファのサイズ
@@ -324,7 +324,7 @@ mode_type_flag(const enum mode_type type, struct termios *mode)
 
 #ifdef UNITTEST
 /**
- * @brief 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする)
+ * @brief 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする)
  *
  * @param[out] term 関数構造体
  */

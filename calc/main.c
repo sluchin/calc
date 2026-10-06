@@ -108,8 +108,8 @@ main_loop(void)
 #ifdef HAVE_READLINE
     char *prompt = NULL; /* プロンプト */
 
-    /* readline は, 端末のときだけ使う. 端末でない (パイプやファイル) とき, イベントフック
-     * (rl_event_hook) があると, 入力の終わり (EOF) で終了せずに, CPU を使い続ける. */
+    /* readline は端末のときだけ使う. 端末でない (パイプやファイル) とき, イベントフック
+     * (rl_event_hook) があると, 入力の終わり (EOF) で終了せずに CPU を使い続ける. */
     interactive = (isatty(STDIN_FILENO) != 0);
     if (interactive) {
         rl_event_hook = &check_state;

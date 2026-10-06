@@ -60,7 +60,7 @@ struct _testerror {
 /** 内部変数の構造体型 (単体テスト用) */
 typedef struct _testerror testerror;
 
-/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
+/* 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする) */
 void test_init_error(testerror *error);
 #endif /* UNITTEST */
 

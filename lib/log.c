@@ -60,9 +60,9 @@
 /**
  * エラー番号のメッセージ取得 (スレッドセーフ)
  *
- * strerror() は, 静的なバッファを使うことがあり, スレッドセーフではない.
+ * strerror() は静的なバッファを使うことがあり, スレッドセーフではない.
  * strerror_r() には, 戻り値が違う 2 つの版がある (GNU 版: char * を返す, XSI 版: int を返す)
- * ので, _GNU_SOURCE が有効な glibc では GNU 版, そのほかでは XSI 版として扱う.
+ * ので_GNU_SOURCE が有効な glibc では GNU 版, そのほかでは XSI 版として扱う.
  *
  * @param[in] errnum エラー番号
  * @param[out] buf メッセージを書き込むバッファ
@@ -369,7 +369,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
     (void)fprintf(fp, "%s%s", "--------   ---- ---- ---- ---- ---- ---- ---- ---- ",
                   "----------------\n");
 
-    /* 16 バイトごとに, アドレス, 16 進数 (2 バイトごとに空白), 文字を出力 */
+    /* 16 バイトごとにアドレス, 16 進数 (2 バイトごとに空白), 文字を出力 */
     unsigned int i, j;
     for (i = 0U; i < len;) {
         (void)fprintf(fp, "%08X : ", pt);
@@ -577,7 +577,7 @@ systrace(const int level,
     /* シスログクローズ */
     closelog();
 
-    /* memfree() は, デバッグ版で systrace() を呼ぶので, 再帰しないよう, free() を使う */
+    /* memfree() はデバッグ版で systrace() を呼ぶので再帰しないよう, free() を使う */
     if (strings != NULL)
         free(strings);
     strings = NULL;
@@ -605,7 +605,7 @@ print_trace(void)
     for (i = 0; i < size; i++)
         (void)fprintf(stderr, "%s\n", strings[i]);
 
-    /* memfree() は, デバッグ版で systrace() を呼ぶので, 再帰しないよう, free() を使う */
+    /* memfree() はデバッグ版で systrace() を呼ぶので再帰しないよう, free() を使う */
     if (strings != NULL)
         free(strings);
     strings = NULL;

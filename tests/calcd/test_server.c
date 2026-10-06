@@ -49,7 +49,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* システムコールなどは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* システムコールなどはモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(int, socket, int, int, int)
 TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol), (domain, type, protocol))
 FAKE_VALUE_FUNC(int, setsockopt, int, int, int, const void *, socklen_t)
@@ -70,13 +70,13 @@ TEST_PASSTHROUGH(int,
                   const struct timespec *timeout,
                   const sigset_t *sigmask),
                  (nfds, readfds, writefds, exceptfds, timeout, sigmask))
-/* glibc の accept() の引数は, 透過的共用体 (GNU 拡張) なので, ISO C では型が一致しない */
+/* glibc の accept() の引数は透過的共用体 (GNU 拡張) なので ISO C では型が一致しない */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *)
 TEST_PASSTHROUGH(int, accept, (int fd, struct sockaddr *addr, socklen_t *len), (fd, addr, len))
 #pragma GCC diagnostic pop
-/* FFF は, 関数ポインタの型を直接書けないので, typedef する */
+/* FFF は関数ポインタの型を直接書けないので, typedef する */
 /** スレッド関数の型 */
 typedef void *(*thread_func_t)(void *);
 FAKE_VALUE_FUNC(int, pthread_create, pthread_t *, const pthread_attr_t *, thread_func_t, void *)
@@ -116,8 +116,8 @@ TEST_PASSTHROUGH(int,
                  (how, set, oldset))
 
 /*
- * malloc() は, ほとんどの関数が使うので, FFF のモックにはせず, 指定したサイズの
- * ときだけ失敗させる (FFF のモックは, main() より前の呼び出しでも使われる).
+ * malloc() はほとんどの関数が使うので, FFF のモックにはせず, 指定したサイズの
+ * ときだけ失敗させる (FFF のモックは main() より前の呼び出しでも使われる).
  * 本物は __libc_malloc() で呼ぶ.
  */
 extern void *__libc_malloc(size_t size);               /**< 本物の malloc() */
@@ -168,7 +168,7 @@ malloc(size_t size)
 }
 
 /*
- * malloc() のあとに memset(0) するコードは, 最適化で calloc() になるので, calloc() も
+ * malloc() のあとに memset(0) するコードは最適化で calloc() になるので calloc() も
  * 同じように置き換える.
  */
 /**
@@ -277,7 +277,7 @@ static void
 setup(void *data)
 {
     (void)data; /* 使用しない */
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(setsockopt);
     TEST_PASSTHROUGH_RESET(listen);
@@ -671,7 +671,7 @@ test_server_sock_failure(void)
     TEST_ASSERT_INT(EX_NG, server_sock());
     TEST_ASSERT_INJECTED(listen);
 
-    /* bind() に失敗 (同じポート番号は, 使用中) */
+    /* bind() に失敗 (同じポート番号は使用中) */
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
     sock = server_sock();
@@ -711,8 +711,8 @@ test_server_loop_failure(void)
     server_loop(ssock);
     TEST_ASSERT_INJECTED(pselect);
 
-    /* accept() に失敗 (接続待ちがないのに, 受付可能と見なす) */
-    g_sig_handled = 1; /* 1 回で, ループを終了する */
+    /* accept() に失敗 (接続待ちがないのに受付可能と見なす) */
+    g_sig_handled = 1; /* 1 回でループを終了する */
     TEST_INJECT(pselect, 0, 1, 1, 0);
     server_loop(ssock);
     TEST_ASSERT_INT(1, accept_fake.call_count);
@@ -738,7 +738,7 @@ test_server_loop_failure(void)
 
 /**
  * server_proc() 関数テスト (失敗と, デバッグ出力)
- * server_proc() は, スレッドで実行されるので, 接続の受付後に, 終了を待つ.
+ * server_proc() はスレッドで実行されるので, 接続の受付後に終了を待つ.
  */
 TEST
 test_server_proc_failure(void)
@@ -749,7 +749,7 @@ test_server_proc_failure(void)
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
-    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+    g_sig_handled = 1; /* server_loop() は 1 回で終了する */
 
     /* ヘッダを受信できない (何も送らずに閉じる) */
     csock = inet_sock_client();
@@ -777,7 +777,7 @@ test_server_proc_failure(void)
     close_sock(&csock);
     (void)usleep(THREAD_WAIT);
 
-    /* 正常なリクエストで, デバッグ出力 (-g) */
+    /* 正常なリクエストでデバッグ出力 (-g) */
     g_gflag = true;
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
@@ -801,10 +801,10 @@ test_server_loop_alloc_failure(void)
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
 
-    /* 接続待ちがあるので, 受付可能になるが, スレッドデータを作れない */
+    /* 接続待ちがあるので受付可能になるが, スレッドデータを作れない */
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
-    g_sig_handled = 1; /* 1 回で, ループを終了する */
+    g_sig_handled = 1; /* 1 回でループを終了する */
     fail_malloc_size = sizeof(thread_data);
     fail_malloc_count = 1;
     server_loop(ssock);
@@ -822,7 +822,7 @@ test_server_loop_signal_mask_failure(void)
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
 
-    /* 失敗しても, 続行する (sigdelset() は, 2 回呼ばれる) */
+    /* 失敗しても続行する (sigdelset() は 2 回呼ばれる) */
     TEST_INJECT(sigemptyset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
     TEST_INJECT(sigdelset, 0, 2, -1, EINVAL);
@@ -846,7 +846,7 @@ test_server_proc_internal_failure(void)
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
-    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+    g_sig_handled = 1; /* server_loop() は 1 回で終了する */
 
     for (i = 0U; i < 4U; i++) {
         csock = inet_sock_client();
@@ -883,13 +883,13 @@ test_server_proc_free_arg(void)
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
-    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+    g_sig_handled = 1; /* server_loop() は 1 回で終了する */
 
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
     track_size = sizeof(thread_data);
     server_loop(ssock);
-    close_sock(&csock); /* スレッドは, ヘッダを受信できずに終了する */
+    close_sock(&csock); /* スレッドはヘッダを受信できずに終了する */
     (void)usleep(THREAD_WAIT);
 
     TEST_ASSERT_MSG(tracked_ptr != NULL, "thread_data was not allocated");
@@ -909,7 +909,7 @@ test_server_proc_length_limit(void)
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
-    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+    g_sig_handled = 1; /* server_loop() は 1 回で終了する */
 
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
@@ -927,7 +927,7 @@ test_server_proc_length_limit(void)
 
 /**
  * server_proc() 関数テスト (終端の NUL がない式)
- * 終端のない式を受け取っても, 確保した領域の外を読まずに, 計算できる.
+ * 終端のない式を受け取っても確保した領域の外を読まずに, 計算できる.
  */
 TEST
 test_server_proc_no_nul(void)
@@ -939,7 +939,7 @@ test_server_proc_no_nul(void)
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
-    g_sig_handled = 1; /* server_loop() は, 1 回で終了する */
+    g_sig_handled = 1; /* server_loop() は 1 回で終了する */
 
     csock = inet_sock_client();
     TEST_ASSERT_NOT_INT(EX_NG, csock);
@@ -971,7 +971,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

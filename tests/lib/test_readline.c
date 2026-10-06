@@ -40,7 +40,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* realloc() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* realloc() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(void *, realloc, void *, size_t)
 TEST_PASSTHROUGH(void *, realloc, (void *ptr, size_t size), (ptr, size))
 
@@ -237,7 +237,7 @@ test_readline_failure(void)
     int p[2] = {-1, -1}; /* パイプ */
     FILE *fp = NULL;     /* ファイルポインタ */
 
-    /* 読み込みエラー (ディレクトリは, オープンできるが, 読み込めない) */
+    /* 読み込みエラー (ディレクトリはオープンできるが, 読み込めない) */
     fp = fopen("/tmp", "r");
     if (fp == NULL) {
         TEST_FAIL("fopen(%d)", errno);
@@ -280,7 +280,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

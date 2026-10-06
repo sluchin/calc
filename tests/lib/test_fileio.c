@@ -40,12 +40,12 @@
 
 DEFINE_FFF_GLOBALS
 
-/* システムコールは, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* システムコールはモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(ssize_t, read, int, void *, size_t)
 TEST_PASSTHROUGH(ssize_t, read, (int fd, void *buf, size_t n), (fd, buf, n))
 FAKE_VALUE_FUNC(ssize_t, write, int, const void *, size_t)
 TEST_PASSTHROUGH(ssize_t, write, (int fd, const void *buf, size_t n), (fd, buf, n))
-/* pipe() は, 引数が配列 (int[2]) と宣言されているので, ポインタとの違いを警告される */
+/* pipe() は引数が配列 (int[2]) と宣言されているので, ポインタとの違いを警告される */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-parameter"
 FAKE_VALUE_FUNC(int, pipe, int *)
@@ -101,7 +101,7 @@ startup(void)
 static void
 setup(void *data)
 {
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     (void)data;
     TEST_PASSTHROUGH_RESET(read);
     TEST_PASSTHROUGH_RESET(write);
@@ -400,7 +400,7 @@ test_redirect(void)
     TEST_ASSERT_INT_MSG(EX_NG, retval, "redirect: path=null");
 
     /* 書込権限なし */
-    /* root は, ファイルの権限に関係なく, access(W_OK) が成功するので, この確認は行わない */
+    /* root はファイルの権限に関係なく, access(W_OK) が成功するのでこの確認は行わない */
     if (geteuid() == 0)
         PASS();
 
@@ -579,7 +579,7 @@ set_sig_handler(void)
 
 /**
  * オープンしていない, 小さなファイルディスクリプタ番号を探す
- * dup2() で作れるように, ファイルディスクリプタの上限 (ulimit -n) より小さくする.
+ * dup2() で作れるようにファイルディスクリプタの上限 (ulimit -n) より小さくする.
  *
  * @return ファイルディスクリプタ番号
  * @retval -1 見つからない
@@ -608,7 +608,7 @@ test_readn_failure(void)
     /* 不正なファイルディスクリプタ */
     TEST_ASSERT_INT(EX_NG, readn(-1, readbuf, sizeof(readbuf)));
 
-    /* 途中で, 書込側が閉じられた (要求したバイト数より少ない) */
+    /* 途中で書込側が閉じられた (要求したバイト数より少ない) */
     if (pipe(p) < 0) {
         TEST_FAIL("pipe(%d)", errno);
     }
@@ -634,7 +634,7 @@ test_readn_interrupted(void)
     }
     TEST_ASSERT_INT(3, write(p[1], "abc", 3U));
 
-    /* 1 回目は割り込まれるが, やり直して, 受信できる */
+    /* 1 回目は割り込まれるがやり直して, 受信できる */
     TEST_INJECT(read, 0, 1, -1, EINTR);
     TEST_ASSERT_INT(3, readn(p[0], readbuf, 3U));
     TEST_ASSERT_INT(2, read_fake.call_count);
@@ -668,7 +668,7 @@ test_writen_interrupted(void)
         TEST_FAIL("pipe(%d)", errno);
     }
 
-    /* 1 回目は割り込まれるが, やり直して, 送信できる */
+    /* 1 回目は割り込まれるがやり直して, 送信できる */
     TEST_INJECT(write, 0, 1, -1, EINTR);
     TEST_ASSERT_INT(3, writen(p[1], "abc", 3U));
     TEST_ASSERT_INT(2, write_fake.call_count);
@@ -724,7 +724,7 @@ test_pipe_fd2_failure(void)
     }
     oldfd = p[0];
 
-    /* close() に失敗しても, dup2() できる */
+    /* close() に失敗しても dup2() できる */
     retval = pipe_fd2(&p[1], &oldfd, newfd);
     TEST_ASSERT_INT(newfd, retval);
     (void)close(newfd);
@@ -743,7 +743,7 @@ test_redirect_failure(void)
         TEST_FAIL("unused_fd");
     }
 
-    /* ディレクトリは, 書込権限があっても, open() できない */
+    /* ディレクトリは書込権限があっても, open() できない */
     TEST_ASSERT_INT(EX_NG, redirect(STDERR_FILENO, "/tmp"));
 
     /* オープンしていないファイルディスクリプタ (close の失敗) */
@@ -754,12 +754,12 @@ test_redirect_failure(void)
     TEST_INJECT(dup2, 0, 1, -1, EBADF);
     TEST_ASSERT_INT(EX_NG, redirect(fdnum, "/dev/null"));
 
-    /* 最後の close() に失敗しても, ログを出力するだけ */
+    /* 最後の close() に失敗してもログを出力するだけ */
     fdnum = open("/dev/null", O_RDWR);
     if (fdnum < 0) {
         TEST_FAIL("open(%d)", errno);
     }
-    TEST_INJECT(close, 1, 1, -1, EIO); /* 1 回目は, 元のファイルディスクリプタ */
+    TEST_INJECT(close, 1, 1, -1, EIO); /* 1 回目は元のファイルディスクリプタ */
     TEST_ASSERT_INT(EX_OK, redirect(fdnum, "/dev/null"));
     TEST_ASSERT_INJECTED(close);
     (void)close(fdnum);
@@ -772,13 +772,13 @@ test_redirect_failure(void)
 TEST
 test_close_fd_failure(void)
 {
-    int fds[] = {-1, 9999}; /* 2 つ目は, オープンしていない */
+    int fds[] = {-1, 9999}; /* 2 つ目はオープンしていない */
 
     fds[0] = open("/dev/null", O_WRONLY);
     if (fds[0] < 0) {
         TEST_FAIL("open(%d)", errno);
     }
-    /* 可変引数の, 2 つ目の close() に失敗 */
+    /* 可変引数の 2 つ目の close() に失敗 */
     TEST_ASSERT_INT(EX_NG, close_fd(&fds[0], &fds[1], NULL));
     TEST_ASSERT_INT(-1, fds[0]);
     TEST_ASSERT_INT(-1, fds[1]);
@@ -800,7 +800,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

@@ -2,7 +2,7 @@
  * @file tests/test_process.h
  * @brief 単体テスト共通ヘッダ (子プロセスでの実行)
  *
- * exit() を呼ぶ関数 (parse_args() や main()) を, 子プロセスで実行して,
+ * exit() を呼ぶ関数 (parse_args() や main()) を子プロセスで実行して,
  * 終了ステータスと出力を確認するための関数群.
  * 子プロセスは exit() で終了する (_exit() だとカバレッジが出力されない).
  *
@@ -43,7 +43,7 @@ typedef void (*test_child_func)(void *arg);
 /**
  * 子プロセスで関数を実行する
  * 標準入力に input を渡し, 標準出力と標準エラー出力を out に取得する.
- * 関数から戻った場合は, exit(EXIT_SUCCESS) で終了する.
+ * 関数から戻った場合は exit(EXIT_SUCCESS) で終了する.
  *
  * @param[in] func 実行する関数
  * @param[in] arg 関数の引数
@@ -181,7 +181,7 @@ test_run_child_pty(test_child_func func, void *arg, const char *input, char *out
 
 /**
  * 親子プロセスで共有するメモリの確保
- * モックの呼び出し回数などを, 子プロセスから親プロセスに伝えるために使う.
+ * モックの呼び出し回数などを子プロセスから親プロセスに伝えるために使う.
  * 内容は 0 で初期化される.
  *
  * @param[in] size バイト数

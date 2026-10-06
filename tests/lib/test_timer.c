@@ -36,7 +36,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* gettimeofday() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* gettimeofday() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(int, gettimeofday, struct timeval *, void *)
 TEST_PASSTHROUGH(int, gettimeofday, (struct timeval * tv, void *tz), (tv, tz))
 
@@ -186,7 +186,7 @@ test_stop_timer_wrap(void)
     fake_time += 500LL;
     TEST_ASSERT_INT(500, stop_timer(&t));
 
-    /* 開始が, 一周する直前 (0xFFFFFF00) で, 終了が, 一周したあと (0x100) */
+    /* 開始が一周する直前 (0xFFFFFF00) で終了が, 一周したあと (0x100) */
     t = 0xFFFFFF00U;
     fake_time = 0x100000100LL;
     TEST_ASSERT_INT(0x200, stop_timer(&t));

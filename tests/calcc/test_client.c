@@ -48,7 +48,7 @@
 
 DEFINE_FFF_GLOBALS
 
-/* socket() と pselect() は, モックにして, 通常は本物を呼ぶ (失敗を注入する) */
+/* socket() と pselect() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(int, socket, int, int, int)
 TEST_PASSTHROUGH(int, socket, (int domain, int type, int protocol), (domain, type, protocol))
 FAKE_VALUE_FUNC(
@@ -77,7 +77,7 @@ static int pfd1[] = {-1, -1};              /**< パイプ1 */
 static int pfd2[] = {-1, -1};              /**< パイプ2 */
 static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
-/* sigemptyset() などと, set_client_data() は, モックにして, 通常は本物を呼ぶ */
+/* sigemptyset() などと, set_client_data() はモックにして, 通常は本物を呼ぶ */
 FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
 TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
 FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
@@ -91,10 +91,10 @@ TEST_PASSTHROUGH(ssize_t,
                  (dt, buf, len))
 
 /*
- * atexit() は, glibc の静的ライブラリ (libc_nonshared.a) の, 小さな関数 (スタブ) で,
+ * atexit() は glibc の静的ライブラリ (libc_nonshared.a) の小さな関数 (スタブ) で,
  * 共有ライブラリ (libcalcc.so) の中に取り込まれるので, 置き換えられない. スタブは,
- * __cxa_atexit() を呼ぶだけで, これは libc.so の関数なので, 置き換えられる.
- * 通常は, 本物の __cxa_atexit() を呼び, 注入したときだけ失敗させる.
+ * __cxa_atexit() を呼ぶだけでこれは libc.so の関数なので, 置き換えられる.
+ * 通常は本物の __cxa_atexit() を呼び, 注入したときだけ失敗させる.
  */
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
 static struct test_inject inject_cxa_atexit; /**< __cxa_atexit() に注入する失敗 */
@@ -181,7 +181,7 @@ static void
 setup(void *data)
 {
     (void)data; /* 使用しない */
-    /* モックと状態を, 初期状態 (素通し) に戻す */
+    /* モックと状態を初期状態 (素通し) に戻す */
     TEST_PASSTHROUGH_RESET(socket);
     TEST_PASSTHROUGH_RESET(pselect);
     (void)memset(&inject_cxa_atexit, 0, sizeof(inject_cxa_atexit));
@@ -363,7 +363,7 @@ test_client_loop(void)
             exit(CHILD_FAILED);
         }
 
-        /* 送信と受信が終わるまでループを続け, 一定時間後に, SIGINT で終了する */
+        /* 送信と受信が終わるまでループを続け, 一定時間後に SIGINT で終了する */
         (void)signal(SIGINT, on_sigint);
         if (fork() == 0) {
             (void)usleep(800000U);
@@ -386,7 +386,7 @@ test_client_loop(void)
 
         /* 標準入力に送信 */
         sendlen = sizeof(sendbuf);
-        /* 1 行だけ送る (終端の NUL まで送ると, 次のループで, 改行のない行を待ち続ける) */
+        /* 1 行だけ送る (終端の NUL まで送ると, 次のループで改行のない行を待ち続ける) */
         wlen = write(STDIN_FILENO, (char *)sendbuf, strlen((char *)sendbuf));
         if (wlen < 0L) {
             TEST_FAIL("write=%zd(%d)", wlen, errno);
@@ -1000,7 +1000,7 @@ child_read_sock(void *arg)
         hd.length = htonl(0U);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
-    default: /* 正常なデータ (4 は, 標準出力を閉じて, 出力に失敗する) */
+    default: /* 正常なデータ (4 は標準出力を閉じて, 出力に失敗する) */
         len = set_server_data(&dt, (const unsigned char *)"42", 3U);
         if (len < 0L)
             exit(CHILD_FAILED);
@@ -1154,14 +1154,14 @@ test_read_sock_failure(void)
     /* データ長が上限を超える (巨大なメモリを確保しない) */
     child_mode = 5;
     TEST_ASSERT_INT(EX_RECV_ERR, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
-    /* 標準出力に書き込めなくても, 続行する */
+    /* 標準出力に書き込めなくても続行する */
     child_mode = 4;
     TEST_ASSERT_INT(EX_SUCCESS, test_run_child(child_read_sock, NULL, NULL, out, sizeof(out)));
     PASS();
 }
 
 /**
- * シグナルマスクの取得に失敗する client_loop() を, 子プロセスで実行するための関数
+ * シグナルマスクの取得に失敗する client_loop() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
  */
@@ -1177,8 +1177,8 @@ child_client_loop_mask_failure(void *arg)
 }
 
 /**
- * 送信のあとの受信に失敗する client_loop() を, 子プロセスで実行するための関数
- * 接続先は, ヘッダだけ送って, 書込側をシャットダウンする.
+ * 送信のあとの受信に失敗する client_loop() を子プロセスで実行するための関数
+ * 接続先はヘッダだけ送って, 書込側をシャットダウンする.
  *
  * @param[in] arg 使用しない
  */
@@ -1194,7 +1194,7 @@ child_client_loop_read_failure(void *arg)
     (void)memset(&hd, 0, sizeof(hd));
     hd.length = htonl(4U);
     (void)writen(sv[1], &hd, sizeof(hd));
-    (void)shutdown(sv[1], SHUT_WR); /* 読込側は開いているので, 送信は成功する */
+    (void)shutdown(sv[1], SHUT_WR); /* 読込側は開いているので送信は成功する */
 
     TEST_INJECT(pselect, 0, 1, 1, 0);
     exit(client_loop(sv[0]));
@@ -1207,7 +1207,7 @@ TEST
 test_client_loop_signal_mask_failure(void)
 {
     child_sock = -1;
-    /* 失敗しても, 続行する */
+    /* 失敗しても続行する */
     TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop_mask_failure, NULL, NULL, NULL, 0));
     PASS();
 }
@@ -1218,7 +1218,7 @@ test_client_loop_signal_mask_failure(void)
 TEST
 test_client_loop_read_failure(void)
 {
-    /* 送信のあとの受信で, データを受信できない (EX_ALLOC_ERR) */
+    /* 送信のあとの受信でデータを受信できない (EX_ALLOC_ERR) */
     TEST_ASSERT_INT(EX_ALLOC_ERR,
                     test_run_child(child_client_loop_read_failure, NULL, "1+1\n", NULL, 0));
     PASS();
@@ -1237,7 +1237,7 @@ test_send_sock_alloc_failure(void)
 }
 
 /**
- * atexit() に失敗する client_loop() を, 子プロセスで実行するための関数
+ * atexit() に失敗する client_loop() を子プロセスで実行するための関数
  *
  * @param[in] arg 使用しない
  */
@@ -1276,9 +1276,9 @@ on_sigint(int signo)
 }
 
 /**
- * ソケットだけが読める状態の client_loop() を, 子プロセスで実行するための関数
- * 標準入力は, 何も入力されない (書込側を開いたままの) パイプにする.
- * 接続先は, 答えを送っておく. 一定時間後に, SIGINT で, ループを終了する.
+ * ソケットだけが読める状態の client_loop() を子プロセスで実行するための関数
+ * 標準入力は何も入力されない (書込側を開いたままの) パイプにする.
+ * 接続先は答えを送っておく. 一定時間後に SIGINT で, ループを終了する.
  *
  * @param[in] arg 使用しない
  */
@@ -1312,7 +1312,7 @@ child_client_loop_socket_only(void *arg)
 
 /**
  * client_loop() 関数テスト (ソケットだけが読める)
- * 標準入力が読めない間は, 標準入力を待たずに, ソケットから受信する.
+ * 標準入力が読めない間は, 標準入力を待たずにソケットから受信する.
  */
 TEST
 test_client_loop_socket_only(void)
@@ -1321,15 +1321,15 @@ test_client_loop_socket_only(void)
 
     TEST_ASSERT_INT(EX_SIGNAL,
                     test_run_child(child_client_loop_socket_only, NULL, NULL, out, sizeof(out)));
-    /* デバッグビルドは, ダンプも標準エラー出力に出す (子プロセスの出力に含まれる) */
+    /* デバッグビルドはダンプも標準エラー出力に出す (子プロセスの出力に含まれる) */
     TEST_ASSERT_MATCH("(^|\n)42\n", out);
     PASS();
 }
 
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 /**
- * 出力に, 指定した行が, 何回出力されたか数える
- * (デバッグビルドは, ダンプも標準エラー出力に出す (子プロセスの出力に含まれる) ので,
+ * 出力に指定した行が何回出力されたか数える
+ * (デバッグビルドはダンプも標準エラー出力に出す (子プロセスの出力に含まれる) ので,
  * 出力全体ではなく, 行を数える)
  *
  * @param[in] out 出力
@@ -1368,7 +1368,7 @@ responder(int sock)
     struct server_data *dt = NULL; /* 送信データ */
     ssize_t len = 0L;              /* 送信データ長 */
 
-    /* 接続先が閉じるまで, 要求を受信して, 答えを送信する */
+    /* 接続先が閉じるまで要求を受信して, 答えを送信する */
     for (;;) {
         length = sizeof(hd);
         if (recv_data(sock, &hd, &length) < 0)
@@ -1378,7 +1378,7 @@ responder(int sock)
         if (data == NULL)
             exit(EXIT_SUCCESS);
         free(data);
-        if (child_mode == 6) /* 答えを返さずに, 終了する */
+        if (child_mode == 6) /* 答えを返さずに終了する */
             exit(EXIT_SUCCESS);
         len = set_server_data(&dt, (const unsigned char *)"ok", 3U);
         if ((len < 0L) || (writen(sock, dt, (size_t)len) < 0))
@@ -1389,8 +1389,8 @@ responder(int sock)
 }
 
 /**
- * 続けて入力される要求の途中で, quit になる client_loop() を, 子プロセスで実行するための関数
- * 標準入力は, 全ての行が, 最初から読める (パイプ) ので, 答えを受信する前に, quit になる.
+ * 続けて入力される要求の途中で quit になる client_loop() を子プロセスで実行するための関数
+ * 標準入力は全ての行が最初から読める (パイプ) ので答えを受信する前に, quit になる.
  *
  * @param[in] arg 使用しない
  */
@@ -1429,12 +1429,12 @@ test_client_loop_drain(void)
                                             out, sizeof(out)));
     TEST_ASSERT_INT(3, count_line(out, "ok"));
 
-    /* 入力の終わりで終わる (改行のない最後の行も, 送信される) */
+    /* 入力の終わりで終わる (改行のない最後の行も送信される) */
     TEST_ASSERT_INT(EX_ALLOC_ERR,
                     test_run_child(child_client_loop_drain, NULL, "1+1\n2+2", out, sizeof(out)));
     TEST_ASSERT_INT(2, count_line(out, "ok"));
 
-    /* 答えを受信できない (接続先が, 答えを返さずに, 閉じる) 場合は, その受信エラー */
+    /* 答えを受信できない (接続先が答えを返さずに閉じる) 場合は, その受信エラー */
     child_mode = 6;
     TEST_ASSERT_INT(EX_RECV_ERR,
                     test_run_child(child_client_loop_drain, NULL, "1+1\nquit\n", out, sizeof(out)));
@@ -1455,7 +1455,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);

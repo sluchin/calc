@@ -54,7 +54,7 @@ struct _testfunc {
 /** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testfunc testfunc;
 
-/* 単体テスト用の関数構造体の初期化 (内部関数を, テストから呼べるようにする) */
+/* 単体テスト用の関数構造体の初期化 (内部関数をテストから呼べるようにする) */
 void test_init_func(testfunc *func);
 #endif /* UNITTEST */
 

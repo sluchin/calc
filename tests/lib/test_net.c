@@ -47,14 +47,14 @@
 
 DEFINE_FFF_GLOBALS
 
-/* send() と recv() は, モックにして, 通常は本物を呼ぶ (EINTR などを注入する) */
+/* send() と recv() はモックにして, 通常は本物を呼ぶ (EINTR などを注入する) */
 FAKE_VALUE_FUNC(ssize_t, send, int, const void *, size_t, int)
 TEST_PASSTHROUGH(ssize_t, send, (int fd, const void *buf, size_t n, int flags), (fd, buf, n, flags))
 FAKE_VALUE_FUNC(ssize_t, recv, int, void *, size_t, int)
 TEST_PASSTHROUGH(ssize_t, recv, (int fd, void *buf, size_t n, int flags), (fd, buf, n, flags))
 
 /*
- * fcntl() は, 可変引数なので, FFF のモックにはせず, F_SETFL のときだけ失敗させる.
+ * fcntl() は可変引数なので FFF のモックにはせず, F_SETFL のときだけ失敗させる.
  * 本物は dlsym(RTLD_NEXT) で探す.
  */
 static struct test_inject inject_fcntl;         /**< fcntl() (F_SETFL) に注入する失敗 */
@@ -64,7 +64,7 @@ static int (*real_fcntl)(int, int, ...) = NULL; /**< 本物の fcntl() */
  *
  * @param[in] fd ファイルディスクリプタ
  * @param[in] cmd コマンド
- * @return fcntl() の戻り値. F_SETFL は, 注入した失敗のときは, その値
+ * @return fcntl() の戻り値. F_SETFL は注入した失敗のときは, その値
  */
 int
 fcntl(int fd, int cmd, ...)
@@ -765,7 +765,7 @@ test_set_hostname_failure(void)
 
     TEST_ASSERT_INT(EX_NG, set_hostname(NULL, "127.0.0.1"));
     TEST_ASSERT_INT(EX_NG, set_hostname(&haddr, NULL));
-    /* IPアドレスでも, ホスト名でもない */
+    /* IPアドレスでもホスト名でもない */
     TEST_ASSERT_INT(EX_NG, set_hostname(&haddr, ""));
     PASS();
 }
@@ -785,7 +785,7 @@ test_set_port_failure(void)
     /* 存在しないサービス名 */
     TEST_ASSERT_INT(EX_NG, set_port(&paddr, "no-such-service"));
 
-    /* 範囲外 (65536 以上は, uint16_t に切り捨てられて, 別のポート番号にならない) */
+    /* 範囲外 (65536 以上は uint16_t に切り捨てられて, 別のポート番号にならない) */
     TEST_ASSERT_INT(EX_NG, set_port(&paddr, "0"));
     TEST_ASSERT_INT(EX_NG, set_port(&paddr, "65536"));
     TEST_ASSERT_INT(EX_NG, set_port(&paddr, "65616"));
@@ -868,7 +868,7 @@ test_send_data_interrupted(void)
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
-     * send() の直後の errno の判定 (EINTR, EAGAIN) が, 働かない */
+     * send() の直後の errno の判定 (EINTR, EAGAIN) が働かない */
     SKIPm("dbglog() clears errno in debug builds");
 #endif
 
@@ -876,7 +876,7 @@ test_send_data_interrupted(void)
         TEST_FAIL("socketpair(%d)", errno);
     }
 
-    /* 1 回目は失敗するが, やり直して, 送信できる */
+    /* 1 回目は失敗するがやり直して, 送信できる */
     unsigned int i;
     for (i = 0U; i < NELEMS(errnos); i++) {
         length = 3U;
@@ -934,7 +934,7 @@ test_recv_data_interrupted(void)
 
 #ifdef _DEBUG
     /* デバッグビルドの dbglog() (system_dbg_log) は, errno を 0 にするので,
-     * send() の直後の errno の判定 (EINTR, EAGAIN) が, 働かない */
+     * send() の直後の errno の判定 (EINTR, EAGAIN) が働かない */
     SKIPm("dbglog() clears errno in debug builds");
 #endif
 
@@ -942,7 +942,7 @@ test_recv_data_interrupted(void)
         TEST_FAIL("socketpair(%d)", errno);
     }
 
-    /* 1 回目は失敗するが, やり直して, 受信できる */
+    /* 1 回目は失敗するがやり直して, 受信できる */
     unsigned int i;
     for (i = 0U; i < NELEMS(errnos); i++) {
         length = 3U;
@@ -1020,7 +1020,7 @@ main(int argc, char **argv)
 {
     /* greatest の初期化 (オプションの解析. 標準出力のバッファリングは行わない) */
     TEST_MAIN_BEGIN();
-    /* 全てのテストの前に, 1 回だけ行う初期化 */
+    /* 全てのテストの前に 1 回だけ行う初期化 */
     startup();
     /* 各テストの前後に行う処理 */
     SET_SETUP(setup, NULL);
