@@ -67,7 +67,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | 7 | `EX_RECV_ERR` | 受信に失敗 (サーバが答えを返さずに閉じた, 上限を超えるデータ長など) |
 | 8 | `EX_SIGNAL` | シグナルを受け取った |
 
-## 2. `calcp` (スタンドアロン)
+## 2. calcp (スタンドアロン)
 
 ### 2.1 四則演算と括弧
 
@@ -189,7 +189,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CP-F-08 | 履歴の上限 | 1 から 150 までの式を, 続けて入力する | エラーにならず, 計算を続けられる (履歴は, 古いものから消える. 上限は 100) | |
 
 
-## 3. `calcd` (サーバ)
+## 3. calcd (サーバ)
 
 この節の各項目の前後に, `pkill -x calcd` で, 起動しているサーバを止める.
 
@@ -222,7 +222,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CD-B-10 | SIGPIPE で停止しない | クライアントが, 答えを受け取る前に, 切断する (CD-D-05) | サーバは, 動き続ける | |
 
 
-## 4. `calcc` (クライアント)
+## 4. calcc (クライアント)
 
 ### 4.1 オプションと接続
 
@@ -238,7 +238,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CC-A-08 | ホスト名が長すぎる | `$B/calcc -i <48 文字以上のホスト名>` | `Hostname string length 47` を出力して, 終了ステータス 1 | |
 
 
-## 5. `calcc` と `calcd` の組み合わせ
+## 5. calcc と calcd の組み合わせ
 
 この節の前に, サーバを起動する (`$B/calcd -p 23456`). 以降の `c` は, `$B/calcc -p 23456` を表す.
 
