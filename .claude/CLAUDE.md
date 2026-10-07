@@ -95,15 +95,19 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 ### コミットメッセージ
 
 - 英語で書く。
-- **タイトル (1 行目) の先頭に、変更の対象を表す prefix を付ける**: `prefix: 要約` の形式。次のどれかにする。
-  - `fix`: バグの修正
-  - `feat`: 機能の追加、変更
-  - `test`: テストだけの変更
-  - `docs`: 文書 (`*.md`) と、コメント (Doxygen コメントを含む) だけの変更
-  - `build`: ビルド (`CMakeLists.txt`、`GNUmakefile`、`cmake/`) の変更
-  - `ci`: `.github/` の変更
-  - `style`: 整形、コーディング規約の適用 (動作を変えない)
-  - `chore`: そのほかの雑務 (`.gitignore`、著作権の年など)
-  - 複数の対象にまたがるときは、変更の中心になる対象の prefix にする。
+- **タイトル (1 行目) は、Conventional Commits の形式で書く**: `type(scope): description`。scope (括弧を含む) は、省略できる。description は、英語で、命令形で書く。
+  - type は、次のどれか。
+    - `feat`: 機能の追加、変更
+    - `fix`: バグの修正
+    - `docs`: 文書 (`*.md`) と、コメント (Doxygen コメントを含む) だけの変更
+    - `style`: 整形、コーディング規約の適用 (動作を変えない)
+    - `refactor`: 動作を変えない、書き換え
+    - `test`: テストだけの変更
+    - `build`: ビルド (`CMakeLists.txt`、`GNUmakefile`、`cmake/`) の変更
+    - `ci`: CI (`.github/`) の変更
+    - `chore`: そのほかの雑務 (`.gitignore`、著作権の年など)
+  - scope は、変更の場所を表す短い名前 (例: `lib`、`calcp`、`calcc`、`calcd`)。決まった一覧はない。
+  - 互換性を壊す変更は、type (または scope) の直後に、感嘆符を付ける (Conventional Commits の仕様のとおり)。
+  - 複数の type にまたがるときは、変更の中心になる type にする。
 - 本文 (タイトルの次の空行のあと) は、`-` で始まる箇条書きにする。
 - `Co-Authored-By:` などの帰属行は含めない。
