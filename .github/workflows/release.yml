@@ -1,0 +1,50 @@
+name: Release
+
+# v から始まるタグ (例: v0.1.0) を push すると、Linux (x86_64) の実行ファイル (calcp、calcd、calcc) を載せた、GitHub Releases のドラフトを作る
+# (中身を確かめて、手で公開する。ソースの zip と tar.gz は、GitHub が自動で付ける).
+# 手動実行 (workflow_dispatch) は、タグを打たずに、成果物を Actions の Artifacts に保存する.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # GitHub Releases への書き込み
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libreadline-dev
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+          cmake --build build
+
+      - name: Package the executables
+        run: |
+          mkdir calc_${{ github.ref_name }}_linux_x86_64
+          cp build/calcp build/calcd build/calcc README.md COPYING calc_${{ github.ref_name }}_linux_x86_64/
+          tar -czf calc_${{ github.ref_name }}_linux_x86_64.tar.gz calc_${{ github.ref_name }}_linux_x86_64
+
+      - name: Create the draft release with the executables
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "calc_${{ github.ref_name }}_linux_x86_64.tar.gz" \
+            --draft --title "calc ${{ github.ref_name }}" --generate-notes
+
+      - name: Upload the executables as an artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: calc-linux
+          path: calc_*_linux_x86_64.tar.gz
+          if-no-files-found: error

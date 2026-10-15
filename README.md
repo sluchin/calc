@@ -153,3 +153,7 @@ graphviz (dot) がなくても生成できる (グラフは出力されない).
 6. ソケットクローズ後, `-1` を代入する.
 
 MISRA-C に対する適合方針および例外事項 (Deviations) については, [MISRA.md](MISRA.md) を参照.
+
+## リリース
+
+`v0.1.0` のようなタグを push すると、GitHub Actions の `release.yml` が、GitHub Releases の**ドラフト**を作ります (載せるもの: Linux (x86_64) の実行ファイル (`calcp`、`calcd`、`calcc`) の tar.gz)。中身を確かめて、手で公開します。タグを打たずに試すときは、Actions の Release を手動で実行します (成果物は、Artifacts に保存されます)。
