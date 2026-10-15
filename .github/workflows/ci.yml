@@ -15,7 +15,7 @@ on:
     branches: [ main ]
 
 env:
-  # 整形は, この版の clang-format で行う (.clang-format は, 新しい版の設定を使っている)
+  # 整形はこの版の clang-format で行う (.clang-format は新しい版の設定を使っている)
   CLANG_FORMAT_VERSION: "23.*"
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
           set -o pipefail
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
           cmake --build build 2>&1 | tee build.log
-          # テストのビルドは, ctest の build_tests でも行うが, ここで先に行い, 警告を確認する
+          # テストのビルドは ctest の build_tests でも行うが, ここで先に行い, 警告を確認する
           cmake --build build --target unit_tests 2>&1 | tee -a build.log
           if grep -q "warning:" build.log; then
             echo "::error::ビルドに警告があります (警告ゼロを維持する)"
@@ -135,7 +135,7 @@ jobs:
           set -o pipefail
           cmake -S . -B build
           cmake --build build --target doc 2>&1 | tee doc.log
-          # Doxygen の日本語の出力には, 内容と関係のない警告が, 必ず出るので, それだけは除く
+          # Doxygen の日本語の出力には, 内容と関係のない警告が必ず出るので, それだけは除く
           if grep "warning:" doc.log | grep -v "selected output language"; then
             echo "::error::ドキュメントに警告があります (警告ゼロを維持する)"
             exit 1

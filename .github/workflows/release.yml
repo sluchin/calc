@@ -1,8 +1,8 @@
 name: Release
 
-# v から始まるタグ (例: v0.1.0) を push すると、Linux (x86_64) の実行ファイル (calcp、calcd、calcc) を載せた、GitHub Releases のドラフトを作る
-# (中身を確かめて、手で公開する。ソースの zip と tar.gz は、GitHub が自動で付ける).
-# 手動実行 (workflow_dispatch) は、タグを打たずに、成果物を Actions の Artifacts に保存する.
+# v から始まるタグ (例: v0.1.0) を push すると, GitHub Releases のドラフトを作り, Linux (x86_64) の実行ファイル (calcp, calcd, calcc) を載せる
+# (中身を確かめて, 手で公開する. ソースの zip と tar.gz は GitHub が自動で付ける).
+# 手動実行 (workflow_dispatch) はタグを打たずに, 成果物を Actions の Artifacts に保存する.
 
 on:
   push:
