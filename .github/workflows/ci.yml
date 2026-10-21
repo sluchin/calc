@@ -44,7 +44,7 @@ jobs:
             exit 1
           fi
       - name: Upload the executables and the libraries
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ${{ matrix.artifact }}
@@ -76,7 +76,7 @@ jobs:
           fi
           cd build && ctest --output-on-failure 2>&1 | tee ../ctest.log
       - name: Upload the test output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test_log
@@ -97,7 +97,7 @@ jobs:
           set -o pipefail
           make analyze 2>&1 | tee analyze.log
       - name: Upload the analysis output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: analyze_log
@@ -116,7 +116,7 @@ jobs:
       - name: Coverage
         run: make coverage
       - name: Upload the report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
@@ -141,7 +141,7 @@ jobs:
             exit 1
           fi
       - name: Upload the documentation
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docs
           path: build/docs/html
