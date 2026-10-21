@@ -43,7 +43,7 @@ jobs:
             --draft --title "calc ${{ github.ref_name }}" --generate-notes
 
       - name: Upload the executables as an artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: calc-linux
           path: calc_*_linux_x86_64.tar.gz
