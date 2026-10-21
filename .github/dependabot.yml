@@ -1,0 +1,15 @@
+# Dependabot: 依存の更新を, 週に 1 回 PR にする (マイナー版とパッチ版は, 種類ごとに 1 つの PR にまとめる).
+# PR では, いつもの CI が走る. マージは手で行う.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
