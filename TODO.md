@@ -7,11 +7,11 @@
 - [ ] デバッグビルド (`_DEBUG`) の `dbglog()` (`system_dbg_log`) が, `errno` を 0 にする.
   `lib/net.c` の `send_data()` `recv_data()` は, `dbglog()` の直後に `errno` (EINTR, EAGAIN) を判定するので, デバッグビルドでは, 割り込まれたときの再試行が働かず, エラーになる.
   `tests/lib/test_net.c` の `test_send_data_interrupted` `test_recv_data_interrupted` は, デバッグビルドでは, スキップしている.
-- [ ] テストのカバレッジの残りは, 分岐 (現在 95.7%). 行は 100% (`make coverage` で確認できる). `calc/func.c` の到達しない `default:` は, `GCOVR_EXCL_START` で, 集計から外している.
 - [ ] 標準出力をリダイレクトしている間にテストが失敗すると, メッセージが見えなくなる. (`tests/calcc/test_client.c` など)
 
 ## 対応済み
 
+- [x] テストのカバレッジを, 行と分岐ともに 100% にして, 下限を 100% にした. 浮動小数点数のゼロの判定 (`fpclassify`) を `is_zero()` にまとめ, 到達しない分岐 (Linux では同じ値の `EWOULDBLOCK`, 常に 0 でないスレッド ID など) を除いた. あわせて, `close_fd(NULL, ...)` と, `print_trace()` の `backtrace_symbols()` の失敗で, NULL を参照していたのを直した.
 - [x] `lib/test_fileio` が root で失敗していた. (「書込権限なし」の確認は, root では `access(W_OK)` が成功するので, root のときは行わない)
 - [x] cutter から greatest と FFF に移行し, テストを `tests/` 配下に移した.
 - [x] `main.c` と `option.c` のテストを追加した.

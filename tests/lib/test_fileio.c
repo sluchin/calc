@@ -461,6 +461,9 @@ test_close_fd(void)
     retval = close_fd(&fds[FD1], NULL);
     TEST_ASSERT_INT(-1, fds[FD1]);
     TEST_ASSERT_INT_MSG(EX_NG, retval, "retrun value");
+
+    /* 最初の引数が NULL (何もしない) */
+    TEST_ASSERT_INT(EX_OK, close_fd(NULL, NULL));
     PASS();
 }
 

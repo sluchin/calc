@@ -75,6 +75,8 @@ TEST_PASSTHROUGH(int,
 #pragma GCC diagnostic ignored "-Wpedantic"
 FAKE_VALUE_FUNC(int, accept, int, struct sockaddr *, socklen_t *)
 TEST_PASSTHROUGH(int, accept, (int fd, struct sockaddr *addr, socklen_t *len), (fd, addr, len))
+FAKE_VALUE_FUNC(int, bind, int, const struct sockaddr *, socklen_t)
+TEST_PASSTHROUGH(int, bind, (int fd, const struct sockaddr *addr, socklen_t len), (fd, addr, len))
 #pragma GCC diagnostic pop
 /* FFF は関数ポインタの型を直接書けないので, typedef する */
 /** スレッド関数の型 */
@@ -229,6 +231,8 @@ TEST test_server_proc_internal_failure(void);
 TEST test_server_proc_free_arg(void);
 TEST test_server_proc_length_limit(void);
 TEST test_server_proc_no_nul(void);
+TEST test_server_loop_timeout(void);
+TEST test_server_proc_two_requests(void);
 
 /* 内部変数 */
 static testserver server;                  /**< 関数構造体 */
@@ -283,6 +287,7 @@ setup(void *data)
     TEST_PASSTHROUGH_RESET(listen);
     TEST_PASSTHROUGH_RESET(pselect);
     TEST_PASSTHROUGH_RESET(accept);
+    TEST_PASSTHROUGH_RESET(bind);
     TEST_PASSTHROUGH_RESET(pthread_create);
     TEST_PASSTHROUGH_RESET(pthread_detach);
     TEST_PASSTHROUGH_RESET(create_answer);
@@ -671,6 +676,11 @@ test_server_sock_failure(void)
     TEST_ASSERT_INT(EX_NG, server_sock());
     TEST_ASSERT_INJECTED(listen);
 
+    /* bind() に失敗 (使用中のほかの理由. 権限がない) */
+    TEST_INJECT(bind, 0, 1, -1, EACCES);
+    TEST_ASSERT_INT(EX_NG, server_sock());
+    TEST_ASSERT_INJECTED(bind);
+
     /* bind() に失敗 (同じポート番号は使用中) */
     ssock = server_sock();
     TEST_ASSERT_NOT_INT(EX_NG, ssock);
@@ -956,6 +966,98 @@ test_server_proc_no_nul(void)
     PASS();
 }
 
+/** pselect_timeout_then_stop() が呼ばれた回数 */
+static int pselect_calls = 0;
+
+/**
+ * pselect() の置き換え. 1 回目はタイムアウト, 2 回目は終了のシグナルを受けて,
+ * 受付のないまま 1 を返す (読めるソケットはない)
+ *
+ * @param[in] nfds 使用しない
+ * @param[in,out] readfds 読み込みのマスク (空にする)
+ * @param[in] writefds 使用しない
+ * @param[in] exceptfds 使用しない
+ * @param[in] timeout 使用しない
+ * @param[in] sigmask 使用しない
+ * @return 1 回目は 0, 2 回目からは 1
+ */
+static int
+pselect_timeout_then_stop(int nfds,
+                          fd_set *readfds,
+                          fd_set *writefds,
+                          fd_set *exceptfds,
+                          const struct timespec *timeout,
+                          const sigset_t *sigmask)
+{
+    (void)nfds;
+    (void)writefds;
+    (void)exceptfds;
+    (void)timeout;
+    (void)sigmask;
+    pselect_calls++;
+    if (pselect_calls == 1)
+        return 0;
+    FD_ZERO(readfds);
+    g_sig_handled = 1;
+    return 1;
+}
+
+/**
+ * server_loop() 関数テスト (タイムアウトで待ち直す. 読めるソケットがなければ受け付けない)
+ */
+TEST
+test_server_loop_timeout(void)
+{
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+
+    pselect_calls = 0;
+    pselect_fake.custom_fake = pselect_timeout_then_stop;
+    server_loop(ssock);
+    TEST_ASSERT_INT(2, pselect_calls);
+    TEST_ASSERT_INT(0, accept_fake.call_count);
+    PASS();
+}
+
+/**
+ * server_proc() 関数テスト (同じ接続で, 2 回計算する)
+ * 終了のシグナルがなければ, 次のリクエストを待つ. 接続先が閉じると, スレッドは終わる.
+ */
+TEST
+test_server_proc_two_requests(void)
+{
+    unsigned char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
+    thread_data *dt = NULL;             /* スレッドデータ */
+    pthread_t tid;                      /* スレッドID */
+    int i = 0;                          /* 回数 */
+
+    TEST_ASSERT_INT(EX_OK, set_port_string(port));
+    ssock = server_sock();
+    TEST_ASSERT_NOT_INT(EX_NG, ssock);
+    csock = inet_sock_client();
+    TEST_ASSERT_NOT_INT(EX_NG, csock);
+
+    /* server_loop() と同じように受け付けて, スレッドで動かす */
+    dt = (thread_data *)calloc(1U, sizeof(thread_data));
+    TEST_ASSERT_NOT_NULL(dt);
+    dt->len = (socklen_t)sizeof(dt->addr);
+    dt->sock = accept(ssock, (struct sockaddr *)&dt->addr, &dt->len);
+    TEST_ASSERT_MSG(dt->sock >= 0, "accept(%d)", errno);
+    (void)sigemptyset(&dt->sigmask);
+    TEST_ASSERT_INT(0, pthread_create(&tid, NULL, server.server_proc, dt));
+
+    for (i = 0; i < 2; i++) {
+        TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
+        (void)memset(rbuf, 0, sizeof(rbuf));
+        TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
+        TEST_ASSERT_STR((char *)expected, (char *)rbuf);
+    }
+    close_sock(&csock); /* スレッドはヘッダを受信できずに終了する */
+    (void)pthread_join(tid, NULL);
+    PASS();
+}
+
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
@@ -989,6 +1091,8 @@ main(int argc, char **argv)
     RUN_TEST(test_server_proc_free_arg);
     RUN_TEST(test_server_proc_length_limit);
     RUN_TEST(test_server_proc_no_nul);
+    RUN_TEST(test_server_loop_timeout);
+    RUN_TEST(test_server_proc_two_requests);
     /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

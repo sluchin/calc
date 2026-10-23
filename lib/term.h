@@ -25,6 +25,7 @@
 #ifndef TERM_H
 #define TERM_H
 
+#include <stddef.h>  /* size_t */
 #include <termios.h> /* termios */
 
 /** モードタイプ */
@@ -44,6 +45,10 @@ void sys_print_termattr(const int level,
 struct _testterm {
     char *(*get_termattr)(const int fd, struct termios *mode); /**< 端末属性の文字列化 */
     tcflag_t *(*mode_type_flag)(const enum mode_type type, struct termios *mode); /**< フラグ取得 */
+    void (*append_str)(char *buf,
+                       const size_t size,
+                       size_t *off,
+                       const char *str); /**< バッファへの文字列追記 */
 };
 /** 内部関数の関数ポインタ構造体型 (単体テスト用) */
 typedef struct _testterm testterm;

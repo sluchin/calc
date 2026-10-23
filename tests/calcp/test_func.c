@@ -23,6 +23,8 @@
  */
 
 #include <ctype.h> /* isalpha */
+#include <float.h> /* DBL_MIN */
+#include <math.h>  /* NAN INFINITY */
 
 #include "test_helper.h"
 
@@ -47,6 +49,7 @@ TEST test_get_log(void);
 TEST test_get_factorial(void);
 TEST test_get_permutation(void);
 TEST test_get_combination(void);
+TEST test_is_zero(void);
 
 /* 内部変数 */
 static testcalc st_calc; /**< calc関数構造体 */
@@ -153,7 +156,8 @@ static const struct test_data permutation_data[] = {
     {"nPr(5,2)",  20,  5,  2,  E_NONE, 0.0},
     {"nPr(-5,2)", 0.0, -5, 2,  E_NAN,  0.0},
     {"nPr(5,-2)", 0.0, 5,  -2, E_NAN,  0.0},
-    {"nPr(2,5)",  0.0, 2,  5,  E_NAN,  0.0}
+    {"nPr(2,5)",  0.0, 2,  5,  E_NAN,  0.0},
+    {"nPr(5,5)",  120, 5,  5,  E_NONE, 0.0}
 };
 
 /** get_combination() 関数テスト用データ */
@@ -161,7 +165,8 @@ static const struct test_data combination_data[] = {
     {"nCr(5,2)",  10,  5,  2,  E_NONE, 0.0},
     {"nCr(-5,2)", 0.0, -5, 2,  E_NAN,  0.0},
     {"nCr(5,-2)", 0.0, 5,  -2, E_NAN,  0.0},
-    {"nCr(2,5)",  0.0, 2,  5,  E_NAN,  0.0}
+    {"nCr(2,5)",  0.0, 2,  5,  E_NAN,  0.0},
+    {"nCr(5,5)",  1,   5,  5,  E_NONE, 0.0}
 };
 
 /**
@@ -521,6 +526,21 @@ test_func_error_state(void)
     PASS();
 }
 
+/**
+ * is_zero() 関数テスト (fpclassify の全ての分類)
+ */
+TEST
+test_is_zero(void)
+{
+    ASSERT(is_zero(0.0));
+    ASSERT(is_zero(-0.0));
+    ASSERT_FALSE(is_zero(1.0));         /* 正規化数 */
+    ASSERT_FALSE(is_zero(DBL_MIN / 2)); /* 非正規化数 */
+    ASSERT_FALSE(is_zero(INFINITY));
+    ASSERT_FALSE(is_zero(NAN));
+    PASS();
+}
+
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
@@ -554,6 +574,7 @@ main(int argc, char **argv)
     RUN_TEST(test_get_factorial);
     RUN_TEST(test_get_permutation);
     RUN_TEST(test_get_combination);
+    RUN_TEST(test_is_zero);
     /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

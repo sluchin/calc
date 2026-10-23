@@ -93,15 +93,21 @@ TEST test_systrace_failure(void);
 #ifdef HAVE_EXECINFO
 TEST test_systrace(void);
 TEST test_print_trace(void);
+TEST test_print_trace_failure(void);
 #endif
+TEST test_stderr_log_unusual(void);
+TEST test_unknown_errno(void);
 
 /* 内部変数 */
+static int fake_month = 0;                     /**< localtime_month() が返す月 (0 から 11 の外も) */
 static char dump[0xFF + 1];                    /**< ダンプデータ */
 static int fd = -1;                            /**< ファイルディスクリプタ */
 static char testfile[TEST_TMPNAME_SIZE] = {0}; /**< 一意なファイル名 */
 
 /* 内部関数 */
 static void set_print_hex(char *buf, size_t len);
+static struct tm *localtime_month(const time_t *timep, struct tm *result);
+static void quiet_stderr(void);
 static int match_print_hex_sys(const char *actual, const char *prefix);
 static void set_sig_handler(void);
 
@@ -308,6 +314,50 @@ test_stderr_log(void)
     dbglog("actual=%s", actual);
 
     TEST_ASSERT_MATCH_MSG(expected, actual, "expected=%s actual=%s", expected, actual);
+    PASS();
+}
+
+/**
+ * stderr_log() 関数テスト (プログラム名がない, 月が範囲の外)
+ */
+TEST
+test_stderr_log_unusual(void)
+{
+    ssize_t rlen = 0L;           /* 戻り値 */
+    char actual[BUF_SIZE] = {0}; /* 実際の文字列 */
+
+    fd = pipe_fd(STDERR_FILENO);
+    if (fd < 0) {
+        TEST_FAIL("pipe_fd=%d(%d)", fd, errno);
+    }
+
+    /* 月の名前は空, プログラム名も空にする */
+    localtime_r_fake.custom_fake = localtime_month;
+    fake_month = -1;
+    stderr_log(NULL, "filename", 15, "function", "%s", "a");
+    fake_month = 12;
+    stderr_log(NULL, "filename", 15, "function", "%s", "b");
+
+    rlen = read(fd, actual, sizeof(actual) - 1U);
+    if (rlen < 0L) {
+        TEST_FAIL("read: fd=%d(%d)", fd, errno);
+    }
+    TEST_ASSERT_MATCH("^ [ 0-9][0-9] .* \\[[0-9]+\\]: filename", actual);
+    TEST_ASSERT_MATCH("function\\(b\\)", actual);
+    PASS();
+}
+
+/**
+ * 知らないエラー番号 (strerror_r() が失敗する) でも, メッセージを出す
+ */
+TEST
+test_unknown_errno(void)
+{
+    quiet_stderr();
+
+    errno = 99999;
+    system_log(LOG_INFO, LOG_PID | LOG_PERROR, "programname", "filename", 15, "function", "%s",
+               "test");
     PASS();
 }
 
@@ -764,6 +814,40 @@ test_systrace_failure(void)
 }
 #endif
 
+#ifdef HAVE_EXECINFO
+/**
+ * print_trace() 関数テスト (失敗)
+ */
+TEST
+test_print_trace_failure(void)
+{
+    quiet_stderr();
+
+    /* backtrace_symbols() に失敗 (何も出さずに戻る) */
+    TEST_INJECT(backtrace_symbols, 0, 1, NULL, ENOMEM);
+    print_trace();
+    TEST_ASSERT_INJECTED(backtrace_symbols);
+    PASS();
+}
+#endif
+
+/**
+ * localtime_r() の置き換え. 本物を呼んでから, 月を fake_month にする
+ *
+ * @param[in] timep 時刻
+ * @param[out] result tm構造体
+ * @return result (本物が失敗したら, NULL)
+ */
+static struct tm *
+localtime_month(const time_t *timep, struct tm *result)
+{
+    struct tm *tp = pass_localtime_r(timep, result); /* 本物の結果 */
+
+    if (tp != NULL)
+        tp->tm_mon = fake_month;
+    return tp;
+}
+
 /* greatest の定義 (main() を含む, 実行ファイルごとに 1 か所) */
 GREATEST_MAIN_DEFS();
 
@@ -790,6 +874,8 @@ main(int argc, char **argv)
     RUN_TEST(test_system_log);
     RUN_TEST(test_system_dbg_log);
     RUN_TEST(test_stderr_log);
+    RUN_TEST(test_stderr_log_unusual);
+    RUN_TEST(test_unknown_errno);
     RUN_TEST(test_dump_log);
     RUN_TEST(test_dump_sys);
     RUN_TEST(test_dump_file);
@@ -801,6 +887,7 @@ main(int argc, char **argv)
     RUN_TEST(test_dump_file_failure);
     RUN_TEST(test_systrace);
     RUN_TEST(test_print_trace);
+    RUN_TEST(test_print_trace_failure);
     RUN_TEST(test_systrace_failure);
     /* 結果の表示と終了 */
     TEST_MAIN_END();

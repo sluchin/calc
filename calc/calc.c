@@ -34,7 +34,6 @@
 #include <stdlib.h> /* malloc */
 #include <ctype.h>  /* isdigit isalpha */
 #include <stdarg.h> /* va_list va_arg */
-#include <math.h>   /* fpclassify FP_ZERO */
 #ifdef _DEBUG
 #  include <limits.h> /* INT_MAX */
 #endif                /* _DEBUG */
@@ -336,7 +335,7 @@ term(calcinfo *calc)
         } else if (calc->ch == '/') {
             readch(calc);
             y = unary(calc);
-            if (fpclassify(y) == FP_ZERO) { /* ゼロ除算エラー */
+            if (is_zero(y)) { /* ゼロ除算エラー */
                 set_errorcode(calc, E_DIVBYZERO);
                 return EX_ERROR;
             }
@@ -463,8 +462,8 @@ token(calcinfo *calc)
 
     if (isdigit(calc->ch) != 0) { /* 数値 */
         result = number(calc);
-    } else if (isalpha(calc->ch) != 0) { /* 関数 */
-        while ((isalpha(calc->ch) != 0) && (calc->ch != '\0') && (pos < MAX_FUNC_STRING)) {
+    } else if (isalpha(calc->ch) != 0) {                              /* 関数 */
+        while ((isalpha(calc->ch) != 0) && (pos < MAX_FUNC_STRING)) { /* '\0' は英字ではない */
             func[pos++] = (char)calc->ch;
             readch(calc);
         }

@@ -803,6 +803,17 @@ test_parse_func_args_failure(void)
     st_calc.readch(&calc);
     parse_func_args(&calc, &x, NULL);
     ASSERT(is_error(&calc));
+
+    /* もうエラーなら, 引数を読まない (エラーも, 読む位置も変えない) */
+    (void)memset(&calc, 0, sizeof(calcinfo));
+    set_string(&calc, "(5)");
+    st_calc.readch(&calc);
+    set_errorcode(&calc, E_SYNTAX);
+    x = 1.0;
+    parse_func_args(&calc, &x, NULL);
+    TEST_ASSERT_INT((int)E_SYNTAX, (int)calc.errorcode);
+    TEST_ASSERT_INT('(', calc.ch);
+    TEST_ASSERT_DOUBLE(1.0, 0.0, x);
     PASS();
 }
 

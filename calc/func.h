@@ -37,6 +37,9 @@ double exec_func(calcinfo *calc, const char *func);
 /* 指数取得 */
 double get_pow(calcinfo *calc, double x, double y);
 
+/* ゼロかどうか (浮動小数点数) */
+bool is_zero(double x);
+
 #ifdef UNITTEST
 /** 内部関数の関数ポインタ構造体 (単体テスト用) */
 struct _testfunc {

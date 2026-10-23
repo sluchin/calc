@@ -51,6 +51,7 @@ TEST test_mode_type_flag(void);
 TEST test_sys_print_termattr_failure(void);
 TEST test_get_termattr_failure(void);
 TEST test_sys_print_termattr_fd(void);
+TEST test_append_str(void);
 
 /* 内部変数 */
 static testterm term; /**< 関数構造体 */
@@ -170,6 +171,28 @@ test_get_termattr(void)
 }
 
 /**
+ * append_str() 関数テスト (入り切らない分は切り捨てて, 常に NUL 終端する)
+ */
+TEST
+test_append_str(void)
+{
+    char buf[8] = {0}; /* バッファ */
+    size_t off = 0U;   /* 書き込み位置 */
+
+    term.append_str(buf, sizeof(buf), &off, "abc");
+    TEST_ASSERT_STR("abc", buf);
+    ASSERT_EQ(3U, off);
+    /* 残りは 4 文字分 (NUL を除く) */
+    term.append_str(buf, sizeof(buf), &off, "defghij");
+    TEST_ASSERT_STR("abcdefg", buf);
+    ASSERT_EQ(sizeof(buf) - 1U, off);
+    /* 一杯なら, 何も足さない */
+    term.append_str(buf, sizeof(buf), &off, "x");
+    TEST_ASSERT_STR("abcdefg", buf);
+    PASS();
+}
+
+/**
  * mode_type_flag() 関数テスト
  */
 TEST
@@ -283,6 +306,7 @@ main(int argc, char **argv)
     RUN_TEST(test_sys_print_termattr_failure);
     RUN_TEST(test_get_termattr_failure);
     RUN_TEST(test_sys_print_termattr_fd);
+    RUN_TEST(test_append_str);
     /* 結果の表示と終了 */
     TEST_MAIN_END();
 }

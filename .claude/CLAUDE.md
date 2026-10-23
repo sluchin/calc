@@ -31,7 +31,9 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - テスト: `make test` (CMake の Debug ビルドを `build-test/` に作り、ビルドして `ctest` を実行する。CMake が必要)
   - 1 つだけ実行するときは、`build-test/tests/<ディレクトリ>/<テスト名>` を直接実行する (先に `make test` でビルドしておく) (例: `build-test/tests/lib/test_data`)。greatest のオプション (`-t <名前>` で名前を指定、`-l` で一覧) が使える。
   - テストが実行できなかったときは、そのことを報告する (成功したとは書かない)。
-- カバレッジ: `make coverage` (gcov と gcovr が必要。`build-coverage/` に作り、端末に一覧を出す。詳細は `build-coverage/coverage/index.html`)
+- カバレッジ: `make coverage` (gcov と gcovr が必要。`build-coverage/` に作り、端末に一覧を出す。詳細は `build-coverage/coverage/index.html`)。**行と分岐は 100%** (`CMakeLists.txt` の `COVERAGE_MIN_LINE` と `COVERAGE_MIN_BRANCH`)。コードを変えたら、テストを足して 100% を保つ。
+  - 集計から外すのは、到達しないコードだけ (`GCOVR_EXCL_START`/`STOP`、`GCOVR_EXCL_LINE`、`GCOVR_EXCL_BR_LINE`)。理由をコメントに書く。libc の失敗は、FFF のモック (`TEST_PASSTHROUGH` と `TEST_INJECT`) で注入してテストする。
+  - 浮動小数点数の分類 (`fpclassify`) は、コンパイラが NaN、無限大などの分岐を作る。ゼロの判定は `is_zero()` (`calc/func.c`) を使う (直接 `fpclassify` を書かない)。
   - CMake のビルドディレクトリでも `make coverage` が使える。`-DENABLE_COVERAGE=ON` (最適化なしで `--coverage` を付ける) で構成していなければ、`<ビルドディレクトリ>/coverage-build/` に別にビルドする。`gcovr` が無いと、理由を表示して失敗する。
   - `add_custom_target` には、必ず `VERBATIM` を付ける (付けないと、`(` などを含む引数でシェルの構文エラーになる)。
 - 静的解析: `make analyze` (gcc 10 以降の `-fanalyzer`。通常のビルドとは分けてあり、リリース用とデバッグ用の両方の設定で、全ソースを `-O0` で解析する。指摘があれば失敗する)。CMake では `cmake --build <ビルドディレクトリ> --target analyze`。コードを修正したら、実行して、指摘が出ないことを確認する。

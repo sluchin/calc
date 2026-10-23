@@ -222,6 +222,7 @@ test_init_term(testterm *term)
 {
     term->get_termattr = get_termattr;
     term->mode_type_flag = mode_type_flag;
+    term->append_str = append_str;
 }
 #endif
 
@@ -257,23 +258,20 @@ get_termattr(const int fd, struct termios *mode)
     /* 最初に "tcgetattr(" を書き込む */
     append_str(buf, sizeof(buf), &off, "tcgetattr(");
 
+    /* 2 つ目からは, 前に ", " を付ける (末尾の区切りを, 後で削らない) */
+    const char *sep = ""; /* 区切り */
     int i = 0;
     for (i = 0; mode_info[i].name != NULL; i++) {
         bitsp = mode_type_flag(mode_info[i].type, mode);
-        if (bitsp == NULL) /* 不正なモード種別 */
-            continue;
+        if (bitsp == NULL) /* GCOVR_EXCL_BR_LINE: 表の種別は, 全て正しい (不正なモード種別) */
+            continue;      /* GCOVR_EXCL_LINE */
         mask = (mode_info[i].mask != 0UL) ? mode_info[i].mask : mode_info[i].bits;
 
         if ((*bitsp & mask) == mode_info[i].bits) {
+            append_str(buf, sizeof(buf), &off, sep);
             append_str(buf, sizeof(buf), &off, mode_info[i].name);
-            append_str(buf, sizeof(buf), &off, ", ");
+            sep = ", ";
         }
-    }
-
-    /* 末尾の ", " を削る処理 */
-    if ((off >= 10U) && (buf[off - 2U] == ',') && (buf[off - 1U] == ' ')) {
-        off -= 2U;
-        buf[off] = '\0';
     }
 
     /* 閉じカッコを追加 */

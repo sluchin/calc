@@ -121,6 +121,7 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 
 gcovr をインストールし (`sudo apt install gcovr`), `make coverage` コマンドを実行する.
 レポートは `build-coverage/coverage/index.html` に出力される.
+行と分岐のどちらかが 100% を下回ると, 失敗する (CI でも確認する). 到達しないコード (全ての種別を処理している `switch` の `default:` など) だけを, 理由を書いた `GCOVR_EXCL_*` のコメントで, 集計から外している.
 
 CMake のビルドディレクトリでも, `make coverage` で実行できる. カバレッジ用に, `build/coverage-build/` に別にビルドして, レポートを `build/coverage-build/coverage/index.html` に出力する.
 

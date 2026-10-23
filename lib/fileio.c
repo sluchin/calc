@@ -278,16 +278,18 @@ close_fd(int *fd, ...)
 
     dbglog("start");
 
-    /* 最初のファイルディスクリプタ */
-    if ((fd != NULL) && (*fd >= 0)) {
-        dbglog("%p fd=%d", (const void *)fd, *fd);
-        retval = close(*fd);
-        if (retval < 0) {
-            outlog("close: fd=%d", *fd);
-            err = true;
+    /* 最初のファイルディスクリプタ (NULL なら, 何もしない) */
+    if (fd != NULL) {
+        if (*fd >= 0) {
+            dbglog("%p fd=%d", (const void *)fd, *fd);
+            retval = close(*fd);
+            if (retval < 0) {
+                outlog("close: fd=%d", *fd);
+                err = true;
+            }
         }
+        *fd = -1;
     }
-    *fd = -1;
 
     va_start(ap, fd);
 

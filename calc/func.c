@@ -148,7 +148,7 @@ exec_func(calcinfo *calc, const char *func)
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);
             dbglog("type=%d", (int)finfo[ftype].type);
-            switch (finfo[ftype].type) {
+            switch (finfo[ftype].type) { /* GCOVR_EXCL_BR_LINE: default は到達しない (下) */
             case FUNC0:
                 result = finfo[ftype].func.func0(calc);
                 break;
@@ -184,6 +184,23 @@ exec_func(calcinfo *calc, const char *func)
 }
 
 /**
+ * @brief ゼロかどうか (浮動小数点数)
+ *
+ * == で比べると, 浮動小数点数の比較の警告になるので, 分類 (fpclassify) で調べる.
+ * fpclassify はコンパイラが NaN, 無限大, 正規化数, 非正規化数ごとに分岐を作るので,
+ * 1 つの関数にまとめて, その全ての場合をテストする.
+ *
+ * @param[in] x 値
+ * @retval true ゼロ (+0.0, -0.0)
+ * @retval false ゼロではない (NaN, 無限大を含む)
+ */
+bool
+is_zero(double x)
+{
+    return fpclassify(x) == FP_ZERO;
+}
+
+/**
  * @brief 指数取得
  *
  * @param[in] calc calcinfo構造体
@@ -201,7 +218,7 @@ get_pow(calcinfo *calc, double x, double y)
     if (is_error(calc))
         return EX_ERROR;
 
-    if ((fpclassify(x) == FP_ZERO) && (isless(y, 0) != 0)) {
+    if (is_zero(x) && (isless(y, 0) != 0)) {
         /* 定義域エラー */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
@@ -487,7 +504,7 @@ get_factorial(calcinfo *calc, double n)
     /* 自然数かどうかチェック */
     decimal = modf(n, &integer);
     dbglog("decimal=%f, integer=%f", decimal, integer);
-    if (fpclassify(decimal) != FP_ZERO) { /* 自然数ではない */
+    if (!is_zero(decimal)) { /* 自然数ではない */
         set_errorcode(calc, E_NAN);
         return EX_ERROR;
     }

@@ -31,6 +31,7 @@
 #include <arpa/inet.h>  /* inet_aton inet_ntoa */
 #include <netinet/in.h> /* in_addr */
 #include <errno.h>      /* errno */
+#include <stdbool.h>    /* bool */
 #include <fcntl.h>      /* fcntl */
 #ifdef __cplusplus
 #  define __STDC_FORMAT_MACROS
@@ -40,6 +41,26 @@
 #include "log.h"
 #include "memfree.h"
 #include "net.h"
+
+/**
+ * 送受信をやり直せるエラーか (割り込みと, 一時的に送受信できないとき)
+ *
+ * EWOULDBLOCK は, Linux などでは EAGAIN と同じ値なので, 違うときだけ比べる
+ * (同じ値を比べる条件は, 常に偽になって, テストできない).
+ *
+ * @param[in] err エラー番号
+ * @retval true やり直せる
+ * @retval false やり直せない
+ */
+static bool
+is_retryable(const int err)
+{
+#if EAGAIN != EWOULDBLOCK
+    if (err == EWOULDBLOCK)
+        return true;
+#endif
+    return (err == EINTR) || (err == EAGAIN);
+}
 
 /**
  * @brief ホスト名設定
@@ -199,7 +220,7 @@ send_data(const int sock, const void *sdata, size_t *length)
         dbglog("send=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len <= 0L) {
             /* 割り込みや, 一時的に送信できないときは, やり直す */
-            if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+            if (is_retryable(errno))
                 len = 0L;
             else
                 goto error_handler;
@@ -241,7 +262,7 @@ recv_data(const int sock, void *rdata, size_t *length)
         dbglog("recv=%zd, ptr=%p, left=%zu", len, ptr, left);
         if (len < 0L) { /* エラー */
             /* 割り込みや, 一時的に受信できないときは, やり直す */
-            if ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK))
+            if (is_retryable(errno))
                 len = 0L;
             else
                 goto error_handler;

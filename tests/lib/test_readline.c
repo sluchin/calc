@@ -124,6 +124,12 @@ test_readline(void)
     TEST_ASSERT_STR("test", (char *)result);
     memfree(&result, NULL);
 
+    /* NUL だけの行 (長さ 0 で, 改行もない. 空の文字列を返す) */
+    result = exec_readline(nolf_data + strlen(nolf_data), 1U);
+    TEST_ASSERT_NOT_NULL((char *)result);
+    TEST_ASSERT_STR("", (char *)result);
+    memfree(&result, NULL);
+
     /* 何も入力されない場合 (入力の終わり) */
     result = exec_readline(nolf_data, 0);
     TEST_ASSERT_NULL((char *)result);

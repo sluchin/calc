@@ -173,8 +173,8 @@ if(BUILD_TESTS)
   # gcovr が必要.
   find_program(GCOVR_COMMAND gcovr)
   # カバレッジの下限 [%]. 下回ると, make coverage が失敗する (CI でも確認する).
-  set(COVERAGE_MIN_LINE 99.5 CACHE STRING "カバレッジの下限 (行) [%]")
-  set(COVERAGE_MIN_BRANCH 94.0 CACHE STRING "カバレッジの下限 (分岐) [%]")
+  set(COVERAGE_MIN_LINE 100 CACHE STRING "カバレッジの下限 (行) [%]")
+  set(COVERAGE_MIN_BRANCH 100 CACHE STRING "カバレッジの下限 (分岐) [%]")
   if(ENABLE_COVERAGE AND GCOVR_COMMAND)
     add_custom_target(coverage
       COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/coverage

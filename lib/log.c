@@ -143,11 +143,10 @@ system_log(const int level,
     }
 
     tid = pthread_self();
-    if (tid != 0)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
+    (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
-    syslog(level, "ppid=%d%s: %s[%d]: %s(%s): %s(%d)", getppid(), ((tid != 0) ? t_buf : ""), fname,
-           line, func, message, get_errmsg(errsv, ebuf, sizeof(ebuf)), errsv);
+    syslog(level, "ppid=%d%s: %s[%d]: %s(%s): %s(%d)", getppid(), t_buf, fname, line, func, message,
+           get_errmsg(errsv, ebuf, sizeof(ebuf)), errsv);
 
     /* シスログクローズ */
     closelog();
@@ -217,12 +216,10 @@ system_dbg_log(const int level,
     }
 
     tid = pthread_self();
-    if (tid != 0)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
+    (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
-    syslog(level, "ppid=%d%s: %02d.%06ld: %s[%d]: %s(%s): %s(%d)", getppid(),
-           ((tid != 0) ? t_buf : ""), t.tm_sec, tv.tv_usec, fname, line, func, message,
-           get_errmsg(errsv, ebuf, sizeof(ebuf)), errsv);
+    syslog(level, "ppid=%d%s: %02d.%06ld: %s[%d]: %s(%s): %s(%d)", getppid(), t_buf, t.tm_sec,
+           tv.tv_usec, fname, line, func, message, get_errmsg(errsv, ebuf, sizeof(ebuf)), errsv);
 
     /* シスログクローズ */
     closelog();
@@ -280,16 +277,14 @@ stderr_log(
     }
 
     tid = pthread_self();
-    if (tid != 0)
-        (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
+    (void)snprintf(t_buf, sizeof(t_buf), ", tid=%lu", (unsigned long)tid);
 
     (void)fprintf(fp,
                   "%s %02d %02d:%02d:%02d.%06ld "
                   "%s %s[%d]: %s[%d]: ppid=%d%s: %s(",
                   (((0 <= t.tm_mon) && (t.tm_mon < (int)NELEMS(mon))) ? mon[t.tm_mon] : ""),
                   t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, tv.tv_usec, h_buf,
-                  ((pname != NULL) ? pname : ""), getpid(), fname, line, getppid(),
-                  ((tid != 0) ? t_buf : ""), func);
+                  ((pname != NULL) ? pname : ""), getpid(), fname, line, getppid(), t_buf, func);
 
     va_start(ap, format);
     retval = vfprintf(fp, format, ap);
@@ -553,8 +548,7 @@ systrace(const int level,
     closelog();
 
     /* memfree() はデバッグ版で systrace() を呼ぶので再帰しないよう, free() を使う */
-    if (strings != NULL)
-        free(strings);
+    free(strings);
     strings = NULL;
 }
 #endif
@@ -573,6 +567,10 @@ print_trace(void)
     /* 呼び出し履歴を取得して, 標準エラー出力に出力する */
     size = backtrace(buffer, STACK_SIZE);
     strings = backtrace_symbols(buffer, size);
+    if (strings == NULL) {
+        (void)fprintf(stderr, "backtrace_symbols: size=%d\n", size);
+        return;
+    }
 
     (void)fprintf(stderr, "Obtained %d stack frames.\n", size);
 
@@ -581,8 +579,7 @@ print_trace(void)
         (void)fprintf(stderr, "%s\n", strings[i]);
 
     /* memfree() はデバッグ版で systrace() を呼ぶので再帰しないよう, free() を使う */
-    if (strings != NULL)
-        free(strings);
+    free(strings);
     strings = NULL;
 }
 #endif
