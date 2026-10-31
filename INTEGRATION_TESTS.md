@@ -90,7 +90,6 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CP-A-15 | 括弧の前の + | `printf '%s\n' '+(1+2)' \| $B/calcp` | `3` | |
 | CP-A-16 | 小数 | `printf '%s\n' '1.5+2.25' \| $B/calcp` | `3.75` | |
 
-
 ### 2.2 関数
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
@@ -116,7 +115,6 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CP-B-19 | 関数の引数に式を書ける | `printf '%s\n' 'sqrt(1+3)' \| $B/calcp` | `2` | |
 | CP-B-20 | 関数と四則演算の組み合わせ | `printf '%s\n' 'sin(0)+cos(0)' \| $B/calcp` | `1` | |
 
-
 ### 2.3 エラー
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
@@ -138,40 +136,36 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CP-C-15 | 巨大な引数でも、すぐに終わる (無限ループしない) | `printf '%s\n' 'n(99999999999999999999)' \| $B/calcp` | `Infinity.` | |
 | CP-C-16 | アンダーフローは、エラーではなく 0 | `printf '%s\n' 'exp(-1000)' \| $B/calcp` | `0` | |
 
-
 - エラーの後も、次の式を計算できること (`printf '5/0\n1+1\n' | $B/calcp` は、`Divide by zero.` と `2` を出力する).
 - 手順の `printf '%s\n' '<式>'` は、式が `-` で始まるとき、`printf` が、式をオプションと見なさないようにするための書き方。
 - `n(171)` などの巨大な引数の手順には、`timeout 5` を付けて実施する (終わらなければ失敗).
-
 
 ### 2.4 オプション
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| CP-D-01 | 有効桁数 (`-d`) | `printf '1/3\n' \\| $B/calcp -d 5` | `0.33333` | |
-| CP-D-02 | 有効桁数の最大 | `printf '1/3\n' \\| $B/calcp -d 15` | `0.333333333333333` | |
+| CP-D-01 | 有効桁数 (`-d`) | `printf '1/3\n' \| $B/calcp -d 5` | `0.33333` | |
+| CP-D-02 | 有効桁数の最大 | `printf '1/3\n' \| $B/calcp -d 15` | `0.333333333333333` | |
 | CP-D-03 | 有効桁数が範囲外 | `$B/calcp -d 0`、`-d 16`、`-d -1`、`-d abc` をそれぞれ実行 | `Digits is 1-15.` を標準エラー出力に出して、終了ステータス 1 | |
-| CP-D-04 | ロングオプション | `printf '1/3\n' \\| $B/calcp --digit=3` | `0.333` | |
-| CP-D-05 | 処理時間 (`-t`) | `printf '1+2\n' \\| $B/calcp -t` | `time of calc_time: <数値>[msec]` の行と、`3` | |
+| CP-D-04 | ロングオプション | `printf '1/3\n' \| $B/calcp --digit=3` | `0.333` | |
+| CP-D-05 | 処理時間 (`-t`) | `printf '1+2\n' \| $B/calcp -t` | `time of calc_time: <数値>[msec]` の行と、`3` | |
 | CP-D-06 | ヘルプ (`-h`) | `$B/calcp -h` | `Usage: calcp [OPTION]...` と、4 つのオプションの説明を標準エラー出力に出して、終了ステータス 0 | |
 | CP-D-07 | バージョン (`-V`) | `$B/calcp -V` | `calcp version 0.05` を標準エラー出力に出して、終了ステータス 0 | |
 | CP-D-08 | 不正なオプション | `$B/calcp -x` | `invalid option -- 'x'` と ``Try `getopt --help' for more information`` を出して、終了ステータス 1 | |
-| CP-D-09 | オプション以外の引数 | `printf 'quit\n' \\| $B/calcp abc def` | `non-option ARGV-elements: abc def ` を出力する | |
-
+| CP-D-09 | オプション以外の引数 | `printf 'quit\n' \| $B/calcp abc def` | `non-option ARGV-elements: abc def` を出力する | |
 
 ### 2.5 入力の方法 (標準入力が端末でない場合)
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| CP-E-01 | パイプ | `printf '1+1\n2+2\n3+3\n' \\| $B/calcp` | `2` `4` `6` を、1 行ずつ出力する。入力の終わりで、終了ステータス 0 で終了する (CPU を使い続けない) | |
+| CP-E-01 | パイプ | `printf '1+1\n2+2\n3+3\n' \| $B/calcp` | `2` `4` `6` を、1 行ずつ出力する。入力の終わりで、終了ステータス 0 で終了する (CPU を使い続けない) | |
 | CP-E-02 | ファイル | `printf '1+1\n2+2\n' > in.txt; $B/calcp < in.txt` | `2` `4`。終了ステータス 0 | |
-| CP-E-03 | 最後の行に改行がない | `printf '1+2' \\| $B/calcp` | `3` (最後の行も計算する) | |
+| CP-E-03 | 最後の行に改行がない | `printf '1+2' \| $B/calcp` | `3` (最後の行も計算する) | |
 | CP-E-04 | 何も入力しない | `$B/calcp < /dev/null; echo $?` | 何も出力せず、終了ステータス 0 | |
-| CP-E-05 | 空行 | `printf '\n\n1+1\n' \\| $B/calcp` | 空行は無視して、`2` だけを出力する | |
-| CP-E-06 | quit | `printf '1+1\nquit\n2+2\n' \\| $B/calcp` | `2` だけを出力する (quit の後は、実行しない). 終了ステータス 0 | |
-| CP-E-07 | exit | `printf '1+1\nexit\n2+2\n' \\| $B/calcp` | `2` だけを出力する | |
-| CP-E-08 | 長い式 | `python3 -c "print('1+'*2000+'1')" \\| $B/calcp` | `2001` | |
-
+| CP-E-05 | 空行 | `printf '\n\n1+1\n' \| $B/calcp` | 空行は無視して、`2` だけを出力する | |
+| CP-E-06 | quit | `printf '1+1\nquit\n2+2\n' \| $B/calcp` | `2` だけを出力する (quit の後は、実行しない). 終了ステータス 0 | |
+| CP-E-07 | exit | `printf '1+1\nexit\n2+2\n' \| $B/calcp` | `2` だけを出力する | |
+| CP-E-08 | 長い式 | `python3 -c "print('1+'*2000+'1')" \| $B/calcp` | `2001` | |
 
 ### 2.6 標準入力が端末の場合 (readline)
 
@@ -188,7 +182,6 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CP-F-07 | SIGTERM | 入力待ちのときに、別の端末から `pkill -TERM -x calcp` | 終了する (終了ステータス 0) | |
 | CP-F-08 | 履歴の上限 | 1 から 150 までの式を、続けて入力する | エラーにならず、計算を続けられる (履歴は、古いものから消える。上限は 100) | |
 
-
 ## 3. calcd (サーバ)
 
 この節の各項目の前後に、`pkill -x calcd` で、起動しているサーバを止める。
@@ -202,25 +195,23 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CD-A-03 | 不正なオプション | `$B/calcd -x` | `invalid option -- 'x'`。終了ステータス 1 | |
 | CD-A-04 | ポート番号が長すぎる | `$B/calcd -p 1234567; echo $?` | `Portno string length 5` を出力して、終了ステータス 1 | |
 | CD-A-05 | ポート番号が範囲外 | `$B/calcd -p 0`、`-p 65536`、`-p -1`、`-p abc` | 起動せず (プロセスが残らない), 終了ステータス 1 | |
-| CD-A-06 | ポート番号の最大 | `$B/calcd -p 65535; ss -ltn \\| grep 65535` | 65535 番を LISTEN する (`pkill -x calcd` で止める) | |
+| CD-A-06 | ポート番号の最大 | `$B/calcd -p 65535; ss -ltn \| grep 65535` | 65535 番を LISTEN する (`pkill -x calcd` で止める) | |
 | CD-A-07 | サービス名 | `$B/calcd -p ftp` (ポート 21 は、権限がなければ、失敗する) | 権限があれば 21 番を LISTEN し、なければ、起動せずに終了ステータス 1 | |
-
 
 ### 3.2 起動と停止
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
 | CD-B-01 | デーモンとして起動 | `$B/calcd -p 23456; echo $?; pgrep -a calcd` | コマンドはすぐに戻り (終了ステータス 0), `calcd -p 23456` のプロセスが 1 つ残る | |
-| CD-B-02 | ポートを待ち受ける | `ss -ltn \\| grep 23456` | `0.0.0.0:23456` が LISTEN | |
+| CD-B-02 | ポートを待ち受ける | `ss -ltn \| grep 23456` | `0.0.0.0:23456` が LISTEN | |
 | CD-B-03 | 同じポートで、二重に起動 | CD-B-01 の後に、もう一度 `$B/calcd -p 23456; echo $?` | `Address already in use` を出力して、終了ステータス 1. 最初のサーバは、動き続ける | |
-| CD-B-04 | SIGTERM で停止 | `pkill -TERM -x calcd; sleep 3; pgrep -c calcd; ss -ltn \\| grep -c 23456` | プロセスが無くなり (`0`), ポートも閉じる (`0`). 停止には、最大 1 秒ほどかかる | |
+| CD-B-04 | SIGTERM で停止 | `pkill -TERM -x calcd; sleep 3; pgrep -c calcd; ss -ltn \| grep -c 23456` | プロセスが無くなり (`0`), ポートも閉じる (`0`). 停止には、最大 1 秒ほどかかる | |
 | CD-B-05 | SIGINT で停止 | 起動して、`pkill -INT -x calcd` | CD-B-04 と同じ | |
 | CD-B-06 | SIGQUIT で停止 | 起動して、`pkill -QUIT -x calcd` | CD-B-04 と同じ | |
 | CD-B-07 | 停止したポートで、再起動 | CD-B-04 の後 (プロセスが無くなってから) に、`$B/calcd -p 23456` | すぐに起動できる (`SO_REUSEADDR` があるので、待たずに使える) | |
 | CD-B-08 | SIGHUP で再起動 | 起動して、`pgrep -x calcd` の PID を控える。 `kill -HUP <PID>; sleep 1; pgrep -a calcd` | サーバは動き続け (デーモンになり直すので、PID は変わる), 続けて、計算を依頼できる (4.1) | |
 | CD-B-09 | 相対パスで起動して、SIGHUP で再起動 | `cd $B; ./calcd -p 23456`。続けて `kill -HUP $(pgrep -x calcd)` | CD-B-08 と同じ (相対パスでも、再起動できる) | |
 | CD-B-10 | SIGPIPE で停止しない | クライアントが、答えを受け取る前に、切断する (CD-D-05) | サーバは、動き続ける | |
-
 
 ## 4. calcc (クライアント)
 
@@ -237,7 +228,6 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | CC-A-07 | ポート番号が長すぎる | `$B/calcc -p 1234567` | `Portno string length 5` を出力して、終了ステータス 1 | |
 | CC-A-08 | ホスト名が長すぎる | `$B/calcc -i <48 文字以上のホスト名>` | `Hostname string length 47` を出力して、終了ステータス 1 | |
 
-
 ## 5. calcc と calcd の組み合わせ
 
 この節の前に、サーバを起動する (`$B/calcd -p 23456`). 以降の `c` は、`$B/calcc -p 23456` を表す。
@@ -246,45 +236,41 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| CS-A-01 | 四則演算 | `printf '1+2*3\nquit\n' \\| c` | `7`。終了ステータス 3 | |
-| CS-A-02 | 複数の式 (パイプで、続けて入力) | `printf '1+2*3\n5/0\nsqrt(-1)\nnofunc(1)\n\n(1+2)*3\nquit\n' \\| c` | `7` `Divide by zero.` `NaN.` `Function not defined.` `9` を、入力の順に出力する (空行は無視). 全ての答えを出力してから、終了ステータス 3 で終了する | |
-| CS-A-03 | 関数 | `printf 'sqrt(2)\nnPr(5,2)\nquit\n' \\| c` | `1.41421356237` `20` | |
-| CS-A-04 | 有効桁数 | サーバを止めてから、`calcd -p 23456 -d 5` で起動して、`printf '1/3\nquit\n' \\| c` | `0.33333` | |
-| CS-A-05 | ホスト名で接続 | `printf '2+2\nquit\n' \\| $B/calcc -i localhost -p 23456` | `4` | |
-| CS-A-06 | quit で終了 | `printf '1+1\nquit\n2+2\n' \\| c; echo $?` | `2` だけを出力して、終了ステータス 3 | |
-| CS-A-07 | exit で終了 | `printf '1+1\nexit\n2+2\n' \\| c; echo $?` | `2` だけを出力して、終了ステータス 3 | |
-| CS-A-08 | 入力の終わりで終了 | `printf '1+1\n2+2' \\| c; echo $?` | `2` `4` (改行のない最後の行も送る) を出力して、終了ステータス 5 | |
-| CS-A-09 | 処理時間 (`-t`) | `printf '1+1\nquit\n' \\| c -t` | `time of client_time: <数値>[msec]` の行と、`2` | |
-| CS-A-10 | デバッグ (`-g`) | `printf '1+1\nquit\n' \\| c -g` | 標準出力は、`2` だけ (送受信のダンプは、syslog に出る) | |
+| CS-A-01 | 四則演算 | `printf '1+2*3\nquit\n' \| c` | `7`。終了ステータス 3 | |
+| CS-A-02 | 複数の式 (パイプで、続けて入力) | `printf '1+2*3\n5/0\nsqrt(-1)\nnofunc(1)\n\n(1+2)*3\nquit\n' \| c` | `7` `Divide by zero.` `NaN.` `Function not defined.` `9` を、入力の順に出力する (空行は無視). 全ての答えを出力してから、終了ステータス 3 で終了する | |
+| CS-A-03 | 関数 | `printf 'sqrt(2)\nnPr(5,2)\nquit\n' \| c` | `1.41421356237` `20` | |
+| CS-A-04 | 有効桁数 | サーバを止めてから、`calcd -p 23456 -d 5` で起動して、`printf '1/3\nquit\n' \| c` | `0.33333` | |
+| CS-A-05 | ホスト名で接続 | `printf '2+2\nquit\n' \| $B/calcc -i localhost -p 23456` | `4` | |
+| CS-A-06 | quit で終了 | `printf '1+1\nquit\n2+2\n' \| c; echo $?` | `2` だけを出力して、終了ステータス 3 | |
+| CS-A-07 | exit で終了 | `printf '1+1\nexit\n2+2\n' \| c; echo $?` | `2` だけを出力して、終了ステータス 3 | |
+| CS-A-08 | 入力の終わりで終了 | `printf '1+1\n2+2' \| c; echo $?` | `2` `4` (改行のない最後の行も送る) を出力して、終了ステータス 5 | |
+| CS-A-09 | 処理時間 (`-t`) | `printf '1+1\nquit\n' \| c -t` | `time of client_time: <数値>[msec]` の行と、`2` | |
+| CS-A-10 | デバッグ (`-g`) | `printf '1+1\nquit\n' \| c -g` | 標準出力は、`2` だけ (送受信のダンプは、syslog に出る) | |
 | CS-A-11 | 対話的な入力 | 端末で `c` を起動し、`7*6` を入力して、待ってから `quit` | `7*6` を入力した直後に、`42` を表示する (サーバの答えが、すぐに出る). `quit` で終了する | |
-| CS-A-12 | 入力が止まっているとき | `( printf '7*6\n'; sleep 2; printf 'quit\n' ) \\| c` の出力に、時刻を付けて確認する | `42` が、`sleep` の間 (quit を入力する 2 秒前) に出力される | |
-
+| CS-A-12 | 入力が止まっているとき | `( printf '7*6\n'; sleep 2; printf 'quit\n' ) \| c` の出力に、時刻を付けて確認する | `42` が、`sleep` の間 (quit を入力する 2 秒前) に出力される | |
 
 ### 5.2 複数のクライアント
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| CS-B-01 | 2 つのクライアントが同時に接続 | 別々の端末 (または `&`) で、`( printf '1+1\n'; sleep 1; printf '2+2\nquit\n' ) \\| c` と、`( printf '3+3\n'; sleep 1; printf '4+4\nquit\n' ) \\| c` を同時に実行 | それぞれが、自分の式の答え (`2` `4` と `6` `8`) だけを受け取る | |
-| CS-B-02 | 50 のクライアントが同時に接続 | `for i in $(seq 1 50); do ( printf "$i+$i\nquit\n" \\| c > out$i.txt ) & done; wait` | 各 `out$i.txt` に、`$i+$i` の答えが出力されている (`2` から `100` まで、全て) | |
+| CS-B-01 | 2 つのクライアントが同時に接続 | 別々の端末 (または `&`) で、`( printf '1+1\n'; sleep 1; printf '2+2\nquit\n' ) \| c` と、`( printf '3+3\n'; sleep 1; printf '4+4\nquit\n' ) \| c` を同時に実行 | それぞれが、自分の式の答え (`2` `4` と `6` `8`) だけを受け取る | |
+| CS-B-02 | 50 のクライアントが同時に接続 | `for i in $(seq 1 50); do ( printf "$i+$i\nquit\n" \| c > out$i.txt ) & done; wait` | 各 `out$i.txt` に、`$i+$i` の答えが出力されている (`2` から `100` まで、全て) | |
 | CS-B-03 | 負荷 (`thcalcc`) | `build-it/tests/thcalcc -p 23456 -t 10` を、`-t 100`、`-t 500`、`-t 1000` でも実行 | いずれも、終了ステータス 0 (各スレッドが、自分の式の答えを受信して、`assert` で確認する。答えが一致しなければ、異常終了する). デバッグビルドなので、詳細なログが、標準エラー出力に出る | |
 | CS-B-04 | 切断したクライアント | クライアントが、答えを受け取る前に、強制終了する (`kill -9`) | サーバは、動き続け、新しいクライアントの計算に、答えられる | |
-
 
 ### 5.3 異常な通信
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
 |---|---|---|---|---|
-| CS-C-01 | サーバが、途中で停止 | `( printf '1+1\n'; sleep 2; printf '2+2\nquit\n' ) \\| c` を実行中に、1 秒後に `pkill -x calcd` | クライアントは、シグナルで終了せず、終了する (サーバが答えを返せなかった場合は、終了ステータス 7) | |
+| CS-C-01 | サーバが、途中で停止 | `( printf '1+1\n'; sleep 2; printf '2+2\nquit\n' ) \| c` を実行中に、1 秒後に `pkill -x calcd` | クライアントは、シグナルで終了せず、終了する (サーバが答えを返せなかった場合は、終了ステータス 7) | |
 | CS-C-02 | サーバが無い状態で送信 | サーバを止めた後に、接続済みのクライアントで、式を入力する | `SIGPIPE` で終了せず、送信または受信のエラーとして処理して、終了ステータス 6 または 7 (実測は 7). サーバが動いていれば、新しいクライアントは、計算できる | |
-| CS-C-03 | 上限を超える長さの式 (70000 文字) | `python3 -c "print('1+'*35000+'1')" \\| c; echo $?` | サーバは、巨大なメモリを確保せずに、接続を閉じる。クライアントは、答えを出力せずに、終了ステータス 7 | |
-| CS-C-04 | 上限内の長い式 (60000 文字) | `python3 -c "print('1+'*30000+'1')" \\| c; echo $?` | `30001` を出力して、終了ステータス 5 (入力の終わり) | |
+| CS-C-03 | 上限を超える長さの式 (70000 文字) | `python3 -c "print('1+'*35000+'1')" \| c; echo $?` | サーバは、巨大なメモリを確保せずに、接続を閉じる。クライアントは、答えを出力せずに、終了ステータス 7 | |
+| CS-C-04 | 上限内の長い式 (60000 文字) | `python3 -c "print('1+'*30000+'1')" \| c; echo $?` | `30001` を出力して、終了ステータス 5 (入力の終わり) | |
 | CS-C-05 | サーバに、巨大なデータ長のヘッダを直接送る | `python3` で、ヘッダ (データ長 `0xFFFFFFF0`, 4 バイトのパディング) だけを送信して、応答を待つ | サーバは、接続を閉じる (受信は、空). サーバは、動き続け、次の計算に答える | |
 | CS-C-06 | 終端の NUL がない式を直接送る | `python3` で、データ長 8, データ `1+1+1+1+` (NUL なし) を送る | 答え `4` を返す (最後の 1 バイトを NUL として扱う). サーバは、異常終了しない | |
 | CS-C-07 | 途中で切れたデータ | `python3` で、ヘッダだけ送って、切断する | サーバは、動き続ける (次の計算に答える) | |
 
-
 - `CS-C-05` `CS-C-06` `CS-C-07` の `python3` は、`struct.pack('!I', length) + b'\0'*4 + data` の形式 (ヘッダは、ネットワークバイトオーダのデータ長 4 バイトと、パディング 4 バイト) で送る。
-
 
 ## 6. ビルド、テスト、配布
 
@@ -304,7 +290,6 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | BD-A-11 | インストール (静的ライブラリ) | `make clean all && make install prefix=/tmp/inst` (または `cmake --install build --prefix /tmp/inst`) | `/tmp/inst/bin` に `calcp` `calcd` `calcc`、`/tmp/inst/lib` に `lib*.a` が入り、`/tmp/inst/bin/calcp -V` が、そのまま動く。最後に、「静的ライブラリを使ったので、実行ファイルは、単独で動きます。 (ldconfig は不要)」と表示される | |
 | BD-A-11b | インストール (動的ライブラリ) | `make clean all DYNAMIC=1 && make install DYNAMIC=1 prefix=/tmp/inst` (または、`-DDYNAMIC=ON` で構成して `cmake --install`) | `/tmp/inst/lib` に `lib*.so` が入る。最後に、「動的ライブラリを ... にインストールしました」と、`sudo ldconfig` の案内が表示される。 `/tmp/inst/bin/calcp -V` は、`ldconfig` を実行する (または `LD_LIBRARY_PATH=/tmp/inst/lib` を付ける) と動く | |
 | BD-A-12 | クリーン | `make clean` | ビルドで作ったファイル (`*.o` `*.a` `*.so` と、実行ファイル、`docs`、`build`、`build-test`、`build-coverage`) が消える | |
-
 
 ## 7. 実施記録
 

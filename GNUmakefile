@@ -106,11 +106,13 @@ clean:
 format:
 	@command -v $(CLANG_FORMAT) >/dev/null || { echo "format は使えません: clang-format をインストールしてください (sudo apt install clang-format)"; exit 1; }
 	$(CLANG_FORMAT) -i --style=file $(FORMAT_SOURCES)
+	npx --yes markdownlint-cli2 --fix
 
 .PHONY: format-check
 format-check:
 	@command -v $(CLANG_FORMAT) >/dev/null || { echo "format-check は使えません: clang-format をインストールしてください (sudo apt install clang-format)"; exit 1; }
 	$(CLANG_FORMAT) --dry-run --Werror --style=file $(FORMAT_SOURCES)
+	npx --yes markdownlint-cli2
 
 .PHONY: doc
 doc:
