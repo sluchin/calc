@@ -13,7 +13,8 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 
 # 解析するファイル
 INPUT                  = README.md \
-                         MISRA.md \
+                         docs/misra.md \
+                         TODO.md \
                          lib \
                          calc \
                          server \
