@@ -153,7 +153,7 @@ graphviz (dot) がなくても生成できる (グラフは出力されない).
 5. メモリ解放後、`NULL` を代入する。
 6. ソケットクローズ後、`-1` を代入する。
 
-MISRA-C に対する適合方針および例外事項 (Deviations) については、[MISRA.md](docs/misra.md) を参照。
+MISRA-C に対する適合方針および例外事項 (Deviations) については、[MISRA.md](docs/misra.md) を参照。未対応の項目や今後の予定については、[TODO.md](TODO.md) を参照。
 
 ## リリース
 
