@@ -279,7 +279,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 | BD-A-01 | CMake でビルド (リリース、静的ライブラリ) | `cmake -S . -B build -DBUILD_TESTS=OFF && cmake --build build` | 警告なしにビルドでき、`build/` に `calcp` `calcd` `calcc` と、`lib*.a` だけができる (`lib*.so` は、できない). `ldd build/calcp` に `libcalc` が出ない。単体テストは、ビルドされない | |
 | BD-A-01b | CMake でビルド (動的ライブラリ) | `cmake -S . -B build-dyn -DDYNAMIC=ON -DBUILD_TESTS=OFF && cmake --build build-dyn` | 警告なしにビルドでき、`lib*.so` だけができる。 `ldd build-dyn/calcp` に `libcalcp.so` `libcalcutil.so` が出る | |
 | BD-A-02 | CMake でビルド (デバッグ) | `cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build-debug` | 警告なしにビルドできる | |
-| BD-A-03 | GNU make でビルド (静的ライブラリ) | `make clean all` | 警告なしにビルドでき、`Success!! Congratulations!!` が出る。 `calc/calcp` `server/calcd` `client/calcc` と、`.a` だけができる。 `ldd calc/calcp` に `libcalc` が出ない | |
+| BD-A-03 | GNU make でビルド (静的ライブラリ) | `make clean all` | 警告なしにビルドでき、`Success!! Congratulations!!` が出る。 `calc/calcp` `server/calcd` `client/calcc` と、静的ライブラリ (`.a`) だけができる。 `ldd calc/calcp` に `libcalc` が出ない | |
 | BD-A-04 | GNU make でビルド (デバッグ) | `make clean debug` | 警告なしにビルドできる | |
 | BD-A-05 | GNU make で動的ライブラリ | `make clean all DYNAMIC=1` | 警告なしにビルドでき、`lib/libcalcutil.so` `calc/libcalcp.so` などの `.so` だけができる (`.a` は、できない). `ldd calc/calcp` に `libcalcp.so` `libcalcutil.so` が出る | |
 | BD-A-06 | 単体テスト | `cd build && make test` (`BUILD_TESTS=ON` の設定で) | 単体テストをビルドしてから実行し、全て成功 (20 テスト). `make` (引数なし) では、ビルドされない | |

@@ -96,7 +96,7 @@ strip:
 
 .PHONY: clean
 clean:
-	@rm -rf docs build build-test build-coverage
+	@rm -rf build build-test build-coverage
 	cd $(top_srcdir)/lib && $(MAKE) clean
 	cd $(top_srcdir)/calc && $(MAKE) clean
 	cd $(top_srcdir)/server && $(MAKE) clean
@@ -116,6 +116,7 @@ format-check:
 
 .PHONY: doc
 doc:
+	@mkdir -p build/docs
 	doxygen Doxyfile
 
 .PHONY: help

@@ -115,7 +115,7 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 
 ## 結合テスト
 
-`calcp` `calcd` `calcc` を、実際に動かして確認する項目は、`INTEGRATION_TESTS.md` にある。
+`calcp` `calcd` `calcc` を、実際に動かして確認する項目は、[docs/integration_tests.md](docs/integration_tests.md) にある。
 
 ## カバレッジ
 
@@ -141,7 +141,7 @@ cd build
 make doc     # build/docs/html/index.html
 ```
 
-リポジトリ直下で `make doc` (GNU make) を実行すると、`docs/html/index.html` に出力される。
+リポジトリ直下で `make doc` (GNU make) を実行しても、`build/docs/html/index.html` に出力される (`make clean` で `build/` ごと削除される)。
 graphviz (dot) がなくても生成できる (グラフは出力されない).
 
 ## コーディングのコンセプト
@@ -153,7 +153,7 @@ graphviz (dot) がなくても生成できる (グラフは出力されない).
 5. メモリ解放後、`NULL` を代入する。
 6. ソケットクローズ後、`-1` を代入する。
 
-MISRA-C に対する適合方針および例外事項 (Deviations) については、[MISRA.md](docs/misra.md) を参照。未対応の項目や今後の予定については、[TODO.md](TODO.md) を参照。
+MISRA-C に対する適合方針および例外事項 (Deviations) については、[docs/misra.md](docs/misra.md) を参照。未対応の項目や今後の予定については、[TODO.md](TODO.md) を参照。
 
 ## リリース
 

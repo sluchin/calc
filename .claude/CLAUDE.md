@@ -38,7 +38,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
   - `add_custom_target` には、必ず `VERBATIM` を付ける (付けないと、`(` などを含む引数でシェルの構文エラーになる)。
 - 静的解析: `make analyze` (gcc 10 以降の `-fanalyzer`。通常のビルドとは分けてあり、リリース用とデバッグ用の両方の設定で、全ソースを `-O0` で解析する。指摘があれば失敗する)。CMake では `cmake --build <ビルドディレクトリ> --target analyze`。コードを修正したら、実行して、指摘が出ないことを確認する。
   - 指摘が、意図した書き方による誤検知のとき (例: `dup2` で、直前に閉じた番号に複製する) だけ、`#pragma GCC diagnostic ignored "-Wanalyzer-..."` で抑える。理由をコメントに書き、gcc 10 未満では `#if` で無効にする。
-- ドキュメント: `build/` で `make doc` (doxygen が必要。`build/docs/html/index.html` に出力。`make clean` で削除される)。`make clean` は、`docs` `coverage` `coverage-build` `Testing` と、`tests/` の実行ファイルのディレクトリを、ディレクトリごと削除する (CMake 3.15 以降。`tests/` 自体は、ビルドに必要な生成ファイルがあるので残す。実行ファイルのディレクトリは、リンカが作らないので、リンクの前に作る)。設定は `Doxyfile` (標準と異なる項目だけを書く。`cmake/doxygen.cmake` が、出力先と `HAVE_DOT` を追加して上書きする)
+- ドキュメント: `build/` で `make doc` (doxygen が必要。`build/docs/html/index.html` に出力。`make clean` で削除される)。リポジトリ直下の `make doc` (GNU make) も、同じ `build/docs/html/` に出力する (`Doxyfile` の `OUTPUT_DIRECTORY`。最上位の `make clean` は `build/` ごと消す。`docs/` は文書のソースなので、出力先にしない)。Doxygen は `docs/` の Markdown も入力にする。Markdown で、「、」「。」の直後に `(` や `.` で始まるインラインコードを置くと、Doxygen 1.15 が `</tt>` の警告を出すので、書き方を変える。`make clean` は、`docs` `coverage` `coverage-build` `Testing` と、`tests/` の実行ファイルのディレクトリを、ディレクトリごと削除する (CMake 3.15 以降。`tests/` 自体は、ビルドに必要な生成ファイルがあるので残す。実行ファイルのディレクトリは、リンカが作らないので、リンクの前に作る)。設定は `Doxyfile` (標準と異なる項目だけを書く。`cmake/doxygen.cmake` が、出力先と `HAVE_DOT` を追加して上書きする)
 
 - CI: `.github/workflows/ci.yml` (GitHub Actions)。`build` (リリースとデバッグ。警告があれば失敗。実行ファイルとライブラリを artifact `build_release` / `build_debug` に保存する)、`test` (出力を artifact `test_log` に保存する)、`analyze` (出力を artifact `analyze_log` に保存する)、`coverage` (`CMakeLists.txt` の `COVERAGE_MIN_LINE` と `COVERAGE_MIN_BRANCH` を下回ると失敗)、`docs` (警告があれば失敗)、`format` (整形が必要なら失敗) の各ジョブ。artifact の名前は、小文字のスネークケースにする。ローカルでも、同じコマンド (`make analyze` `make coverage` `make format-check` など) で確認できる。
 
@@ -54,7 +54,7 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 
 ## コーディング規約
 
-@../CODING_STYLE.md
+@../docs/coding_style.md
 
 ## テストの規約
 
@@ -114,3 +114,4 @@ C 言語 (gcc / GNU make) の電卓プログラム。スタンドアロン版 (`
 - 本文 (タイトルの次の空行のあと) は、`-` で始まる箇条書きにする。
 - `Co-Authored-By:` などの帰属行は含めない。
 - Markdown (`*.md`) の日本語の文章は、句読点に「、」「。」を使う (「,」「.」は使わない)。インラインコード・コードブロック・URL・ファイル名・数値 (`1.2.0`、`1,000`) は対象外。見出しや番号付きリストの「1.」の形は変えない。`docs/` の生成物と、この `CLAUDE.md` は対象外。
+- Markdown (`*.md`。この `CLAUDE.md` を除く) には、AI の目線の記述を書かない。読み手 (人) に向けて、事実、仕様、手順だけを書く。「承認されたら実装します」「教えてください」「提案します」のような、AI からの依頼や約束、作業の報告、「Claude が」のような書き手の記述は、会話で伝えて、ファイルには残さない。
