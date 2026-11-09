@@ -65,8 +65,8 @@ static char hostname[HOST_SIZE];         /**< ホスト名 */
 static char portno[PORT_SIZE];           /**< ポート番号 */
 static unsigned int start_time = 0U;     /**< タイマ開始 */
 static struct client_data *sdata = NULL; /**< 送信データ構造体 */
-static unsigned char *expr = NULL;       /**< 入力バッファ */
-static unsigned char *answer = NULL;     /**< 受信データ */
+static char *expr = NULL;                /**< 入力バッファ */
+static char *answer = NULL;              /**< 受信データ */
 
 /* 内部関数 */
 static st_client drain_replies(int sock, int *pending, st_client status);
@@ -338,10 +338,10 @@ send_sock(int sock)
         return EX_EMPTY;
     }
 
-    if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
+    if ((strcmp(expr, "quit") == 0) || (strcmp(expr, "exit") == 0))
         return EX_QUIT;
 
-    length = strlen((char *)expr) + 1U;
+    length = strlen(expr) + 1U;
     dbgdump(expr, length, "stdin: expr=%zu", length);
 
     if (g_tflag)
@@ -401,7 +401,7 @@ read_sock(int sock)
     }
 
     /* データ受信 */
-    answer = (unsigned char *)recv_data_new(sock, &length);
+    answer = (char *)recv_data_new(sock, &length);
     if (answer == NULL) /* メモリ確保できない */
         return EX_ALLOC_ERR;
     if (length == 0U) /* 受信エラー */

@@ -90,15 +90,12 @@ FAKE_VALUE_FUNC(int, pthread_detach, pthread_t)
 TEST_PASSTHROUGH(int, pthread_detach, (pthread_t tid), (tid))
 
 /* 計算やデータ作成, 送信と, シグナルマスクの関数は, モックにして, 通常は本物を呼ぶ */
-FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *, const unsigned char *)
-TEST_PASSTHROUGH(unsigned char *,
-                 create_answer,
-                 (calcinfo * calc, const unsigned char *expr),
-                 (calc, expr))
-FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **, const unsigned char *, size_t)
+FAKE_VALUE_FUNC(char *, create_answer, calcinfo *, const char *)
+TEST_PASSTHROUGH(char *, create_answer, (calcinfo * calc, const char *expr), (calc, expr))
+FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **, const char *, size_t)
 TEST_PASSTHROUGH(ssize_t,
                  set_server_data,
-                 (struct server_data * *dt, const unsigned char *buf, size_t len),
+                 (struct server_data * *dt, const char *buf, size_t len),
                  (dt, buf, len))
 FAKE_VALUE_FUNC(int, send_data, int, const void *, size_t *)
 TEST_PASSTHROUGH(int,
@@ -212,10 +209,10 @@ free(void *ptr)
 
 /** スレッドデータ構造体 */
 struct send_data {
-    unsigned char sdata[BUF_SIZE];    /**< 送信データ */
-    unsigned char rdata[BUF_SIZE];    /**< 受信データ */
-    unsigned char expected[BUF_SIZE]; /**< 期待される文字列 */
-    size_t len;                       /**< 送信データ長 */
+    char sdata[BUF_SIZE];    /**< 送信データ */
+    char rdata[BUF_SIZE];    /**< 受信データ */
+    char expected[BUF_SIZE]; /**< 期待される文字列 */
+    size_t len;              /**< 送信データ長 */
 };
 
 /* プロトタイプ */
@@ -238,15 +235,15 @@ TEST test_server_proc_two_requests(void);
 static testserver server;                  /**< 関数構造体 */
 static char port[] = "12345";              /**< ポート番号 */
 static const char *hostname = "localhost"; /**< ホスト名 */
-static unsigned char readbuf[BUF_SIZE];    /**< 受信バッファ */
-static unsigned char expr[] = "1+1";       /**< 式 */
-static unsigned char expected[] = "2";     /**< 期待される文字列 */
+static char readbuf[BUF_SIZE];             /**< 受信バッファ */
+static char expr[] = "1+1";                /**< 式 */
+static char expected[] = "2";              /**< 期待される文字列 */
 static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 
 /* 内部関数 */
-static int send_client(int sockfd, unsigned char *sbuf, size_t length);
-static int recv_client(int sockfd, unsigned char *rbuf);
+static int send_client(int sockfd, char *sbuf, size_t length);
+static int recv_client(int sockfd, char *rbuf);
 static int inet_sock_client(void);
 static void set_sig_handler(void);
 
@@ -415,7 +412,7 @@ test_server_loop(void)
             TEST_FAIL("recv_client: csock=%d(%d)", csock, errno);
         }
 
-        TEST_ASSERT_STR((char *)expected, (char *)readbuf);
+        TEST_ASSERT_STR(expected, readbuf);
 
         w = wait(&status);
         if (w < 0)
@@ -496,7 +493,7 @@ test_server_proc(void)
             TEST_FAIL("recv_client: csock=%d(%d)", csock, errno);
         }
 
-        TEST_ASSERT_STR((char *)expected, (char *)readbuf);
+        TEST_ASSERT_STR(expected, readbuf);
 
         w = wait(&status);
         if (w < 0)
@@ -518,7 +515,7 @@ test_server_proc(void)
  * @retval EX_NG エラー
  */
 static int
-send_client(int sockfd, unsigned char *sbuf, size_t length)
+send_client(int sockfd, char *sbuf, size_t length)
 {
     struct client_data *cdata = NULL; /* 送信データ構造体 */
     ssize_t slen = 0L;                /* 送信データバイト数 */
@@ -552,7 +549,7 @@ send_client(int sockfd, unsigned char *sbuf, size_t length)
  * @retval EX_NG エラー
  */
 static int
-recv_client(int sockfd, unsigned char *rbuf)
+recv_client(int sockfd, char *rbuf)
 {
     size_t length = 0U; /* バイト数 */
     struct header hd;   /* ヘッダ構造体 */
@@ -753,8 +750,8 @@ test_server_loop_failure(void)
 TEST
 test_server_proc_failure(void)
 {
-    struct header hd;             /* ヘッダ */
-    unsigned char rbuf[BUF_SIZE]; /* 受信バッファ */
+    struct header hd;    /* ヘッダ */
+    char rbuf[BUF_SIZE]; /* 受信バッファ */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
@@ -795,7 +792,7 @@ test_server_proc_failure(void)
     server_loop(ssock);
     (void)memset(rbuf, 0, sizeof(rbuf));
     TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
-    TEST_ASSERT_STR((char *)expected, (char *)rbuf);
+    TEST_ASSERT_STR(expected, rbuf);
     close_sock(&csock);
     (void)usleep(THREAD_WAIT);
     PASS();
@@ -942,9 +939,9 @@ test_server_proc_length_limit(void)
 TEST
 test_server_proc_no_nul(void)
 {
-    struct header hd;                                                  /* ヘッダ */
-    unsigned char noterm[] = {'1', '+', '1', '+', '1', '+', '1', '+'}; /* 終端の NUL がない式 */
-    unsigned char rbuf[BUF_SIZE];                                      /* 受信バッファ */
+    struct header hd;                                         /* ヘッダ */
+    char noterm[] = {'1', '+', '1', '+', '1', '+', '1', '+'}; /* 終端の NUL がない式 */
+    char rbuf[BUF_SIZE];                                      /* 受信バッファ */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
@@ -962,7 +959,7 @@ test_server_proc_no_nul(void)
     /* 最後の 1 バイトが NUL に置き換えられて, "1+1+1+1" として計算される */
     (void)memset(rbuf, 0, sizeof(rbuf));
     TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
-    TEST_ASSERT_STR("4", (char *)rbuf);
+    TEST_ASSERT_STR("4", rbuf);
     PASS();
 }
 
@@ -1027,10 +1024,10 @@ test_server_loop_timeout(void)
 TEST
 test_server_proc_two_requests(void)
 {
-    unsigned char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
-    thread_data *dt = NULL;             /* スレッドデータ */
-    pthread_t tid;                      /* スレッドID */
-    int i = 0;                          /* 回数 */
+    char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
+    thread_data *dt = NULL;    /* スレッドデータ */
+    pthread_t tid;             /* スレッドID */
+    int i = 0;                 /* 回数 */
 
     TEST_ASSERT_INT(EX_OK, set_port_string(port));
     ssock = server_sock();
@@ -1051,7 +1048,7 @@ test_server_proc_two_requests(void)
         TEST_ASSERT_INT(EX_OK, send_client(csock, expr, sizeof(expr)));
         (void)memset(rbuf, 0, sizeof(rbuf));
         TEST_ASSERT_INT(EX_OK, recv_client(csock, rbuf));
-        TEST_ASSERT_STR((char *)expected, (char *)rbuf);
+        TEST_ASSERT_STR(expected, rbuf);
     }
     close_sock(&csock); /* スレッドはヘッダを受信できずに終了する */
     (void)pthread_join(tid, NULL);

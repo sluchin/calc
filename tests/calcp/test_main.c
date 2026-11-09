@@ -53,11 +53,8 @@ FAKE_VALUE_FUNC(int, setvbuf, FILE *, char *, int, size_t)
 TEST_PASSTHROUGH(int, setvbuf, (FILE * fp, char *buf, int mode, size_t size), (fp, buf, mode, size))
 FAKE_VALUE_FUNC(int, fflush, FILE *)
 TEST_PASSTHROUGH(int, fflush, (FILE * fp), (fp))
-FAKE_VALUE_FUNC(unsigned char *, create_answer, calcinfo *, const unsigned char *)
-TEST_PASSTHROUGH(unsigned char *,
-                 create_answer,
-                 (calcinfo * calc, const unsigned char *expr),
-                 (calc, expr))
+FAKE_VALUE_FUNC(char *, create_answer, calcinfo *, const char *)
+TEST_PASSTHROUGH(char *, create_answer, (calcinfo * calc, const char *expr), (calc, expr))
 
 #define BUF_SIZE 1024U /**< バッファサイズ */
 

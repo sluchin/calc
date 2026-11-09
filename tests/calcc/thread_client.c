@@ -52,12 +52,12 @@
 
 /** スレッドデータ構造体 */
 struct _thread_data {
-    unsigned char expr[BUF_SIZE];      /**< 式 */
-    struct client_data *sdata;         /**< 送信データ */
-    unsigned char *answer;             /**< 受信データ */
-    unsigned char *expected[BUF_SIZE]; /**< 期待する文字列 */
-    size_t len;                        /**< 送信データ長 */
-    int sock;                          /**< ソケット */
+    char expr[BUF_SIZE];       /**< 式 */
+    struct client_data *sdata; /**< 送信データ */
+    char *answer;              /**< 受信データ */
+    char expected[BUF_SIZE];   /**< 期待する文字列 */
+    size_t len;                /**< 送信データ長 */
+    int sock;                  /**< ソケット */
 };
 /** スレッドデータ型 */
 typedef struct _thread_data thread_data;
@@ -207,7 +207,7 @@ client_thread(void *arg)
 
     pthread_cleanup_push(thread_cleanup, &dt);
 
-    length = strlen((char *)dt->expr) + 1U;
+    length = strlen(dt->expr) + 1U;
 
     /* データ設定 */
     slen = set_client_data(&dt->sdata, dt->expr, length);
@@ -230,7 +230,7 @@ client_thread(void *arg)
     length = (size_t)ntohl((uint32_t)hd.length); /* データ長を保持 */
 
     /* データ受信 */
-    dt->answer = (unsigned char *)recv_data_new(dt->sock, &length);
+    dt->answer = (char *)recv_data_new(dt->sock, &length);
     if (dt->answer == NULL) /* メモリ確保できない */
         pthread_exit((void *)EX_ALLOC_ERR);
 
@@ -242,7 +242,7 @@ client_thread(void *arg)
 
     stdlog("%s", dt->answer);
 
-    retval = strcmp((char *)dt->expected, (char *)dt->answer);
+    retval = strcmp(dt->expected, dt->answer);
     stdlog("strcmp=%d", retval);
     assert(0 == retval);
 

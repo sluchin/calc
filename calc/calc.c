@@ -72,8 +72,8 @@ static int get_strlen(const double val, const char *fmt);
  * @retval NULL エラー
  * @attention destroy_answerを必ず呼ぶこと.
  */
-unsigned char *
-create_answer(calcinfo *calc, const unsigned char *expr)
+char *
+create_answer(calcinfo *calc, const char *expr)
 {
     double val = 0.0;        /* 値 */
     size_t length = 0U;      /* 文字数 */
@@ -128,18 +128,18 @@ create_answer(calcinfo *calc, const unsigned char *expr)
         length = (size_t)retval + 1U; /* 文字数 + 1 */
 
         /* メモリ確保 */
-        calc->answer = (unsigned char *)malloc(length * sizeof(unsigned char));
+        calc->answer = (char *)malloc(length * sizeof(char));
         if (calc->answer == NULL) {
             outlog("malloc: length=%zu", length);
             return NULL;
         }
-        (void)memset(calc->answer, 0, length * sizeof(unsigned char));
+        (void)memset(calc->answer, 0, length * sizeof(char));
 
         /* 値を文字列に変換 */
         /* 書式 ("%.<桁数>g") は, 桁数 (digit) から作るので文字列リテラルではない */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
-        retval = snprintf((char *)calc->answer, length, calc->fmt, val);
+        retval = snprintf(calc->answer, length, calc->fmt, val);
 #pragma GCC diagnostic pop
         if (retval < 0) {
             outlog("snprintf: answer=%p, length=%zu", calc->answer, length);
@@ -264,7 +264,7 @@ readch(calcinfo *calc)
     dbglog("start");
 
     do {
-        calc->ch = (int)*calc->ptr;
+        calc->ch = (int)(unsigned char)*calc->ptr;
         dbglog("ptr=%p, ch=%c", calc->ptr, calc->ch);
         if (calc->ch == '\0')
             break;

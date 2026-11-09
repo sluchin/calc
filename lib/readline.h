@@ -32,6 +32,6 @@
 #define FGETSBUF 1024U /**< バッファサイズ */
 
 /* 一行読込 */
-unsigned char *_readline(FILE *fp);
+char *_readline(FILE *fp);
 
 #endif /* CALCUTIL_READLINE_H */

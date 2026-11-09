@@ -32,7 +32,7 @@
 #include "func.h"
 
 /* エラーメッセージ取得 */
-unsigned char *get_errormsg(calcinfo *calc);
+char *get_errormsg(calcinfo *calc);
 
 /* エラーコード設定 */
 void set_errorcode(calcinfo *calc, ER error);

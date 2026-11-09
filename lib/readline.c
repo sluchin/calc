@@ -42,15 +42,15 @@
  * @return 文字列
  * @retval NULL エラー
  */
-unsigned char *
+char *
 _readline(FILE *fp)
 {
-    char *fgetsp = NULL;         /* fgets戻り値 */
-    size_t length = 0U;          /* 文字列長 */
-    size_t total = 0U;           /* 文字列長全て */
-    unsigned char *alloc = NULL; /* reallocバッファ */
-    unsigned char *tmp = NULL;   /* 一時ポインタ */
-    unsigned char buf[FGETSBUF]; /* fgetsバッファ */
+    char *fgetsp = NULL; /* fgets戻り値 */
+    size_t length = 0U;  /* 文字列長 */
+    size_t total = 0U;   /* 文字列長全て */
+    char *alloc = NULL;  /* reallocバッファ */
+    char *tmp = NULL;    /* 一時ポインタ */
+    char buf[FGETSBUF];  /* fgetsバッファ */
 
     /* fgetsのファイルポインタにNULLを渡した場合,
      * crashするかもしれない */
@@ -59,7 +59,7 @@ _readline(FILE *fp)
 
     do {
         (void)memset(buf, 0, sizeof(buf));
-        fgetsp = fgets((char *)buf, sizeof(buf), fp);
+        fgetsp = fgets(buf, sizeof(buf), fp);
         if (ferror(fp) != 0) { /* エラー */
             outlog("fgets=%p", (const void *)fgetsp);
             clearerr(fp);
@@ -69,22 +69,21 @@ _readline(FILE *fp)
         if (fgetsp == NULL) /* 入力の終わり (何も読めなかった) */
             break;
 
-        length = strlen((char *)buf);
+        length = strlen(buf);
         dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
-        tmp = (unsigned char *)realloc(alloc, (total + length + 1U) * sizeof(unsigned char));
+        tmp = (char *)realloc(alloc, (total + length + 1U) * sizeof(char));
         if (tmp == NULL) {
             outlog("realloc: total+length+1=%zu", total + length + 1U);
             goto error_handler;
         }
         alloc = tmp;
-        (void)memset(alloc + total, 0, (length + 1U) * sizeof(unsigned char));
+        (void)memset(alloc + total, 0, (length + 1U) * sizeof(char));
 
-        (void)memcpy(alloc + total, buf, length * sizeof(unsigned char));
+        (void)memcpy(alloc + total, buf, length * sizeof(char));
 
         total += length;
-        dbglog("alloc=%p, length=%zu, total=%zu", alloc + total, length * sizeof(unsigned char),
-               total);
+        dbglog("alloc=%p, length=%zu, total=%zu", alloc + total, length * sizeof(char), total);
 
     } while (!((total > 0U) && (*(alloc + total - 1U) == '\n')) && (feof(fp) == 0));
 

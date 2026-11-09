@@ -40,20 +40,20 @@ struct header {
 
 /** クライアントデータ構造体 */
 struct client_data {
-    struct header hd;            /**< ヘッダ構造体 */
-    unsigned char expression[1]; /**< データバッファ */
+    struct header hd;   /**< ヘッダ構造体 */
+    char expression[1]; /**< データバッファ */
 };
 
 /** サーバデータ構造体 */
 struct server_data {
-    struct header hd;        /**< ヘッダ構造体 */
-    unsigned char answer[1]; /**< データバッファ */
+    struct header hd; /**< ヘッダ構造体 */
+    char answer[1];   /**< データバッファ */
 };
 
 /* クライアントデータ構造体設定 */
-ssize_t set_client_data(struct client_data **dt, const unsigned char *buf, const size_t len);
+ssize_t set_client_data(struct client_data **dt, const char *buf, const size_t len);
 
 /* サーバデータ構造体設定 */
-ssize_t set_server_data(struct server_data **dt, const unsigned char *buf, const size_t len);
+ssize_t set_server_data(struct server_data **dt, const char *buf, const size_t len);
 
 #endif /* DATA_H */

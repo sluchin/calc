@@ -91,8 +91,8 @@ test_get_errormsg(void)
         st_calc.readch(&calc);
         calc.errorcode = (ER)i;
         calc.answer = get_errormsg(&calc);
-        TEST_ASSERT_STR_MSG(st_error.errormsg[i], (char *)calc.answer, "%s==%s",
-                            (char *)calc.answer, (char *)st_error.errormsg);
+        TEST_ASSERT_STR_MSG(st_error.errormsg[i], calc.answer, "%s==%s", calc.answer,
+                            (char *)st_error.errormsg);
         clear_error(&calc);
         destroy_answer(&calc);
     }
@@ -134,7 +134,7 @@ test_clear_error(void)
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
 
-    calc.answer = (unsigned char *)strdup("dammy");
+    calc.answer = strdup("dammy");
     clear_error(&calc);
 
     TEST_ASSERT_INT((int)E_NONE, (int)calc.errorcode);

@@ -56,17 +56,17 @@ typedef enum _ER ER;
 
 /** calc情報構造体 */
 struct _calcinfo {
-    int ch;                   /**< 文字 */
-    const unsigned char *ptr; /**< 文字列走査用ポインタ */
-    unsigned char *answer;    /**< 結果文字列 */
-    char fmt[FMT_SIZE];       /**< フォーマット */
-    ER errorcode;             /**< エラーコード */
+    int ch;             /**< 文字 */
+    const char *ptr;    /**< 文字列走査用ポインタ */
+    char *answer;       /**< 結果文字列 */
+    char fmt[FMT_SIZE]; /**< フォーマット */
+    ER errorcode;       /**< エラーコード */
 };
 /** calc情報構造体型 */
 typedef struct _calcinfo calcinfo;
 
 /* 計算結果 */
-unsigned char *create_answer(calcinfo *calc, const unsigned char *expr);
+char *create_answer(calcinfo *calc, const char *expr);
 
 /* メモリ解放 */
 void destroy_answer(void *calc);

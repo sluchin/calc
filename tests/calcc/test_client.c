@@ -68,8 +68,8 @@ static testclient client;                  /**< 関数構造体 */
 static char port[] = "12345";              /**< ポート番号 */
 static const char *hostname = "localhost"; /**< ホスト名 */
 static struct sockaddr_in addr;            /**< ソケットアドレス情報構造体 */
-static unsigned char readbuf[BUF_SIZE];    /**< 受信バッファ */
-static unsigned char sendbuf[BUF_SIZE];    /**< 送信データ */
+static char readbuf[BUF_SIZE];             /**< 受信バッファ */
+static char sendbuf[BUF_SIZE];             /**< 送信データ */
 static int ssock = -1;                     /**< サーバソケット */
 static int csock = -1;                     /**< クライアントソケット */
 static int acc = -1;                       /**< アクセプト */
@@ -84,10 +84,10 @@ FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
 TEST_PASSTHROUGH(int, sigfillset, (sigset_t * set), (set))
 FAKE_VALUE_FUNC(int, sigdelset, sigset_t *, int)
 TEST_PASSTHROUGH(int, sigdelset, (sigset_t * set, int signo), (set, signo))
-FAKE_VALUE_FUNC(ssize_t, set_client_data, struct client_data **, const unsigned char *, size_t)
+FAKE_VALUE_FUNC(ssize_t, set_client_data, struct client_data **, const char *, size_t)
 TEST_PASSTHROUGH(ssize_t,
                  set_client_data,
-                 (struct client_data * *dt, const unsigned char *buf, size_t len),
+                 (struct client_data * *dt, const char *buf, size_t len),
                  (dt, buf, len))
 
 /*
@@ -144,10 +144,10 @@ TEST test_send_sock_alloc_failure(void);
 
 /* 内部関数 */
 static void on_sigint(int signo);
-static int exec_send_sock(unsigned char *sbuf, size_t length);
+static int exec_send_sock(char *sbuf, size_t length);
 static int accept_server(int sockfd);
-static int recv_server(int sockfd, unsigned char *rbuf);
-static int send_server(int sockfd, unsigned char *sbuf, size_t length);
+static int recv_server(int sockfd, char *rbuf);
+static int send_server(int sockfd, char *sbuf, size_t length);
 static int inet_sock_server(void);
 static void set_sig_handler(void);
 
@@ -387,7 +387,7 @@ test_client_loop(void)
         /* 標準入力に送信 */
         sendlen = sizeof(sendbuf);
         /* 1 行だけ送る (終端の NUL まで送ると, 次のループで改行のない行を待ち続ける) */
-        wlen = write(STDIN_FILENO, (char *)sendbuf, strlen((char *)sendbuf));
+        wlen = write(STDIN_FILENO, sendbuf, strlen(sendbuf));
         if (wlen < 0L) {
             TEST_FAIL("write=%zd(%d)", wlen, errno);
         }
@@ -406,13 +406,13 @@ test_client_loop(void)
         }
 
         /* 改行削除 */
-        if (sendbuf[strlen((char *)sendbuf) - 1U] == '\n')
-            sendbuf[strlen((char *)sendbuf) - 1U] = '\0';
+        if (sendbuf[strlen(sendbuf) - 1U] == '\n')
+            sendbuf[strlen(sendbuf) - 1U] = '\0';
 
         TEST_ASSERT_MEM(sendbuf, sendlen, readbuf, sendlen);
 
         /* 送信 */
-        sendlen = strlen((char *)readbuf) + 1U;
+        sendlen = strlen(readbuf) + 1U;
         retval = send_server(acc, readbuf, sendlen);
         if (retval < 0) {
             TEST_FAIL("send_server: acc=%d(%d)", acc, errno);
@@ -426,7 +426,7 @@ test_client_loop(void)
 
         /* 標準出力から受信 */
         (void)memset(readbuf, 0, sizeof(readbuf));
-        rlen = readn(STDOUT_FILENO, (char *)readbuf, sendlen - 1U);
+        rlen = readn(STDOUT_FILENO, readbuf, sendlen - 1U);
         if (rlen < 0L) {
             TEST_FAIL("read=%zd(%d)", rlen, errno);
         }
@@ -453,9 +453,9 @@ test_client_loop(void)
 TEST
 test_send_sock(void)
 {
-    int retval = 0;                  /* 戻り値 */
-    unsigned char estr[] = "exit\n"; /* exit文字列 */
-    unsigned char qstr[] = "quit\n"; /* quit文字列 */
+    int retval = 0;         /* 戻り値 */
+    char estr[] = "exit\n"; /* exit文字列 */
+    char qstr[] = "quit\n"; /* quit文字列 */
 
     /* 準備をして, 関数を実行し, 結果を確認する */
     dbglog("start");
@@ -550,7 +550,7 @@ test_read_sock(void)
         }
 
         /* 標準出力から受信 */
-        rlen = readn(STDOUT_FILENO, (char *)readbuf, sizeof(sendbuf));
+        rlen = readn(STDOUT_FILENO, readbuf, sizeof(sendbuf));
         if (rlen < 0L) {
             TEST_FAIL("read=%zd(%d)", rlen, errno);
         }
@@ -559,7 +559,7 @@ test_read_sock(void)
         if (dup2(oldfd, STDOUT_FILENO) < 0)
             TEST_NOTIFY("dup2(%d)", errno);
 
-        TEST_ASSERT_MEM(sendbuf, strlen((char *)sendbuf), readbuf, strlen((char *)sendbuf));
+        TEST_ASSERT_MEM(sendbuf, strlen(sendbuf), readbuf, strlen(sendbuf));
         w = wait(&status);
         if (w < 0)
             TEST_NOTIFY("wait(%d)", errno);
@@ -579,16 +579,16 @@ test_read_sock(void)
  * @retval EX_NG エラー
  */
 static int
-exec_send_sock(unsigned char *sbuf, size_t length)
+exec_send_sock(char *sbuf, size_t length)
 {
-    pid_t cpid = 0;                     /* プロセスID */
-    pid_t w = 0;                        /* wait戻り値 */
-    int status = 0;                     /* wait引数 */
-    ssize_t wlen = 0L;                  /* write戻り値 */
-    int oldfd = 0;                      /* 退避用 */
-    int retval = 0;                     /* 戻り値 */
-    unsigned char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
-    st_client st = EX_SUCCESS;          /* ステータス */
+    pid_t cpid = 0;            /* プロセスID */
+    pid_t w = 0;               /* wait戻り値 */
+    int status = 0;            /* wait引数 */
+    ssize_t wlen = 0L;         /* write戻り値 */
+    int oldfd = 0;             /* 退避用 */
+    int retval = 0;            /* 戻り値 */
+    char rbuf[BUF_SIZE] = {0}; /* 受信バッファ */
+    st_client st = EX_SUCCESS; /* ステータス */
 
     dbglog("start");
 
@@ -660,14 +660,14 @@ exec_send_sock(unsigned char *sbuf, size_t length)
         }
 
         /* 標準入力に送信 */
-        wlen = writen(STDIN_FILENO, (char *)sbuf, length);
+        wlen = writen(STDIN_FILENO, sbuf, length);
         if (wlen < 0L) {
             TEST_ERROR("write=%zd(%d)", wlen, errno);
             return EX_NG;
         }
         dbglog("write=%zd", wlen);
 
-        if ((strcmp((char *)sbuf, "quit\n") != 0) && (strcmp((char *)sbuf, "exit\n") != 0)) {
+        if ((strcmp(sbuf, "quit\n") != 0) && (strcmp(sbuf, "exit\n") != 0)) {
 
             /* 受信待ち */
             acc = accept_server(ssock);
@@ -684,10 +684,10 @@ exec_send_sock(unsigned char *sbuf, size_t length)
             }
 
             /* 改行削除 */
-            if (sbuf[strlen((char *)sbuf) - 1U] == '\n')
-                sbuf[strlen((char *)sbuf) - 1U] = '\0';
+            if (sbuf[strlen(sbuf) - 1U] == '\n')
+                sbuf[strlen(sbuf) - 1U] = '\0';
 
-            if (strcmp((char *)sbuf, (char *)rbuf) != 0) {
+            if (strcmp(sbuf, rbuf) != 0) {
                 TEST_ERROR("expected=%s actual=%s", sbuf, rbuf);
                 return EX_NG;
             }
@@ -784,7 +784,7 @@ accept_server(int sockfd)
  * @retval EX_NG エラー
  */
 static int
-recv_server(int sockfd, unsigned char *rbuf)
+recv_server(int sockfd, char *rbuf)
 {
     size_t length = 0U; /* バイト数 */
     struct header hd;   /* ヘッダ構造体 */
@@ -821,7 +821,7 @@ recv_server(int sockfd, unsigned char *rbuf)
  * @retval EX_NG エラー
  */
 static int
-send_server(int sockfd, unsigned char *sbuf, size_t length)
+send_server(int sockfd, char *sbuf, size_t length)
 {
     struct server_data *sdata = NULL; /* 送信データ構造体 */
     ssize_t slen = 0L;                /* 送信データバイト数 */
@@ -1001,7 +1001,7 @@ child_read_sock(void *arg)
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
     default: /* 正常なデータ (4 は標準出力を閉じて, 出力に失敗する) */
-        len = set_server_data(&dt, (const unsigned char *)"42", 3U);
+        len = set_server_data(&dt, (const char *)"42", 3U);
         if (len < 0L)
             exit(CHILD_FAILED);
         (void)writen(sv[1], dt, (size_t)len);
@@ -1297,7 +1297,7 @@ child_client_loop_socket_only(void *arg)
     if ((pipe(idle) < 0) || (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0))
         exit(CHILD_FAILED);
     (void)dup2(idle[0], STDIN_FILENO);
-    len = set_server_data(&dt, (const unsigned char *)"42", 3U);
+    len = set_server_data(&dt, (const char *)"42", 3U);
     if ((len < 0L) || (writen(sv[1], dt, (size_t)len) < 0))
         exit(CHILD_FAILED);
 
@@ -1380,7 +1380,7 @@ responder(int sock)
         free(data);
         if (child_mode == 6) /* 答えを返さずに終了する */
             exit(EXIT_SUCCESS);
-        len = set_server_data(&dt, (const unsigned char *)"ok", 3U);
+        len = set_server_data(&dt, (const char *)"ok", 3U);
         if ((len < 0L) || (writen(sock, dt, (size_t)len) < 0))
             exit(EXIT_FAILURE);
         free(dt);

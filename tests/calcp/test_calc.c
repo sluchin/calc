@@ -345,7 +345,7 @@ test_answer_four(void)
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(four_data[i].answer, (char *)calc.answer, "%s=%s", four_data[i].expr,
+        TEST_ASSERT_STR_MSG(four_data[i].answer, calc.answer, "%s=%s", four_data[i].expr,
                             four_data[i].answer);
         destroy_answer(&calc);
         memfree(&calc, NULL);
@@ -367,7 +367,7 @@ test_answer_func(void)
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, func_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(func_data[i].answer, (char *)calc.answer, "%s=%s", func_data[i].expr,
+        TEST_ASSERT_STR_MSG(func_data[i].answer, calc.answer, "%s=%s", func_data[i].expr,
                             func_data[i].answer);
         destroy_answer(&calc);
     }
@@ -388,8 +388,8 @@ test_answer_four_func(void)
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, four_func_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(four_func_data[i].answer, (char *)calc.answer, "%s=%s",
-                            four_func_data[i].expr, four_func_data[i].answer);
+        TEST_ASSERT_STR_MSG(four_func_data[i].answer, calc.answer, "%s=%s", four_func_data[i].expr,
+                            four_func_data[i].answer);
         destroy_answer(&calc);
     }
     PASS();
@@ -409,7 +409,7 @@ test_answer_error(void)
         (void)memset(&calc, 0, sizeof(calcinfo));
         exec_calc(&calc, error_data[i].expr);
 
-        TEST_ASSERT_STR_MSG(error_data[i].answer, (char *)calc.answer, "%s=%s", error_data[i].expr,
+        TEST_ASSERT_STR_MSG(error_data[i].answer, calc.answer, "%s=%s", error_data[i].expr,
                             error_data[i].answer);
         destroy_answer(&calc);
     }
@@ -459,7 +459,7 @@ test_set_digit(void)
     set_digit(15L);
     (void)memset(&calc, 0, sizeof(calcinfo));
     exec_calc(&calc, expr);
-    TEST_ASSERT_STR_MSG(expect, (char *)calc.answer, "%s=%s", expect, calc.answer);
+    TEST_ASSERT_STR_MSG(expect, calc.answer, "%s=%s", expect, calc.answer);
     PASS();
 }
 
@@ -469,8 +469,8 @@ test_set_digit(void)
 TEST
 test_readch(void)
 {
-    const unsigned char *ptr = NULL; /* ポインタ */
-    calcinfo calc;                   /* calc情報構造体 */
+    const char *ptr = NULL; /* ポインタ */
+    calcinfo calc;          /* calc情報構造体 */
 
     /* スペース・タブを含んだ文字列を設定 */
     (void)memset(&calc, 0, sizeof(calcinfo));
@@ -667,7 +667,7 @@ test_get_strlen(void)
 static void
 exec_calc(calcinfo *calc, const char *str)
 {
-    if (create_answer(calc, (const unsigned char *)str) == NULL) {
+    if (create_answer(calc, (const char *)str) == NULL) {
         TEST_ERROR("create_answer: calc=%p", (void *)calc);
         exit(EXIT_FAILURE);
     }
@@ -715,7 +715,7 @@ test_answer_timer(void)
     exec_calc(&calc, "(105+312)+2*(5-3)");
     g_tflag = false;
 
-    TEST_ASSERT_STR("421", (char *)calc.answer);
+    TEST_ASSERT_STR("421", calc.answer);
     destroy_answer(&calc);
     PASS();
 }
@@ -726,10 +726,10 @@ test_answer_timer(void)
 TEST
 test_answer_failure(void)
 {
-    calcinfo calc;                 /* calcinfo構造体 */
-    unsigned char expr[] = "1+2";  /* 式 (答えは "3") */
-    unsigned char third[] = "1/3"; /* 式 (答えは "0.333333333333") */
-    unsigned char zero[] = "1/0";  /* 式 (0 で割る) */
+    calcinfo calc;        /* calcinfo構造体 */
+    char expr[] = "1+2";  /* 式 (答えは "3") */
+    char third[] = "1/3"; /* 式 (答えは "0.333333333333") */
+    char zero[] = "1/0";  /* 式 (0 で割る) */
 
     /* 書式の設定に失敗 */
     (void)memset(&calc, 0, sizeof(calcinfo));

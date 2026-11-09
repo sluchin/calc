@@ -123,11 +123,11 @@ check_state(void)
 static void
 main_loop(void)
 {
-    int retval = 0;               /* 戻り値 */
-    calcinfo calc;                /* calcinfo構造体 */
-    unsigned char *answer = NULL; /* create_answer戻り値 */
-    unsigned char *expr = NULL;   /* 式 */
-    bool interactive = false;     /* 標準入力が端末か */
+    int retval = 0;           /* 戻り値 */
+    calcinfo calc;            /* calcinfo構造体 */
+    char *answer = NULL;      /* create_answer戻り値 */
+    char *expr = NULL;        /* 式 */
+    bool interactive = false; /* 標準入力が端末か */
 #ifdef HAVE_READLINE
     char *prompt = NULL; /* プロンプト */
 
@@ -150,7 +150,7 @@ main_loop(void)
         dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
         if (interactive)
-            expr = (unsigned char *)readline(prompt);
+            expr = readline(prompt);
         else
 #endif /* HAVE_READLINE */
             expr = _readline(stdin);
@@ -162,10 +162,9 @@ main_loop(void)
             memfree(&expr, NULL);
             continue;
         }
-        dbgdump(expr, strlen((char *)expr) + 1U, "stdin: expr=%p, strlen=%zu", expr,
-                strlen((char *)expr) + 1U);
+        dbgdump(expr, strlen(expr) + 1U, "stdin: expr=%p, strlen=%zu", expr, strlen(expr) + 1U);
 
-        if ((strcmp((char *)expr, "quit") == 0) || (strcmp((char *)expr, "exit") == 0))
+        if ((strcmp(expr, "quit") == 0) || (strcmp(expr, "exit") == 0))
             break;
 
         (void)memset(&calc, 0, sizeof(calcinfo));
@@ -175,13 +174,13 @@ main_loop(void)
             outlog("create_calc");
         } else {
             dbglog("expr=%p, answer=%p", expr, calc.answer);
-            retval = fprintf(stdout, "%s\n", (char *)calc.answer);
+            retval = fprintf(stdout, "%s\n", calc.answer);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
         }
 #ifdef HAVE_READLINE
         if (interactive)
-            add_history((char *)expr);
+            add_history(expr);
 #endif /* HAVE_READLINE */
 
         destroy_answer(&calc);

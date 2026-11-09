@@ -49,12 +49,12 @@ TEST test_readline(void);
 TEST test_readline_failure(void);
 
 /* 内部変数 */
-static int pfd[] = {-1, -1};         /**< パイプ */
-static char test_data[BUF_SIZE];     /**< テストデータ */
-static unsigned char *result = NULL; /**< 結果文字列 */
+static int pfd[] = {-1, -1};     /**< パイプ */
+static char test_data[BUF_SIZE]; /**< テストデータ */
+static char *result = NULL;      /**< 結果文字列 */
 
 /* 内部関数 */
-static unsigned char *exec_readline(char *data, size_t length);
+static char *exec_readline(char *data, size_t length);
 static void set_sig_handler(void);
 
 /**
@@ -109,36 +109,36 @@ test_readline(void)
     if (test_data[strlen(test_data) - 1U] == '\n')
         test_data[strlen(test_data) - 1U] = '\0';
 
-    TEST_ASSERT_STR(test_data, (char *)result);
+    TEST_ASSERT_STR(test_data, result);
 
     memfree(&result, NULL);
 
     /* 改行がなく, 入力の終わりで終わる最後の行も, 返す (終端の NUL も送る) */
     result = exec_readline(nolf_data, sizeof(nolf_data));
     dbglog("result=%s", result);
-    TEST_ASSERT_STR("test", (char *)result);
+    TEST_ASSERT_STR("test", result);
     memfree(&result, NULL);
 
     /* 終端の NUL もない場合 */
     result = exec_readline(nolf_data, strlen(nolf_data));
-    TEST_ASSERT_STR("test", (char *)result);
+    TEST_ASSERT_STR("test", result);
     memfree(&result, NULL);
 
     /* NUL だけの行 (長さ 0 で, 改行もない. 空の文字列を返す) */
     result = exec_readline(nolf_data + strlen(nolf_data), 1U);
-    TEST_ASSERT_NOT_NULL((char *)result);
-    TEST_ASSERT_STR("", (char *)result);
+    TEST_ASSERT_NOT_NULL(result);
+    TEST_ASSERT_STR("", result);
     memfree(&result, NULL);
 
     /* 何も入力されない場合 (入力の終わり) */
     result = exec_readline(nolf_data, 0);
-    TEST_ASSERT_NULL((char *)result);
+    TEST_ASSERT_NULL(result);
 
     /* 異常系 */
 
     /* ファイルポインタがNULLの場合 */
     result = _readline((FILE *)NULL);
-    TEST_ASSERT_NULL((char *)result);
+    TEST_ASSERT_NULL(result);
     PASS();
 }
 
@@ -149,7 +149,7 @@ test_readline(void)
  * @param[in] length バイト数
  * @return 結果文字列
  */
-static unsigned char *
+static char *
 exec_readline(char *data, size_t length)
 {
     FILE *fp = NULL;  /* ファイルポインタ */
@@ -249,7 +249,7 @@ test_readline_failure(void)
         TEST_FAIL("fopen(%d)", errno);
     }
     result = _readline(fp);
-    TEST_ASSERT_NULL((char *)result);
+    TEST_ASSERT_NULL(result);
     (void)fclose(fp);
 
     /* メモリを確保できない */
@@ -266,7 +266,7 @@ test_readline_failure(void)
     }
     TEST_INJECT(realloc, 0, 1, NULL, ENOMEM);
     result = _readline(fp);
-    TEST_ASSERT_NULL((char *)result);
+    TEST_ASSERT_NULL(result);
     (void)fclose(fp);
     PASS();
 }

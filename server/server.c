@@ -272,8 +272,8 @@ server_proc(void *arg)
     size_t length = 0U;               /* 長さ */
     ssize_t slen = 0L;                /* 送信するバイト数 */
     struct header hd;                 /* ヘッダ構造体 */
-    unsigned char *expr = NULL;       /* 受信データ */
-    unsigned char *answer = NULL;     /* create_answer戻り値 */
+    char *expr = NULL;                /* 受信データ */
+    char *answer = NULL;              /* create_answer戻り値 */
     calcinfo calc;                    /* calc情報構造体 */
     struct server_data *sdata = NULL; /* 送信データ構造体 */
 
@@ -308,7 +308,7 @@ server_proc(void *arg)
             outlog("data length=%zu, max=%u", length, MAX_DATA_LENGTH);
             pthread_exit((void *)EXIT_FAILURE);
         }
-        expr = (unsigned char *)recv_data_new(dt.sock, &length);
+        expr = (char *)recv_data_new(dt.sock, &length);
         if (expr == NULL) /* メモリ不足 */
             pthread_exit((void *)EXIT_FAILURE);
 
@@ -335,7 +335,7 @@ server_proc(void *arg)
 
         pthread_cleanup_push(destroy_answer, &calc);
 
-        length = strlen((char *)calc.answer) + 1U; /* 文字列長保持 */
+        length = strlen(calc.answer) + 1U; /* 文字列長保持 */
 
         dbgdump(calc.answer, length, "answer=%p, length=%zu", calc.answer, length);
 

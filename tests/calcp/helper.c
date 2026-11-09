@@ -47,21 +47,21 @@ static size_t nstrings = 0U;       /**< 確保した文字列数 */
 void
 set_string(calcinfo *calc, const char *str)
 {
-    size_t length = 0U;         /* 文字列長 */
-    unsigned char *expr = NULL; /* 式 */
-    int retval = 0;             /* 戻り値 */
+    size_t length = 0U; /* 文字列長 */
+    char *expr = NULL;  /* 式 */
+    int retval = 0;     /* 戻り値 */
 
     length = strlen(str);
     if (nstrings >= MAX_STRINGS) {
         (void)printf("set_string: too many strings\n");
         exit(EXIT_FAILURE);
     }
-    expr = (unsigned char *)strndup(str, length);
+    expr = strndup(str, length);
     if (expr == NULL) {
         (void)printf("set_string: strndup=%p\n", (void *)expr);
         exit(EXIT_FAILURE);
     }
-    strings[nstrings++] = (char *)expr; /* free_strings() で解放する */
+    strings[nstrings++] = expr; /* free_strings() で解放する */
 
     calc->ptr = expr;
 

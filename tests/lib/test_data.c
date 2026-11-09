@@ -80,7 +80,7 @@ test_set_client_data(void)
     for (i = 0U; i < NELEMS(test_data); i++) {
         length = strlen(test_data[i]) + 1U;
         dbglog("length=%zu", length);
-        len = set_client_data(&dt, (const unsigned char *)test_data[i], length);
+        len = set_client_data(&dt, (const char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         TEST_ASSERT_INT(0, len % ALIGN);
         dbglog("dt=%p", (const void *)dt);
@@ -107,7 +107,7 @@ test_set_server_data(void)
     for (i = 0U; i < NELEMS(test_data); i++) {
         length = strlen(test_data[i]) + 1U;
         dbglog("length=%zu", length);
-        len = set_server_data(&dt, (const unsigned char *)test_data[i], length);
+        len = set_server_data(&dt, (const char *)test_data[i], length);
         dbglog("len=%zd, %s", len, test_data[i]);
         TEST_ASSERT_INT(0, len % ALIGN);
         dbglog("dt=%p", (const void *)dt);
@@ -126,7 +126,7 @@ TEST
 test_set_client_data_failure(void)
 {
     struct client_data *dt = NULL; /* 送受信データ構造体 */
-    unsigned char buf[] = "a";     /* 送受信バッファ */
+    char buf[] = "a";              /* 送受信バッファ */
 
     /* バッファがNULL */
     TEST_ASSERT_INT(EX_NG, set_client_data(&dt, NULL, 1U));
@@ -145,7 +145,7 @@ TEST
 test_set_server_data_failure(void)
 {
     struct server_data *dt = NULL; /* 送受信データ構造体 */
-    unsigned char buf[] = "a";     /* 送受信バッファ */
+    char buf[] = "a";              /* 送受信バッファ */
 
     /* バッファがNULL */
     TEST_ASSERT_INT(EX_NG, set_server_data(&dt, NULL, 1U));
