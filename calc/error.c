@@ -23,18 +23,19 @@
  */
 
 #include <stdio.h>  /* NULL */
-#include <string.h> /* strdup */
+#include <string.h> /* strndup */
 #include <math.h>   /* isnan isinf fpclassify */
 #include <fenv.h>   /* fetestexcept FE_INVALID */
 #include <errno.h>  /* errno */
 #include <assert.h> /* assert */
 
+#include "def.h"
 #include "log.h"
 #include "error.h"
 
 /** エラーメッセージ文字列構造体 */
-static const char *errormsg[] = {
-    NULL, "Divide by zero.", "Syntax error.", "Function not defined.", "NaN.", "Infinity."};
+static const char errormsg[][MAX_ERRMSG_SIZE] = {
+    "", "Divide by zero.", "Syntax error.", "Function not defined.", "NaN.", "Infinity."};
 
 /**
  * @brief エラーメッセージ取得
@@ -59,9 +60,9 @@ get_errormsg(calcinfo *calc)
     dbglog("errormsg=%s, errorcode=%d", errormsg[calc->errorcode], (int)calc->errorcode);
 
     /* 呼び出し元が解放できるように複製する */
-    msg = strdup(errormsg[calc->errorcode]);
+    msg = strndup(errormsg[calc->errorcode], sizeof(errormsg[0]));
     if (msg == NULL) {
-        outlog("strdup");
+        outlog("strndup");
         return NULL;
     }
 

@@ -22,8 +22,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE /**< memrchr を使うために必要 */
+#endif
+
 #include <stdio.h>     /* fprintf vsprintf */
-#include <string.h>    /* memset strrchr strerror_r */
+#include <string.h>    /* memset memcpy memrchr strncat strerror_r strnlen */
 #include <stdlib.h>    /* free */
 #include <stdarg.h>    /* va_list va_start va_end */
 #include <time.h>      /* tm */
@@ -43,16 +47,15 @@
 #define MAX_HOST_SIZE 25U  /**< 最大ホスト文字列サイズ */
 #define MAX_MES_SIZE  256U /**< 最大メッセージサイズ */
 #define STACK_SIZE    100U /**< スタックサイズ */
-#define MAX_PROGNAME  25U  /**< 最大プログラム名文字列長 */
 
 /** syslog にメッセージを出力 (ファイル名, 行番号, 関数名, errno 付き) */
 #define SYSMSG(lv, fmt, ...) \
-    syslog(lv, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, __func__, ##__VA_ARGS__, errno)
+      syslog(lv, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, __func__, ##__VA_ARGS__, errno)
 
 /** 標準エラー出力にメッセージを出力 (ファイル名, 行番号, 関数名, errno 付き) */
-#define LOGMSG(fmt, ...)                                                                          \
-    (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, __func__, ##__VA_ARGS__, \
-                  errno)
+#define LOGMSG(fmt, ...)                                                   \
+      (void)fprintf(stderr, "%s[%d]: %s: " fmt "(%d)", __FILE__, __LINE__, \
+                    __func__, ##__VA_ARGS__, errno)
 
 /** エラーメッセージ用バッファのサイズ */
 #define ERRMSG_SIZE 64U
@@ -76,14 +79,16 @@ static const char *get_errmsg(const int errnum, char *buf, const size_t size);
 void
 set_progname(const char *name)
 {
-    const char *ptr = NULL; /* strrchr戻り値 */
+    const char *ptr = NULL;       /* memrchr戻り値 */
+    char buf[ARG_BUF_SIZE] = {0}; /* プログラム名のコピー */
+    size_t len = 0U;              /* 設定する長さ */
 
     if (progname[0] == '\0') { /* 一度のみ設定される */
-        ptr = strrchr(name, '/');
-        if (ptr != NULL)
-            (void)strncpy(progname, ptr + 1, sizeof(progname) - 1U);
-        else
-            (void)strncpy(progname, name, sizeof(progname) - 1U);
+        (void)snprintf(buf, sizeof(buf), "%s", name);
+        ptr = (const char *)memrchr(buf, '/', strnlen(buf, sizeof(buf)));
+        ptr = ((ptr != NULL) ? (ptr + 1) : buf);
+        len = strnlen(ptr, sizeof(progname) - 1U);
+        (void)memcpy(progname, ptr, len); /* progname は静的で, 0 で初期化されている */
     }
 }
 
@@ -333,7 +338,7 @@ dump_log(const void *buf, const size_t len, const char *format, ...)
     }
 
     /* メッセージと, ダンプのヘッダを出力 */
-    (void)fprintf(fp, "%s\n", message);
+    (void)fprintf(fp, "%.*s\n", (int)strnlen(message, sizeof(message)), message);
     (void)fprintf(fp, "%s%s", "Address  :  0 1  2 3  4 5  6 7  8 9  A B  C D  E F ",
                   "0123456789ABCDEF\n");
     (void)fprintf(fp, "%s%s", "--------   ---- ---- ---- ---- ---- ---- ---- ---- ",
@@ -424,11 +429,11 @@ dump_sys(const int level,
             (void)memset(tmp, 0, tsize);
             if ((i + j) >= len) {
                 (void)snprintf(tmp, tsize, "  %s", (((j % 2U) == 1U) ? " " : ""));
-                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
+                (void)strncat(hexdump, tmp, (hsize - strnlen(hexdump, hsize) - 1U));
             } else {
                 (void)snprintf(tmp, tsize, "%02x%s", (unsigned int)*(p + i + j),
                                (((j % 2U) == 1U) ? " " : ""));
-                (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
+                (void)strncat(hexdump, tmp, (hsize - strnlen(hexdump, hsize) - 1U));
             }
         }
         /* アスキー文字の表示 */
@@ -436,7 +441,7 @@ dump_sys(const int level,
             (void)memset(tmp, 0, tsize);
             (void)snprintf(tmp, tsize, "%c",
                            (((*(p + i) < ' ') || ('~' < *(p + i))) ? '.' : *(p + i)));
-            (void)strncat(hexdump, tmp, (hsize - strlen(hexdump) - 1U));
+            (void)strncat(hexdump, tmp, (hsize - strnlen(hexdump, hsize) - 1U));
         }
         syslog(level, "%s[%d]: %s(%s): %s", fname, line, func, message, hexdump);
         pt += j;
@@ -562,25 +567,13 @@ print_trace(void)
 {
     void *buffer[STACK_SIZE] = {0}; /* 配列 */
     int size = 0;                   /* サイズ */
-    char **strings = NULL;          /* 文字列 */
 
-    /* 呼び出し履歴を取得して, 標準エラー出力に出力する */
+    /* 呼び出し履歴を取得して, 標準エラー出力に出力する.
+     * backtrace_symbols_fd() は, 文字列を確保せず, 直接書き込む */
     size = backtrace(buffer, STACK_SIZE);
-    strings = backtrace_symbols(buffer, size);
-    if (strings == NULL) {
-        (void)fprintf(stderr, "backtrace_symbols: size=%d\n", size);
-        return;
-    }
-
     (void)fprintf(stderr, "Obtained %d stack frames.\n", size);
-
-    int i;
-    for (i = 0; i < size; i++)
-        (void)fprintf(stderr, "%s\n", strings[i]);
-
-    /* memfree() はデバッグ版で systrace() を呼ぶので再帰しないよう, free() を使う */
-    free(strings);
-    strings = NULL;
+    (void)fflush(stderr);
+    backtrace_symbols_fd(buffer, size, STDERR_FILENO);
 }
 #endif
 

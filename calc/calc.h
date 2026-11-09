@@ -26,6 +26,7 @@
 #define CALC_H
 
 #include <stdbool.h> /* bool */
+#include <stddef.h>  /* size_t */
 
 #include "def.h"
 
@@ -59,6 +60,7 @@ struct _calcinfo {
     int ch;             /**< 文字 */
     const char *ptr;    /**< 文字列走査用ポインタ */
     char *answer;       /**< 結果文字列 */
+    size_t answer_size; /**< 結果文字列のバッファのサイズ (NUL を含む) */
     char fmt[FMT_SIZE]; /**< フォーマット */
     ER errorcode;       /**< エラーコード */
 };

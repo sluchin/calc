@@ -25,8 +25,13 @@
 #ifndef DEF_H
 #define DEF_H
 
+#include <stddef.h> /* size_t */
+
 /** 配列要素数 */
 #define NELEMS(array) (sizeof(array) / sizeof(array[0]))
+
+/** コマンドライン引数をコピーするバッファのサイズ [byte] (NUL を含む. 長い引数は切り詰める) */
+#define ARG_BUF_SIZE 4096U
 
 /** 関数戻り値 */
 enum {

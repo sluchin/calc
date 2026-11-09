@@ -30,7 +30,7 @@
  */
 
 #include <stdio.h>  /* fprintf snprintf FILE */
-#include <string.h> /* memcpy memset */
+#include <string.h> /* memcpy memset strnlen */
 #include <stdlib.h> /* malloc */
 #include <ctype.h>  /* isdigit isalpha */
 #include <stdarg.h> /* va_list va_arg */
@@ -116,6 +116,8 @@ create_answer(calcinfo *calc, const char *expr)
         clear_error(calc);
         if (calc->answer == NULL)
             return NULL;
+        length = strnlen(calc->answer, MAX_ERRMSG_SIZE) + 1U; /* 文字数 + 1 */
+        calc->answer_size = length;
         dbglog("answer=%p, length=%zu", calc->answer, length);
     } else {
         /* 文字数取得 */
@@ -133,6 +135,7 @@ create_answer(calcinfo *calc, const char *expr)
             outlog("malloc: length=%zu", length);
             return NULL;
         }
+        calc->answer_size = length;
         (void)memset(calc->answer, 0, length * sizeof(char));
 
         /* 値を文字列に変換 */
@@ -162,6 +165,7 @@ destroy_answer(void *calc)
     calcinfo *ptr = (calcinfo *)calc; /* calcinfo構造体 */
     dbglog("start: result=%p", ptr->answer);
     memfree(&ptr->answer, NULL);
+    ptr->answer_size = 0U;
 }
 
 /**

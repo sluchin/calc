@@ -38,9 +38,9 @@
 
 DEFINE_FFF_GLOBALS
 
-/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(char *, strdup, const char *)
-TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+/* strndup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strndup, const char *, size_t)
+TEST_PASSTHROUGH(char *, strndup, (const char *str, size_t n), (str, n))
 
 /*
  * snprintf() と malloc() はほとんどの関数が使うので, FFF のモックにはせず,
@@ -683,7 +683,7 @@ static void
 setup(void *data)
 {
     (void)data;
-    TEST_PASSTHROUGH_RESET(strdup);
+    TEST_PASSTHROUGH_RESET(strndup);
     fail_snprintf = SNPRINTF_NONE;
     fail_malloc_count = 0;
     FFF_RESET_HISTORY();
@@ -760,9 +760,9 @@ test_answer_failure(void)
 
     /* エラーメッセージを作れない */
     (void)memset(&calc, 0, sizeof(calcinfo));
-    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_INJECT(strndup, 0, 1, NULL, ENOMEM);
     TEST_ASSERT_NULL(create_answer(&calc, zero));
-    TEST_ASSERT_INJECTED(strdup);
+    TEST_ASSERT_INJECTED(strndup);
     PASS();
 }
 

@@ -25,7 +25,8 @@
 #include <stdio.h>   /* FILE */
 #include <stdlib.h>  /* exit EXIT_SUCCESS free */
 #include <stdbool.h> /* true */
-#include <string.h>  /* memset */
+#include <string.h>  /* memset strncmp strnlen */
+#include <malloc.h>  /* malloc_usable_size */
 #include <unistd.h>  /* close */
 #include <signal.h>  /* SIGINT SIGTERM SIGQUIT */
 #ifdef HAVE_READLINE
@@ -36,6 +37,7 @@
 #include "def.h"
 #include "memfree.h"
 #include "readline.h"
+#include "data.h"
 #include "option.h"
 #include "log.h"
 #include "term.h"
@@ -127,6 +129,7 @@ main_loop(void)
     calcinfo calc;            /* calcinfo構造体 */
     char *answer = NULL;      /* create_answer戻り値 */
     char *expr = NULL;        /* 式 */
+    size_t expr_size = 0U;    /* expr のバッファのサイズ */
     bool interactive = false; /* 標準入力が端末か */
 #ifdef HAVE_READLINE
     char *prompt = NULL; /* プロンプト */
@@ -149,11 +152,14 @@ main_loop(void)
     do {
         dbgterm(STDIN_FILENO);
 #ifdef HAVE_READLINE
-        if (interactive)
+        if (interactive) {
             expr = readline(prompt);
-        else
+            expr_size = malloc_usable_size(expr); /* NULL のときは 0 */
+        } else
+            expr = _readline(stdin, &expr_size);
+#else
+        expr = _readline(stdin, &expr_size);
 #endif /* HAVE_READLINE */
-            expr = _readline(stdin);
         if (expr == NULL)
             break;
 
@@ -162,9 +168,11 @@ main_loop(void)
             memfree(&expr, NULL);
             continue;
         }
-        dbgdump(expr, strlen(expr) + 1U, "stdin: expr=%p, strlen=%zu", expr, strlen(expr) + 1U);
+        dbgdump(expr, strnlen(expr, expr_size) + 1U, "stdin: expr=%p, strlen=%zu", expr,
+                strnlen(expr, expr_size) + 1U);
 
-        if ((strcmp(expr, "quit") == 0) || (strcmp(expr, "exit") == 0))
+        if ((strncmp(expr, "quit", sizeof("quit")) == 0) ||
+            (strncmp(expr, "exit", sizeof("exit")) == 0))
             break;
 
         (void)memset(&calc, 0, sizeof(calcinfo));
@@ -174,7 +182,8 @@ main_loop(void)
             outlog("create_calc");
         } else {
             dbglog("expr=%p, answer=%p", expr, calc.answer);
-            retval = fprintf(stdout, "%s\n", calc.answer);
+            retval =
+                fprintf(stdout, "%.*s\n", (int)strnlen(calc.answer, calc.answer_size), calc.answer);
             if (retval < 0)
                 outlog("fprintf=%d", retval);
         }

@@ -40,9 +40,9 @@ DEFINE_FFF_GLOBALS
 /* 端末が無くても実行できるように, tcgetattr() は FFF でモックにする */
 FAKE_VALUE_FUNC(int, tcgetattr, int, struct termios *)
 
-/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(char *, strdup, const char *)
-TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+/* strndup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strndup, const char *, size_t)
+TEST_PASSTHROUGH(char *, strndup, (const char *str, size_t n), (str, n))
 
 /* プロトタイプ */
 TEST test_sys_print_termattr(void);
@@ -97,7 +97,7 @@ setup(void *data)
     RESET_FAKE(tcgetattr);
     FFF_RESET_HISTORY();
     tcgetattr_fake.custom_fake = fake_tcgetattr;
-    TEST_PASSTHROUGH_RESET(strdup);
+    TEST_PASSTHROUGH_RESET(strndup);
 }
 
 /**
@@ -258,9 +258,9 @@ test_get_termattr_failure(void)
     TEST_ASSERT_NULL(term.get_termattr(STDIN_FILENO, &mode));
     TEST_ASSERT_INT(1, tcgetattr_fake.call_count);
 
-    /* strdup() に失敗 */
+    /* strndup() に失敗 */
     tcgetattr_fake.custom_fake = fake_tcgetattr;
-    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_INJECT(strndup, 0, 1, NULL, ENOMEM);
     TEST_ASSERT_NULL(term.get_termattr(STDIN_FILENO, &mode));
     PASS();
 }

@@ -23,7 +23,7 @@
  */
 
 #include <stdlib.h> /* realloc */
-#include <string.h> /* memcpy memset */
+#include <string.h> /* memcpy memset strnlen */
 
 #include "log.h"
 #include "memfree.h"
@@ -39,11 +39,12 @@
  * @brief 一行読込
  *
  * @param[in] fp ファイルポインタ
+ * @param[out] size 確保した文字列のバッファのサイズ (NUL を含む. エラーのときは 0)
  * @return 文字列
  * @retval NULL エラー
  */
 char *
-_readline(FILE *fp)
+_readline(FILE *fp, size_t *size)
 {
     char *fgetsp = NULL; /* fgets戻り値 */
     size_t length = 0U;  /* 文字列長 */
@@ -54,6 +55,7 @@ _readline(FILE *fp)
 
     /* fgetsのファイルポインタにNULLを渡した場合,
      * crashするかもしれない */
+    *size = 0U;
     if (fp == NULL)
         return NULL;
 
@@ -69,7 +71,7 @@ _readline(FILE *fp)
         if (fgetsp == NULL) /* 入力の終わり (何も読めなかった) */
             break;
 
-        length = strlen(buf);
+        length = strnlen(buf, sizeof(buf));
         dbgdump(buf, length, "buf=%p, length=%zu", buf, length);
 
         tmp = (char *)realloc(alloc, (total + length + 1U) * sizeof(char));
@@ -91,6 +93,8 @@ _readline(FILE *fp)
     if ((alloc != NULL) && (total > 0U) && (*(alloc + total - 1U) == '\n'))
         *(alloc + total - 1U) = '\0'; /* 改行削除 */
 
+    if (alloc != NULL)
+        *size = total + 1U;
     return alloc;
 
 error_handler:

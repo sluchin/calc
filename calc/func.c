@@ -22,7 +22,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <string.h> /* strcmp */
+#include <string.h> /* strncmp */
 #include <math.h>   /* sin cos tan log log10 */
 #include <assert.h> /* assert */
 
@@ -144,7 +144,7 @@ exec_func(calcinfo *calc, const char *func)
 
     int i;
     for (i = 0, exec = false; (i < MAXFUNC) && !exec; i++) {
-        if (strcmp(fstring[i].funcname, func) == 0) {
+        if (strncmp(fstring[i].funcname, func, MAX_FUNC_STRING + 1U) == 0) {
             ftype = fstring[i].type;
             dbglog("i=%d, ftype=%d", i, (int)ftype);
             dbglog("type=%d", (int)finfo[ftype].type);

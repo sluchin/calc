@@ -29,10 +29,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>  /* fprintf */
-#include <stdlib.h> /* EXIT_SUCCESS */
-#include <getopt.h> /* getopt_long */
+#include <stdio.h>   /* fprintf */
+#include <stdlib.h>  /* EXIT_SUCCESS */
+#include <stdbool.h> /* bool */
+#include <string.h>  /* strnlen */
+#include <getopt.h>  /* getopt_long */
 
+#include "def.h"
 #include "log.h"
 #include "version.h"
 #include "server.h"
@@ -55,7 +58,7 @@ static const char *shortopts = "p:d:hVg";
 /* 内部関数 */
 static void print_help(const char *progname);
 static void print_version(const char *progname);
-static void parse_error(const int c, const char *msg);
+static void parse_error(const int c, const bool internal);
 
 /**
  * オプション引数
@@ -109,18 +112,22 @@ parse_args(int argc, char *argv[])
             exit(EXIT_SUCCESS);
         case '?':
         case ':':
-            parse_error(opt, NULL);
+            parse_error(opt, false);
             exit(EXIT_FAILURE);
         default:
-            parse_error(opt, "internal error");
+            parse_error(opt, true);
             exit(EXIT_FAILURE);
         }
         opt = getopt_long(argc, argv, shortopts, longopts, NULL);
     }
     if (optind < argc) {
         (void)printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            (void)printf("%s ", argv[optind++]);
+        char arg[ARG_BUF_SIZE] = {0}; /* 引数のコピー */
+        while (optind < argc) {
+            (void)snprintf(arg, sizeof(arg), "%s", argv[optind]);
+            (void)printf("%.*s ", (int)strnlen(arg, sizeof(arg)), arg);
+            optind++;
+        }
         (void)printf("\n");
     }
 }
@@ -134,7 +141,8 @@ parse_args(int argc, char *argv[])
 static void
 print_help(const char *progname)
 {
-    (void)fprintf(stderr, "Usage: %s [OPTION]...\n", progname);
+    (void)fprintf(stderr, "Usage: %.*s [OPTION]...\n", (int)strnlen(progname, MAX_PROGNAME),
+                  progname);
     (void)fprintf(stderr, "  -p, --port             %s%s%s",
                   "set port number or service name (default: ", DEFAULT_PORTNO, ")\n");
     (void)fprintf(stderr, "  -d, --digit            %s%ld%s", "set digit (1-", MAX_DIGIT, ")\n");
@@ -152,7 +160,7 @@ print_help(const char *progname)
 static void
 print_version(const char *progname)
 {
-    (void)fprintf(stderr, "%s %s\n", progname, VERSION);
+    (void)fprintf(stderr, "%.*s %s\n", (int)strnlen(progname, MAX_PROGNAME), progname, VERSION);
 }
 
 /**
@@ -160,12 +168,12 @@ print_version(const char *progname)
  *
  * getopt が異常な動作をした場合, エラーを表示する.
  * @param[in] c オプション引数
- * @param[in] msg メッセージ文字列
+ * @param[in] internal 内部エラーのメッセージを出すか
  */
 static void
-parse_error(const int c, const char *msg)
+parse_error(const int c, const bool internal)
 {
-    if (msg != NULL)
-        (void)fprintf(stderr, "getopt[%d]: %s\n", c, msg);
+    if (internal)
+        (void)fprintf(stderr, "getopt[%d]: internal error\n", c);
     (void)fprintf(stderr, "Try `getopt --help' for more information\n");
 }

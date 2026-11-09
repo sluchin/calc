@@ -25,13 +25,14 @@
 #ifndef CALCUTIL_READLINE_H
 #define CALCUTIL_READLINE_H
 
-#include <stdio.h> /* FILE */
+#include <stddef.h> /* size_t */
+#include <stdio.h>  /* FILE */
 
 #include "def.h"
 
 #define FGETSBUF 1024U /**< バッファサイズ */
 
 /* 一行読込 */
-char *_readline(FILE *fp);
+char *_readline(FILE *fp, size_t *size);
 
 #endif /* CALCUTIL_READLINE_H */

@@ -35,9 +35,9 @@
 
 DEFINE_FFF_GLOBALS
 
-/* strdup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
-FAKE_VALUE_FUNC(char *, strdup, const char *)
-TEST_PASSTHROUGH(char *, strdup, (const char *str), (str))
+/* strndup() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
+FAKE_VALUE_FUNC(char *, strndup, const char *, size_t)
+TEST_PASSTHROUGH(char *, strndup, (const char *str, size_t n), (str, n))
 
 /* feclearexcept() はモックにして, 通常は本物を呼ぶ (失敗を注入する) */
 FAKE_VALUE_FUNC(int, feclearexcept, int)
@@ -91,8 +91,12 @@ test_get_errormsg(void)
         st_calc.readch(&calc);
         calc.errorcode = (ER)i;
         calc.answer = get_errormsg(&calc);
-        TEST_ASSERT_STR_MSG(st_error.errormsg[i], calc.answer, "%s==%s", calc.answer,
-                            (char *)st_error.errormsg);
+        if (i == (int)E_NONE) { /* エラーなしは, メッセージがない */
+            TEST_ASSERT_NULL(calc.answer);
+        } else {
+            TEST_ASSERT_STR_MSG(st_error.errormsg[i], calc.answer, "%s==%s", calc.answer,
+                                (const char *)st_error.errormsg);
+        }
         clear_error(&calc);
         destroy_answer(&calc);
     }
@@ -134,7 +138,7 @@ test_clear_error(void)
     set_string(&calc, "dammy");
     st_calc.readch(&calc);
 
-    calc.answer = strdup("dammy");
+    calc.answer = strndup("dammy", sizeof("dammy"));
     clear_error(&calc);
 
     TEST_ASSERT_INT((int)E_NONE, (int)calc.errorcode);
@@ -273,7 +277,7 @@ static void
 setup(void *data)
 {
     (void)data;
-    TEST_PASSTHROUGH_RESET(strdup);
+    TEST_PASSTHROUGH_RESET(strndup);
     TEST_PASSTHROUGH_RESET(feclearexcept);
 }
 
@@ -307,11 +311,11 @@ test_get_errormsg_failure(void)
     calc.errorcode = (ER)MAXERROR;
     TEST_ASSERT_NULL(get_errormsg(&calc));
 
-    /* strdup() に失敗 */
+    /* strndup() に失敗 */
     calc.errorcode = E_SYNTAX;
-    TEST_INJECT(strdup, 0, 1, NULL, ENOMEM);
+    TEST_INJECT(strndup, 0, 1, NULL, ENOMEM);
     TEST_ASSERT_NULL(get_errormsg(&calc));
-    TEST_ASSERT_INJECTED(strdup);
+    TEST_ASSERT_INJECTED(strndup);
     PASS();
 }
 

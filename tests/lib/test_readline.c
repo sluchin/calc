@@ -52,6 +52,7 @@ TEST test_readline_failure(void);
 static int pfd[] = {-1, -1};     /**< パイプ */
 static char test_data[BUF_SIZE]; /**< テストデータ */
 static char *result = NULL;      /**< 結果文字列 */
+static size_t result_size = 0U;  /**< 結果文字列のバッファのサイズ */
 
 /* 内部関数 */
 static char *exec_readline(char *data, size_t length);
@@ -110,6 +111,8 @@ test_readline(void)
         test_data[strlen(test_data) - 1U] = '\0';
 
     TEST_ASSERT_STR(test_data, result);
+    /* バッファは, 削除した改行の分も含む */
+    TEST_ASSERT_INT((int)(strlen(test_data) + 2U), (int)result_size);
 
     memfree(&result, NULL);
 
@@ -128,16 +131,18 @@ test_readline(void)
     result = exec_readline(nolf_data + strlen(nolf_data), 1U);
     TEST_ASSERT_NOT_NULL(result);
     TEST_ASSERT_STR("", result);
+    TEST_ASSERT_INT(1, (int)result_size);
     memfree(&result, NULL);
 
     /* 何も入力されない場合 (入力の終わり) */
     result = exec_readline(nolf_data, 0);
     TEST_ASSERT_NULL(result);
+    TEST_ASSERT_INT(0, (int)result_size);
 
     /* 異常系 */
 
     /* ファイルポインタがNULLの場合 */
-    result = _readline((FILE *)NULL);
+    result = _readline((FILE *)NULL, &result_size);
     TEST_ASSERT_NULL(result);
     PASS();
 }
@@ -199,7 +204,7 @@ exec_readline(char *data, size_t length)
 
         /* テスト関数の実行 */
         /* 受信待ち */
-        result = _readline(fp);
+        result = _readline(fp, &result_size);
         dbglog("result=%s", result);
 
         close_fd(&pfd[PIPE_R], NULL);
@@ -248,7 +253,7 @@ test_readline_failure(void)
     if (fp == NULL) {
         TEST_FAIL("fopen(%d)", errno);
     }
-    result = _readline(fp);
+    result = _readline(fp, &result_size);
     TEST_ASSERT_NULL(result);
     (void)fclose(fp);
 
@@ -265,7 +270,7 @@ test_readline_failure(void)
         TEST_FAIL("fdopen(%d)", errno);
     }
     TEST_INJECT(realloc, 0, 1, NULL, ENOMEM);
-    result = _readline(fp);
+    result = _readline(fp, &result_size);
     TEST_ASSERT_NULL(result);
     (void)fclose(fp);
     PASS();

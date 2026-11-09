@@ -24,7 +24,7 @@
 
 #include <stdio.h>      /* FILE */
 #include <stdlib.h>     /* atexit */
-#include <string.h>     /* memcpy memset */
+#include <string.h>     /* memcpy memset strncmp strnlen */
 #include <sys/socket.h> /* socket connect */
 #include <sys/types.h>  /* socket etc... */
 #include <arpa/inet.h>  /* ntohl*/
@@ -84,8 +84,8 @@ static void exit_memfree(void);
 int
 set_port_string(const char *port)
 {
-    if (sizeof(portno) <= strlen(port)) {
-        outlog("port: length=%zu", strlen(port));
+    if (sizeof(portno) <= strnlen(port, sizeof(portno))) {
+        outlog("port: length>=%zu", sizeof(portno));
         return EX_NG;
     }
     (void)memset(portno, 0, sizeof(portno));
@@ -102,8 +102,8 @@ set_port_string(const char *port)
 int
 set_host_string(const char *host)
 {
-    if (sizeof(hostname) <= strlen(host)) {
-        outlog("host: length=%zu", strlen(host));
+    if (sizeof(hostname) <= strnlen(host, sizeof(hostname))) {
+        outlog("host: length>=%zu", sizeof(hostname));
         return EX_NG;
     }
     (void)memset(hostname, 0, sizeof(hostname));
@@ -325,11 +325,12 @@ drain_replies(int sock, int *pending, st_client status)
 static st_client
 send_sock(int sock)
 {
-    int retval = 0;     /* 戻り値 */
-    size_t length = 0U; /* 長さ */
-    ssize_t slen = 0L;  /* 送信するバイト数 */
+    int retval = 0;        /* 戻り値 */
+    size_t length = 0U;    /* 長さ */
+    ssize_t slen = 0L;     /* 送信するバイト数 */
+    size_t expr_size = 0U; /* expr のバッファのサイズ */
 
-    expr = _readline(stdin);
+    expr = _readline(stdin, &expr_size);
     if (expr == NULL)
         return EX_ALLOC_ERR;
 
@@ -338,10 +339,11 @@ send_sock(int sock)
         return EX_EMPTY;
     }
 
-    if ((strcmp(expr, "quit") == 0) || (strcmp(expr, "exit") == 0))
+    if ((strncmp(expr, "quit", sizeof("quit")) == 0) ||
+        (strncmp(expr, "exit", sizeof("exit")) == 0))
         return EX_QUIT;
 
-    length = strlen(expr) + 1U;
+    length = strnlen(expr, expr_size) + 1U;
     dbgdump(expr, length, "stdin: expr=%zu", length);
 
     if (g_tflag)
@@ -417,7 +419,7 @@ read_sock(int sock)
         print_timer(client_time);
     }
 
-    retval = fprintf(stdout, "%s\n", answer);
+    retval = fprintf(stdout, "%.*s\n", (int)strnlen(answer, length), answer);
     if (retval < 0)
         outlog("fprintf=%d", retval);
 

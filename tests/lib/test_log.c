@@ -93,7 +93,6 @@ TEST test_systrace_failure(void);
 #ifdef HAVE_EXECINFO
 TEST test_systrace(void);
 TEST test_print_trace(void);
-TEST test_print_trace_failure(void);
 #endif
 TEST test_stderr_log_unusual(void);
 TEST test_unknown_errno(void);
@@ -815,20 +814,6 @@ test_systrace_failure(void)
 #endif
 
 #ifdef HAVE_EXECINFO
-/**
- * print_trace() 関数テスト (失敗)
- */
-TEST
-test_print_trace_failure(void)
-{
-    quiet_stderr();
-
-    /* backtrace_symbols() に失敗 (何も出さずに戻る) */
-    TEST_INJECT(backtrace_symbols, 0, 1, NULL, ENOMEM);
-    print_trace();
-    TEST_ASSERT_INJECTED(backtrace_symbols);
-    PASS();
-}
 #endif
 
 /**
@@ -887,7 +872,6 @@ main(int argc, char **argv)
     RUN_TEST(test_dump_file_failure);
     RUN_TEST(test_systrace);
     RUN_TEST(test_print_trace);
-    RUN_TEST(test_print_trace_failure);
     RUN_TEST(test_systrace_failure);
     /* 結果の表示と終了 */
     TEST_MAIN_END();

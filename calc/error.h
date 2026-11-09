@@ -52,10 +52,13 @@ void check_math_feexcept(calcinfo *calc);
 /* 浮動小数点例外チェッククリア */
 void clear_math_feexcept(void);
 
+/** エラーメッセージのバッファのサイズ (NUL を含む) */
+#define MAX_ERRMSG_SIZE 24U
+
 #ifdef UNITTEST
 /** 内部変数の構造体 (単体テスト用) */
 struct _testerror {
-    const char **errormsg; /**< エラーメッセージ配列 */
+    const char (*errormsg)[MAX_ERRMSG_SIZE]; /**< エラーメッセージ配列 */
 };
 /** 内部変数の構造体型 (単体テスト用) */
 typedef struct _testerror testerror;

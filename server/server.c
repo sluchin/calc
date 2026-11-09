@@ -24,7 +24,7 @@
 
 #include <stdio.h>      /* fprintf */
 #include <stdlib.h>     /* EXIT_SUCCESS */
-#include <string.h>     /* memcpy memset */
+#include <string.h>     /* memcpy memset strnlen */
 #include <stdbool.h>    /* bool */
 #include <sys/socket.h> /* socket setsockopt bind listen */
 #include <sys/types.h>  /* socket etc... */
@@ -33,6 +33,7 @@
 #include <sys/select.h> /* select */
 
 #include "def.h"
+#include "data.h"
 #include "log.h"
 #include "net.h"
 #include "memfree.h"
@@ -67,8 +68,8 @@ static void set_thread_sigmask(sigset_t sigmask);
 int
 set_port_string(const char *port)
 {
-    if (sizeof(portno) <= strlen(port)) {
-        outlog("port: length=%zu", strlen(port));
+    if (sizeof(portno) <= strnlen(port, sizeof(portno))) {
+        outlog("port: length>=%zu", sizeof(portno));
         return EX_NG;
     }
     (void)memset(portno, 0, sizeof(portno));
@@ -335,7 +336,7 @@ server_proc(void *arg)
 
         pthread_cleanup_push(destroy_answer, &calc);
 
-        length = strlen(calc.answer) + 1U; /* 文字列長保持 */
+        length = strnlen(calc.answer, calc.answer_size) + 1U; /* 文字列長保持 */
 
         dbgdump(calc.answer, length, "answer=%p, length=%zu", calc.answer, length);
 

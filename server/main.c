@@ -25,12 +25,14 @@
 #ifndef _GNU_SOURCE
 #  define _GNU_SOURCE /**< execvpe を使うために必要 */
 #endif
+#include <stdio.h>  /* snprintf */
 #include <stdlib.h> /* exit EXIT_SUCCESS realpath */
 #include <limits.h> /* PATH_MAX */
-#include <string.h> /* memset */
+#include <string.h> /* memset memchr strnlen */
 #include <unistd.h> /* alarm execve */
 #include <signal.h> /* SIGINT SIGHUP SIGCHLD SA_NOCLDWAIT */
 
+#include "def.h"
 #include "log.h"
 #include "net.h"
 #include "sig.h"
@@ -61,6 +63,7 @@ main(int argc, char *argv[], char *envp[])
 #ifndef _DEBUG
     int retval = 0; /* 戻り値 */
 #endif
+    char arg0[ARG_BUF_SIZE] = {0}; /* argv[0] のコピー */
     char exepath[PATH_MAX];        /* 実行ファイルの絶対パス */
     const char *restart = argv[0]; /* 再起動する実行ファイル */
     const char *resolved = NULL;   /* realpath戻り値 */
@@ -78,8 +81,9 @@ main(int argc, char *argv[], char *envp[])
 
     /* daemon() はカレントディレクトリを / に変えるので, 再起動 (SIGHUP) のために,
      * 実行ファイルのパスを前もって絶対パスにする. (/ を含まないときは PATH から探す) */
-    if (strchr(argv[0], '/') != NULL) {
-        resolved = realpath(argv[0], exepath);
+    (void)snprintf(arg0, sizeof(arg0), "%s", argv[0]);
+    if (memchr(arg0, '/', strnlen(arg0, sizeof(arg0))) != NULL) {
+        resolved = realpath(arg0, exepath);
         if (resolved != NULL)
             restart = exepath;
     }

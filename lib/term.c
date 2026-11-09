@@ -23,7 +23,7 @@
  */
 
 #include <stdio.h>  /* snprintf */
-#include <string.h> /* memcpy memset strdup strlen */
+#include <string.h> /* memcpy memset strndup strnlen */
 #include <unistd.h> /* STDIN_FILENO */
 
 #include "def.h"
@@ -277,9 +277,9 @@ get_termattr(const int fd, struct termios *mode)
     /* 閉じカッコを追加 */
     append_str(buf, sizeof(buf), &off, ")");
 
-    ptr = strdup(buf);
+    ptr = strndup(buf, sizeof(buf));
     if (ptr == NULL) {
-        outlog("strdup failed for buf");
+        outlog("strndup failed for buf");
         return NULL;
     }
 
@@ -299,8 +299,8 @@ get_termattr(const int fd, struct termios *mode)
 static void
 append_str(char *buf, const size_t size, size_t *off, const char *str)
 {
-    size_t len = strlen(str);       /* 追記する長さ */
-    size_t room = size - 1U - *off; /* 追記できる長さ (NUL を除く) */
+    size_t len = strnlen(str, size); /* 追記する長さ */
+    size_t room = size - 1U - *off;  /* 追記できる長さ (NUL を除く) */
 
     if (len > room)
         len = room;

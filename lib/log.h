@@ -30,6 +30,9 @@
 
 #include "term.h"
 
+/** 最大プログラム名文字列長 [byte] (NUL を含む) */
+#define MAX_PROGNAME 25U
+
 /** syslog のファシリティ */
 #define SYS_FACILITY LOG_SYSLOG
 /** ログ関数に渡す共通の引数 (プログラム名, ファイル名, 行番号, 関数名) */
