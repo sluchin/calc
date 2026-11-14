@@ -35,7 +35,7 @@
 | 3 | Rule 17.2 | Rule 16.2 | Required | 関数の再帰呼び出し | 再帰下降構文解析 (`calc/calc.c`) |
 | 4 | Rule 1.2 | Rule 1.1, 1.2 | Advisory / Required | POSIX 拡張・OS 固有 API の使用 | ソケット、スレッド、端末制御、readline (`lib/`、`server/`、`client/`) |
 | 5 | Rule 21.6 | Rule 20.9 | Required | 標準入出力ライブラリ `<stdio.h>` の使用 | CLI 入出力、ログ出力、ファイル I/O (`calc/`、`lib/fileio.c`、`lib/log.c`) |
-| 6 | Rule 21.5 | Rule 20.8 | Required | シグナル処理 `<signal.h>` の使用 | デーモン制御 (SIGHUP), 割り込み (SIGINT), SIGPIPE 抑止 (`lib/sig.c`、`server/main.c`、`client/main.c`、`calc/main.c`) |
+| 6 | Rule 21.5 | Rule 20.8 | Required | シグナル処理 `<signal.h>` の使用 | デーモン制御 (SIGHUP)、割り込み (SIGINT), SIGPIPE 抑止 (`lib/sig.c`、`server/main.c`、`client/main.c`、`calc/main.c`) |
 | 7 | Rule 21.8 | Rule 20.11 | Required | プロセス終了関数 (`exit()`、`atexit()`) の使用 | CLI オプション終了、致命的エラー終了、終了ハンドラ登録 |
 | 8 | Rule 17.1 | Rule 16.1 | Required | 可変長引数 `<stdarg.h>` の使用 | ログ出力マクロ、関数引数解析、一括解放 (`memfree`、`close_fd`) |
 | 9 | Rule 18.4, 11.3 | Rule 17.4, 11.4 | Advisory / Required | ポインタ演算およびポインタキャスト | 文字列走査、送受信オフセット、ソケット構造体キャスト |
@@ -90,7 +90,7 @@
   - 「言語拡張を使用してはならない。未定義・未規定の動作に依存してはならない」
 - **理由 (Rationale)**:
   - 本システムは Linux/POSIX OS 上で動作するネットワーク計算サービスおよび対話型 CLI アプリケーションです。
-  - Berkeley ソケット API (`sys/socket.h`), POSIX スレッド (`pthread.h`), I/O 多重化 (`sys/select.h`、`poll.h`), 端末属性制御 (`termios.h`), システムログ (`syslog.h`), プロセス制御 (`fork`、`execvpe`、`waitpid`), GNU readline 等の OS 固有機能が要件上不可欠です。
+  - Berkeley ソケット API (`sys/socket.h`), POSIX スレッド (`pthread.h`), I/O 多重化 (`sys/select.h`、`poll.h`)、端末属性制御 (`termios.h`)、システムログ (`syslog.h`)、プロセス制御 (`fork`、`execvpe`、`waitpid`), GNU readline 等の OS 固有機能が要件上不可欠です。
 - **安全対策 (Mitigation)**:
   - POSIX 標準規格に準拠した API 呼出に統一し、コンパイラ拡張等の非標準構文は極力排除しています。
   - すべてのシステムコール戻り値を検証し、環境による動作差異を吸収しています。
@@ -128,7 +128,7 @@
 - **該当ルール**: MISRA C:2012 Rule 17.1 (Required), MISRA C:2004 Rule 16.1 (Required)
   - 「`<stdarg.h>` の機能を使用してはならない」
 - **理由 (Rationale)**:
-  - 書式付きログ出力マクロ (`dbglog`、`outlog`), 電卓の可変引数組み込み関数解析 (`parse_func_args`), 可変個ポインタの一括解放 (`memfree`), 可変個ファイルディスクリプタの一括クローズ (`close_fd`) の実装に必要です。
+  - 書式付きログ出力マクロ (`dbglog`、`outlog`)、電卓の可変引数組み込み関数解析 (`parse_func_args`)、可変個ポインタの一括解放 (`memfree`)、可変個ファイルディスクリプタの一括クローズ (`close_fd`) の実装に必要です。
 - **安全対策 (Mitigation)**:
   - `memfree` や `close_fd` では末尾に `NULL` 終端子を渡す呼び出し規約を徹底し、可変引数の境界外アクセスを防止しています。ログ出力では `vsnprintf` によるバッファ長制限を厳守しています。
 

@@ -33,7 +33,7 @@ sudo yum install readline-devel
 
 ## ビルド
 
-ライブラリは静的ライブラリ (`.a`) と動的ライブラリ (`.so`) の、どちらか一方だけを作る。既定は、静的ライブラリで、実行ファイルは、静的ライブラリにリンクする (単独で動く).
+ライブラリは静的ライブラリ (`.a`) と動的ライブラリ (`.so`) の、どちらか一方だけを作る。既定は、静的ライブラリで、実行ファイルは、静的ライブラリにリンクする (単独で動く)。
 動的ライブラリにするには、`DYNAMIC` を指定する。
 
 Make の場合:
@@ -104,7 +104,7 @@ make          # 単体テストは, ビルドされない
 make test     # 単体テストをビルドして, 実行する (ctest)
 ```
 
-`make test` は、単体テストのビルドも、ctest のテスト (`build_tests`) として実行する。ビルドの出力と、各テストの出力を、全て表示する (`ctest --verbose`).
+`make test` は、単体テストのビルドも、ctest のテスト (`build_tests`) として実行する。ビルドの出力と、各テストの出力を、全て表示する (`ctest --verbose`)。
 `ctest --output-on-failure` でも、同じようにビルドしてから実行する。
 単体テストは、内部関数を公開する `UNITTEST` を有効にしてビルドする。配布用のビルドでは、`-DBUILD_TESTS=OFF` を指定する。
 
@@ -121,7 +121,7 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 
 gcovr をインストールし (`sudo apt install gcovr`), `make coverage` コマンドを実行する。
 レポートは `build-coverage/coverage/index.html` に出力される。
-行と分岐のどちらかが 100% を下回ると、失敗する (CI でも確認する). 到達しないコード (全ての種別を処理している `switch` の `default:` など) だけを、理由を書いた `GCOVR_EXCL_*` のコメントで、集計から外している。
+行と分岐のどちらかが 100% を下回ると、失敗する (CI でも確認する)。到達しないコード (全ての種別を処理している `switch` の `default:` など) だけを、理由を書いた `GCOVR_EXCL_*` のコメントで、集計から外している。
 
 CMake のビルドディレクトリでも、`make coverage` で実行できる。カバレッジ用に、`build/coverage-build/` に別にビルドして、レポートを `build/coverage-build/coverage/index.html` に出力する。
 
@@ -142,7 +142,7 @@ make doc     # build/docs/html/index.html
 ```
 
 リポジトリ直下で `make doc` (GNU make) を実行しても、`build/docs/html/index.html` に出力される (`make clean` で `build/` ごと削除される)。
-graphviz (dot) がなくても生成できる (グラフは出力されない).
+graphviz (dot) がなくても生成できる (グラフは出力されない)。
 
 ## コーディングのコンセプト
 
