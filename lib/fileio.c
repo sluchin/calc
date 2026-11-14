@@ -278,7 +278,7 @@ close_fd(int *fd, ...)
 
     dbglog("start");
 
-    /* 最初のファイルディスクリプタ (NULL なら, 何もしない) */
+    /* 最初のファイルディスクリプタ (NULL なら何もしない) */
     if (fd != NULL) {
         if (*fd >= 0) {
             dbglog("%p fd=%d", (const void *)fd, *fd);

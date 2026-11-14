@@ -186,7 +186,7 @@ test_append_str(void)
     term.append_str(buf, sizeof(buf), &off, "defghij");
     TEST_ASSERT_STR("abcdefg", buf);
     ASSERT_EQ(sizeof(buf) - 1U, off);
-    /* 一杯なら, 何も足さない */
+    /* 一杯なら何も足さない */
     term.append_str(buf, sizeof(buf), &off, "x");
     TEST_ASSERT_STR("abcdefg", buf);
     PASS();

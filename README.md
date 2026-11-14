@@ -33,7 +33,7 @@ sudo yum install readline-devel
 
 ## ビルド
 
-ライブラリは、静的ライブラリ (`.a`) と動的ライブラリ (`.so`) の、どちらか一方だけを作る。既定は、静的ライブラリで、実行ファイルは、静的ライブラリにリンクする (単独で動く).
+ライブラリは静的ライブラリ (`.a`) と動的ライブラリ (`.so`) の、どちらか一方だけを作る。既定は、静的ライブラリで、実行ファイルは、静的ライブラリにリンクする (単独で動く).
 動的ライブラリにするには、`DYNAMIC` を指定する。
 
 Make の場合:
@@ -45,7 +45,7 @@ make clean all DYNAMIC=1      # 動的ライブラリ
 ```
 
 (GNU make の `-D` は、変数の定義ではないので、`DYNAMIC=1` と書く。)
-静的と動的を切り替えるときは、`make clean` してから、ビルドし直す。
+静的と動的を切り替えるときは、`make clean` してからビルドし直す。
 
 CMake の場合:
 
@@ -62,7 +62,7 @@ sudo make install                # 静的ライブラリ (既定)
 sudo make install DYNAMIC=1      # 動的ライブラリ
 ```
 
-- 静的ライブラリ: 実行ファイルは、単独で動く。 `ldconfig` は不要。
+- 静的ライブラリ: 実行ファイルは単独で動く。 `ldconfig` は不要。
 - 動的ライブラリ: 環境によって、ライブラリの検索パスが異なる。インストール後に、`sudo ldconfig` を実行する。
   (`/usr/local/lib` が検索パスに含まれない場合は、`/etc/ld.so.conf.d/` にファイルを作って追加する。)
 - どちらも、`make install` の最後に、上の内容がメッセージとして表示される。
@@ -105,7 +105,7 @@ make test     # 単体テストをビルドして, 実行する (ctest)
 ```
 
 `make test` は、単体テストのビルドも、ctest のテスト (`build_tests`) として実行する。ビルドの出力と、各テストの出力を、全て表示する (`ctest --verbose`).
-`ctest --output-on-failure` でも、同じように、ビルドしてから実行する。
+`ctest --output-on-failure` でも、同じようにビルドしてから実行する。
 単体テストは、内部関数を公開する `UNITTEST` を有効にしてビルドする。配布用のビルドでは、`-DBUILD_TESTS=OFF` を指定する。
 
 トップレベルの `make test` (GNU make) は、Debug ビルドを `build-test/` に作って、ctest を実行する。
@@ -157,4 +157,4 @@ MISRA-C に対する適合方針および例外事項 (Deviations) について�
 
 ## リリース
 
-`v0.1.0` のようなタグを push すると、GitHub Actions の `release.yml` が、GitHub Releases の**ドラフト**を作ります (載せるもの: Linux (x86_64) の実行ファイル (`calcp`、`calcd`、`calcc`) の tar.gz)。中身を確かめて、手で公開します。タグを打たずに試すときは、Actions の Release を手動で実行します (成果物は、Artifacts に保存されます)。
+`v0.1.0` のようなタグを push すると、GitHub Actions の `release.yml` が、GitHub Releases の**ドラフト**を作ります (載せるもの: Linux (x86_64) の実行ファイル (`calcp`、`calcd`、`calcc`) の tar.gz)。中身を確かめて手で公開します。タグを打たずに試すときは、Actions の Release を手動で実行します (成果物は、Artifacts に保存されます)。

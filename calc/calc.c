@@ -296,7 +296,7 @@ expression(calcinfo *calc)
     x = term(calc);
     dbglog("%.*g", (int)digit, x);
 
-    /* 続く項を'+' '-' で, 左から順に加減算する */
+    /* 続く項を'+' '-' で左から順に加減算する */
     while (true) {
         if (calc->ch == '+') {
             readch(calc);

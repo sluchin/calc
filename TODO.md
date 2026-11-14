@@ -5,8 +5,8 @@
 - [ ] GNU readline から editline を使用するよう変更する。 (2011-09-21)
 - [ ] 多倍長整数に対応する。 GNU gmp, GNU mpfr. (2011-09-21)
 - [ ] デバッグビルド (`_DEBUG`) の `dbglog()` (`system_dbg_log`) が、`errno` を 0 にする。
-  `lib/net.c` の `send_data()` `recv_data()` は、`dbglog()` の直後に `errno` (EINTR, EAGAIN) を判定するので、デバッグビルドでは、割り込まれたときの再試行が働かず、エラーになる。
-  `tests/lib/test_net.c` の `test_send_data_interrupted` `test_recv_data_interrupted` は、デバッグビルドでは、スキップしている。
+  `lib/net.c` の `send_data()` `recv_data()` は、`dbglog()` の直後に `errno` (EINTR, EAGAIN) を判定する。そのため、デバッグビルドでは、割り込まれたときの再試行が働かず、エラーになる。
+  `tests/lib/test_net.c` の `test_send_data_interrupted` `test_recv_data_interrupted` は、デバッグビルドではスキップしている。
 - [ ] 標準出力をリダイレクトしている間にテストが失敗すると、メッセージが見えなくなる。 (`tests/calcc/test_client.c` など)
 
 ## 対応済み

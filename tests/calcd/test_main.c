@@ -264,7 +264,7 @@ test_main_signal(void)
 {
     char *argv[] = {"calcd", NULL}; /* 引数 */
 
-    /* SIGTERM: ループを終了して, 正常終了する */
+    /* SIGTERM: ループを終了して正常終了する */
     raise_signo = SIGTERM;
     TEST_ASSERT_INT(EXIT_SUCCESS, test_run_child(run_main, argv, NULL, NULL, 0));
     TEST_ASSERT_INT(1, shm->loop_signal);
@@ -333,7 +333,7 @@ run_main_relative(void *arg)
 }
 
 /**
- * main() 関数テスト (相対パスで起動して, SIGHUP で再起動する)
+ * main() 関数テスト (相対パスで起動して SIGHUP で再起動する)
  * (デバッグビルドは daemon() を呼ばないので修正前でも通る)
  */
 TEST

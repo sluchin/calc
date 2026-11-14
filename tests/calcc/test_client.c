@@ -77,7 +77,7 @@ static int pfd1[] = {-1, -1};              /**< パイプ1 */
 static int pfd2[] = {-1, -1};              /**< パイプ2 */
 static const int CHILD_FAILED = 255;       /**< 子プロセス失敗 */
 
-/* sigemptyset() などと, set_client_data() はモックにして, 通常は本物を呼ぶ */
+/* sigemptyset() などと, set_client_data() はモックにして通常は本物を呼ぶ */
 FAKE_VALUE_FUNC(int, sigemptyset, sigset_t *)
 TEST_PASSTHROUGH(int, sigemptyset, (sigset_t * set), (set))
 FAKE_VALUE_FUNC(int, sigfillset, sigset_t *)
@@ -93,7 +93,7 @@ TEST_PASSTHROUGH(ssize_t,
 /*
  * atexit() は glibc の静的ライブラリ (libc_nonshared.a) の小さな関数 (スタブ) で,
  * 共有ライブラリ (libcalcc.so) の中に取り込まれるので, 置き換えられない. スタブは,
- * __cxa_atexit() を呼ぶだけでこれは libc.so の関数なので, 置き換えられる.
+ * __cxa_atexit() を呼ぶだけでこれは libc.so の関数なので置き換えられる.
  * 通常は本物の __cxa_atexit() を呼び, 注入したときだけ失敗させる.
  */
 extern int __cxa_atexit(void (*func)(void *), void *arg, void *dso);
@@ -1000,7 +1000,7 @@ child_read_sock(void *arg)
         hd.length = htonl(0U);
         (void)writen(sv[1], &hd, sizeof(hd));
         break;
-    default: /* 正常なデータ (4 は標準出力を閉じて, 出力に失敗する) */
+    default: /* 正常なデータ (4 は標準出力を閉じて出力に失敗する) */
         len = set_server_data(&dt, (const char *)"42", 3U);
         if (len < 0L)
             exit(CHILD_FAILED);
@@ -1073,7 +1073,7 @@ test_client_loop_failure(void)
     TEST_ASSERT_INT(EX_SIGNAL, test_run_child(child_client_loop, NULL, "\n", out, sizeof(out)));
     g_sig_handled = 0;
 
-    /* 標準入力が quit なら, 終了 */
+    /* 標準入力が quit なら終了 */
     TEST_INJECT(pselect, 0, 1, 1, 0);
     TEST_ASSERT_INT(EX_QUIT, test_run_child(child_client_loop, NULL, "quit\n", out, sizeof(out)));
 

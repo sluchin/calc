@@ -89,7 +89,7 @@ TEST_PASSTHROUGH(int,
 FAKE_VALUE_FUNC(int, pthread_detach, pthread_t)
 TEST_PASSTHROUGH(int, pthread_detach, (pthread_t tid), (tid))
 
-/* 計算やデータ作成, 送信と, シグナルマスクの関数は, モックにして, 通常は本物を呼ぶ */
+/* 計算やデータ作成, 送信と, シグナルマスクの関数は, モックにして通常は本物を呼ぶ */
 FAKE_VALUE_FUNC(char *, create_answer, calcinfo *, const char *)
 TEST_PASSTHROUGH(char *, create_answer, (calcinfo * calc, const char *expr), (calc, expr))
 FAKE_VALUE_FUNC(ssize_t, set_server_data, struct server_data **, const char *, size_t)
@@ -1018,7 +1018,7 @@ test_server_loop_timeout(void)
 }
 
 /**
- * server_proc() 関数テスト (同じ接続で, 2 回計算する)
+ * server_proc() 関数テスト (同じ接続で 2 回計算する)
  * 終了のシグナルがなければ, 次のリクエストを待つ. 接続先が閉じると, スレッドは終わる.
  */
 TEST

@@ -91,7 +91,7 @@ snprintf(char *str, size_t size, const char *format, ...)
         errno = EIO;
         return -1;
     }
-    /* 対象でなければ, 本物の処理 */
+    /* 対象でなければ本物の処理 */
     va_start(ap, format);
     retval = vsnprintf(str, size, format, ap);
     va_end(ap);
@@ -804,7 +804,7 @@ test_parse_func_args_failure(void)
     parse_func_args(&calc, &x, NULL);
     ASSERT(is_error(&calc));
 
-    /* もうエラーなら, 引数を読まない (エラーも, 読む位置も変えない) */
+    /* もうエラーなら, 引数を読まない (エラーも読む位置も変えない) */
     (void)memset(&calc, 0, sizeof(calcinfo));
     set_string(&calc, "(5)");
     st_calc.readch(&calc);

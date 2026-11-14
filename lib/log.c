@@ -88,7 +88,7 @@ set_progname(const char *name)
         ptr = (const char *)memrchr(buf, '/', strnlen(buf, sizeof(buf)));
         ptr = ((ptr != NULL) ? (ptr + 1) : buf);
         len = strnlen(ptr, sizeof(progname) - 1U);
-        (void)memcpy(progname, ptr, len); /* progname は静的で, 0 で初期化されている */
+        (void)memcpy(progname, ptr, len); /* progname は静的で 0 で初期化されている */
     }
 }
 
@@ -569,7 +569,7 @@ print_trace(void)
     int size = 0;                   /* サイズ */
 
     /* 呼び出し履歴を取得して, 標準エラー出力に出力する.
-     * backtrace_symbols_fd() は, 文字列を確保せず, 直接書き込む */
+     * backtrace_symbols_fd() は, 文字列を確保せず直接書き込む */
     size = backtrace(buffer, STACK_SIZE);
     (void)fprintf(stderr, "Obtained %d stack frames.\n", size);
     (void)fflush(stderr);

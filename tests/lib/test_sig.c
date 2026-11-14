@@ -203,10 +203,10 @@ test_set_sigaction_failure(void)
     /* 不正なシグナル番号 (取得に失敗する) */
     TEST_ASSERT_INT(EX_NG, set_sigaction(-1, test_handler, 0));
 
-    /* 変更できないシグナル (SIGKILL: 取得はできて, 設定に失敗する) */
+    /* 変更できないシグナル (SIGKILL: 取得はできて設定に失敗する) */
     TEST_ASSERT_INT(EX_NG, set_sigaction(SIGKILL, test_handler, 0));
 
-    /* sigfillset() に失敗: sigaction() は呼ばれず, 設定は変わらない */
+    /* sigfillset() に失敗: sigaction() は呼ばれず設定は変わらない */
     calls = sigaction_fake.call_count;
     TEST_INJECT(sigfillset, 0, 1, -1, EINVAL);
     TEST_ASSERT_INT(EX_NG, set_sigaction(test_signo, test_handler, 0));
