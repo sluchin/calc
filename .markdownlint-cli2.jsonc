@@ -1,15 +1,14 @@
 {
   "config": {
+    // 全ての規則を有効にする. 次の 1 つだけ無効にする.
     "default": true,
+    // MD013 (line-length): 1 行を 80 桁までにする.
+    // 日本語の文は段落を 1 行で書く (途中で折り返すと, 表示に空白が入る) ので, 使わない.
     "MD013": false,
-    "MD024": {
-      "siblings_only": true
-    },
-    "MD033": false,
-    "MD034": false,
-    "MD036": false,
-    "MD041": false,
-    "MD060": false
+    // MD060 (table-column-style): 表の | の前後の空白をそろえる. 詰めた形 (| a | b |) に決める.
+    "MD060": {
+      "style": "compact"
+    }
   },
   "globs": [
     "**/*.md"

@@ -8,7 +8,7 @@
 ### 1.1 対象
 
 | プログラム | 内容 | 版 |
-|---|---|---|
+| --- | --- | --- |
 | `calcp` | 電卓 (標準入力から式を読んで、答えを標準出力に出す) | 0.05 |
 | `calcd` | 電卓サーバ (TCP で式を受け取り、答えを返す。デーモンになる) | 0.05 |
 | `calcc` | 電卓クライアント (標準入力の式を、サーバに送り、答えを標準出力に出す) | 0.05 |
@@ -46,7 +46,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 1.4 結果欄
 
 | 記号 | 意味 |
-|---|---|
+| --- | --- |
 | ○ | 期待どおり |
 | × | 期待と異なる (内容を、備考に書く) |
 | - | 実施しない (理由を書く) |
@@ -56,7 +56,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 `calcp` と `calcd` は、正常な終了が 0, 異常が 1 (`EXIT_FAILURE`). `calcc` は、次のとおり。
 
 | 値 | 名前 | 意味 |
-|---|---|---|
+| --- | --- | --- |
 | 0 | `EX_SUCCESS` | 正常 |
 | 1 | `EX_FAILURE` | 異常 (`atexit` の登録の失敗、`select` の失敗) |
 | 2 | `EX_EMPTY` | 空の入力 (内部でだけ使う) |
@@ -72,7 +72,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 2.1 四則演算と括弧
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-A-01 | 乗算を先に計算する | `printf '%s\n' '1+2*3' \| $B/calcp` | `7` | |
 | CP-A-02 | 括弧を先に計算する | `printf '%s\n' '(1+2)*3' \| $B/calcp` | `9` | |
 | CP-A-03 | 除算は、小数になる | `printf '%s\n' '10/4' \| $B/calcp` | `2.5` | |
@@ -93,7 +93,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 2.2 関数
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-B-01 | 円周率 | `printf '%s\n' 'pi' \| $B/calcp` | `3.14159265359` | |
 | CP-B-02 | ネイピア数 | `printf '%s\n' 'e' \| $B/calcp` | `2.71828182846` | |
 | CP-B-03 | 絶対値 | `printf '%s\n' 'abs(-2)' \| $B/calcp` | `2` | |
@@ -118,7 +118,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 2.3 エラー
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-C-01 | ゼロ除算 | `printf '%s\n' '5/0' \| $B/calcp` | `Divide by zero.` | |
 | CP-C-02 | 閉じ括弧がない | `printf '%s\n' 'sin(5' \| $B/calcp` | `Syntax error.` | |
 | CP-C-03 | 引数が足りない | `printf '%s\n' 'nCr(5)' \| $B/calcp` | `Syntax error.` | |
@@ -143,7 +143,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 2.4 オプション
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-D-01 | 有効桁数 (`-d`) | `printf '1/3\n' \| $B/calcp -d 5` | `0.33333` | |
 | CP-D-02 | 有効桁数の最大 | `printf '1/3\n' \| $B/calcp -d 15` | `0.333333333333333` | |
 | CP-D-03 | 有効桁数が範囲外 | `$B/calcp -d 0`、`-d 16`、`-d -1`、`-d abc` をそれぞれ実行 | `Digits is 1-15.` を標準エラー出力に出して、終了ステータス 1 | |
@@ -157,7 +157,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 2.5 入力の方法 (標準入力が端末でない場合)
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-E-01 | パイプ | `printf '1+1\n2+2\n3+3\n' \| $B/calcp` | `2` `4` `6` を、1 行ずつ出力する。入力の終わりで、終了ステータス 0 で終了する (CPU を使い続けない) | |
 | CP-E-02 | ファイル | `printf '1+1\n2+2\n' > in.txt; $B/calcp < in.txt` | `2` `4`。終了ステータス 0 | |
 | CP-E-03 | 最後の行に改行がない | `printf '1+2' \| $B/calcp` | `3` (最後の行も計算する) | |
@@ -172,7 +172,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 端末 (または `script -qc "$B/calcp" /dev/null`) で実施する。
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CP-F-01 | 計算 | `1+1` を入力して、Enter | 次の行に `2` を表示する | |
 | CP-F-02 | 履歴 | `1+1` を Enter で実行した後に、上矢印、Enter | `1+1` が呼び出されて、再び `2` を表示する | |
 | CP-F-03 | 行の編集 | `1+1` を入力してから、Backspace で `1` を消して `2` を入力し、Enter | `1+2` として、`3` を表示する | |
@@ -189,7 +189,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 3.1 オプション
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CD-A-01 | ヘルプ (`-h`) | `$B/calcd -h` | `Usage: calcd [OPTION]...` と、`-p` `-d` `-g` `-h` `-V` の説明 (既定のポートは `12345`)。終了ステータス 0 | |
 | CD-A-02 | バージョン (`-V`) | `$B/calcd -V` | `calcd version 0.05`。終了ステータス 0 | |
 | CD-A-03 | 不正なオプション | `$B/calcd -x` | `invalid option -- 'x'`。終了ステータス 1 | |
@@ -201,7 +201,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 3.2 起動と停止
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CD-B-01 | デーモンとして起動 | `$B/calcd -p 23456; echo $?; pgrep -a calcd` | コマンドはすぐに戻り (終了ステータス 0), `calcd -p 23456` のプロセスが 1 つ残る | |
 | CD-B-02 | ポートを待ち受ける | `ss -ltn \| grep 23456` | `0.0.0.0:23456` が LISTEN | |
 | CD-B-03 | 同じポートで、二重に起動 | CD-B-01 の後に、もう一度 `$B/calcd -p 23456; echo $?` | `Address already in use` を出力して、終了ステータス 1. 最初のサーバは、動き続ける | |
@@ -218,7 +218,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 4.1 オプションと接続
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CC-A-01 | ヘルプ (`-h`) | `$B/calcc -h` | `Usage: calcc [OPTION]...` と、`-i` `-p` `-g` `-t` `-h` `-V` の説明 (既定は、`127.0.0.1` とポート `12345`)。終了ステータス 0 | |
 | CC-A-02 | バージョン (`-V`) | `$B/calcc -V` | `calcc version 0.05`。終了ステータス 0 | |
 | CC-A-03 | 不正なオプション | `$B/calcc -x` | `invalid option -- 'x'`。終了ステータス 1 | |
@@ -235,7 +235,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 5.1 計算
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CS-A-01 | 四則演算 | `printf '1+2*3\nquit\n' \| c` | `7`。終了ステータス 3 | |
 | CS-A-02 | 複数の式 (パイプで、続けて入力) | `printf '1+2*3\n5/0\nsqrt(-1)\nnofunc(1)\n\n(1+2)*3\nquit\n' \| c` | `7` `Divide by zero.` `NaN.` `Function not defined.` `9` を、入力の順に出力する (空行は無視)。全ての答えを出力してから、終了ステータス 3 で終了する | |
 | CS-A-03 | 関数 | `printf 'sqrt(2)\nnPr(5,2)\nquit\n' \| c` | `1.41421356237` `20` | |
@@ -252,7 +252,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 5.2 複数のクライアント
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CS-B-01 | 2 つのクライアントが同時に接続 | 別々の端末 (または `&`) で、`( printf '1+1\n'; sleep 1; printf '2+2\nquit\n' ) \| c` と、`( printf '3+3\n'; sleep 1; printf '4+4\nquit\n' ) \| c` を同時に実行 | それぞれが、自分の式の答え (`2` `4` と `6` `8`) だけを受け取る | |
 | CS-B-02 | 50 のクライアントが同時に接続 | `for i in $(seq 1 50); do ( printf "$i+$i\nquit\n" \| c > out$i.txt ) & done; wait` | 各 `out$i.txt` に、`$i+$i` の答えが出力されている (`2` から `100` まで、全て) | |
 | CS-B-03 | 負荷 (`thcalcc`) | `build-it/tests/thcalcc -p 23456 -t 10` を、`-t 100`、`-t 500`、`-t 1000` でも実行 | いずれも、終了ステータス 0 (各スレッドが、自分の式の答えを受信して、`assert` で確認する。答えが一致しなければ、異常終了する)。デバッグビルドなので、詳細なログが、標準エラー出力に出る | |
@@ -261,7 +261,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ### 5.3 異常な通信
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CS-C-01 | サーバが、途中で停止 | `( printf '1+1\n'; sleep 2; printf '2+2\nquit\n' ) \| c` を実行中に、1 秒後に `pkill -x calcd` | クライアントは、シグナルで終了せず、終了する (サーバが答えを返せなかった場合は、終了ステータス 7) | |
 | CS-C-02 | サーバが無い状態で送信 | サーバを止めた後に、接続済みのクライアントで、式を入力する | `SIGPIPE` で終了せず、送信または受信のエラーとして処理して、終了ステータス 6 または 7 (実測は 7)。サーバが動いていれば、新しいクライアントは、計算できる | |
 | CS-C-03 | 上限を超える長さの式 (70000 文字) | `python3 -c "print('1+'*35000+'1')" \| c; echo $?` | サーバは、巨大なメモリを確保せずに、接続を閉じる。クライアントは、答えを出力せずに、終了ステータス 7 | |
@@ -275,7 +275,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ## 6. ビルド、テスト、配布
 
 | No | 項目 | 手順 | 期待結果 | 結果 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | BD-A-01 | CMake でビルド (リリース、静的ライブラリ) | `cmake -S . -B build -DBUILD_TESTS=OFF && cmake --build build` | 警告なしにビルドでき、`build/` に `calcp` `calcd` `calcc` と、`lib*.a` だけができる (`lib*.so` は、できない). `ldd build/calcp` に `libcalc` が出ない。単体テストは、ビルドされない | |
 | BD-A-01b | CMake でビルド (動的ライブラリ) | `cmake -S . -B build-dyn -DDYNAMIC=ON -DBUILD_TESTS=OFF && cmake --build build-dyn` | 警告なしにビルドでき、`lib*.so` だけができる。 `ldd build-dyn/calcp` に `libcalcp.so` `libcalcutil.so` が出る | |
 | BD-A-02 | CMake でビルド (デバッグ) | `cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build-debug` | 警告なしにビルドできる | |
@@ -294,7 +294,7 @@ cmake --build build-it --target thcalcc     # build-it/tests/thcalcc
 ## 7. 実施記録
 
 | 実施日 | 実施者 | 版 (コミット) | 環境 | 結果 (○ / × の数) | 備考 |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | | | | | | |
 
 ## 8. 結合テストで見つかった不具合

@@ -1,4 +1,4 @@
-## コーディング規約
+# コーディング規約
 
 `README.md` の「コーディングのコンセプト」に従う。
 MISRA-C への対応方針および例外事項 (Deviations) については、[misra.md](misra.md) を参照。
